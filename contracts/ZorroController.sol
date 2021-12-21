@@ -64,8 +64,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
         uint256 contribution; // The user-specific contribution for a given pool (Cx). Equivalent to the product of their contribution and a time multiplier
         uint256 timeMultiplier; // The time multiplier factor for rewards
         uint256 rewardDebt; // The user's share of the amount of rewards accumulated in the pool to date (see README)
-        uint256 durationCommittedInBlocks; // How many blocks the user committed to at the time of deposit
-        uint256 enteredVaultOnBlock; // The earliest contiguous block for which the user deposited into a Vault.
+        uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit
+        uint256 enteredVaultAt; // The earliest timestamp for which the user deposited into a Vault.
     }
 
     // Info of each pool
@@ -368,11 +368,11 @@ contract ZorroController is Ownable, ReentrancyGuard {
             pool.totalUserContributions = pool.totalUserContributions.add(contributionAdded);
             // If the user has not yet registered a block that it has entered on yet, assign the current block
             if (user.enteredVaultOnBlock == 0) {
-                user.enteredVaultOnBlock = block.number;
+                user.enteredVaultAt = block.timestamp;
             }
             // If the user has no duration committed, assign the commitment to the duration in weeks, convered to blocks
-            if (user.durationCommittedInBlocks == 0) {
-                user.durationCommittedInBlocks =  _weeksCommitted.mul(7).mul(blocksPerDay);
+            if (user.durationCommittedInWeeks == 0) {
+                user.durationCommittedInWeeks =  _weeksCommitted;
             }
         }
         // Update the reward debt that the user owes by multiplying user share % by the pool's accumulated Zorro rewards
@@ -435,8 +435,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
             // Reset time-based rewards parameters if everything is withdrawn
             if (user.contribution == 0) {
-                user.durationCommittedInBlocks = 0;
-                user.enteredVaultOnBlock = 0;
+                user.durationCommittedInWeeks = 0;
+                user.enteredVaultAt = 0;
             }
         }
         // Note: User's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
@@ -510,9 +510,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
 }
 
 // TODO - how do penalties work?
-// TODO harvesting before time commitment period should incur a penalty if it's an early harvest
-
-// TODO: Instead of using duration in weeks converted to blocks: Use block.timestamp https://ethereum.stackexchange.com/questions/37026/how-to-calculate-with-time-and-dates
+// TODO harvesting before time commitment period should incur a penalty if it's an early harvest. No harvest until withdrawal for timelock?
 
 // TODO - how to gradually allow room for Oracle controlled TVL etc?
 
@@ -520,3 +518,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
 // TODO: Deposit: Autoswapping
 // TODO: Withdrawal: Back to USDC
+
+// TODO: Allow toggling of time multiplier feature?
+
+// TODO. Min 900 sec time commitment
