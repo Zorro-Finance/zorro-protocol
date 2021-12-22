@@ -84,7 +84,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
     // Public variables and their initial values (check blockchain scanner for latest values)
     address public ZORRO = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
     address public burnAddress = 0x000000000000000000000000000000000000dEaD;
-    uint256 public startBlock = 13650292; //https://bscscan.com/block/countdown/3888888 // TODO - set this
+    uint256 public startBlock = 13650292; //https://bscscan.com/block/countdown/13650292 // TODO - set this
     address public publicPool = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
     uint256 public baseRewardRateBasisPoints = 10;
     uint256 public BSCMarketTVLUSD = 30e9; // TODO - set this correctly, allow setter function
@@ -126,8 +126,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
     // Info of each pool
     PoolInfo[] public poolInfo;
-    // Info of each user that stakes LP tokens.
-    mapping(uint256 => mapping(address => UserInfo)) public userInfo; 
+    // Info of each user that stakes Want tokens. Mapping: pool ID/index => user wallet address => tranche ID/index => investment info
+    mapping(uint256 => mapping(address => mapping(uint256 => UserInfo))) public userInfo; 
     // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
 
@@ -160,14 +160,14 @@ contract ZorroController is Ownable, ReentrancyGuard {
         if (block.number > pool.lastRewardBlock) {
             // TODO: revise calculations
             uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
+            uint256 ZORROPerBlock = getZorroPerBlock();
             uint256 ZORROReward = elapsedBlocks.mul(ZORROPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
             accZORRORewards = accZORRORewards.add(ZORROReward);
         }
 
-        // Determine pending Zorro rewards due to a user
-         
-        // Return the factor of accumulated ZORRO per share and the user's current shares, subtracted by their reward debt
-        return user.shares.mul(accZORRORewards).sub(user.rewardDebt);
+        // Return the user's share of the Zorro rewards for this pool net of the reward debt
+        uint256 userShare = user.contribution.div(pool.totalUserContributions);
+        return userShare.mul(accZORRORewards).sub(user.rewardDebt);
     }
 
     /// @notice View function to see staked Want tokens on frontend.
@@ -179,8 +179,6 @@ contract ZorroController is Ownable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
 
-        // TODO: Biz logic
-
         // Determine total number of shares in the underlying Zorro Vault contract
         uint256 sharesTotal = IVault(pool.vault).sharesTotal();
         // Determine the total number of Want tokens locked into the underlying Zorro Vault contract
@@ -191,7 +189,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
             return 0;
         }
         // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
-        return user.shares.mul(wantLockedTotal).div(sharesTotal);
+        uint256 userShares = user.contribution.div(user.timeMultiplier);
+        return userShares.mul(wantLockedTotal).div(sharesTotal);
     }
 
     /// @notice Determine the number of Zorro to emit per block based on current market parameters
