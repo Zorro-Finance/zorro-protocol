@@ -185,8 +185,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
             TrancheInfo storage tranche = trancheInfo[_pid][_user][tid];
             
             // Return the user's share of the Zorro rewards for this pool net of the reward debt
-            uint256 trancheShare = tranche.contribution.div(pool.totalTrancheContributions);
-            pendingRewards = pendingRewards.add(trancheShare.mul(accZORRORewards).sub(tranche.rewardDebt));
+            uint256 trancheShare = tranche.contribution.mul(1e6).div(pool.totalTrancheContributions);
+            pendingRewards = pendingRewards.add(trancheShare.mul(accZORRORewards).div(1e6).sub(tranche.rewardDebt));
         }
         return pendingRewards;
     }
@@ -216,8 +216,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
         for (uint256 tid = 0; tid < numTranches; ++tid) {
             TrancheInfo storage tranche = trancheInfo[_pid][_user][tid];
             // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
-            uint256 trancheShares = tranche.contribution.div(tranche.timeMultiplier);
-            stakedWantTokens = stakedWantTokens.add(trancheShares.mul(wantLockedTotal).div(sharesTotal));
+            uint256 trancheShares = tranche.contribution.mul(1e6).div(tranche.timeMultiplier);
+            stakedWantTokens = stakedWantTokens.add((trancheShares.mul(wantLockedTotal).div(1e6)).div(sharesTotal));
         }
         return stakedWantTokens;  
     }
@@ -337,12 +337,12 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
     /// @notice Calculate time multiplier based on duration committed
     /// @param durationInWeeks number of weeks committed into Vault
-    /// @return multiplier factor
+    /// @return multiplier factor, times 1e12
     function getTimeMultiplier(uint256 durationInWeeks) private pure returns (uint256) {
         if (isTimeMultiplierActive) {
-            return uint256(1).add((uint256(2).div(10)).mul(sqrt(durationInWeeks)));
+            return (uint256(1).add((uint256(2).div(10)).mul(sqrt(durationInWeeks)))).mul(1e12);
         } else {
-            return 1;
+            return 1e12;
         }
     }
 
@@ -351,7 +351,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
     /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
     /// @return The relative contribution of the user (unitless)
     function getUserContribution(uint256 _liquidityCommitted, uint256 _timeMultiplier) private pure returns (uint256) {
-        return _liquidityCommitted.mul(_timeMultiplier);
+        return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
 
     /* Cash flow */
@@ -384,8 +384,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
         // Increment the pool's total contributions by the contribution added
         pool.totalTrancheContributions = pool.totalTrancheContributions.add(contributionAdded);
         // Update the reward debt that the user owes by multiplying user share % by the pool's accumulated Zorro rewards
-        uint256 newTrancheShare = tranche.contribution.div(pool.totalTrancheContributions);
-        uint256 rewardDebt = pool.accZORRORewards.mul(newTrancheShare);
+        uint256 newTrancheShare = tranche.contribution.mul(1e12).div(pool.totalTrancheContributions);
+        uint256 rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(1e12);
         // Push a new tranche for this user
         trancheInfo[_pid][msg.sender].push(TrancheInfo({
             contribution: contributionAdded,
@@ -416,14 +416,14 @@ contract ZorroController is Ownable, ReentrancyGuard {
         require(pool.totalTrancheContributions > 0, "totalTrancheContributions is 0");
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
-        uint256 trancheShare = tranche.contribution.div(pool.totalTrancheContributions);
-        uint256 pendingRewards = trancheShare.mul(pool.accZORRORewards).sub(tranche.rewardDebt);
+        uint256 trancheShare = tranche.contribution.mul(1e12).div(pool.totalTrancheContributions);
+        uint256 pendingRewards = trancheShare.mul(pool.accZORRORewards).div(1e12).sub(tranche.rewardDebt);
         if (pendingRewards > 0) {
             safeZORROTransfer(msg.sender, pendingRewards);
         }
 
         // Get current amount in tranche
-        uint256 amount = tranche.contribution.div(tranche.timeMultiplier);
+        uint256 amount = tranche.contribution.mul(1e12).div(tranche.timeMultiplier);
         // Establish cap for safety
         if (_wantAmt > amount) {
             _wantAmt = amount;
@@ -456,8 +456,8 @@ contract ZorroController is Ownable, ReentrancyGuard {
             }
         }
         // Note: Tranche's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
-        uint256 newTrancheShare = tranche.contribution.div(pool.totalTrancheContributions);
-        tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare);
+        uint256 newTrancheShare = tranche.contribution.mul(1e12).div(pool.totalTrancheContributions);
+        tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _trancheId, _wantAmt);
     }
 
@@ -500,7 +500,6 @@ contract ZorroController is Ownable, ReentrancyGuard {
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }
-
 
 // TODO - how do penalties work?
 // TODO harvesting before time commitment period should incur a penalty if it's an early harvest. No harvest until withdrawal for timelock?
