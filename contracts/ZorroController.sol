@@ -59,12 +59,12 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
     /* Structs */
 
-    // Info of each user.
-    struct UserInfo {
-        uint256 contribution; // The user-specific contribution for a given pool (Cx). Equivalent to the product of their contribution and a time multiplier
+    // Info of each tranche.
+    struct TrancheInfo {
+        uint256 contribution; // The tranche-specific contribution for a given pool (Cx). Equivalent to the product of their contribution and a time multiplier
         uint256 timeMultiplier; // The time multiplier factor for rewards
-        uint256 rewardDebt; // The user's share of the amount of rewards accumulated in the pool to date (see README)
-        uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit
+        uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
+        uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
         uint256 enteredVaultAt; // The earliest timestamp for which the user deposited into a Vault.
     }
 
@@ -74,10 +74,9 @@ contract ZorroController is Ownable, ReentrancyGuard {
         uint256 allocPoint; // How many allocation points assigned to this pool.
         uint256 lastRewardBlock; // Last block number that ZORRO distribution occurs.
         uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
-        uint256 totalUserContributions; // Sum of all user contributions in this pool
+        uint256 totalTrancheContributions; // Sum of all user contributions in this pool
         address vault; // Vault address that ZORRO compounds Want tokens upon.
     }
-    // TODO: Need to account for divide by zero errors
 
     /* Variables */ 
 
@@ -93,6 +92,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
     uint256 public blocksPerDay = 28800; // Approximate
     uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 0.01%
     uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 0.20%
+    bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) onlyOwner {
@@ -122,19 +122,22 @@ contract ZorroController is Ownable, ReentrancyGuard {
     function setZORRODailyDistributionFactorBasisPointsMax(uint256 _value) onlyOwner {
         ZORRODailyDistributionFactorBasisPointsMax = _value;
     }
+    function setIsTimeMultiplierActive(bool _isActive) onlyOwner {
+        isTimeMultiplierActive = _isActive;
+    }
 
 
     // Info of each pool
     PoolInfo[] public poolInfo;
-    // Info of each user that stakes Want tokens. Mapping: pool ID/index => user wallet address => tranche ID/index => investment info
-    mapping(uint256 => mapping(address => mapping(uint256 => UserInfo))) public userInfo; 
+    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address => list of tranches
+    mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo; 
     // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
 
     /* Events */
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 trancheId, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     /* View functions */
@@ -145,6 +148,14 @@ contract ZorroController is Ownable, ReentrancyGuard {
         return poolInfo.length;
     }
 
+    /// @notice Number of tranches invested by a given user into a given pool
+    /// @param _pid Index of pool
+    /// @param _user wallet address of user
+    /// @return Number of tranches
+    function trancheLength(uint256 _pid, address _user) external view returns (uint256) {
+        return trancheInfo[_pid][_user].length;
+    }
+
     /// @notice View function to see pending ZORRO on frontend.
     /// @param _pid Index of pool
     /// @param _user wallet address of user
@@ -152,22 +163,32 @@ contract ZorroController is Ownable, ReentrancyGuard {
     function pendingZORRORewards(uint256 _pid, address _user) external view returns (uint256) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
         uint256 accZORRORewards = pool.accZORRORewards;
 
         // Increment accumulated ZORRO rewards by the current pending Zorro rewards, 
         // IF we are on a block that is greater than the previous block this function was executed in
         if (block.number > pool.lastRewardBlock) {
-            // TODO: revise calculations
             uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
             uint256 ZORROPerBlock = getZorroPerBlock();
             uint256 ZORROReward = elapsedBlocks.mul(ZORROPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
             accZORRORewards = accZORRORewards.add(ZORROReward);
         }
 
-        // Return the user's share of the Zorro rewards for this pool net of the reward debt
-        uint256 userShare = user.contribution.div(pool.totalUserContributions);
-        return userShare.mul(accZORRORewards).sub(user.rewardDebt);
+        if (pool.totalTrancheContributions == 0) {
+            return 0;
+        }
+
+        uint256 numTranches = trancheLength();
+        uint256 pendingRewards = 0;
+        // Iterate through each tranche and increment rewards
+        for (uint256 tid = 0; tid < numTranches; ++tid) {
+            TrancheInfo storage tranche = trancheInfo[_pid][_user][tid];
+            
+            // Return the user's share of the Zorro rewards for this pool net of the reward debt
+            uint256 trancheShare = tranche.contribution.div(pool.totalTrancheContributions);
+            pendingRewards = pendingRewards.add(trancheShare.mul(accZORRORewards).sub(tranche.rewardDebt));
+        }
+        return pendingRewards;
     }
 
     /// @notice View function to see staked Want tokens on frontend.
@@ -177,7 +198,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
     function stakedWantTokens(uint256 _pid, address _user) external view returns (uint256) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
+        TrancheInfo storage tranche = trancheInfo[_pid][_user];
 
         // Determine total number of shares in the underlying Zorro Vault contract
         uint256 sharesTotal = IVault(pool.vault).sharesTotal();
@@ -188,9 +209,17 @@ contract ZorroController is Ownable, ReentrancyGuard {
         if (sharesTotal == 0) {
             return 0;
         }
-        // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
-        uint256 userShares = user.contribution.div(user.timeMultiplier);
-        return userShares.mul(wantLockedTotal).div(sharesTotal);
+
+        uint256 numTranches = trancheLength();
+        uint256 stakedWantTokens = 0;
+        // Iterate through each tranche and increment rewards
+        for (uint256 tid = 0; tid < numTranches; ++tid) {
+            TrancheInfo storage tranche = trancheInfo[_pid][_user][tid];
+            // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
+            uint256 trancheShares = tranche.contribution.div(tranche.timeMultiplier);
+            stakedWantTokens = stakedWantTokens.add(trancheShares.mul(wantLockedTotal).div(sharesTotal));
+        }
+        return stakedWantTokens;  
     }
 
     /// @notice Determine the number of Zorro to emit per block based on current market parameters
@@ -239,7 +268,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
                 accZORRORewards: 0,
-                totalUserContributions: 0,
+                totalTrancheContributions: 0,
                 vault: _vault
             })
         );
@@ -296,7 +325,6 @@ contract ZorroController is Ownable, ReentrancyGuard {
         uint256 ZORROPerBlock = getZorroPerBlock();
         // Finally, multiply this by the number of elapsed blocks and the pool weighting
         uint256 ZORROReward = elapsedBlocks.mul(ZORROPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        // TODO: Only issue with this is if too much time passes by without a deposit/withdrawal such that TVL and other factors change too much. Consider having a forced cron job every X blocks
         // Transfer Zorro rewards to this contract from the Public Pool
         IERC20(ZORRO).safeTransferFrom(publicPool, address(this), ZORROReward);
         // Increment this pool's accumulated Zorro per share value by the reward amount
@@ -311,10 +339,13 @@ contract ZorroController is Ownable, ReentrancyGuard {
     /// @param durationInWeeks number of weeks committed into Vault
     /// @return multiplier factor
     function getTimeMultiplier(uint256 durationInWeeks) private pure returns (uint256) {
-        return uint256(1).add((uint256(2).div(10)).mul(sqrt(durationInWeeks)));
+        if (isTimeMultiplierActive) {
+            return uint256(1).add((uint256(2).div(10)).mul(sqrt(durationInWeeks)));
+        } else {
+            return 1;
+        }
     }
 
-    // TODO - careful with floating point precision (consider re-introducing 1e12 logic like Autofarm?)
     /// @notice The contribution of the user, meant to be used in rewards allocations
     /// @param _liquidityCommitted How many tokens staked (e.g. LP tokens)
     /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
@@ -331,82 +362,68 @@ contract ZorroController is Ownable, ReentrancyGuard {
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @return None
     function deposit(uint256 _pid, uint256 _wantAmt, uint256 _weeksCommitted) public nonReentrant {
+        // Preflight checks
+        require(_wantAmt > 0, "_wantAmt must be > 0!");
+
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
 
-        // Get pool and current user (wallet) info
+        // Get pool info
         PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
 
-        // If the user has contributions, determine pending rewards and pay them out
-        if (user.contribution > 0) {
-            // Calculate the user share (their contribution divided by everyone else's contributions)
-            uint256 userShare = user.contribution.div(pool.totalUserContributions);
-            // Multiply the pool's accumulated rewards by the user share and subtract the "reward debt" marked at the last cash flow event
-            uint256 pendingRewards = pool.accZORRORewards.mul(userShare).sub(user.rewardDebt);
-            // If pending rewards exist, send them to msg.sender
-            if (pendingRewards > 0) {
-                safeZORROTransfer(msg.sender, pendingRewards);
-            }
-        }
-        // If the _wantAmt is > 0, transfer Want tokens from sender to the underlying Zorro Vault contract and update shares. If NOT, user shares will NOT be updated.
-        if (_wantAmt > 0) {
-            // Transfer tokens from sender to this contract
-            pool.want.safeTransferFrom(address(msg.sender), address(this), _wantAmt);
-            // Safely allow the underlying Zorro Vault contract to transfer the Want token
-            pool.want.safeIncreaseAllowance(pool.vault, _wantAmt);
-            // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
-            uint256 sharesAdded = IVault(poolInfo[_pid].vault).deposit(msg.sender, _wantAmt);
-            // Determine the time multiplier value based on the duration committed to in weeks
-            user.timeMultiplier = getTimeMultiplier(durationInWeeks);
-            // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-            uint256 contributionAdded = getUserContribution(sharesAdded, user.timeMultiplier);
-            // Increment the user's contribution by the contribution added
-            user.contribution = user.contribution.add(contributionAdded);
-            // Increment the pool's total contributions by the contribution added
-            pool.totalUserContributions = pool.totalUserContributions.add(contributionAdded);
-            // If the user has not yet registered a block that it has entered on yet, assign the current block
-            if (user.enteredVaultOnBlock == 0) {
-                user.enteredVaultAt = block.timestamp;
-            }
-            // If the user has no duration committed, assign the commitment to the duration in weeks, convered to blocks
-            if (user.durationCommittedInWeeks == 0) {
-                user.durationCommittedInWeeks =  _weeksCommitted;
-            }
-        }
+        // Transfer tokens from sender to this contract
+        pool.want.safeTransferFrom(address(msg.sender), address(this), _wantAmt);
+        // Safely allow the underlying Zorro Vault contract to transfer the Want token
+        pool.want.safeIncreaseAllowance(pool.vault, _wantAmt);
+        // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
+        uint256 sharesAdded = IVault(poolInfo[_pid].vault).deposit(msg.sender, _wantAmt);
+        // Determine the time multiplier value based on the duration committed to in weeks
+        uint256 timeMultiplier = getTimeMultiplier(durationInWeeks);
+        // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
+        uint256 contributionAdded = getUserContribution(sharesAdded, timeMultiplier);
+        // Increment the pool's total contributions by the contribution added
+        pool.totalTrancheContributions = pool.totalTrancheContributions.add(contributionAdded);
         // Update the reward debt that the user owes by multiplying user share % by the pool's accumulated Zorro rewards
-        uint256 newUserShare = user.contribution.div(pool.totalUserContributions);
-        user.rewardDebt = pool.accZORRORewards.mul(newUserShare);
+        uint256 newTrancheShare = tranche.contribution.div(pool.totalTrancheContributions);
+        uint256 rewardDebt = pool.accZORRORewards.mul(newTrancheShare);
+        // Push a new tranche for this user
+        trancheInfo[_pid][msg.sender].push(TrancheInfo({
+            contribution: contributionAdded,
+            timeMultiplier: timeMultiplier,
+            durationCommittedInWeeks: _weeksCommitted,
+            enteredVaultAt: block.timestamp,
+            rewardDebt: rewardDebt
+        }));
         // Emit deposit event
         emit Deposit(msg.sender, _pid, _wantAmt);
     }
 
     /// @notice Withdraw LP tokens from MasterChef.
     /// @param _pid index of pool
-    /// @param _wantAmt how much Want tokens to withdraw. If 0 is specified, function will only harvest Zorro rewards
+    /// @param _wantAmt how much Want tokens to withdraw. If 0 is specified, function will only harvest Zorro rewards but not actually withdraw
+    /// @param _trancheId index of tranche
     /// @return None
-    function withdraw(uint256 _pid, uint256 _wantAmt) public nonReentrant {
+    function withdraw(uint256 _pid, uint256 _wantAmt, uint256 _trancheId) public nonReentrant {
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
 
-        // Get pool and current user (wallet) info
+        // Get pool and current tranche info
         PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        TrancheInfo storage tranche = trancheInfo[_pid][msg.sender][_trancheId];
 
         /* Preflight checks on contributions */
-        require(user.contribution > 0, "user.contribution is 0");
-        require(pool.totalUserContributions > 0, "totalUserContributions is 0");
+        require(tranche.contribution > 0, "tranche.contribution is 0");
+        require(pool.totalTrancheContributions > 0, "totalTrancheContributions is 0");
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
-        uint256 userShare = user.contribution.div(pool.totalUserContributions);
-        uint256 pendingRewards =
-            userShare.mul(pool.accZORRORewards).sub(user.rewardDebt);
+        uint256 trancheShare = tranche.contribution.div(pool.totalTrancheContributions);
+        uint256 pendingRewards = trancheShare.mul(pool.accZORRORewards).sub(tranche.rewardDebt);
         if (pendingRewards > 0) {
             safeZORROTransfer(msg.sender, pendingRewards);
         }
 
-        // Withdraw want tokens
-        uint256 amount = user.contribution.div(user.timeMultiplier);
+        // Get current amount in tranche
+        uint256 amount = tranche.contribution.div(tranche.timeMultiplier);
         // Establish cap for safety
         if (_wantAmt > amount) {
             _wantAmt = amount;
@@ -414,16 +431,15 @@ contract ZorroController is Ownable, ReentrancyGuard {
         // If the _wantAmt is > 0, transfer Want tokens from the underlying Zorro Vault contract and update shares. If NOT, user shares will NOT be updated. 
         if (_wantAmt > 0) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            uint256 sharesRemoved =
-                IVault(poolInfo[_pid].vault).withdraw(msg.sender, _wantAmt);
-            uint256 contributionRemoved = getUserContribution(sharesRemoved, user.timeMultiplier);
+            uint256 sharesRemoved = IVault(poolInfo[_pid].vault).withdraw(msg.sender, _wantAmt);
+            uint256 contributionRemoved = getUserContribution(sharesRemoved, tranche.timeMultiplier);
             // Update shares safely
-            if (contributionRemoved > user.contribution) {
-                user.contribution = 0;
-                pool.totalUserContributions = pool.totalUserContributions.sub(user.contribution);
+            if (contributionRemoved > tranche.contribution) {
+                tranche.contribution = 0;
+                pool.totalTrancheContributions = pool.totalTrancheContributions.sub(tranche.contribution);
             } else {
-                user.contribution = user.contribution.sub(contributionRemoved);
-                pool.totalUserContributions = pool.totalUserContributions.sub(contributionRemoved);
+                tranche.contribution = tranche.contribution.sub(contributionRemoved);
+                pool.totalTrancheContributions = pool.totalTrancheContributions.sub(contributionRemoved);
             }
             // Withdraw Want tokens from this contract to sender
             uint256 wantBal = IERC20(pool.want).balanceOf(address(this));
@@ -432,16 +448,17 @@ contract ZorroController is Ownable, ReentrancyGuard {
             }
             pool.want.safeTransfer(address(msg.sender), _wantAmt);
 
-            // Reset time-based rewards parameters if everything is withdrawn
-            if (user.contribution == 0) {
-                user.durationCommittedInWeeks = 0;
-                user.enteredVaultAt = 0;
+            // Remove tranche from this user if it's a full withdrawal
+            if (_wantAmt == amount) {
+                uint256 trancheLength = trancheLength(_pid, msg.sender);
+                trancheInfo[_pid][msg.sender][_trancheId] = trancheInfo[_pid][msg.sender][tracheLength - 1];
+                trancheInfo[_pid][msg.sender].pop();
             }
         }
-        // Note: User's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
-        uint256 newUserShare = user.contribution.div(pool.totalUserContributions);
-        user.rewardDebt = pool.accZORRORewards.mul(newUserShare);
-        emit Withdraw(msg.sender, _pid, _wantAmt);
+        // Note: Tranche's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
+        uint256 newTrancheShare = tranche.contribution.div(pool.totalTrancheContributions);
+        tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare);
+        emit Withdraw(msg.sender, _pid, _trancheId, _wantAmt);
     }
 
     /// @notice Withdraw the maximum number of Want tokens from a pool
@@ -449,37 +466,13 @@ contract ZorroController is Ownable, ReentrancyGuard {
     /// @return None
     function withdrawAll(uint256 _pid) public nonReentrant {
         // uint256(-1) == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF (i.e. the max amount possible)
-        withdraw(_pid, uint256(-1));
+        uint256 numTranches = trancheLength(_pid, msg.sender);
+        for (uint256 tid = 0; tid < numTranches; ++tid) {
+            withdraw(_pid, uint256(-1), tid);
+        }
     }
 
-    /* Emergency functions */
-
-    /// @notice Withdraw without caring about rewards. EMERGENCY ONLY.
-    /// @param _pid index of pool
-    /// @return None
-    function emergencyWithdraw(uint256 _pid) public nonReentrant {
-        // Get pool and user info
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-
-        // Determine the total quantity of Want tokens locked in the underlying Zorro Vault contract
-        uint256 wantLockedTotal =
-            IVault(poolInfo[_pid].vault).wantLockedTotal();
-        // Determine total number of shares in the underlying Zorro Vault contract
-        uint256 sharesTotal = IVault(poolInfo[_pid].vault).sharesTotal();
-        // Determine amount to withdraw by multiplying user's shares (as a percentage of total shares) against the total Want tokens locked
-        uint256 amount = user.shares.mul(wantLockedTotal).div(sharesTotal);
-
-        // Call withdraw() function of underlying Zorro vault contract
-        IVault(poolInfo[_pid].vault).withdraw(msg.sender, amount);
-        // Safely transfer amount back to caller
-        pool.want.safeTransfer(address(msg.sender), amount);
-        // Emit EmergencyWithdraw event
-        emit EmergencyWithdraw(msg.sender, _pid, amount);
-        // Finally, force set the user shares and reward debt to zero, respectively.
-        user.shares = 0;
-        user.rewardDebt = 0;
-    }
+    /* Safety functions */
 
     /// @notice Safe ZORRO transfer function, just in case if rounding error causes pool to not have enough
     /// @param _to destination for funds
@@ -508,16 +501,9 @@ contract ZorroController is Ownable, ReentrancyGuard {
     }
 }
 
+
 // TODO - how do penalties work?
 // TODO harvesting before time commitment period should incur a penalty if it's an early harvest. No harvest until withdrawal for timelock?
 
-// TODO - how to gradually allow room for Oracle controlled TVL etc?
-
-// TODO: be careful about floating point percentage
-
 // TODO: Deposit: Autoswapping
 // TODO: Withdrawal: Back to USDC
-
-// TODO: Allow toggling of time multiplier feature?
-
-// TODO. Min 900 sec time commitment
