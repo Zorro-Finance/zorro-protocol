@@ -138,7 +138,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 trancheId, uint256 amount);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event TransferInvestment(address indexed user, uint256 indexed fromPid, uint256 indexed fromTrancheId, uint256 indexed toPid);
 
     /* View functions */
 
@@ -358,7 +358,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
     /// @notice Want tokens moved from user -> ZORROFarm (ZORRO allocation) -> Strat (compounding)
     /// @param _pid index of pool
-    /// @param _wantAmt how much Want tokens to deposit
+    /// @param _wantAmt how much Want token to deposit
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @return None
     function deposit(uint256 _pid, uint256 _wantAmt, uint256 _weeksCommitted) public nonReentrant {
@@ -370,6 +370,7 @@ contract ZorroController is Ownable, ReentrancyGuard {
 
         // Get pool info
         PoolInfo storage pool = poolInfo[_pid];
+
 
         // Transfer tokens from sender to this contract
         pool.want.safeTransferFrom(address(msg.sender), address(this), _wantAmt);
@@ -395,15 +396,15 @@ contract ZorroController is Ownable, ReentrancyGuard {
             rewardDebt: rewardDebt
         }));
         // Emit deposit event
-        emit Deposit(msg.sender, _pid, _wantAmt);
+        emit Deposit(msg.sender, _pid, _amountUSD);
     }
 
     /// @notice Withdraw LP tokens from MasterChef.
     /// @param _pid index of pool
-    /// @param _wantAmt how much Want tokens to withdraw. If 0 is specified, function will only harvest Zorro rewards but not actually withdraw
     /// @param _trancheId index of tranche
+    /// @param _wantAmt how much Want token to withdraw. If 0 is specified, function will only harvest Zorro rewards and not actually withdraw
     /// @return None
-    function withdraw(uint256 _pid, uint256 _wantAmt, uint256 _trancheId) public nonReentrant {
+    function withdraw(uint256 _pid, uint256 _trancheId, uint256 _wantAmt) public nonReentrant {
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
 
@@ -419,7 +420,17 @@ contract ZorroController is Ownable, ReentrancyGuard {
         uint256 trancheShare = tranche.contribution.mul(1e12).div(pool.totalTrancheContributions);
         uint256 pendingRewards = trancheShare.mul(pool.accZORRORewards).div(1e12).sub(tranche.rewardDebt);
         if (pendingRewards > 0) {
-            safeZORROTransfer(msg.sender, pendingRewards);
+            // Check if this is an early withdrawal
+            // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
+            // If not, distribute rewards as normal
+            uint256 timeRemainingInCommitment = tranche.enteredVaultAt.add(tranche.durationCommittedInWeeks weeks).sub(block.timestamp);
+            uint256 rewardsDue = 0;
+            if (timeRemainingInCommitment > 0) {
+                rewardsDue = pendingRewards.sub(pendingRewards.mul(timeRemainingInCommitment).div(tranche.durationCommittedInWeeks weeks));
+            } else {
+                rewardsDue = pendingRewards;
+            }
+            safeZORROTransfer(msg.sender, rewardsDue);
         }
 
         // Get current amount in tranche
@@ -459,6 +470,21 @@ contract ZorroController is Ownable, ReentrancyGuard {
         uint256 newTrancheShare = tranche.contribution.mul(1e12).div(pool.totalTrancheContributions);
         tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _trancheId, _wantAmt);
+    }
+
+    /// @notice Transfer all assets from a tranche in one vault to a new vault
+    /// @param _fromPid index of pool FROM
+    /// @param _fromTrancheId index of tranche FROM
+    /// @param _toPid index of pool TO
+    /// @return None
+    function transferInvestment(uint256 _fromPid, uint256 _fromTrancheId, uint256 _toPid) public nonReentrant {
+        // TODO: Need withdrawal to USDC
+        uint256 weeksCommitted = trancheInfo[_fromPid][msg.sender][_fromTrancheId].durationCommittedInWeeks;
+        withdraw(_fromPid, _fromTrancheId, uint256(-1));
+        // TODO: Need autoswapping FROM USDC
+        // TODO: wantAmt not yet set
+        deposit(_toPid, wantAmt, weeksCommitted);
+        emit TransferInvestment(msg.sender, _fromPid, _fromTrancheId, _toPid);
     }
 
     /// @notice Withdraw the maximum number of Want tokens from a pool
@@ -501,8 +527,10 @@ contract ZorroController is Ownable, ReentrancyGuard {
     }
 }
 
-// TODO - how do penalties work?
-// TODO harvesting before time commitment period should incur a penalty if it's an early harvest. No harvest until withdrawal for timelock?
-
-// TODO: Deposit: Autoswapping
-// TODO: Withdrawal: Back to USDC
+// TODO: Develop library for each pool 
+/*
+- Interface with functions: deposit(), withdraw() (No state tracked)
+- Store address of deployed library on the pool level 
+- Call the interface functions via delegatecall (deposit, withdraw)
+- Set pool/update pool should allow setting the library contract address
+*/
