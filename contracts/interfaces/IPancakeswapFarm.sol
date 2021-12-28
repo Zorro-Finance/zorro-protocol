@@ -1,4 +1,6 @@
-pragma solidity 0.6.12;
+// SPDX-License-Identifier: UNLICENSED
+
+pragma solidity >=0.6.12 <0.9.0;
 
 interface IPancakeswapFarm {
     function poolLength() external view returns (uint256);

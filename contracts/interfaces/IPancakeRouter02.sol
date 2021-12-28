@@ -1,4 +1,6 @@
-pragma solidity 0.6.12;
+// SPDX-License-Identifier: UNLICENSED
+
+pragma solidity >=0.6.12 <0.9.0;
 
 // TODO - consider updating this and all libs/interfaces to the latest version
 
