@@ -2,7 +2,7 @@
 
 pragma solidity >=0.6.12 <0.9.0;
 
-interface IPancakeRouter01 {
+interface IAMMRouter01 {
     function factory() external pure returns (address);
 
     function WETH() external pure returns (address);
