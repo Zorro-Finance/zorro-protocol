@@ -1,5 +1,13 @@
 # Zorro Protocol
+
+(Short description)
+Website: https://zorro.finance
+App: https://app.zorro.finance
+
 TODO
+
+# Compliance
+* Open Zeppelin
 
 # Glossary
 * **want address**: Address of the farm (e.g. PancakePair). Token is the LP token, when liquidity mining
