@@ -15,7 +15,7 @@ import "./libraries/Math.sol";
 contract ZorroControllerInvestment is ZorroControllerBase {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
-  using Math for uint256;
+  using CustomMath for uint256;
 
   /* Cash flow */
 

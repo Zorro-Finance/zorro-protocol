@@ -19,6 +19,38 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
+    /* Constructor */
+
+    /// @notice Constructor
+    /// @param _timelockOwner address of owner (should be a timelock)
+    /// @param _zorroToken address of Zorro token
+    /// @param _startBlock start block number. If current block is below this number, rewards won't be emitted. https://bscscan.com/block/countdown/13650292
+    /// @param _publicPool address of the public pool to draw rewards from
+    /// @param _BSCMarketTVLUSD total market TVL on the BSC chain in USD
+    /// @param _ZorroTotalVaultTVLUSD total TVL locked into the Zorro protocol across all vaults
+    /// @param _targetTVLCaptureBasisPoints how many basis points of the BSC total market TVL the protocol desires to capture (influences market aware emissions calcs)
+    constructor(
+        address _timelockOwner,
+        address _zorroToken,
+        uint256 _startBlock,
+        address _publicPool,
+        uint256 _BSCMarketTVLUSD,
+        uint256 _ZorroTotalVaultTVLUSD,
+        uint256 _targetTVLCaptureBasisPoints,
+        address _defaultStablecoin
+    ) {
+        // Assign owner as to timelock contract
+        transferOwnership(_timelockOwner);
+        // Set main state variables to initial state
+        ZORRO = _zorroToken;
+        startBlock = _startBlock;
+        publicPool = _publicPool;
+        BSCMarketTVLUSD = _BSCMarketTVLUSD; 
+        ZorroTotalVaultTVLUSD = _ZorroTotalVaultTVLUSD; 
+        targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
+        defaultStablecoin = _defaultStablecoin;
+    }
+
     /* Structs */
 
     // Info of each tranche.
@@ -56,19 +88,20 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /* Variables */ 
 
     // Public variables and their initial values (check blockchain scanner for latest values)
-    address public ZORRO = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
+    // See constructor() for explanations
+    address public ZORRO;
     address public burnAddress = 0x000000000000000000000000000000000000dEaD;
-    uint256 public startBlock = 13650292; //https://bscscan.com/block/countdown/13650292 // TODO - set this
-    address public publicPool = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
+    uint256 public startBlock;
+    address public publicPool; 
     uint256 public baseRewardRateBasisPoints = 10;
-    uint256 public BSCMarketTVLUSD = 30e9; // TODO - set this correctly, allow setter function
-    uint256 public ZorroTotalVaultTVLUSD = 500e6; // TODO - set this correctly, allow setter function
-    uint256 public targetTVLCaptureBasisPoints = 333;
+    uint256 public BSCMarketTVLUSD; 
+    uint256 public ZorroTotalVaultTVLUSD;
+    uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33%
     uint256 public blocksPerDay = 28800; // Approximate
-    uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 0.01%
-    uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 0.20%
+    uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 1 = 0.01%
+    uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20%
     bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
-    address public defaultStablecoin = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d; // USDC
+    address public defaultStablecoin;
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
