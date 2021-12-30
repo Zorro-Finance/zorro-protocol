@@ -16,10 +16,7 @@ contract VaultPancake is VaultStandardAMM {
         address[] memory _earnedToToken1Path,
         address[] memory _token0ToEarnedPath,
         address[] memory _token1ToEarnedPath,
-        uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _entranceFeeFactor,
-        uint256 _withdrawFeeFactor
+        uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     ) {
         wbnbAddress = _addresses[0];
         govAddress = _addresses[1];
@@ -44,12 +41,12 @@ contract VaultPancake is VaultStandardAMM {
         token0ToEarnedPath = _token0ToEarnedPath;
         token1ToEarnedPath = _token1ToEarnedPath;
 
-        controllerFee = _controllerFee;
+        controllerFee = _fees[0];
         rewardsAddress = _addresses[10];
-        buyBackRate = _buyBackRate;
+        buyBackRate = _fees[1];
         burnAddress = _addresses[11];
-        entranceFeeFactor = _entranceFeeFactor;
-        withdrawFeeFactor = _withdrawFeeFactor;
+        entranceFeeFactor = _fees[2];
+        withdrawFeeFactor = _fees[3];
 
         transferOwnership(zorroControllerAddress);
     }

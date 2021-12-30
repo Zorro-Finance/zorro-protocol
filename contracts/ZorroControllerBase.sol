@@ -19,38 +19,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    /* Constructor */
-
-    /// @notice Constructor
-    /// @param _timelockOwner address of owner (should be a timelock)
-    /// @param _zorroToken address of Zorro token
-    /// @param _startBlock start block number. If current block is below this number, rewards won't be emitted. https://bscscan.com/block/countdown/13650292
-    /// @param _publicPool address of the public pool to draw rewards from
-    /// @param _BSCMarketTVLUSD total market TVL on the BSC chain in USD
-    /// @param _ZorroTotalVaultTVLUSD total TVL locked into the Zorro protocol across all vaults
-    /// @param _targetTVLCaptureBasisPoints how many basis points of the BSC total market TVL the protocol desires to capture (influences market aware emissions calcs)
-    constructor(
-        address _timelockOwner,
-        address _zorroToken,
-        uint256 _startBlock,
-        address _publicPool,
-        uint256 _BSCMarketTVLUSD,
-        uint256 _ZorroTotalVaultTVLUSD,
-        uint256 _targetTVLCaptureBasisPoints,
-        address _defaultStablecoin
-    ) {
-        // Assign owner as to timelock contract
-        transferOwnership(_timelockOwner);
-        // Set main state variables to initial state
-        ZORRO = _zorroToken;
-        startBlock = _startBlock;
-        publicPool = _publicPool;
-        BSCMarketTVLUSD = _BSCMarketTVLUSD; 
-        ZorroTotalVaultTVLUSD = _ZorroTotalVaultTVLUSD; 
-        targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
-        defaultStablecoin = _defaultStablecoin;
-    }
-
     /* Structs */
 
     // Info of each tranche.
