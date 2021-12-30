@@ -38,7 +38,7 @@ contract ModifiedPaymentSplitter is Context {
 
     mapping(address => uint256) internal _shares;
     mapping(address => uint256) internal _released;
-    address[] internal _payees;
+    address[] public payees;
 
     mapping(IERC20 => uint256) internal _erc20TotalReleased;
     mapping(IERC20 => mapping(address => uint256)) internal _erc20Released;
@@ -50,12 +50,12 @@ contract ModifiedPaymentSplitter is Context {
      * All addresses in `payees` must be non-zero. Both arrays must have the same non-zero length, and there must be no
      * duplicates in `payees`.
      */
-    constructor(address[] memory payees, uint256[] memory shares_) payable {
-        require(payees.length == shares_.length, "PaymentSplitter: payees and shares length mismatch");
-        require(payees.length > 0, "PaymentSplitter: no payees");
+    constructor(address[] memory payees_, uint256[] memory shares_) payable {
+        require(payees_.length == shares_.length, "PaymentSplitter: payees and shares length mismatch");
+        require(payees_.length > 0, "PaymentSplitter: no payees");
 
-        for (uint256 i = 0; i < payees.length; i++) {
-            _addPayee(payees[i], shares_[i]);
+        for (uint256 i = 0; i < payees_.length; i++) {
+            _addPayee(payees_[i], shares_[i]);
         }
     }
 
@@ -120,7 +120,15 @@ contract ModifiedPaymentSplitter is Context {
      * @dev Getter for the address of the payee number `index`.
      */
     function payee(uint256 index) public view returns (address) {
-        return _payees[index];
+        return payees[index];
+    }
+
+    /**
+     * @dev Getter for the length of `payees`.
+     * @return number of payees
+     */
+    function numPayees() public view returns (uint256) {
+        return payees.length;
     }
 
     /**
@@ -184,7 +192,7 @@ contract ModifiedPaymentSplitter is Context {
         require(shares_ > 0, "PaymentSplitter: shares are 0");
         require(_shares[account] == 0, "PaymentSplitter: account already has shares");
 
-        _payees.push(account);
+        payees.push(account);
         _shares[account] = shares_;
         _totalShares = _totalShares + shares_;
         emit PayeeAdded(account, shares_);
