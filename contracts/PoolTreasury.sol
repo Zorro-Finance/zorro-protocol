@@ -18,7 +18,7 @@ contract PoolTreasury is Ownable {
     transferOwnership(_timelockOwner);
   }
 
-  /// @notice transfer accumulated ERC20 token on this contract to specified recipient
+  /// @notice transfer accumulated ERC20 token on this contract to specified recipient. Used for distribution of warchest funds.
   /// @param _token address of token to transfer out
   /// @param _amount amount of token to transfer, up to maximum. Specifying uint256(-1) will transfer maximum amount
   /// @param _recipient address of recipient to transfer to
@@ -33,7 +33,7 @@ contract PoolTreasury is Ownable {
     IERC20(_token).safeTransfer(_recipient, _amount);
   }
 
-  /// @notice transfer accumulated ETH on this contract to specified recipient
+  /// @notice transfer accumulated ETH on this contract to specified recipient. Used for distribution of warchest funds.
   /// @param _amount amount of ETH to transfer, up to the balance on this contract. Specifying uint256(-1) will transfer maximum amount
   /// @param _recipient address of recipient to transfer to
   function transferETHOut(uint256 _amount, address payable _recipient) external onlyOwner {
