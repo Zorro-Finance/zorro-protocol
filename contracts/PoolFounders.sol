@@ -32,7 +32,7 @@ contract PoolFounders is ModifiedPaymentSplitter, Ownable {
   }
 
   /// @notice change the value of shares for a particular payee (for ERC20)
-  function setSharesERC20(address payable _payee, uint256 _newShares) public onlyOwner {
+  function updateSharesERC20(address payable _payee, uint256 _newShares) public onlyOwner {
     // Release any outstanding funds owed to each payee first
     uint256 numPayees = numPayees();
     for (uint256 i = 0; i < numPayees; i++) {
