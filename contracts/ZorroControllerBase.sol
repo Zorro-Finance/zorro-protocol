@@ -38,13 +38,14 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
         uint256 totalTrancheContributions; // Sum of all user contributions in this pool
         address vault; // Address of the Vault
-        address lib; // Address of deployed library for this pool
         address intermediaryToken; // Token that the protocol returns after claiming (e.g. on Tranchess) (usually a stablecoin like USDC)
     }
 
     // Claim
     struct Claim {
-        uint256 amount;
+        uint256 preSettlementAmount; // Amount of tokens bought/sold of origin token, before settlement
+        uint256 settlementEpoch; // The anticipated settlement epoch
+        bool settled; // Whether trade has been settled
         uint256 reason; // 0: deposit, 1: withdrawal, 2: transfer
     }
     // Redeposit information for async flows
@@ -118,7 +119,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /* Events */
     event Deposit(address indexed user, uint256 indexed pid, uint256 wantAmount);
-    event ClaimCreated(address indexed user, uint256 indexed pid, uint256 value, address token);
+    event ClaimCreated(address indexed user, uint256 indexed pid, uint256 indexed settlementEpoch, uint256 value, address token);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 trancheId, uint256 wantAmount);
     event TransferInvestment(address user, uint256 indexed fromPid, uint256 indexed fromTrancheId, uint256 indexed toPid);
 

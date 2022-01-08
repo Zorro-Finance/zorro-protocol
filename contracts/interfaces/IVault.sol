@@ -10,19 +10,21 @@ interface IVault {
     // Sum of all shares of users to wantLockedTotal
     function sharesTotal() external view returns (uint256);
 
-    // Main want token compounding function
-    // Note: Earn events do not happen here. They are triggered via CRON
+    // Deposits
+    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256, bool);
+
+    function depositWantToken(uint256 _wantAmt) external returns (uint256);
+
+    // Withdrawals
+    function withdrawWantToken(uint256 _wantAmt) external returns (uint256);
+
+    function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256, bool);
+
+    // Claims
+    function settleTrades(address _user, uint256 _settlementEpoch, address _token) external returns (uint256);
+
+    // Compounding
     function earn() external;
-
-    // Transfer Want tokens into Vault
-    function deposit(address _userAddress, uint256 _wantAmt)
-        external
-        returns (uint256);
-
-    // Transfer Want tokens from Vault
-    function withdraw(address _userAddress, uint256 _wantAmt)
-        external
-        returns (uint256);
 
     // Transfer ERC20 tokens on the Vault back to the owner, if necessary
     function inCaseTokensGetStuck(

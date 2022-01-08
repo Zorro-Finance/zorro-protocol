@@ -16,14 +16,12 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
     /// @param _want The address of the want token
     /// @param _withUpdate  Mass update all pools if set to true
     /// @param _vault The contract address of the underlying vault
-    /// @param _lib The address of the deployed library for this pool
     /// @param _intermediaryToken The address of an intermediary token (i.e. what is returned back to the user upon withdrawal) or 0 (only applicable for protocols like Tranchess)
     function add(
         uint256 _allocPoint,
         IERC20 _want,
         bool _withUpdate,
         address _vault,
-        address _lib,
         address _intermediaryToken
     ) public onlyOwner {
         // If _withUpdate provided, update all pools
@@ -43,7 +41,6 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
                 accZORRORewards: 0,
                 totalTrancheContributions: 0,
                 vault: _vault,
-                lib: _lib,
                 intermediaryToken: _intermediaryToken
             })
         );
@@ -53,13 +50,11 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
     /// @param _pid The index of the pool ID
     /// @param _allocPoint The number of allocation points for this pool (aka "multiplier")
     /// @param _withUpdate  Mass update all pools if set to true
-    /// @param _lib The address of the deployed library for this pool
     /// @param _intermediaryToken The address of an intermediary token (i.e. what is returned back to the user upon withdrawal) or 0 (only applicable for protocols like Tranchess)
     function set(
         uint256 _pid,
         uint256 _allocPoint,
         bool _withUpdate, 
-        address _lib,
         address _intermediaryToken
     ) public onlyOwner {
         // If _withUpdate provided, update all pools
@@ -70,7 +65,6 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         // Update the key params for this pool
         poolInfo[_pid].allocPoint = _allocPoint;
-        poolInfo[_pid].lib = _lib;
         poolInfo[_pid].intermediaryToken = _intermediaryToken;
     }
 

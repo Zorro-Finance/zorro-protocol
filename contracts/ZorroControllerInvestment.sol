@@ -30,14 +30,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Claim Want token and deposit (usually called after async settlement has occurred)
     /// @param _pid index of pool
     /// @param _user address of user
-    /// @param _wantAmt amount of the Want token
+    /// @param _settlementEpoch The end of the epoch that the trade is expected to have settled in
     /// @param _token address of the Want token
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
-    function claimAndDeposit(uint256 _pid, address _user, uint256 _wantAmt, address _token, uint256 _weeksCommitted) external onlyOwner {
+    function claimAndDeposit(uint256 _pid, address _user, uint256 _settlementEpoch, address _token, uint256 _weeksCommitted) external onlyOwner {
         // Claim 
-        uint256 amountClaimed = _claimToken(_pid, _user, _wantAmt, _token);
+        uint256 amountClaimed = _claimToken(_pid, _user, _token, _settlementEpoch);
         // Deposit
         _deposit(_pid, _user, amountClaimed, _weeksCommitted, block.timestamp);
+        // TODO consider batch claim function for all users of an epoch
     }
 
     /// @notice Internal function for depositing Want tokens into Vault
@@ -60,7 +61,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Safely allow the underlying Zorro Vault contract to transfer the Want token
         pool.want.safeIncreaseAllowance(pool.vault, _wantAmt);
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
-        uint256 sharesAdded = IVault(poolInfo[_pid].vault).deposit(_user, _wantAmt);
+        uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(_wantAmt);
         // Determine the time multiplier value based on the duration committed to in weeks
         uint256 timeMultiplier = getTimeMultiplier(_weeksCommitted);
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
@@ -100,17 +101,21 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _vaultEnteredAt date that the vault was entered at
     function _depositFullService(uint256 _pid, address _user, uint256 _valueUSDC, address[] memory _sourceTokens, uint256 _weeksCommitted, uint256 _vaultEnteredAt) internal {
-        // Get library from pool
-        address lib = poolInfo[_pid].lib;
-        // Perform delegate call to autoswap and receive tokens and enter underlying vaults
-        (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("deposit(address, uint256, address[])", _user, _valueUSDC, _sourceTokens));
-        require(success, "call to deposit() failed");
-        (uint256 wantAmt, bool isSynchronous) = abi.decode(data, (uint256, bool));
+        // Get Vault contract 
+        IVault vault = IVault(poolInfo[_pid].vault);
+
+        // Exchange USDC for Want token in the Vault contract
+        (uint256 wantAmt, bool isSynchronous) = vault.exchangeUSDForWantToken(_user, _valueUSDC);
+
+        // Make deposit or record claim depending on whether exchange is synchronous
         if (isSynchronous) {
             // Call core deposit function
             _deposit(_pid, _user, wantAmt, _weeksCommitted, _vaultEnteredAt);
         } else {
             // Record claim
+            // TODO - also account for if the trade isn't fully filled - check!
+            // TODO - check isFundActive(), (accounts for if rebalance happened recently)
+            // TODO - want amount will be zero. Should we use _valueUSDC instead?
             recordClaim(_pid, _user, wantAmt, address(poolInfo[_pid].want), 0);
         }
     }
@@ -135,11 +140,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Claim 
         uint256 amountClaimed = _claimToken(_pid, _user, _wantAmt, _token);
         // Withdraw claimed intermediary token
-        address lib = poolInfo[_pid].lib;
-        (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdrawClaimedIntermedToken(address, uint256)", _user, amountClaimed));
-        require(success, "call to withdrawClaimedIntermedToken() failed");
-        uint valueUSDC = abi.decode(data, (uint256));
-        require(valueUSDC > 0, "withdrawClaimedIntermedToken() yielded zero value");
+        // (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdrawClaimedIntermedToken(address, uint256)", _user, amountClaimed));
+        // require(success, "call to withdrawClaimedIntermedToken() failed");
+        // uint valueUSDC = abi.decode(data, (uint256));
+        // require(valueUSDC > 0, "withdrawClaimedIntermedToken() yielded zero value");
     }
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
@@ -186,7 +190,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // If the _wantAmt is > 0, transfer Want tokens from the underlying Zorro Vault contract and update shares. If NOT, user shares will NOT be updated. 
         if (_wantAmt > 0) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            uint256 sharesRemoved = IVault(poolInfo[_pid].vault).withdraw(_user, _wantAmt);
+            uint256 sharesRemoved = IVault(poolInfo[_pid].vault).withdrawWantToken(_wantAmt);
             uint256 contributionRemoved = getUserContribution(sharesRemoved, tranche.timeMultiplier);
             // Update shares safely
             if (contributionRemoved > tranche.contribution) {
@@ -235,8 +239,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _wantAmt value in Want tokens to withdraw (0 will result in harvest and uint256(-1) will result in max value)
     /// @return Amount (in USDC) returned
     function withdrawalFullService(uint256 _pid, uint256 _trancheId, uint256 _wantAmt) public nonReentrant returns (uint256) {
-        (uint256 amount, bool isSynchronous) = _withdrawalFullService(_pid, msg.sender, _trancheId, _wantAmt, false);
-        require(isSynchronous, "not synchronous");
+        (uint256 amount,) = _withdrawalFullService(_pid, msg.sender, _trancheId, _wantAmt, false);
         return amount;
     }
 
@@ -250,21 +253,22 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     function _withdrawalFullService(uint256 _pid, address _user, uint256 _trancheId, uint256 _wantAmt, bool _isForTransfer) internal returns (uint256, bool) {
         // Call core withdrawal function (returns actual amount withdrawn)
         uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _wantAmt);
-        // Get library from pool
-        address lib = poolInfo[_pid].lib;
-        // Perform delegate call to autoswap and receive tokens and enter underlying vaults
-        (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdraw(address, uint256)", _user, wantAmtWithdrawn));
-        require(success, "call to withdraw() failed");
-        // Parse and return amount data
-        (uint256 amount, bool isSynchronous) = abi.decode(data, (uint256, bool));
-        if (isSynchronous) {
-            return (amount, true);
-        } else {
-            // Record claim and return 0 for now
-            address intermediaryToken = poolInfo[_pid].intermediaryToken;
-            recordClaim(_pid, _user, amount, intermediaryToken, _isForTransfer ? 2 : 1);
-            return (0, false);
-        }
+        // TODO
+        // // Get library from pool
+        // address lib = poolInfo[_pid].lib;
+        // // Perform delegate call to autoswap and receive tokens and enter underlying vaults
+        // (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdraw(address, uint256)", _user, wantAmtWithdrawn));
+        // require(success, "call to withdraw() failed");
+        // // Parse and return amount data
+        // (uint256 amount, bool isSynchronous) = abi.decode(data, (uint256, bool));
+        // if (isSynchronous) {
+        //     return (amount, true);
+        // } else {
+        //     // Record claim and return 0 for now
+        //     address intermediaryToken = poolInfo[_pid].intermediaryToken;
+        //     recordClaim(_pid, _user, amount, intermediaryToken, _isForTransfer ? 2 : 1);
+        //     return (0, false);
+        // }
     }
 
     /// @notice Transfer all assets from a tranche in one vault to a new vault
@@ -300,21 +304,23 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Claim 
         uint256 amountClaimed = _claimToken(_pid, _user, _amount, _token);
 
-        // Withdraw claimed intermediary token
-        address lib = poolInfo[_pid].lib;
-        (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdrawClaimedIntermedToken(address, uint256)", _user, amountClaimed));
-        require(success, "call to withdrawClaimedIntermedToken() failed");
-        uint valueUSDC = abi.decode(data, (uint256));
-        require(valueUSDC > 0, "withdrawClaimedIntermedToken() yielded zero value");
+        // TODO
 
-        // Get redeposit params
-        uint256 durationCommittedInWeeks = redepositInfo[_pid][_user].durationCommittedInWeeks;
-        uint256 enteredVaultAt = redepositInfo[_pid][_user].enteredVaultAt;
+        // // Withdraw claimed intermediary token
+        // address lib = poolInfo[_pid].lib;
+        // (bool success, bytes memory data) = lib.call(abi.encodeWithSignature("withdrawClaimedIntermedToken(address, uint256)", _user, amountClaimed));
+        // require(success, "call to withdrawClaimedIntermedToken() failed");
+        // uint valueUSDC = abi.decode(data, (uint256));
+        // require(valueUSDC > 0, "withdrawClaimedIntermedToken() yielded zero value");
 
-        // Redeposit
-        address[] memory sourceTokens;
-        sourceTokens[0] = defaultStablecoin;
-        _depositFullService(_pid, _user, valueUSDC, sourceTokens, durationCommittedInWeeks, enteredVaultAt);
+        // // Get redeposit params
+        // uint256 durationCommittedInWeeks = redepositInfo[_pid][_user].durationCommittedInWeeks;
+        // uint256 enteredVaultAt = redepositInfo[_pid][_user].enteredVaultAt;
+
+        // // Redeposit
+        // address[] memory sourceTokens;
+        // sourceTokens[0] = defaultStablecoin;
+        // _depositFullService(_pid, _user, valueUSDC, sourceTokens, durationCommittedInWeeks, enteredVaultAt);
     }
 
     /// @notice Withdraw the maximum number of Want tokens from a pool
@@ -331,31 +337,36 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Claims a token for async operations (e.g. Tranchess)
     /// @dev Can be used to claim any token and will clear out claim in storage once successful
     /// @param _pid index of pool to deposit into
-    /// @param _amount amount of token to claim
     /// @param _token the address of the token to be claimed
+    /// @param _settlementEpoch the end of the epoch that the trade is expected to have settled in
     /// @return amount of token claimed
-    function claimToken(uint256 _pid, uint256 _amount, address _token) public nonReentrant returns (uint256) {
-        return _claimToken(_pid, msg.sender, _amount, _token);
+    function claimToken(uint256 _pid, address _token, uint256 _settlementEpoch) public nonReentrant returns (uint256) {
+        return _claimToken(_pid, msg.sender, _token, _settlementEpoch);
     }
 
     /// @notice Private function for claiming a token for async operations (e.g. Tranchess)
     /// @dev Can be used to claim any token and will clear out claim in storage once successful
     /// @param _pid index of pool to deposit into
     /// @param _user address of user
-    /// @param _amount amount of token to claim
     /// @param _token the address of the token to be claimed
+    /// @param _settlementEpoch the end of the epoch that the trade is expected to have settled in
     /// @return amount of token claimed
-    function _claimToken(uint256 _pid, address _user, uint256 _amount, address _token) internal returns (uint256) {
+    function _claimToken(uint256 _pid, address _user, address _token, uint256 _settlementEpoch) internal returns (uint256) {
         // Check that a claim exists for a user
-        require(claims[_pid][_user][_token].amount > 0, "No claim recorded!");
-        // Call claim via delegatecall
-        address lib = poolInfo[_pid].lib;
-        (bool success, bytes memory data) = lib.delegatecall(abi.encodeWithSignature("claimToken(uint256)", _amount, _token));
-        require(success, "delegatecall to claimToken() failed");
+        require(claims[_pid][_user][_token].preSettlementAmount > 0 && claims[_pid][_user][_token].settlementEpoch > 0, "No claim recorded!");
+
+        // Get Vault contract
+        IVault vault = IVault(poolInfo[_pid].vault);
+
+        // Settle outstanding claim
+        uint256 amount = vault.settleTrades(_user, _settlementEpoch);
+
         // Clear out claim 
-        claims[_pid][_user][_token].amount = 0;
+        claims[_pid][_user][_token].settled = true;
+        claims[_pid][_user][_token].preSettlementAmount = 0;
+
         // Parse and return amount data
-        return abi.decode(data, (uint256));
+        return amount;
     }
 
     /// @notice Record a claim for a token (usually for async operations when obtaining Want tokens, like Tranchess)
@@ -365,13 +376,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _amount amount of token to claim
     /// @param _token the address of the token to be claimed
     /// @param _claimReason uint256 :: 0: deposit, 1: withdrawal, 2: transfer
-    function recordClaim(uint256 _pid, address _user, uint256 _amount, address _token, uint256 _claimReason) internal {
+    /// @param _settlementEpoch The end of the epoch within which the trade is expected to settle
+    function recordClaim(uint256 _pid, address _user, uint256 _amount, address _token, uint256 _claimReason, uint256 _settlementEpoch) internal {
         // Record claim if one doesn't already exist
-        require(claims[_pid][_user][_token].amount == 0, "A current claim is already in progress!");
-        claims[_pid][_user][_token].amount = _amount;
+        require(claims[_pid][_user][_token].preSettlementAmount == 0, "A current claim is already in progress!");
+        claims[_pid][_user][_token].preSettlementAmount = _amount;
+        claims[_pid][_user][_token].settled = false;
+        claims[_pid][_user][_token].settlementEpoch = _settlementEpoch;
         claims[_pid][_user][_token].reason = _claimReason;
         // Emit claim creation event
-        emit ClaimCreated(_user, _pid, _amount, _token);
+        emit ClaimCreated(_user, _pid, _settlementEpoch, _amount, _token);
     }
 
     /* Allocations */
