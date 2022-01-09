@@ -18,9 +18,8 @@ import "./libraries/SafeERC20.sol";
 
 import "./libraries/SafeMath.sol";
 
-
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
-abstract contract VaultStandardAMM is VaultBase {
+contract VaultStandardAMM is VaultBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -77,7 +76,14 @@ abstract contract VaultStandardAMM is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return Number of shares added
-    function deposit(uint256 _wantAmt) public virtual onlyOwner nonReentrant whenNotPaused returns (uint256) {
+    function depositWantToken(uint256 _wantAmt)
+        public
+        override
+        onlyOwner
+        nonReentrant
+        whenNotPaused
+        returns (uint256)
+    {
         // Transfer Want token from current user to this contract
         IERC20(wantAddress).safeTransferFrom(
             address(msg.sender),
@@ -86,8 +92,8 @@ abstract contract VaultStandardAMM is VaultBase {
         );
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
-        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked, 
-        // discounted by the entrance fee 
+        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
+        // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
             sharesAdded = _wantAmt
                 .mul(sharesTotal)
@@ -109,13 +115,26 @@ abstract contract VaultStandardAMM is VaultBase {
         return sharesAdded;
     }
 
-    /// @notice Public function for farming Want token. 
-    function farm() public virtual nonReentrant {
+    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @param _account The user account to transfer USDC from
+    /// @param _amount The USDC quantity to exchange
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return Amount of Want token obtained
+    function exchangeUSDForWantToken(
+        address _account,
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) public override returns (uint256) {
+        // TODO complete this
+    }
+
+    /// @notice Public function for farming Want token.
+    function farm() public nonReentrant {
         _farm();
     }
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
-    function _farm() internal virtual {
+    function _farm() internal {
         // Farming should only occur if this contract is set for autocompounding
         require(isZorroComp, "!isZorroComp");
 
@@ -138,9 +157,9 @@ abstract contract VaultStandardAMM is VaultBase {
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal virtual {
+    function _unfarm(uint256 _wantAmt) internal {
         if (isCOREStaking) {
-            // If this is contract is meant for staking a core assets of the underlying protocol, 
+            // If this is contract is meant for staking a core assets of the underlying protocol,
             // simply un-stake the asset from the single-token-staking vault on the Farm contract
             IAMMFarm(farmContractAddress).leaveStaking(_wantAmt); // Just for CAKE staking, we dont use withdraw()
         } else {
@@ -152,7 +171,13 @@ abstract contract VaultStandardAMM is VaultBase {
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _wantAmt the amount of Want tokens to withdraw
     /// @return the number of shares removed
-    function withdraw(uint256 _wantAmt) public virtual onlyOwner nonReentrant returns (uint256) {
+    function withdrawWantToken(uint256 _wantAmt)
+        public
+        onlyOwner
+        nonReentrant
+        override
+        returns (uint256)
+    {
         // Want amount must be greater than 0
         require(_wantAmt > 0, "_wantAmt <= 0");
 
@@ -196,8 +221,21 @@ abstract contract VaultStandardAMM is VaultBase {
         return sharesRemoved;
     }
 
-    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event. 
-    function earn() public virtual nonReentrant whenNotPaused override {
+    /// @notice Converts Want token back into USD to be ready for withdrawal
+    /// @param _account The user account to transfer USDC from
+    /// @param _amount The Want token quantity to exchange
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return Amount of USDC token obtained
+    function exchangeWantTokenForUSD(
+        address _account,
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) public virtual override returns (uint256) {
+        // TODO
+    }
+
+    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
+    function earn() public override nonReentrant whenNotPaused {
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -229,10 +267,13 @@ abstract contract VaultStandardAMM is VaultBase {
             return;
         }
 
-        // Approve the router contract 
+        // Approve the router contract
         IERC20(earnedAddress).safeApprove(uniRouterAddress, 0);
         // Allow the router contract to spen up to earnedAmt
-        IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, earnedAmt);
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            earnedAmt
+        );
 
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
