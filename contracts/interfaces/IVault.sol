@@ -11,17 +11,14 @@ interface IVault {
     function sharesTotal() external view returns (uint256);
 
     // Deposits
-    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256, bool);
+    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256);
 
     function depositWantToken(uint256 _wantAmt) external returns (uint256);
 
     // Withdrawals
     function withdrawWantToken(uint256 _wantAmt) external returns (uint256);
 
-    function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256, bool);
-
-    // Claims
-    function settleTrades(address _user, uint256 _settlementEpoch, address _token) external returns (uint256);
+    function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256);
 
     // Compounding
     function earn() external;

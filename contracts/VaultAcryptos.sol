@@ -113,9 +113,10 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return Number of shares added
-    function deposit(uint256 _wantAmt)
+    function depositWantToken(uint256 _wantAmt)
         public
         virtual
+        override
         onlyOwner
         nonReentrant
         whenNotPaused
@@ -152,6 +153,19 @@ contract VaultAcryptosSingle is VaultBase {
         return sharesAdded;
     }
 
+    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @param _account The user account to transfer USDC from
+    /// @param _amount The USDC quantity to exchange
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return Amount of Want token obtained
+    function exchangeUSDForWantToken(
+        address _account,
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) public override returns (uint256) {
+        // TODO complete this
+    }
+
     /// @notice Public function for farming Want token.
     function farm() public virtual nonReentrant {
         _farm();
@@ -183,9 +197,10 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _wantAmt the amount of Want tokens to withdraw
     /// @return the number of shares removed
-    function withdraw(uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         virtual
+        override
         onlyOwner
         nonReentrant
         returns (uint256)
@@ -233,8 +248,21 @@ contract VaultAcryptosSingle is VaultBase {
         return sharesRemoved;
     }
 
+    /// @notice Converts Want token back into USD to be ready for withdrawal
+    /// @param _account The user account to transfer USDC from
+    /// @param _amount The Want token quantity to exchange
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return Amount of USDC token obtained
+    function exchangeWantTokenForUSD(
+        address _account,
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) public virtual override returns (uint256) {
+        // TODO
+    }
+
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    function earn() public virtual nonReentrant whenNotPaused {
+    function earn() public virtual override nonReentrant whenNotPaused {
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress

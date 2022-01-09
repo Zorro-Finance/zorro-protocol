@@ -353,17 +353,14 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /* Abstract methods */
 
     // Deposits
-    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) public virtual returns (uint256, bool);
+    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) public virtual returns (uint256);
 
     function depositWantToken(uint256 _wantAmt) public virtual returns (uint256);
 
     // Withdrawals
     function withdrawWantToken(uint256 _wantAmt) public virtual returns (uint256);
 
-    function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) public virtual returns (uint256, bool);
-
-    // Claims
-    function settleTrades(address _user, uint256 _settlementEpoch, address _token) public virtual returns (uint256);
+    function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) public virtual returns (uint256);
 
     // Compounding
     function earn() public virtual;
