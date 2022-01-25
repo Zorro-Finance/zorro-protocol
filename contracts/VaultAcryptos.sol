@@ -46,6 +46,7 @@ contract VaultAcryptosSingle is VaultBase {
         wantAddress = _addresses[4];
         token0Address = _addresses[5];
         token1Address = _addresses[6];
+        // TODO: Allow up to 4 token addresses
         earnedAddress = _addresses[7];
 
         farmContractAddress = _addresses[8];
@@ -75,10 +76,12 @@ contract VaultAcryptosSingle is VaultBase {
 
     address public balancerVaultAddress =
         0xa82f327BBbF0667356D2935C6532d164b06cEced; // Address of Balancer/ACSI.finance Vault for swaps etc.
-    bytes32 public balancerPoolEarnedToToken0 =
-        0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to token0.
+    bytes32 public balancerPoolEarnedToTokens =
+        0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to underlying tokens.
     uint256 balancerPoolEarnedWeightBasisPoints = 4000;
     uint256 balancerPoolToken0WeightBasisPoints = 3000;
+    // TODO: Put this in constructor
+    uint256 numTokens; // Number of tokens in the LP pool (number between 1 and 4, inclusive)
 
     /* Config */
 
@@ -89,11 +92,11 @@ contract VaultAcryptosSingle is VaultBase {
         balancerVaultAddress = _balancerVaultAddress;
     }
 
-    function setBalancerPoolEarnedToToken0(bytes32 _balancerPoolEarnedToToken0)
+    function setBalancerPoolEarnedToTokens(bytes32 _balancerPoolEarnedToToken)
         public
         onlyOwner
     {
-        balancerPoolEarnedToToken0 = _balancerPoolEarnedToToken0;
+        balancerPoolEarnedToTokens = _balancerPoolEarnedToToken;
     }
 
     function setBalancerPoolEarnedWeightBasisPoints(
@@ -111,9 +114,10 @@ contract VaultAcryptosSingle is VaultBase {
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
+    /// @param _account address of user that this deposit is intended for
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return Number of shares added
-    function depositWantToken(uint256 _wantAmt)
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         virtual
         override
@@ -122,12 +126,12 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Transfer Want token from current user to this contract
-        IERC20(wantAddress).safeTransferFrom(
-            address(msg.sender),
-            address(this),
-            _wantAmt
+        // Check to make sure Want token is already on this contract and held for this user
+        require(
+            _wantAmt <= wantTokensInHolding[_account],
+            "Exceeds Want tokens in holding for this user"
         );
+
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
@@ -150,6 +154,9 @@ contract VaultAcryptosSingle is VaultBase {
             wantLockedTotal = wantLockedTotal.add(_wantAmt);
         }
 
+        // Clear holdings
+        wantTokensInHolding[_account];
+
         return sharesAdded;
     }
 
@@ -163,7 +170,26 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public override returns (uint256) {
-        // TODO complete this
+        // TODO: For all swaps, join/exit pools: Ensure to use safety features to prevent front running
+        // Swap USDC for tokens
+        // TODO Consider using a batch swap here
+        // Swap Token0
+        // --
+        if (numTokens > 1) {
+            // Swap Token1
+        }
+        if (numTokens > 2) {
+            // Swap Token2
+        }
+        if (numTokens > 3) {
+            // Swap Token3
+        }
+
+        // Deposit tokens to get Want token (e.g. LP token)
+        // TODO: joinPool: https://dev.balancer.fi/resources/joins-and-exits/pool-joins 
+
+        // Update temporary holdings for user
+        wantTokensInHolding[_account] = 0; // TODO <- change this to want tokens obtained.
     }
 
     /// @notice Public function for farming Want token.
@@ -195,9 +221,10 @@ contract VaultAcryptosSingle is VaultBase {
     }
 
     /// @notice Withdraw Want tokens from the Farm contract
+    /// @param _account The address of the owner of vault investment
     /// @param _wantAmt the amount of Want tokens to withdraw
     /// @return the number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         virtual
         override
@@ -262,7 +289,8 @@ contract VaultAcryptosSingle is VaultBase {
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    function earn() public virtual override nonReentrant whenNotPaused {
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function earn(uint256 _maxMarketMovementAllowed) public virtual override nonReentrant whenNotPaused {
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -304,28 +332,11 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
-            // Determine the limit based on the exchange rate
-            uint256 limit = getExchangeRateEarnedToToken0()
-                .mul(slippageFactor)
-                .div(1000);
-            // Swap Earned token to token0
-            IBalancerVault(balancerVaultAddress).swap(
-                SingleSwap({
-                    poolId: balancerPoolEarnedToToken0,
-                    kind: SwapKind.GIVEN_IN,
-                    assetIn: IAsset(earnedAddress),
-                    assetOut: IAsset(token0Address),
-                    amount: earnedAmt,
-                    userData: ""
-                }),
-                FundManagement({
-                    sender: address(this),
-                    fromInternalBalance: false,
-                    recipient: payable(address(this)),
-                    toInternalBalance: false
-                }),
-                limit,
-                block.timestamp.add(600)
+            swapAcryptos(
+                earnedAmt,
+                earnedAddress,
+                token0Address,
+                slippageFactor
             );
         }
 
@@ -346,24 +357,63 @@ contract VaultAcryptosSingle is VaultBase {
         _farm();
     }
 
-    /// @notice Calculates exchange rate of Token0 per Earned token. Note: Ignores swap fees!
-    /// @return exhange rate of Token0 per Earned token
-    function getExchangeRateEarnedToToken0() internal returns (uint256) {
+    function swapAcryptos(
+        uint256 _amountIn,
+        address _assetIn,
+        address _assetOut,
+        uint256 _slippageFactor
+    ) internal {
+        // Determine the limit based on the exchange rate
+        uint256 limit = getExchangeRate(balancerVaultAddress, _assetOut, _assetIn)
+            .mul(_slippageFactor)
+            .div(1000);
+        // Swap Earned token to token0
+        IBalancerVault(balancerVaultAddress).swap(
+            SingleSwap({
+                poolId: balancerPoolEarnedToTokens,
+                kind: SwapKind.GIVEN_IN,
+                assetIn: IAsset(_assetIn),
+                assetOut: IAsset(_assetOut),
+                amount: _amountIn,
+                userData: ""
+            }),
+            FundManagement({
+                sender: address(this),
+                fromInternalBalance: false,
+                recipient: payable(address(this)),
+                toInternalBalance: false
+            }),
+            limit,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Calculates exchange rate of token B per token A. Note: Ignores swap fees!
+    /// @param _balancerVaultAddress Address of Acryptos/Balancer Vault
+    /// @param _tokenA token A address
+    /// @param _tokenB token B address
+    /// @return exhange rate of token B per token A
+    function getExchangeRate(
+        address _balancerVaultAddress,
+        address _tokenA, 
+        address _tokenB
+    ) internal returns (uint256) {
         // Calculate current balances of each token (Earned, and token0)
-        (uint256 cashEarned, , , ) = IBalancerVault(balancerVaultAddress)
+        (uint256 cashB, , , ) = IBalancerVault(_balancerVaultAddress)
             .getPoolTokenInfo(
-                balancerPoolEarnedToToken0,
-                IERC20(earnedAddress)
+                balancerPoolEarnedToTokens,
+                IERC20(_tokenB)
             );
-        (uint256 cashToken0, , , ) = IBalancerVault(balancerVaultAddress)
+        (uint256 cashA, , , ) = IBalancerVault(_balancerVaultAddress)
             .getPoolTokenInfo(
-                balancerPoolEarnedToToken0,
-                IERC20(token0Address)
+                balancerPoolEarnedToTokens,
+                IERC20(_tokenA)
             );
         // Return exchange rate, accounting for weightings
+        // TODO - needs to be generalized for all 4 tokens
         return
-            (cashToken0.div(balancerPoolToken0WeightBasisPoints)).div(
-                cashEarned.div(balancerPoolEarnedWeightBasisPoints)
+            (cashA.div(balancerPoolToken0WeightBasisPoints)).div(
+                cashB.div(balancerPoolEarnedWeightBasisPoints)
             );
     }
 }

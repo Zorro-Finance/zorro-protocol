@@ -58,6 +58,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         pool.want.safeIncreaseAllowance(pool.vault, _wantAmt);
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
+            _user,
             _wantAmt
         );
         // Determine the time multiplier value based on the duration committed to in weeks
@@ -131,6 +132,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     ) internal {
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
+
+        // TODO: Need to approve the Vault contract first? 
 
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(
@@ -224,7 +227,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         if (_wantAmt > 0) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
             uint256 sharesRemoved = IVault(poolInfo[_pid].vault)
-                .withdrawWantToken(_wantAmt);
+                .withdrawWantToken(_user, _wantAmt);
             uint256 contributionRemoved = getUserContribution(
                 sharesRemoved,
                 tranche.timeMultiplier

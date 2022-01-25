@@ -76,7 +76,7 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return Number of shares added
-    function depositWantToken(uint256 _wantAmt)
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyOwner
@@ -84,12 +84,9 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Transfer Want token from current user to this contract
-        IERC20(wantAddress).safeTransferFrom(
-            address(msg.sender),
-            address(this),
-            _wantAmt
-        );
+        // Check to make sure Want token is already on this contract and held for this user
+        require(_wantAmt <= wantTokensInHolding[_account], "Exceeds Want tokens in holding for this user");
+
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
@@ -112,6 +109,9 @@ contract VaultStandardAMM is VaultBase {
             wantLockedTotal = wantLockedTotal.add(_wantAmt);
         }
 
+        // Clear holdings
+        wantTokensInHolding[_account];
+
         return sharesAdded;
     }
 
@@ -125,7 +125,63 @@ contract VaultStandardAMM is VaultBase {
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public override returns (uint256) {
-        // TODO complete this
+        // TODO: Take in current market prices (oracle)
+        // Swap USDC for token0
+        address[] memory USDCToToken0Path;
+        USDCToToken0Path[0] = tokenUSDCAddress;
+        USDCToToken0Path[1] = token0Address;
+        _safeSwap(
+            uniRouterAddress,
+            _amount.div(2),
+            _maxMarketMovementAllowed,
+            USDCToToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Swap USDC for token1 (if applicable)
+        address[] memory USDCToToken1Path;
+        USDCToToken1Path[0] = tokenUSDCAddress;
+        USDCToToken1Path[1] = token1Address;
+        _safeSwap(
+            uniRouterAddress,
+            _amount.div(2),
+            _maxMarketMovementAllowed,
+            USDCToToken1Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
+        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token0Amt
+            );
+        IERC20(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        IAMMRouter02(uniRouterAddress).addLiquidity(
+            token0Address,
+            token1Address,
+            token0Amt,
+            token1Amt,
+            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
+
+        // Update temporary holdings for user
+        wantTokensInHolding[_account] = wantAmt;
+
+        // TODO: Account for pool with only one token
+
+        return wantAmt;
     }
 
     /// @notice Public function for farming Want token.
@@ -169,9 +225,10 @@ contract VaultStandardAMM is VaultBase {
     }
 
     /// @notice Withdraw Want tokens from the Farm contract
+    /// @param _account address of user
     /// @param _wantAmt the amount of Want tokens to withdraw
     /// @return the number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         onlyOwner
         nonReentrant
@@ -218,6 +275,9 @@ contract VaultStandardAMM is VaultBase {
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
+        // Update holdings
+        wantTokensInHolding[_account] = _wantAmt;
+
         return sharesRemoved;
     }
 
@@ -231,11 +291,73 @@ contract VaultStandardAMM is VaultBase {
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override returns (uint256) {
-        // TODO
+        // TODO: Too many local variables. Consolidate after uncommenting below
+        // TODO: Take in current market prices (oracle)
+        // Require Want tokens to already be in holdings
+        // require(_amount <= wantTokensInHolding[_account], "Requested more Want tokens than are in holding");
+
+        // // Exit LP pool 
+        // uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
+        // uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
+        // uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
+        // uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+        // uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+        // IAMMRouter02(uniRouterAddress).removeLiquidity(
+        //     token0Address, 
+        //     token1Address,  
+        //     _amount,  
+        //     amount0Min,  
+        //     amount1Min,  
+        //     address(this),  
+        //     block.timestamp.add(600)
+        // );
+
+        // // Swap tokens back to USDC
+        // uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        // uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        // // Swap token0 for USDC
+        // address[] memory token0ToUSDCPath;
+        // token0ToUSDCPath[0] = token0Address;
+        // token0ToUSDCPath[1] = tokenUSDCAddress;
+        // _safeSwap(
+        //     uniRouterAddress,
+        //     token0Amt,
+        //     _maxMarketMovementAllowed,
+        //     token0ToUSDCPath,
+        //     address(this),
+        //     block.timestamp.add(600)
+        // );
+
+        // // Swap token1 for USDC
+        // address[] memory token1ToUSDCPath;
+        // token1ToUSDCPath[0] = token1Address;
+        // token1ToUSDCPath[1] = tokenUSDCAddress;
+        // _safeSwap(
+        //     uniRouterAddress,
+        //     token1Amt,
+        //     _maxMarketMovementAllowed,
+        //     token1ToUSDCPath,
+        //     address(this),
+        //     block.timestamp.add(600)
+        // );
+
+        // // TODO - account for pool with only one token
+
+        // Clear out temporary holdings for user
+        wantTokensInHolding[_account] = 0;
+
+        uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+
+        // Update temporary holdings for user
+        wantTokensInHolding[_account] = 0;
+
+        return amountUSDC;
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    function earn() public override nonReentrant whenNotPaused {
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function earn(uint256 _maxMarketMovementAllowed) public override nonReentrant whenNotPaused {
+        // TODO: Take in price oracle to perform safe swaps
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -322,8 +444,8 @@ contract VaultStandardAMM is VaultBase {
                 token1Address,
                 token0Amt,
                 token1Amt,
-                0,
-                0,
+                token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+                token1Amt.mul(_maxMarketMovementAllowed).div(1000),
                 address(this),
                 block.timestamp.add(600)
             );
