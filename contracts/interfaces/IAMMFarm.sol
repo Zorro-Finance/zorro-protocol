@@ -2,7 +2,7 @@
 
 pragma solidity >=0.6.12 <0.9.0;
 
-interface IPancakeswapFarm {
+interface IAMMFarm {
     function poolLength() external view returns (uint256);
 
     function userInfo() external view returns (uint256);

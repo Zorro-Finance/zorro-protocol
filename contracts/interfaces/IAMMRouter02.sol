@@ -2,11 +2,9 @@
 
 pragma solidity >=0.6.12 <0.9.0;
 
-// TODO - consider updating this and all libs/interfaces to the latest version
+import "./IAMMRouter01.sol";
 
-import "./IPancakeRouter01.sol";
-
-interface IPancakeRouter02 is IPancakeRouter01 {
+interface IAMMRouter02 is IAMMRouter01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
         uint256 liquidity,

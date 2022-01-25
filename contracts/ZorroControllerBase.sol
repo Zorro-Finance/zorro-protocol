@@ -38,13 +38,14 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
         uint256 totalTrancheContributions; // Sum of all user contributions in this pool
         address vault; // Address of the Vault
-        address lib; // Address of deployed library for this pool
         address intermediaryToken; // Token that the protocol returns after claiming (e.g. on Tranchess) (usually a stablecoin like USDC)
     }
 
     // Claim
     struct Claim {
-        uint256 amount;
+        uint256 preSettlementAmount; // Amount of tokens bought/sold of origin token, before settlement
+        uint256 settlementEpoch; // The anticipated settlement epoch
+        bool settled; // Whether trade has been settled
         uint256 reason; // 0: deposit, 1: withdrawal, 2: transfer
     }
     // Redeposit information for async flows
@@ -56,19 +57,20 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /* Variables */ 
 
     // Public variables and their initial values (check blockchain scanner for latest values)
-    address public ZORRO = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
+    // See constructor() for explanations
+    address public ZORRO;
     address public burnAddress = 0x000000000000000000000000000000000000dEaD;
-    uint256 public startBlock = 13650292; //https://bscscan.com/block/countdown/13650292 // TODO - set this
-    address public publicPool = 0xa184088a740c695E156F91f5cC086a06bb78b827; // TODO - set this
+    uint256 public startBlock;
+    address public publicPool; 
     uint256 public baseRewardRateBasisPoints = 10;
-    uint256 public BSCMarketTVLUSD = 30e9; // TODO - set this correctly, allow setter function
-    uint256 public ZorroTotalVaultTVLUSD = 500e6; // TODO - set this correctly, allow setter function
-    uint256 public targetTVLCaptureBasisPoints = 333;
+    uint256 public BSCMarketTVLUSD; 
+    uint256 public ZorroTotalVaultTVLUSD;
+    uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33%
     uint256 public blocksPerDay = 28800; // Approximate
-    uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 0.01%
-    uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 0.20%
+    uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 1 = 0.01%
+    uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20%
     bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
-    address public defaultStablecoin = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d; // USDC
+    address public defaultStablecoin;
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
@@ -117,7 +119,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /* Events */
     event Deposit(address indexed user, uint256 indexed pid, uint256 wantAmount);
-    event ClaimCreated(address indexed user, uint256 indexed pid, uint256 value, address token);
+    event ClaimCreated(address indexed user, uint256 indexed pid, uint256 indexed settlementEpoch, uint256 value, address token);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 trancheId, uint256 wantAmount);
     event TransferInvestment(address user, uint256 indexed fromPid, uint256 indexed fromTrancheId, uint256 indexed toPid);
 
