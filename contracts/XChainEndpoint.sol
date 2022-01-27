@@ -9,6 +9,8 @@ import "./helpers/Ownable.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
+import "./helpers/ProvethVerifier.sol";
+
 /// @title XChainBaseLayer. Base contract for cross-chain functionality
 contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     /* Modifiers */
@@ -17,6 +19,14 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
         require(
             _msgSender() == authorizedOracle,
             "Only authd oracle can make call"
+        );
+        _;
+    }
+    /// @notice Only allows functions to be executed where the sender matches the authorizedOracleController address
+    modifier onlyAuthorizedOracleController() {
+        require(
+            _msgSender() == authorizedOracleController,
+            "Only authd oracle ctrlr can make call"
         );
         _;
     }
@@ -34,16 +44,23 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     event OracleReceivedCrossChainBlock(uint256 indexed originChainBlockNumber);
     event RelayerReceivedCrossChainTx(bytes indexed transactionId);
 
+    /* Constants */
+    uint8 public constant BLOCK_HEADER_HASH_NOT_EXIST = 0;
+    uint8 public constant BLOCK_HEADER_HASH_IN_PROGRESS = 1;
+    uint8 public constant BLOCK_HEADER_HASH_PROCESSED = 2;
+
     /* State */
-    // TODO: Need to differentiate between Chainlink oracle and the account on the cloud function. Extra modifiers are needed
-    address authorizedOracle;
-    address authorizedRelayer;
-    address oracleContract; // TODO setter, constructor
-    address relayerContract; // TODO setter, constructor
-    bytes32 notifyOracleJobId; // TODO setter, constructor
-    bytes32 sendTxToRelayerJobId; // TODO setter, constructor
-    bytes32 requestProofJobId; // TODO setter, constructor
-    uint256 oraclePayment; // TODO setter
+    address authorizedOracle; // Oracle node address
+    address authorizedRelayer; // Relayer node address
+    address authorizedOracleController; // Controller that acts on behalf of the Oracle
+    address oracleContract; // Address of Chainlink oracle contract
+    address relayerContract; // Address of Chainlink relayer contract
+    bytes32 notifyOracleJobId; // Job ID for notifying oracle of cross-chain block
+    bytes32 sendTxToRelayerJobId; // Job ID for notifying relayer of new cross-chain TXs
+    bytes32 requestProofJobId; // Job ID for requesting TX proofs from relayer
+    uint256 oraclePayment; // Amount of LINK to pay Chainlink node operator
+
+    mapping(bytes32 => uint8) private _blockHeaderHashes; // Stores block header hashes sent from Oracle. Mapping: hash => BLOCK_HEADER_HASH_* (see constants section)
 
     /* Setters */
     /// @notice Sets the `authorizedOracle` address to a new address. This is designed to allow only a certain address to make calls
@@ -52,38 +69,90 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
         authorizedOracle = _authorizedOracle;
     }
 
+    /// @notice Sets the `authorizedOracleController` address to a new address. This is designed to allow only a certain address to make calls
+    /// @param _authorizedOracleController The new address to authorize as the oracle
+    function setAuthorizedOracleController(address _authorizedOracleController) public onlyOwner {
+        authorizedOracleController = _authorizedOracleController;
+    }
+
     /// @notice Sets the `authorizedRelayer` address to a new address. This is designed to allow only a certain address to make calls
     /// @param _authorizedRelayer The new address to authorize as the oracle
     function setAuthorizedRelayer(address _authorizedRelayer) public onlyOwner {
         authorizedRelayer = _authorizedRelayer;
     }
+
+    /// @notice Sets the oracle contract that Chainlink calls should be made to
+    /// @param _oracleContract The oracle contract that the Chainlink node owns
+    function setOracleContract(address _oracleContract) public onlyOwner {
+      oracleContract = _oracleContract;
+    }
+
+    /// @notice Sets the relayer contract that Chainlink calls should be made to
+    /// @param _relayerContract The oracle contract that the Chainlink node owns
+    function setOracleContract(address _oracleContract) public onlyOwner {
+      oracleContract = _oracleContract;
+    }
+
+    /// @notice Sets the job ID for notifying the oracle of a block with cross chain activity
+    /// @param _notifyOracleJobId Job ID for notifying the oracle
+    function setNotifyOracleJobId(address _notifyOracleJobId) public onlyOwner {
+      notifyOracleJobId = _notifyOracleJobId;
+    }
+
+    /// @notice Sets the job ID for sending cross-chain related transactions to the relayer
+    /// @param _sendTxToRelayerJobId Job ID for sending transactions to the relayer
+    function setSendTxToRelayerJobId(address _sendTxToRelayerJobId) public onlyOwner {
+      sendTxToRelayerJobId = _sendTxToRelayerJobId;
+    }
+
+    /// @notice Sets the job ID for requesting all proofs and tx data for a block hash
+    /// @param _requestProofJobId Job ID for requesting proofs from the relayer
+    function setRequestProofJobId(address _requestProofJobId) public onlyOwner {
+      requestProofJobId = _requestProofJobId;
+    }
+
+    /// @notice Sets the amount of LINK to pay to a Chainlink node
+    function setOraclePayment(uint256 _oraclePayment) public onlyOwner {
+      oraclePayment = _oraclePayment;
+    }
 }
 
-// TODO: How is a cross chain vault even defined? Where will logic for encoding the payload and function go? (Chain ID, contract address, function signature)
-// TODO: How do we handle non EVM cross chain tx encoding? -> Serialize to bytes (whatever dest. chain's ABI equivalent is)
-// TODO: Where do we decide on minting/burning etc.?
-// TODO: Should we lock before burning?
-// TODO: Consider emitting events to make debugging easier
+// TODO: Should we lock before burning? Where do we decide on minting/burning etc.?
 // TODO: *** How do we keep chain of custody of msg.sender all the way across chains? -> Encode this in proveth.py, dest. contract needs to call the appropriate investment function and put in the replacement value for msg.sender
-// TODO: *** How do we know that the payload hasn't been tampered with? Merkle proof? -> Check the `input` field
 
 /// @title XChainEndpoint. The full contract (inherits from all contracts above) that interfaces with all cross-chain interactions
-contract XChainEndpoint is XChainBaseLayer, ChainlinkClient {
+contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     using Chainlink for Chainlink.Request;
 
     /* Constructor */
     /// @notice Constructor. Sets permissions
     /// @param _owner Address of intended owner for this contract
-    /// @param _authorizedOracle Address of the only Oracle node allowed to make calls to this contract
-    /// @param _authorizedRelayer Address of the only Relayer node allowed to make calls to this contract
+    /// @param _authorizedAddresses Array of addresses of authorized oracle/relayer addresses: [authorizedOracle, authorizedOracleController, authorizedRelayer]
+    /// @param _oracleContracts Array of addresses of contracts oracle/relayer: [oracleContract, relayerContract]
+    /// @param _jobIds Array of job IDs for oracle/relayer: [notifyOracleJobId, sendTxToRelayerJobId, requestProofJobId]
+    /// @param _oraclePayment Amount of LINK to pay the node operator
     constructor(
         address _owner,
-        address _authorizedOracle,
-        address _authorizedRelayer
+        address[] _authorizedAddresses,
+        address[] _oracleContracts,
+        bytes32[] _jobIds,
+        uint256 _oraclePayment
     ) {
+        // Set owner of this contract
         transferOwnership(_owner);
-        authorizedOracle = _authorizedOracle;
-        authorizedRelayer = _authorizedRelayer;
+        // Set authorized resources
+        authorizedOracle = _authorizedAddresses[0];
+        authorizedOracleController = _authorizedAddresses[1];
+        authorizedRelayer = _authorizedAddresses[2];
+        // Set oracle contracts
+        oracleContract = _oracleContracts[0];
+        relayerContract = _oracleContracts[1];
+        // Set job IDs
+        notifyOracleJobId = _jobIds[0];
+        sendTxToRelayerJobId = _jobIds[1];
+        requestProofJobId = _jobIds[2];
+        // Set node payment
+        oraclePayment = _oraclePayment;
     }
 
     /*
@@ -97,7 +166,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient {
     function sendXChainTransaction(
         bytes calldata _destinationContract,
         bytes calldata _payload
-    ) public onlyOwner {
+    ) external onlyOwner {
         // Call relay
         sendTransactionPacketToRelayer(_destinationContract, _payload);
         // Call oracle
@@ -168,18 +237,42 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient {
     /// @notice Receives callback from Relayer in order to validate all cross chain transactions in a given block on the sending chain
     /// @param _destinationContracts Array of addresses of destination contracts (one per tx)
     /// @param _payloads Array of payloads for each transaction
-    /// @param _proofs Array of proofs (one per tx)
+    /// @param _proofBlobs Array of proof blobs (one per tx)
+    /// @param _blockHeaderHash The block header hash that was originally requested (will be checked against storage for authenticity)
     function validateTxProofsCallback(
         address[] calldata _destinationContracts,
         bytes[] calldata _payloads,
-        bytes[] calldata _proofs
+        bytes[] calldata _proofBlobs,
+        bytes32 _blockHeaderHash
     ) external onlyAuthorizedRelayer {
-        // TODO complete function
-        // Iterate through length of _proofs
-        // For each proof, check against block header hash for validity
-        // For the first failure, revert the entire transaction
-        // Otherwise, call the Contract layer with the payloads and destination contracts
-        // TODO - where are we getting the block header hash from to compare proofs? Probably store a hash as private var?
+        // Check that provided block hash was already sent by the oracle.
+        require(
+            _blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
+            "Block hash not recorded"
+        );
+        require(
+            _blockHeaderHashes[_blockHeaderHash] ==
+                BLOCK_HEADER_HASH_IN_PROGRESS,
+            "Block hash not in progress"
+        );
+        // Iterate through length of _proofBlobs
+        for (uint256 i = 0; i < _proofBlobs.length; i++) {
+            // Get all values at current index
+            bytes _destinationContract = _destinationContracts[i];
+            bytes _payload = _payloads[i];
+            bytes _proofBlob = _proofBlobs[i];
+            // For each proof, check against block header hash for validity
+            (uint8 res, , , , , , , , , , , ) = txProof(
+                _blockHeaderHash,
+                proofBlob
+            );
+            // If one proof is invalid, revert the entire transaction
+            require(res == 1, "Failed to validate Tx Proof");
+            // Call Contract Layer with payloads to finally execute the cross chain transaction
+            receiveXChainTransaction(_destinationContract, _payload);
+        }
+        // Mark current hash as completed so that it does not run again
+        _blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED;
     }
 
     /*
@@ -217,7 +310,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient {
     function receiveOracleNotification(
         uint256 _blockNumber,
         bytes calldata _blockHeaderHash
-    ) external onlyAuthorizedOracle {
+    ) external onlyAuthorizedOracleController {
         // Call Relay layer with block header hash
         requestTxProofsForBlock(_blockHeaderHash);
         // Emit log
