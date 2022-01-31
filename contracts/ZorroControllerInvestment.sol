@@ -417,4 +417,52 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     ) private pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
+
+    /* 
+    Cross Chain functions 
+    */
+
+    /* TODO Everything below */
+
+    // TODO - should we have full service and regular deposit for x chain? Probably no, b/c we are doing USDC
+    // TODO - how to rescue/recover failed x chain txns?
+
+    /* Deposits */
+
+    function receiveXChainDepositRequest() internal {
+        // TODO: Complete function, docstrings
+        // Swap 
+        // Burn
+        // Call contract layer
+    }
+
+    function sendXChainDepositRequest() external nonReentrant {
+        // TODO: Complete function, docstrings
+        // Swap 
+        // Burn
+        // Call contract layer
+    }
+
+    /* Withdrawals */
+
+    function receiveXChainWithdrawalRequest() internal {
+        // TODO: Complete function, docstrings
+        // Swap 
+        // Burn
+        // Call contract layer
+    }
+
+    function sendXChainWithdrawalRequest() external nonReentrant {
+        // TODO: Complete function, docstrings
+        // Swap 
+        // Burn
+        // Call contract layer
+    }
+
+    /* TODO : See misc. cross chain functions in Lucid chart */
+    /*
+    - Request ZOR burn cross chain
+    - Request gas compensation from treasury 
+    */
+
 }
