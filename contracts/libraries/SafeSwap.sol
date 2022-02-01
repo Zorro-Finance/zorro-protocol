@@ -9,7 +9,7 @@ import "./SafeMath.sol";
 // TODO: Might want a V3 style router for better liquidity (e.g. Curve Finance/Uniswap V3) - create another function
 
 /// @title SafeSwap: Library for safe swapping of ERC20 tokens
-contract SafeSwap {
+library SafeSwap {
     /*
     Libraries
     */
