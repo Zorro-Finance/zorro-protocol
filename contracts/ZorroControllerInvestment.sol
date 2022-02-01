@@ -462,7 +462,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /* TODO : See misc. cross chain functions in Lucid chart */
     /*
     - Request ZOR burn cross chain
-    - Request gas compensation from treasury 
+    - Repatriation request
+    - Reversion
+    - Cross chain identity
+    - How to ensure usdc transferFrom is the same as that specified in the payload
+    - 100% withdrawal only
+    - Lock/unlock
+    - Burn when done locking
     */
+
+
 
 }
