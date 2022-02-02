@@ -536,5 +536,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     - Get all function visibilities right
     - Get all function modifiers right (onlyOwner etc.)
     - Have some sort of global lock so that people can't game the system to replay events and cause race conditions, etc.
+    - Figure out how to abstract the logic out for ABI decoding and verification of payload params (identity, amount, etc.), since each chain is different!
     */
 }
