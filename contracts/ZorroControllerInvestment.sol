@@ -133,7 +133,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
-        // TODO: Need to approve the Vault contract first? 
+        // TODO: Need to approve the Vault contract first?
 
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(
@@ -331,7 +331,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Call core withdrawal function (returns actual amount withdrawn)
         uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _wantAmt);
 
-        uint256 amount = vault.exchangeWantTokenForUSD(_user, wantAmtWithdrawn, _maxMarketMovement);
+        uint256 amount = vault.exchangeWantTokenForUSD(
+            _user,
+            wantAmtWithdrawn,
+            _maxMarketMovement
+        );
 
         return amount;
     }
@@ -422,55 +426,115 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     Cross Chain functions 
     */
 
-    /* TODO Everything below */
-
-    // TODO - should we have full service and regular deposit for x chain? Probably no, b/c we are doing USDC
-    // TODO - how to rescue/recover failed x chain txns?
-
     /* Deposits */
 
-    function receiveXChainDepositRequest() internal {
+    /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain (TODO: consider creating a mapping to the oracle, relayer node addresses)
+    /// @param _destinationContract The address of the smart contract on the destination chain
+    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    function sendXChainDepositRequest(
+        uint256 _chainId,
+        bytes calldata _destinationContract,
+        bytes calldata _payload
+    ) external nonReentrant {
         // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
+        // Verify that the amount of USDC to transfer into this contract is the same as what's encoded in the payload
+        // Verify that encoded user identity is in fact tx.origin
+        // Transfer USDC into this contract
+        // Lock USDC on the ledger
         // Call contract layer
     }
 
-    function sendXChainDepositRequest() external nonReentrant {
+    /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
+    /// @dev For params, see _depositFullService() function declaration above
+    function receiveXChainDepositRequest(
+        uint256 _pid,
+        address _user,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _vaultEnteredAt,
+        uint256 _maxMarketMovement
+    ) internal {
         // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
-        // Call contract layer
+        // Mint corresponding amount of zUSDC
+        // Swap zUSDC for USDC
+        // Call deposit function
     }
 
     /* Withdrawals */
-
-    function receiveXChainWithdrawalRequest() internal {
+    /// @notice Prepares and sends a cross chain withdrwal request.
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain (TODO: consider creating a mapping to the oracle, relayer node addresses)
+    /// @param _destinationContract The address of the smart contract on the destination chain
+    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    function sendXChainWithdrawalRequest(
+        uint256 _chainId,
+        bytes calldata _destinationContract,
+        bytes calldata _payload
+    ) external nonReentrant {
         // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
+        // Verify that the encoded user identity is in fact tx.origin
         // Call contract layer
     }
 
-    function sendXChainWithdrawalRequest() external nonReentrant {
+    /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
+    /// @dev For params, see _withdrawalFullService() function declaration above
+    function receiveXChainWithdrawalRequest(
+        uint256 _pid,
+        address _user,
+        uint256 _trancheId,
+        uint256 _wantAmt,
+        uint256 _maxMarketMovement
+    ) internal {
         // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
-        // Call contract layer
+        // Call withdrawal function
+        // Lock withdrawn USDC
+        // Prepare repatriation transaction
+        // Call contract layer to dispatch cross chain transaction
+    }
+
+    /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
+    /// @param _pid The pool ID on the remote chain that the user withdrew from
+    /// @param _user The user on this chain who initiated the withdrawal request
+    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit 
+    /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
+    function receiveXChainRepatriationRequest(
+        uint256 _pid,
+        address _user,
+        uint256 _trancheId,
+        uint256 _withdrawnUSDC
+    ) external nonReentrant {
+        // TODO: Complete function, docstrings
+        // Extract account, pool ID, tranche ID
+        // Determine original deposit amount for this tranche
+        // Calculate profit amount if a profit was made
+        // If a profit was made, set the unlockable amount to the original deposit amount (principal) only,
+        // and set the mint amount to the proceeds.
+        // If a loss was made, set the unlockable amount to the withdrawal amount, and the mint amount to zero.
+        // The burn amount should be the loss amount.
+        // Unlock USDC principal
+        // Mint zUSDC (if applicable)
+        // Swap zUSDC for USDC (if applicable)
+        // Burn unused USDC (if applicable)
+        // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
+    }
+
+    /* Safety */
+    function revertXChainTransaction() public {
+        // TODO: Complete function, docstrings
     }
 
     /* TODO : See misc. cross chain functions in Lucid chart */
     /*
     - Request ZOR burn cross chain
     - Repatriation request
-    - Reversion
-    - Cross chain identity
-    - How to ensure usdc transferFrom is the same as that specified in the payload
+    - Reversion request
+    - Cross chain identity (include in proof)
+    - How to ensure usdc transferFrom is the same as that specified in the payload 
     - 100% withdrawal only
-    - Lock/unlock
-    - Burn when done locking
+    - Lock/unlock (be aware of the principal)
+    - Burn when done locking (cross chain call)
+    - Get all function visibilities right
+    - Get all function modifiers right (onlyOwner etc.)
+    - Have some sort of global lock so that people can't game the system to replay events and cause race conditions, etc.
     */
-
-
-
 }
