@@ -523,12 +523,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // TODO: Complete function, docstrings
     }
 
-    /* TODO : See misc. cross chain functions in Lucid chart */
+    // TODO - All the functions for updating pool rewards cross chain
+
     /*
     - Request ZOR burn cross chain
     - Repatriation request
     - Reversion request
-    - Cross chain identity (include in proof)
+    - Cross chain identity (1- include in proof, 2- verify it's the same as in payload)
     - How to ensure usdc transferFrom is the same as that specified in the payload 
     - 100% withdrawal only
     - Lock/unlock (be aware of the principal)
