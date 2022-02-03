@@ -327,15 +327,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
+    /// @param _account address of user
     /// @param _pid index of pool to deposit into
-    /// @param _user address of user
     /// @param _trancheId index of tranche
     /// @param _wantAmt value in Want tokens to withdraw (0 will result in harvest and uint256(-1) will result in max value)
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return Amount (in USDC) returned
     function _withdrawalFullService(
+        address _account,
         uint256 _pid,
-        address _user,
         uint256 _trancheId,
         uint256 _wantAmt,
         uint256 _maxMarketMovement
@@ -452,12 +452,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bytes calldata _destinationContract,
         bytes calldata _payload
     ) external nonReentrant {
-        // TODO
         // Get endpoint contract that interfaces with the remote chain
         address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
         // Extract amount of USDC to transfer into this contract from the payload
         uint256 _amountUSDC = _endpointContract.extractValueFromPayload(_payload);
-        // Verify that encoded user identity is in fact msg.sender. Is this necessary?
+        // Verify that encoded user identity is in fact msg.sender.
         address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
         require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
         // Allow this contract to spend USDC
@@ -513,9 +512,21 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bytes calldata _destinationContract,
         bytes calldata _payload
     ) external nonReentrant {
-        // TODO: Complete function, docstrings
-        // Verify that the encoded user identity is in fact tx.origin
+        // Get endpoint contract that interfaces with the remote chain
+        address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
+        // Verify that the encoded user identity is in fact msg.sender
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
+        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
         // Call contract layer
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Withdrawal call unsuccessful");
     }
 
     /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
@@ -527,12 +538,30 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmt, // TODO: Remove - not required as we're doing 100% withdrawals only
         uint256 _maxMarketMovement
     ) internal {
-        // TODO: Complete function, docstrings
         // Call withdrawal function
+        uint256 _amountUSDC = _withdrawalFullService(_account, _pid, _trancheId, _wantAmt, _maxMarketMovement);
         // Lock withdrawn USDC
+        TokenLockController(lockUSDCController).lockFunds(_account, _amountUSDC);
         // Prepare repatriation transaction
+        bytes _destinationContract = abi.encodePacked(homeChainZorroController);
+        bytes _payload = abi.encodeWithSignature(
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId)", 
+            _account, _amountUSDC, _pid, _trancheId
+        );
         // Call contract layer to dispatch cross chain transaction
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Repatriation call unsuccessful");
     }
+
+    // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all 
+    // arguments. We changed around the order of many args. 
 
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _pid The pool ID on the remote chain that the user withdrew from
