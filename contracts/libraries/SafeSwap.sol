@@ -32,7 +32,7 @@ library SafeSwap {
         address[] memory _path,
         address _to,
         uint256 _deadline
-    ) public virtual {
+    ) public {
         // TODO: Rather than calling getAmountsOut(), try to take in an input arg instead
         uint256[] memory amounts = _uniRouter.getAmountsOut(_amountIn, _path);
         uint256 amountOut = amounts[amounts.length.sub(1)];

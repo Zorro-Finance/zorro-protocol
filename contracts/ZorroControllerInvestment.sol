@@ -16,11 +16,21 @@ import "./TokenLockController.sol";
 
 import "./XChainEndpoint.sol";
 
+import "./ZorroTokens.sol";
+
+import "./interfaces/IAMMRouter02.sol";
+
+import "./libraries/SafeSwap.sol";
+
 
 contract ZorroControllerInvestment is ZorroControllerBase {
+    /*
+    Libraries
+    */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using CustomMath for uint256;
+    using SafeSwap for IAMMRouter02;
 
     /* Cash flow */
 
@@ -478,10 +488,19 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
     ) internal {
-        // TODO: Complete function, docstrings
         // Mint corresponding amount of zUSDC
+        ZUSDC(syntheticStablecoin).mint(address(this), _valueUSDC);
         // Swap zUSDC for USDC
+        address[] memory _path = [syntheticStablecoin, defaultStablecoin];
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _valueUSDC,
+            _maxMarketMovement,
+            _path,
+            address(this),
+            block.timestamp.add(600)
+        );
         // Call deposit function
+        _depositFullService(_pid, _account, _valueUSDC, _weeksCommitted, _vaultEnteredAt, _maxMarketMovement);
     }
 
     /* Withdrawals */
