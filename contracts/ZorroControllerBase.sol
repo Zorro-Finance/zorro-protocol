@@ -71,6 +71,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20%
     bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
     address public defaultStablecoin;
+    mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
+    address public lockUSDCController; // TODO: Put in setter, constructor
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
@@ -102,6 +104,9 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     }
     function setIsTimeMultiplierActive(bool _isActive) external onlyOwner {
         isTimeMultiplierActive = _isActive;
+    }
+    function setEndpointContracts(uint256 _chainId, address _endpointContract) external onlyOwner {
+        endpointContracts[_chainId] = _endpointContract;
     }
 
 

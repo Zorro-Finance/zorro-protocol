@@ -316,4 +316,29 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         // Emit log
         emit OracleReceivedCrossChainBlock(_blockNumber);
     }
+
+    /* Encoding/Decoding */
+    /// @notice Takes an encoded bytes payload and extracts out the _account parameter. Can be overriden depending on unique chain requirements
+    /// @dev The _account parameter MUST be the first input argument of the receiving function on the remote chain (address (20-bit) datatype)
+    /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
+    /// @return Extracted address
+    function extractIdentityFromPayload(bytes _payload) public view virtual returns (address) {
+        // TODO
+        // Remove the first 4 bytes (Keccak 256 method signature)
+        // Take the next 20 bits 
+        // ABI decode to "address" datatype
+        // Return address
+    }
+
+    /// @notice Takes an encoded bytes payload (usually intended for deposit/repatriation) and extracts out the _value parameter. Can be overriden depending on unique chain requirements
+    /// @dev The _value parameter MUST be the second input argument of the receiving function on the remote chain (uint256 data type)
+    /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
+    /// @return Extracted address
+    function extractValueFromPayload(bytes _payload) public view virtual returns (address) {
+        // TODO
+        // Remove the first 4 bytes (Keccak 256 method signature) + 20 bits (address)
+        // Take the next 256 bits 
+        // ABI decode to "uint256" datatype
+        // Return address
+    }
 }

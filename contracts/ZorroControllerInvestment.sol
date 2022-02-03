@@ -12,6 +12,11 @@ import "./libraries/SafeMath.sol";
 
 import "./libraries/Math.sol";
 
+import "./TokenLockController.sol";
+
+import "./XChainEndpoint.sol";
+
+
 contract ZorroControllerInvestment is ZorroControllerBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -429,7 +434,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /* Deposits */
 
     /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
-    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain (TODO: consider creating a mapping to the oracle, relayer node addresses)
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the smart contract on the destination chain
     /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
     function sendXChainDepositRequest(
@@ -437,20 +442,38 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bytes calldata _destinationContract,
         bytes calldata _payload
     ) external nonReentrant {
-        // TODO: Complete function, docstrings
-        // Verify that the amount of USDC to transfer into this contract is the same as what's encoded in the payload
-        // Verify that encoded user identity is in fact tx.origin
+        // TODO
+        // Get endpoint contract that interfaces with the remote chain
+        address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
+        // Extract amount of USDC to transfer into this contract from the payload
+        uint256 _amountUSDC = _endpointContract.extractValueFromPayload(_payload);
+        // Verify that encoded user identity is in fact msg.sender. Is this necessary?
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
+        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
+        // Allow this contract to spend USDC
+        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _amountUSDC);
         // Transfer USDC into this contract
+        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, address(this), _amountUSDC);
         // Lock USDC on the ledger
+        TokenLockController(lockUSDCController).lockFunds(msg.sender, _amountUSDC);
         // Call contract layer
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Deposit call unsuccessful");
     }
 
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
     function receiveXChainDepositRequest(
-        uint256 _pid,
-        address _user,
+        address _account,
         uint256 _valueUSDC,
+        uint256 _pid,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
@@ -479,10 +502,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _withdrawalFullService() function declaration above
     function receiveXChainWithdrawalRequest(
+        address _account,
         uint256 _pid,
-        address _user,
         uint256 _trancheId,
-        uint256 _wantAmt,
+        uint256 _wantAmt, // TODO: Remove - not required as we're doing 100% withdrawals only
         uint256 _maxMarketMovement
     ) internal {
         // TODO: Complete function, docstrings
@@ -494,14 +517,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _pid The pool ID on the remote chain that the user withdrew from
-    /// @param _user The user on this chain who initiated the withdrawal request
-    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit 
+    /// @param _account The user on this chain who initiated the withdrawal request
+    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
     function receiveXChainRepatriationRequest(
+        address _account,
+        uint256 _withdrawnUSDC,
         uint256 _pid,
-        address _user,
-        uint256 _trancheId,
-        uint256 _withdrawnUSDC
+        uint256 _trancheId
     ) external nonReentrant {
         // TODO: Complete function, docstrings
         // Extract account, pool ID, tranche ID
