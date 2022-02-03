@@ -545,8 +545,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Prepare repatriation transaction
         bytes _destinationContract = abi.encodePacked(homeChainZorroController);
         bytes _payload = abi.encodeWithSignature(
-            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId)", 
-            _account, _amountUSDC, _pid, _trancheId
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement)", 
+            _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement
         );
         // Call contract layer to dispatch cross chain transaction
         (bool successful, ) = _endpointContract.call(
@@ -564,29 +564,97 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     // arguments. We changed around the order of many args. 
 
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
-    /// @param _pid The pool ID on the remote chain that the user withdrew from
     /// @param _account The user on this chain who initiated the withdrawal request
-    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
+    /// @param _originalDepositUSDC The amount originally deposited into this tranche // TODO net- or gross- of fees? IMPORTANT
+    /// @param _pid The pool ID on the remote chain that the user withdrew from
+    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
+    /// @param _maxMarketMovement factor to account for max market movement/slippage. // TODO - need definition
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
+        uint256 _originalDepositUSDC,
         uint256 _pid,
-        uint256 _trancheId
+        uint256 _trancheId,
+        uint256 _maxMarketMovement
     ) external nonReentrant {
         // TODO: Complete function, docstrings
-        // Extract account, pool ID, tranche ID
-        // Determine original deposit amount for this tranche
-        // Calculate profit amount if a profit was made
-        // If a profit was made, set the unlockable amount to the original deposit amount (principal) only,
-        // and set the mint amount to the proceeds.
-        // If a loss was made, set the unlockable amount to the withdrawal amount, and the mint amount to zero.
-        // The burn amount should be the loss amount.
+        /*
+        TODO
+        - Need original deposit amount, which is stored on opposite chain. OR we maintain a xchain mapping on this chain by tranche
+
+        */
+        // Initialize finance variables
+        uint256 _profit = 0;
+        uint256 _unlockableAmountUSDC = 0;
+        uint256 _mintableAmountZUSDC = 0;
+        uint256 _burnableAmountUSDC = 0;
+
+        // Update amounts depending on whether investment was profitable
+        if (_withdrawnUSDC >= _originalDepositUSDC) {
+            // Profitable
+            // Calculate profit amount if a profit was made
+            _profit = _withdrawnUSDC.sub(_originalDepositUSDC);
+            // Set the unlockable amount to the original deposit amount (principal) only
+            _unlockableAmountUSDC = _originalDepositUSDC;
+            // Set the mint amount to the proceeds.
+            _mintableAmountZUSDC = _profit;
+        } else {
+            // Loss
+            // Set the unlockable amount to the withdrawal amount
+            _unlockableAmountUSDC = _withdrawnUSDC;
+            // The burn amount to the loss amount
+            _burnableAmountUSDC = _originalDepositUSDC.sub(_withdrawnUSDC);
+        }
+
         // Unlock USDC principal
+        TokenLockController(lockUSDCController).unlockFunds(_account, _unlockableAmountUSDC);
         // Mint zUSDC (if applicable)
-        // Swap zUSDC for USDC (if applicable)
+        if (_mintableAmountZUSDC > 0) {
+            ZUSDC(syntheticStablecoin).mint(address(this), _mintableAmountZUSDC);
+            // Swap zUSDC for USDC
+            address[] memory _path = [syntheticStablecoin, defaultStablecoin];
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _mintableAmountZUSDC,
+                _maxMarketMovement,
+                _path,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
         // Burn unused USDC (if applicable)
+        if (_burnableAmountUSDC > 0) {
+            IERC20(defaultStablecoin).safeTransfer(burnAddress, _burnableAmountUSDC);
+        }
+        // Transfer total USDC to wallet
+        uint256 _balanceUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
+        // TODO - how to prepare request such that it's generalized for any chain? E.g. abi encoding
+        sendXChainUnlockRequest();
+    }
+
+    // TODO: Do we need to account for "dust" amounts? Too small amounts causing potential failures? Rounding errors? See Autofarm code
+
+    /* Cross-chain unlocks */
+
+    // TODO docstrings, args, fill in function
+    /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
+    /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
+    function sendXChainUnlockRequest(
+        
+    ) internal {
+        // Prepare cross chain request
+        // Call contract layer
+    }
+
+    // TODO docstrings, args, fill in function
+    /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
+    function receiveXChainUnlockRequest(
+
+    ) public {
+        // Unlock user funds
+        // Burn
     }
 
     /* Safety */

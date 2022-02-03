@@ -76,6 +76,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public lockUSDCController; // TODO: Put in setter, constructor
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc. TODO: Put in setter/getter
     address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor
+    // TODO: Do thorough analysis to ensure enough setters/constructors
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {

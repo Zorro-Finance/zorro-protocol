@@ -93,6 +93,8 @@ contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
     }
     // Unlock funds from ledger
     lockedFunds[_account] = _currentlyLocked.sub(_amountToUnlock);
+    // Transfer funds back to account
+    IERC20(lockableToken).transfer(_account, _amountToUnlock);
     // Return amount unlocked
     return _amountToUnlock;
   }
