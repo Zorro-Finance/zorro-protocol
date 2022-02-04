@@ -318,6 +318,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     }
 
     /* Encoding/Decoding */
+
     /// @notice Takes an encoded bytes payload and extracts out the _account parameter. Can be overriden depending on unique chain requirements
     /// @dev The _account parameter MUST be the first input argument of the receiving function on the remote chain (address (20-bit) datatype)
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
@@ -340,5 +341,17 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         // Take the next 256 bits 
         // ABI decode to "uint256" datatype
         // Return address
+    }
+
+    /// @notice Takes a given account and amount and encodes an unlock request in bytes for EVM chains. Can be overriden for other chains
+    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
+    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
+    /// @return The ABI econded bytes. For other chains, it will be those chains' standard serializations in bytes.
+    function encodeUnlockRequest(address _account,uint256 _amountUSDC) public view virtual returns (bytes) {
+        // Abi encode the payload and return it (override this for other chains, which use a different encoding)        
+        return abi.encodeWithSignature(
+            "receiveXChainUnlockRequest(address _account,uint256 _amountUSDC)", 
+            _account, _amountUSDC
+        );
     }
 }

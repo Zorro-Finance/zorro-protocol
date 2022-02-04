@@ -504,7 +504,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Withdrawals */
     /// @notice Prepares and sends a cross chain withdrwal request.
-    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain (TODO: consider creating a mapping to the oracle, relayer node addresses)
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the smart contract on the destination chain
     /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
     function sendXChainWithdrawalRequest(
@@ -545,8 +545,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Prepare repatriation transaction
         bytes _destinationContract = abi.encodePacked(homeChainZorroController);
         bytes _payload = abi.encodeWithSignature(
-            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement)", 
-            _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)", 
+            _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement, address(this)
         );
         // Call contract layer to dispatch cross chain transaction
         (bool successful, ) = _endpointContract.call(
@@ -570,13 +570,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _pid The pool ID on the remote chain that the user withdrew from
     /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
     /// @param _maxMarketMovement factor to account for max market movement/slippage. // TODO - need definition
+    /// @param _callbackContract The remote contract that called this function.
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
         uint256 _originalDepositUSDC,
         uint256 _pid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        address _callbackContract
     ) external nonReentrant {
         // TODO: Complete function, docstrings
         /*
@@ -638,23 +640,57 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Cross-chain unlocks */
 
-    // TODO docstrings, args, fill in function
     /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
     /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
+    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
+    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
+    /// @param _destinationContract The address of the contract on the remote chain to send the unlock request to
     function sendXChainUnlockRequest(
-        
+        uint256 _chainId,
+        address _account,
+        uint256 _amountUSDC,
+        address _destinationContract
     ) internal {
+        // Get endpoint contract
+        address _endpointContract = endpointContracts[_chainId];
+
         // Prepare cross chain request
+        (bool success, bytes memory data) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "encodeUnlockRequest(address _account,uint256 _amountUSDC)", 
+                _account, _amountUSDC
+            )
+        );
+        require(success, "Unsuccessful serialize unlock");
+        bytes _payload = abi.decode(data, (bytes));
+
         // Call contract layer
+        (bool success1,) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(success1, "Unsuccessful xchain unlock");
     }
 
-    // TODO docstrings, args, fill in function
+    // TODO - consider having this emit an event
     /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
+    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
+    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     function receiveXChainUnlockRequest(
-
+        address _account,
+        uint256 _amountUSDC
     ) public {
+        // Get controller
+        TokenLockController lockController = TokenLockController(lockUSDCController);
         // Unlock user funds
+        lockController.unlockFunds(_account, _amountUSDC);
         // Burn
+        lockController.burnFunds(_amountUSDC);
     }
 
     /* Safety */
