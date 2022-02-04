@@ -340,6 +340,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmt,
         uint256 _maxMarketMovement
     ) internal returns (uint256) {
+        // Update tranche status
+        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block.timestamp;
+
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
@@ -530,7 +533,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
-    /// @dev For params, see _withdrawalFullService() function declaration above
+    /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
     function receiveXChainWithdrawalRequest(
         address _account,
         uint256 _pid,
@@ -538,16 +541,30 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmt, // TODO: Remove - not required as we're doing 100% withdrawals only
         uint256 _maxMarketMovement
     ) internal {
-        // Call withdrawal function
-        uint256 _amountUSDC = _withdrawalFullService(_account, _pid, _trancheId, _wantAmt, _maxMarketMovement);
-        // Lock withdrawn USDC
-        TokenLockController(lockUSDCController).lockFunds(_account, _amountUSDC);
+        // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
+        // without the withdrawal and lock steps
+        TrancheInfo tranche = trancheInfo[_pid][_account][_trancheId];
+        uint256 _amountUSDC = 0;
+        if (tranche.exitedVaultStartingAt == 0) {
+            // Call withdrawal function
+            _amountUSDC = _withdrawalFullService(_account, _pid, _trancheId, _wantAmt, _maxMarketMovement);
+            // Lock withdrawn USDC
+            TokenLockController(lockUSDCController).lockFunds(_account, _amountUSDC);   
+        } else {
+            // Lookup amount locked
+            _amountUSDC = TokenLockController(lockUSDCController).lockedFunds[_account];
+        }
+
+        // Only proceed if there is something to withdraw
+        require(_amountUSDC > 0, "Nothing to withdraw");
+
         // Prepare repatriation transaction
         bytes _destinationContract = abi.encodePacked(homeChainZorroController);
         bytes _payload = abi.encodeWithSignature(
             "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)", 
             _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement, address(this)
         );
+
         // Call contract layer to dispatch cross chain transaction
         (bool successful, ) = _endpointContract.call(
             abi.encodeWithSignature(
@@ -610,7 +627,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
 
         // Unlock USDC principal
-        TokenLockController(lockUSDCController).unlockFunds(_account, _unlockableAmountUSDC);
+        TokenLockController(lockUSDCController).unlockFunds(_account, _unlockableAmountUSDC, address(this));
         // Mint zUSDC (if applicable)
         if (_mintableAmountZUSDC > 0) {
             ZUSDC(syntheticStablecoin).mint(address(this), _mintableAmountZUSDC);
@@ -688,14 +705,26 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get controller
         TokenLockController lockController = TokenLockController(lockUSDCController);
         // Unlock user funds
-        lockController.unlockFunds(_account, _amountUSDC);
+        lockController.unlockFunds(_account, _amountUSDC, 0x0);
         // Burn
         lockController.burnFunds(_amountUSDC);
     }
 
     /* Safety */
-    function revertXChainTransaction() public {
-        // TODO: Complete function, docstrings
+    // TODO: Get function visibilities, modifiers correct. Note that this is a different oracle. Consider emitting events too
+
+    /// @notice Called by oracle when the deposit logic on the remote chain failed, and the deposit logic on this chain thus needs to be reverted
+    /// @dev Unlocks USDC and returns it to depositor
+    /// @param _account The address of the depositor
+    /// @param _amountUSDC The amount originally deposited (TODO: inclusive of fees?)
+    function revertXChainDeposit(address _account, uint256 _amountUSDC) public {
+        // Unlock & return to wallet
+        TokenLockController(lockUSDCController).unlockFunds(_account, _amountUSDC, _account);
+    }
+
+    // TODO - decide on what we're doing for emergencies
+    function emergencyWithdrawal() public {
+
     }
 
     // TODO - All the functions for updating pool rewards cross chain

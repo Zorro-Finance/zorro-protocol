@@ -79,11 +79,12 @@ contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
     lockedFunds[_account] = _amount;
   }
 
-  /// @notice Unlock funds from this contract's ledger for a given user account
+  /// @notice Unlock funds from this contract's ledger for a given user account and transfer to user
   /// @param _account The address whose funds should be unlocked. 
   /// @param _amount The amount of the token to lock
+  /// @param _recipient If set, will transfer unlocked funds to the address set. If not, will not do any transfers (useful for burning)
   /// @return The amount unlocked
-  function unlockFunds(address _account, uint256 _amount) public onlyAllowedOperators returns (uint256) {
+  function unlockFunds(address _account, uint256 _amount, address _recipient) public onlyAllowedOperators returns (uint256) {
     // Determine currently locked funds
     uint256 _currentlyLocked = lockedFunds[_account];
     uint256 _amountToUnlock = _amount;
@@ -93,8 +94,10 @@ contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
     }
     // Unlock funds from ledger
     lockedFunds[_account] = _currentlyLocked.sub(_amountToUnlock);
-    // Transfer funds back to account
-    IERC20(lockableToken).transfer(_account, _amountToUnlock);
+    // Transfer funds back to account (if applicable)
+    if (_recipient != address(0)) {
+      IERC20(lockableToken).transfer(_recipient, _amountToUnlock);
+    }
     // Return amount unlocked
     return _amountToUnlock;
   }

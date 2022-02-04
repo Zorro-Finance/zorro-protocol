@@ -28,6 +28,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
         uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
         uint256 enteredVaultAt; // The block timestamp for which the user deposited into a Vault.
+        uint256 exitedVaultStartingAt; // The block timestamp for which the user attempted withdrawal (useful for tracking cross chain withdrawals)
     }
 
     // Info of each pool
@@ -120,6 +121,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo; 
     // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
+    // TODO: Do we even need claims anymore? Consider doing a global removal of "claim" related stuff
     // Claims for user by pool ID (e.g. for Tranchess). Mapping pool ID/index => user wallet address => token address => claim amount
     mapping(uint256 => mapping(address => mapping(address => Claim))) public claims;
     // Redeposit information (so contract knows settings for destination vault during an async redeposit event)
