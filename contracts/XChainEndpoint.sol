@@ -160,15 +160,18 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     */
 
     /* Sending chain */
+    // TODO: Add in another arg: bytes calldata _revertPayload / ""
     /// @notice Starts off cross chain transaction by accepting contract & payload, and sending to Relay/Oracle layers
     /// @param _destinationContract Address of the destination contract to call (in bytes to keep generic)
     /// @param _payload Payload in ABI encoded bytes (or equivalent depending on chain)
+    /// @param _recoveryPayload Same as above, except it is meant to be recovery instructions on this chain in the event of a failure on the remote chain (optional)
     function sendXChainTransaction(
         bytes calldata _destinationContract,
-        bytes calldata _payload
+        bytes calldata _payload,
+        bytes calldata _recoveryPayload
     ) external onlyOwner {
         // Call relay
-        sendTransactionPacketToRelayer(_destinationContract, _payload);
+        sendTransactionPacketToRelayer(_destinationContract, _payload, _recoveryPayload);
         // Call oracle
         notifyOracle();
     }
@@ -177,6 +180,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @notice receives a validated transaction from the Relay layer and calls the on-chain destination contract to make a transaction
     /// @param _destinationContract Address of the destination contract to call to complete the cross chain transaction (in bytes to keep generic)
     /// @param _payload Payload in ABI encoded bytes (or equivalent depending on chain)
+    /// @param _revertPayload Same as above, except meant to be recovery instructions for sending chain in the event of failure (optional) (unused in this function, as it is meant for relayer to pick up)
     function receiveXChainTransaction(
         address _destinationContract,
         bytes calldata _payload
@@ -195,9 +199,11 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @notice Sends transaction information to the Relayer
     /// @param _destinationContract universal address of the destination contract (in bytes to keep generic)
     /// @param _payload ABI-encoded payload (or equivalent). Encodes both the function call and the payload
+    /// @param _recoveryPayload Same as above, except meant to be recovery instructions on this chain in the event of failure on remote chain (optional)
     function sendTransactionPacketToRelayer(
         bytes calldata _destinationContract,
-        bytes calldata _payload
+        bytes calldata _payload,
+        bytes calldata _recoveryPayload
     ) internal {
         // Create a Chainlink Request to send transaction info to the Relayer
         Chainlink.Request memory req = buildChainlinkRequest(
@@ -207,6 +213,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         );
         req.addBytes("destContract", _destinationContract);
         req.addBytes("payload", _payload);
+        req.addBytes("recoveryPayload", _recoveryPayload);
         sendChainlinkRequestTo(relayerContract, req, oraclePayment);
     }
 

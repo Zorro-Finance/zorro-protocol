@@ -705,7 +705,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get controller
         TokenLockController lockController = TokenLockController(lockUSDCController);
         // Unlock user funds
-        lockController.unlockFunds(_account, _amountUSDC, 0x0);
+        lockController.unlockFunds(_account, _amountUSDC, address(0));
         // Burn
         lockController.burnFunds(_amountUSDC);
     }
