@@ -717,7 +717,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @dev Unlocks USDC and returns it to depositor
     /// @param _account The address of the depositor
     /// @param _amountUSDC The amount originally deposited (TODO: inclusive of fees?)
-    function revertXChainDeposit(address _account, uint256 _amountUSDC) public {
+    function revertXChainDeposit(address _account, uint256 _amountUSDC) public virtual {
         // Unlock & return to wallet
         TokenLockController(lockUSDCController).unlockFunds(_account, _amountUSDC, _account);
     }
