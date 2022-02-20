@@ -92,6 +92,8 @@ contract VaultZorro is VaultBase {
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
+        userShares[_account] = userShares[_account].add(sharesAdded);
+
         // Update want locked total
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
 
@@ -122,17 +124,17 @@ contract VaultZorro is VaultBase {
 
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _account address of user
-    /// @param _wantAmt the amount of Want tokens to withdraw
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal (Should ALWAYS be true for this contract)
     /// @return the number of shares removed
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(address _account, bool _harvestOnly)
         public
         override
         onlyOwner
         nonReentrant
         returns (uint256)
     {
-        // Want amount must be greater than 0
-        require(_wantAmt > 0, "_wantAmt <= 0");
+        uint256 _userNumShares = userShares[_account];
+        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this)).mul(_userNumShares).div(sharesTotal);
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);

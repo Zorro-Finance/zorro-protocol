@@ -107,6 +107,7 @@ contract VaultStandardAMM is VaultBase {
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
+        userShares[_account] = userShares[_account].add(sharesAdded);
 
         if (isZorroComp) {
             // If this contract is meant for Autocompounding, start to farm the staked token
@@ -117,7 +118,7 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Clear holdings
-        wantTokensInHolding[_account];
+        wantTokensInHolding[_account] = 0;
 
         return sharesAdded;
     }
@@ -229,19 +230,22 @@ contract VaultStandardAMM is VaultBase {
         }
     }
 
-    /// @notice Withdraw Want tokens from the Farm contract
+    /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account address of user
-    /// @param _wantAmt the amount of Want tokens to withdraw
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @return the number of shares removed
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(address _account, bool _harvestOnly)
         public
         onlyOwner
         nonReentrant
         override
         returns (uint256)
     {
-        // Want amount must be greater than 0
-        require(_wantAmt > 0, "_wantAmt <= 0");
+        uint256 _wantAmt = 0;
+        if (!_harvestOnly) {
+            uint256 _userNumShares = userShares[_account];
+            _wantAmt = IERC20(wantAddress).balanceOf(address(this)).mul(_userNumShares).div(sharesTotal);
+        }
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -251,6 +255,7 @@ contract VaultStandardAMM is VaultBase {
         }
         // Decrement the total shares by the sharesRemoved
         sharesTotal = sharesTotal.sub(sharesRemoved);
+        userShares[_account] = userShares[_account].sub(sharesRemoved);
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {

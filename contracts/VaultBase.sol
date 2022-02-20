@@ -89,8 +89,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public token1ToEarnedPath;
 
     // Other
-    // Ledger of Want tokens held by user when making deposits/withdrawals
-    mapping(address => uint256) public wantTokensInHolding;
+    mapping(address => uint256) public wantTokensInHolding; // Ledger of Want tokens held by user when making deposits/withdrawals
+    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
 
     /* Events */
 
@@ -411,7 +411,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(address _account, bool _harvestOnly)
         public
         virtual
         returns (uint256);

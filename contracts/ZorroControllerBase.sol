@@ -23,7 +23,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     // Info of each tranche.
     struct TrancheInfo {
-        uint256 contribution; // The tranche-specific contribution for a given pool (Cx). Equivalent to the product of their contribution and a time multiplier
+        uint256 contribution; // The tranche-specific contribution for a given pool (Cx). Equivalent to the product of their contributed deposit and a time multiplier
         uint256 timeMultiplier; // The time multiplier factor for rewards
         uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
         uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
