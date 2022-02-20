@@ -61,3 +61,8 @@ Instructions
 
 # Upgradeability
 Transparent Proxy based on OpenZeppelin standard
+
+# Installation 
+```
+yarn add @chainlink/contracts
+```

@@ -20,8 +20,12 @@ import "./interfaces/IAMMRouter02.sol";
 
 import "./libraries/SafeMath.sol";
 
+import "./libraries/SafeSwap.sol";
+
+
 abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
+    using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
 
     /* State */
@@ -127,8 +131,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             );
 
             // Swap all dust tokens to earned tokens
-            _safeSwap(
-                uniRouterAddress,
+            IAMMRouter02(uniRouterAddress).safeSwap(
                 token0Amt,
                 slippageFactor,
                 token0ToEarnedPath,
@@ -146,8 +149,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             );
 
             // Swap all dust tokens to earned tokens
-            _safeSwap(
-                uniRouterAddress,
+            IAMMRouter02(uniRouterAddress).safeSwap(
                 token1Amt,
                 slippageFactor,
                 token1ToEarnedPath,
@@ -157,6 +159,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
+    // TODO - are these needed or do they come for free? If not, consider where we need to add these for other pausable contracts
     /// @notice Pause contract
     function pause() public virtual onlyAllowGov {
         _pause();
@@ -300,36 +303,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         IERC20(_token).safeTransfer(_to, _amount);
     }
 
-    /// @notice Safely swap tokens
-    /// @param _uniRouterAddress The address of the AMM router contract
-    /// @param _amountIn The quantity of the origin token to swap
-    /// @param _slippageFactor The maximum slippage factor tolerated for this swap
-    /// @param _path The path to take for the swap
-    /// @param _to The destination to send the swapped token to
-    /// @param _deadline How much time to allow for the transaction
-    function _safeSwap(
-        address _uniRouterAddress,
-        uint256 _amountIn,
-        uint256 _slippageFactor,
-        address[] memory _path,
-        address _to,
-        uint256 _deadline
-    ) internal virtual {
-        // TODO: Rather than calling getAmountsOut(), try to take in an input arg instead
-        uint256[] memory amounts = IAMMRouter02(_uniRouterAddress)
-            .getAmountsOut(_amountIn, _path);
-        uint256 amountOut = amounts[amounts.length.sub(1)];
-
-        IAMMRouter02(_uniRouterAddress)
-            .swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                _amountIn,
-                amountOut.mul(_slippageFactor).div(1000),
-                _path,
-                _to,
-                _deadline
-            );
-    }
-
     /* Performance fees & buyback */
 
     /// @notice buy back Zorro tokens, deposit them as liquidity, and burn the LP tokens (removing them from circulation and increasing scarcity)
@@ -352,8 +325,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
                 buyBackAmt
             );
             // Swap the Earned token for the Zorro and send to the burn address
-            _safeSwap(
-                uniRouterAddress,
+            IAMMRouter02(uniRouterAddress).safeSwap(
                 buyBackAmt,
                 slippageFactor,
                 earnedToZORROPath,
