@@ -312,7 +312,7 @@ contract VaultAcryptosSingle is VaultBase {
         // Reassign value of earned amount after distributing fees
         earnedAmt = distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro
-        earnedAmt = buyBack(earnedAmt);
+        earnedAmt = buyBack(earnedAmt, _maxMarketMovementAllowed);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
         if (isCOREStaking || isSameAssetDeposit) {

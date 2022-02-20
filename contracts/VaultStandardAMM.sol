@@ -25,6 +25,7 @@ import "./libraries/SafeSwap.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
+    /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SafeSwapUni for IAMMRouter02;
@@ -383,7 +384,7 @@ contract VaultStandardAMM is VaultBase {
         // Reassign value of earned amount after distributing fees
         earnedAmt = distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro
-        earnedAmt = buyBack(earnedAmt);
+        earnedAmt = buyBack(earnedAmt, _maxMarketMovementAllowed);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
         if (isCOREStaking || isSameAssetDeposit) {
