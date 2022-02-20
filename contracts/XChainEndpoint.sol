@@ -311,10 +311,10 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
 
     /// @notice Starts recovery process on this chain, assuming that the remote chain transaction failed
     /// @dev To be called only by Relayer
-    /// @param _blockHashRemote The block header of the block on the remote chain in which the tx failed 
+    /// @param _blockHashRemote The block header of the block on the origin chain in which the tx failed 
     /// @param _txHash The failed transaction hash on the remote chain
     function startRecovery(
-        bytes calldata _blockHashRemote,
+        bytes calldata _blockHashOrigin,
         bytes calldata _txHash
     ) external onlyAuthorizedRelayer {
         // Asks Oracle if tx actually indeed fail
@@ -324,7 +324,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             address(this),
             this.callbackRecovery.selector
         );
-        req.addBytes("blockHash", _blockHashRemote);
+        req.addBytes("blockHash", _blockHashOrigin);
         req.addBytes("txHash", _txHash);
         sendChainlinkRequestTo(oracleContract, req, oraclePayment);
     }

@@ -18,7 +18,7 @@ import "./XChainEndpoint.sol";
 
 import "./ZorroTokens.sol";
 
-import "./interfaces/IAMMRouter02.sol";
+import "./interfaces/ICurveMetaPool.sol";
 
 import "./libraries/SafeSwap.sol";
 
@@ -30,7 +30,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using CustomMath for uint256;
-    using SafeSwap for IAMMRouter02;
+    using SafeSwapCurve for ICurveMetaPool;
 
     /* Cash flow */
 
@@ -493,13 +493,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Mint corresponding amount of zUSDC
         ZUSDC(syntheticStablecoin).mint(address(this), _valueUSDC);
         // Swap zUSDC for USDC
-        address[] memory _path = [syntheticStablecoin, defaultStablecoin];
-        IAMMRouter02(uniRouterAddress).safeSwap(
+        ICurveMetaPool(curveStablePoolAddress).safeSwap(
             _valueUSDC,
             _maxMarketMovement,
-            _path,
-            address(this),
-            block.timestamp.add(600)
+            synthethicStablecoinIndex,
+            defaultStablecoinIndex
         );
         // Call deposit function
         _depositFullService(_pid, _account, _valueUSDC, _weeksCommitted, _vaultEnteredAt, _maxMarketMovement);
@@ -632,13 +630,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         if (_mintableAmountZUSDC > 0) {
             ZUSDC(syntheticStablecoin).mint(address(this), _mintableAmountZUSDC);
             // Swap zUSDC for USDC
-            address[] memory _path = [syntheticStablecoin, defaultStablecoin];
-            IAMMRouter02(uniRouterAddress).safeSwap(
+            ICurveMetaPool(curveStablePoolAddress).safeSwap(
                 _mintableAmountZUSDC,
                 _maxMarketMovement,
-                _path,
-                address(this),
-                block.timestamp.add(600)
+                synthethicStablecoinIndex,
+                defaultStablecoinIndex
             );
         }
         // Burn unused USDC (if applicable)
@@ -728,19 +724,4 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     // TODO - All the functions for updating pool rewards cross chain
-
-    /*
-    - Request ZOR burn cross chain
-    - Repatriation request
-    - Reversion request
-    - Cross chain identity (1- include in proof, 2- verify it's the same as in payload)
-    - How to ensure usdc transferFrom is the same as that specified in the payload 
-    - 100% withdrawal only
-    - Lock/unlock (be aware of the principal)
-    - Burn when done locking (cross chain call)
-    - Get all function visibilities right
-    - Get all function modifiers right (onlyOwner etc.)
-    - Have some sort of global lock so that people can't game the system to replay events and cause race conditions, etc.
-    - Figure out how to abstract the logic out for ABI decoding and verification of payload params (identity, amount, etc.), since each chain is different!
-    */
 }

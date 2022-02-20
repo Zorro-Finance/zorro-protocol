@@ -71,11 +71,15 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 1 = 0.01%
     uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20%
     bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
+    // TODO: Are defaultStablecoin, syntheticStablecoin needed anymore?
     address public defaultStablecoin; // TODO: Setter/constructor
     address public syntheticStablecoin; // TODO: Setter/constructor
+    int128 public defaultStablecoinIndex; // Index in Curve metapool of default stablecoin (e.g. USDC) TODO: Setter/constructor
+    int128 public synthethicStablecoinIndex; // Index in Curve metapool of synthetic stablecoin (e.g. zUSDC) TODO: Setter/constructor
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
     address public lockUSDCController; // TODO: Put in setter, constructor
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc. TODO: Put in setter/getter
+    address public curveStablePoolAddress; // Pool contract address for swapping stablecoins TODO: Put in setter/getter
     address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor
     // TODO: Do thorough analysis to ensure enough setters/constructors
 

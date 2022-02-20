@@ -25,7 +25,7 @@ import "./libraries/SafeSwap.sol";
 
 abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
-    using SafeSwap for IAMMRouter02;
+    using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
 
     /* State */

@@ -10,6 +10,8 @@ import "./libraries/EnumerableSet.sol";
 
 import "./interfaces/IAMMFarm.sol";
 
+import "./interfaces/IAMMRouter02.sol";
+
 import "./VaultBase.sol";
 
 import "./interfaces/IERC20.sol";
@@ -18,10 +20,14 @@ import "./libraries/SafeERC20.sol";
 
 import "./libraries/SafeMath.sol";
 
+import "./libraries/SafeSwap.sol";
+
+
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using SafeSwapUni for IAMMRouter02;
 
     /* Constructor */
 
@@ -130,8 +136,7 @@ contract VaultStandardAMM is VaultBase {
         address[] memory USDCToToken0Path;
         USDCToToken0Path[0] = tokenUSDCAddress;
         USDCToToken0Path[1] = token0Address;
-        _safeSwap(
-            uniRouterAddress,
+        IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
             _maxMarketMovementAllowed,
             USDCToToken0Path,
@@ -143,8 +148,7 @@ contract VaultStandardAMM is VaultBase {
         address[] memory USDCToToken1Path;
         USDCToToken1Path[0] = tokenUSDCAddress;
         USDCToToken1Path[1] = token1Address;
-        _safeSwap(
-            uniRouterAddress,
+        IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
             _maxMarketMovementAllowed,
             USDCToToken1Path,
@@ -400,8 +404,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
             // Swap half earned to token0
-            _safeSwap(
-                uniRouterAddress,
+            IAMMRouter02(uniRouterAddress).safeSwap(
                 earnedAmt.div(2),
                 slippageFactor,
                 earnedToToken0Path,
@@ -413,8 +416,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap Earned token to token1 if token0 is not the Earned token
         if (earnedAddress != token1Address) {
             // Swap half earned to token1
-            _safeSwap(
-                uniRouterAddress,
+            IAMMRouter02(uniRouterAddress).safeSwap(
                 earnedAmt.div(2),
                 slippageFactor,
                 earnedToToken1Path,
