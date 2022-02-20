@@ -12,10 +12,25 @@ import "./libraries/SafeMath.sol";
 
 import "./libraries/Math.sol";
 
+import "./TokenLockController.sol";
+
+import "./XChainEndpoint.sol";
+
+import "./ZorroTokens.sol";
+
+import "./interfaces/ICurveMetaPool.sol";
+
+import "./libraries/SafeSwap.sol";
+
+
 contract ZorroControllerInvestment is ZorroControllerBase {
+    /*
+    Libraries
+    */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using CustomMath for uint256;
+    using SafeSwapCurve for ICurveMetaPool;
 
     /* Cash flow */
 
@@ -133,7 +148,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
-        // TODO: Need to approve the Vault contract first? 
+        // TODO: Need to approve the Vault contract first?
 
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(
@@ -312,26 +327,33 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
+    /// @param _account address of user
     /// @param _pid index of pool to deposit into
-    /// @param _user address of user
     /// @param _trancheId index of tranche
     /// @param _wantAmt value in Want tokens to withdraw (0 will result in harvest and uint256(-1) will result in max value)
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return Amount (in USDC) returned
     function _withdrawalFullService(
+        address _account,
         uint256 _pid,
-        address _user,
         uint256 _trancheId,
         uint256 _wantAmt,
         uint256 _maxMarketMovement
     ) internal returns (uint256) {
+        // Update tranche status
+        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block.timestamp;
+
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
         // Call core withdrawal function (returns actual amount withdrawn)
         uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _wantAmt);
 
-        uint256 amount = vault.exchangeWantTokenForUSD(_user, wantAmtWithdrawn, _maxMarketMovement);
+        uint256 amount = vault.exchangeWantTokenForUSD(
+            _user,
+            wantAmtWithdrawn,
+            _maxMarketMovement
+        );
 
         return amount;
     }
@@ -422,47 +444,284 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     Cross Chain functions 
     */
 
-    /* TODO Everything below */
-
-    // TODO - should we have full service and regular deposit for x chain? Probably no, b/c we are doing USDC
-    // TODO - how to rescue/recover failed x chain txns?
-
     /* Deposits */
 
-    function receiveXChainDepositRequest() internal {
-        // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
+    /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
+    /// @param _destinationContract The address of the smart contract on the destination chain
+    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    function sendXChainDepositRequest(
+        uint256 _chainId,
+        bytes calldata _destinationContract,
+        bytes calldata _payload
+    ) external nonReentrant {
+        // Get endpoint contract that interfaces with the remote chain
+        address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
+        // Extract amount of USDC to transfer into this contract from the payload
+        uint256 _amountUSDC = _endpointContract.extractValueFromPayload(_payload);
+        // Verify that encoded user identity is in fact msg.sender.
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
+        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
+        // Allow this contract to spend USDC
+        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _amountUSDC);
+        // Transfer USDC into this contract
+        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, address(this), _amountUSDC);
+        // Lock USDC on the ledger
+        TokenLockController(lockUSDCController).lockFunds(msg.sender, _amountUSDC);
         // Call contract layer
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Deposit call unsuccessful");
     }
 
-    function sendXChainDepositRequest() external nonReentrant {
-        // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
-        // Call contract layer
+    /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
+    /// @dev For params, see _depositFullService() function declaration above
+    function receiveXChainDepositRequest(
+        address _account,
+        uint256 _valueUSDC,
+        uint256 _pid,
+        uint256 _weeksCommitted,
+        uint256 _vaultEnteredAt,
+        uint256 _maxMarketMovement
+    ) internal {
+        // Mint corresponding amount of zUSDC
+        ZUSDC(syntheticStablecoin).mint(address(this), _valueUSDC);
+        // Swap zUSDC for USDC
+        ICurveMetaPool(curveStablePoolAddress).safeSwap(
+            _valueUSDC,
+            _maxMarketMovement,
+            synthethicStablecoinIndex,
+            defaultStablecoinIndex
+        );
+        // Call deposit function
+        _depositFullService(_pid, _account, _valueUSDC, _weeksCommitted, _vaultEnteredAt, _maxMarketMovement);
     }
 
     /* Withdrawals */
-
-    function receiveXChainWithdrawalRequest() internal {
-        // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
+    /// @notice Prepares and sends a cross chain withdrwal request.
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
+    /// @param _destinationContract The address of the smart contract on the destination chain
+    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    function sendXChainWithdrawalRequest(
+        uint256 _chainId,
+        bytes calldata _destinationContract,
+        bytes calldata _payload
+    ) external nonReentrant {
+        // Get endpoint contract that interfaces with the remote chain
+        address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
+        // Verify that the encoded user identity is in fact msg.sender
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
+        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
         // Call contract layer
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Withdrawal call unsuccessful");
     }
 
-    function sendXChainWithdrawalRequest() external nonReentrant {
-        // TODO: Complete function, docstrings
-        // Swap 
-        // Burn
-        // Call contract layer
+    /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
+    /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
+    function receiveXChainWithdrawalRequest(
+        address _account,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _wantAmt, // TODO: Remove - not required as we're doing 100% withdrawals only
+        uint256 _maxMarketMovement
+    ) internal {
+        // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
+        // without the withdrawal and lock steps
+        TrancheInfo tranche = trancheInfo[_pid][_account][_trancheId];
+        uint256 _amountUSDC = 0;
+        if (tranche.exitedVaultStartingAt == 0) {
+            // Call withdrawal function
+            _amountUSDC = _withdrawalFullService(_account, _pid, _trancheId, _wantAmt, _maxMarketMovement);
+            // Lock withdrawn USDC
+            TokenLockController(lockUSDCController).lockFunds(_account, _amountUSDC);   
+        } else {
+            // Lookup amount locked
+            _amountUSDC = TokenLockController(lockUSDCController).lockedFunds[_account];
+        }
+
+        // Only proceed if there is something to withdraw
+        require(_amountUSDC > 0, "Nothing to withdraw");
+
+        // Prepare repatriation transaction
+        bytes _destinationContract = abi.encodePacked(homeChainZorroController);
+        bytes _payload = abi.encodeWithSignature(
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)", 
+            _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement, address(this)
+        );
+
+        // Call contract layer to dispatch cross chain transaction
+        (bool successful, ) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(successful, "Repatriation call unsuccessful");
     }
 
-    /* TODO : See misc. cross chain functions in Lucid chart */
-    /*
-    - Request ZOR burn cross chain
-    - Request gas compensation from treasury 
-    */
+    // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all 
+    // arguments. We changed around the order of many args. 
 
+    /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
+    /// @param _account The user on this chain who initiated the withdrawal request
+    /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
+    /// @param _originalDepositUSDC The amount originally deposited into this tranche // TODO net- or gross- of fees? IMPORTANT
+    /// @param _pid The pool ID on the remote chain that the user withdrew from
+    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
+    /// @param _maxMarketMovement factor to account for max market movement/slippage. // TODO - need definition
+    /// @param _callbackContract The remote contract that called this function.
+    function receiveXChainRepatriationRequest(
+        address _account,
+        uint256 _withdrawnUSDC,
+        uint256 _originalDepositUSDC,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _maxMarketMovement,
+        address _callbackContract
+    ) external nonReentrant {
+        // TODO: Complete function, docstrings
+        /*
+        TODO
+        - Need original deposit amount, which is stored on opposite chain. OR we maintain a xchain mapping on this chain by tranche
+
+        */
+        // Initialize finance variables
+        uint256 _profit = 0;
+        uint256 _unlockableAmountUSDC = 0;
+        uint256 _mintableAmountZUSDC = 0;
+        uint256 _burnableAmountUSDC = 0;
+
+        // Update amounts depending on whether investment was profitable
+        if (_withdrawnUSDC >= _originalDepositUSDC) {
+            // Profitable
+            // Calculate profit amount if a profit was made
+            _profit = _withdrawnUSDC.sub(_originalDepositUSDC);
+            // Set the unlockable amount to the original deposit amount (principal) only
+            _unlockableAmountUSDC = _originalDepositUSDC;
+            // Set the mint amount to the proceeds.
+            _mintableAmountZUSDC = _profit;
+        } else {
+            // Loss
+            // Set the unlockable amount to the withdrawal amount
+            _unlockableAmountUSDC = _withdrawnUSDC;
+            // The burn amount to the loss amount
+            _burnableAmountUSDC = _originalDepositUSDC.sub(_withdrawnUSDC);
+        }
+
+        // Unlock USDC principal
+        TokenLockController(lockUSDCController).unlockFunds(_account, _unlockableAmountUSDC, address(this));
+        // Mint zUSDC (if applicable)
+        if (_mintableAmountZUSDC > 0) {
+            ZUSDC(syntheticStablecoin).mint(address(this), _mintableAmountZUSDC);
+            // Swap zUSDC for USDC
+            ICurveMetaPool(curveStablePoolAddress).safeSwap(
+                _mintableAmountZUSDC,
+                _maxMarketMovement,
+                synthethicStablecoinIndex,
+                defaultStablecoinIndex
+            );
+        }
+        // Burn unused USDC (if applicable)
+        if (_burnableAmountUSDC > 0) {
+            IERC20(defaultStablecoin).safeTransfer(burnAddress, _burnableAmountUSDC);
+        }
+        // Transfer total USDC to wallet
+        uint256 _balanceUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
+        // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
+        // TODO - how to prepare request such that it's generalized for any chain? E.g. abi encoding
+        sendXChainUnlockRequest();
+    }
+
+    // TODO: Do we need to account for "dust" amounts? Too small amounts causing potential failures? Rounding errors? See Autofarm code
+
+    /* Cross-chain unlocks */
+
+    /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
+    /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
+    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
+    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
+    /// @param _destinationContract The address of the contract on the remote chain to send the unlock request to
+    function sendXChainUnlockRequest(
+        uint256 _chainId,
+        address _account,
+        uint256 _amountUSDC,
+        address _destinationContract
+    ) internal {
+        // Get endpoint contract
+        address _endpointContract = endpointContracts[_chainId];
+
+        // Prepare cross chain request
+        (bool success, bytes memory data) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "encodeUnlockRequest(address _account,uint256 _amountUSDC)", 
+                _account, _amountUSDC
+            )
+        );
+        require(success, "Unsuccessful serialize unlock");
+        bytes _payload = abi.decode(data, (bytes));
+
+        // Call contract layer
+        (bool success1,) = _endpointContract.call(
+            abi.encodeWithSignature(
+                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
+                _destinationContract,
+                _payload
+            )
+        );
+        // Require successful call
+        require(success1, "Unsuccessful xchain unlock");
+    }
+
+    // TODO - consider having this emit an event
+    /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
+    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
+    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
+    function receiveXChainUnlockRequest(
+        address _account,
+        uint256 _amountUSDC
+    ) public {
+        // Get controller
+        TokenLockController lockController = TokenLockController(lockUSDCController);
+        // Unlock user funds
+        lockController.unlockFunds(_account, _amountUSDC, address(0));
+        // Burn
+        lockController.burnFunds(_amountUSDC);
+    }
+
+    /* Safety */
+    // TODO: Get function visibilities, modifiers correct. Note that this is a different oracle. Consider emitting events too
+
+    /// @notice Called by oracle when the deposit logic on the remote chain failed, and the deposit logic on this chain thus needs to be reverted
+    /// @dev Unlocks USDC and returns it to depositor
+    /// @param _account The address of the depositor
+    /// @param _amountUSDC The amount originally deposited (TODO: inclusive of fees?)
+    function revertXChainDeposit(address _account, uint256 _amountUSDC) public virtual {
+        // Unlock & return to wallet
+        TokenLockController(lockUSDCController).unlockFunds(_account, _amountUSDC, _account);
+    }
+
+    // TODO - decide on what we're doing for emergencies
+    function emergencyWithdrawal() public {
+
+    }
+
+    // TODO - All the functions for updating pool rewards cross chain
 }
