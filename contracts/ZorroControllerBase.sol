@@ -214,6 +214,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @param _ZORROAmt quantity of Zorro tokens to send
     function safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
         uint256 ZORROBal = IERC20(ZORRO).balanceOf(address(this));
+        // TODO: Change this to a safeTransfer() function (OpenZeppelin compliance)
         if (_ZORROAmt > ZORROBal) {
             IERC20(ZORRO).transfer(_to, ZORROBal);
         } else {

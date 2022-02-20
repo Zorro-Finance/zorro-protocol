@@ -218,16 +218,23 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 .add(tranche.durationCommittedInWeeks.mul(oneWeek))
                 .sub(block.timestamp);
             uint256 rewardsDue = 0;
+            uint256 slashedRewards = 0;
             if (timeRemainingInCommitment > 0) {
-                rewardsDue = pendingRewards.sub(
-                    pendingRewards.mul(timeRemainingInCommitment).div(
-                        tranche.durationCommittedInWeeks.mul(oneWeek)
-                    )
+                slashedRewards = pendingRewards.mul(timeRemainingInCommitment).div(
+                    tranche.durationCommittedInWeeks.mul(oneWeek)
                 );
+                rewardsDue = pendingRewards.sub(slashedRewards);
             } else {
                 rewardsDue = pendingRewards;
             }
+            // Transfer ZORRO rewards to user, net of any applicable slashing
             safeZORROTransfer(_user, rewardsDue);
+            // Transfer any slashed rewards to single Zorro staking vault, if applicable
+            if (slashedRewards > 0) {
+                address singleStakingVaultZORRO = poolInfo[_pid].vault;
+                // Transfer slashed rewards to vault to reward ZORRO stakers
+                safeZORROTransfer(singleStakingVaultZORRO, slashedRewards);
+            }
         }
 
         // Get current amount in tranche
