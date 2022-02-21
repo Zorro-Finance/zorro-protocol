@@ -162,29 +162,29 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         _deposit(_pid, _user, wantAmt, _weeksCommitted, _vaultEnteredAt);
     }
 
-    /// @notice Withdraw Want tokens from underlying Vault.
+    /// @notice Fully withdraw Want tokens from underlying Vault.
     /// @param _pid index of pool
     /// @param _trancheId index of tranche
-    /// @param _wantAmt how much Want token to withdraw. If 0 is specified, function will only harvest Zorro rewards and not actually withdraw
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @return Amount of Want token withdrawn
     function withdraw(
         uint256 _pid,
         uint256 _trancheId,
-        uint256 _wantAmt
+        bool _harvestOnly
     ) public nonReentrant returns (uint256) {
-        return _withdraw(_pid, msg.sender, _trancheId, _wantAmt);
+        return _withdraw(_pid, msg.sender, _trancheId, _harvestOnly);
     }
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
     /// @param _pid index of pool
     /// @param _trancheId index of tranche
-    /// @param _wantAmt how much Want token to withdraw. If 0 is specified, function will only harvest Zorro rewards and not actually withdraw
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @return Amount of Want token withdrawn
     function _withdraw(
         uint256 _pid,
         address _user,
         uint256 _trancheId,
-        uint256 _wantAmt
+        bool _harvestOnly
     ) internal returns (uint256) {
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
@@ -218,61 +218,63 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 .add(tranche.durationCommittedInWeeks.mul(oneWeek))
                 .sub(block.timestamp);
             uint256 rewardsDue = 0;
+            uint256 slashedRewards = 0;
             if (timeRemainingInCommitment > 0) {
-                rewardsDue = pendingRewards.sub(
-                    pendingRewards.mul(timeRemainingInCommitment).div(
-                        tranche.durationCommittedInWeeks.mul(oneWeek)
-                    )
+                slashedRewards = pendingRewards.mul(timeRemainingInCommitment).div(
+                    tranche.durationCommittedInWeeks.mul(oneWeek)
                 );
+                rewardsDue = pendingRewards.sub(slashedRewards);
             } else {
                 rewardsDue = pendingRewards;
             }
+            // Transfer ZORRO rewards to user, net of any applicable slashing
             safeZORROTransfer(_user, rewardsDue);
+            // Transfer any slashed rewards to single Zorro staking vault, if applicable
+            if (slashedRewards > 0) {
+                address singleStakingVaultZORRO = poolInfo[_pid].vault;
+                // Transfer slashed rewards to vault to reward ZORRO stakers
+                safeZORROTransfer(singleStakingVaultZORRO, slashedRewards);
+            }
         }
 
         // Get current amount in tranche
-        uint256 amount = tranche.contribution.mul(1e12).div(
+        // TODO: Since single staking vault can receive more "earned" tokens over time, check carefully that we are accounting for relative share correctly
+        uint256 _wantAmountWithdrawable = tranche.contribution.mul(1e12).div(
             tranche.timeMultiplier
         );
-        // Establish cap for safety
-        if (_wantAmt > amount) {
-            _wantAmt = amount;
-        }
-        // If the _wantAmt is > 0, transfer Want tokens from the underlying Zorro Vault contract and update shares. If NOT, user shares will NOT be updated.
-        if (_wantAmt > 0) {
-            // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            uint256 sharesRemoved = IVault(poolInfo[_pid].vault)
-                .withdrawWantToken(_user, _wantAmt);
-            uint256 contributionRemoved = getUserContribution(
-                sharesRemoved,
-                tranche.timeMultiplier
-            );
-            // Update shares safely
-            if (contributionRemoved > tranche.contribution) {
-                tranche.contribution = 0;
-                pool.totalTrancheContributions = pool
-                    .totalTrancheContributions
-                    .sub(tranche.contribution);
-            } else {
-                tranche.contribution = tranche.contribution.sub(
-                    contributionRemoved
-                );
-                pool.totalTrancheContributions = pool
-                    .totalTrancheContributions
-                    .sub(contributionRemoved);
-            }
-            // Withdraw Want tokens from this contract to sender
-            uint256 wantBal = IERC20(pool.want).balanceOf(address(this));
-            if (wantBal < _wantAmt) {
-                _wantAmt = wantBal;
-            }
-            pool.want.safeTransfer(address(_user), _wantAmt);
 
-            // Remove tranche from this user if it's a full withdrawal
-            if (_wantAmt == amount) {
-                deleteTranche(_pid, _trancheId, _user);
-            }
+        // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
+        uint256 sharesRemoved = IVault(poolInfo[_pid].vault)
+            .withdrawWantToken(_user, _harvestOnly);
+        uint256 contributionRemoved = getUserContribution(
+            sharesRemoved,
+            tranche.timeMultiplier
+        );
+        // Update shares safely
+        if (contributionRemoved > tranche.contribution) {
+            tranche.contribution = 0;
+            pool.totalTrancheContributions = pool
+                .totalTrancheContributions
+                .sub(tranche.contribution);
+        } else {
+            tranche.contribution = tranche.contribution.sub(
+                contributionRemoved
+            );
+            pool.totalTrancheContributions = pool
+                .totalTrancheContributions
+                .sub(contributionRemoved);
         }
+        // Withdraw Want tokens from this contract to sender
+        uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
+        if (_wantBal > 0) {
+            pool.want.safeTransfer(address(_user), _wantBal);
+        }
+
+        // Remove tranche from this user if it's a full withdrawal
+        if (_wantBal == _wantAmountWithdrawable) {
+            deleteTranche(_pid, _trancheId, _user);
+        }
+        
         // Note: Tranche's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
         uint256 newTrancheShare = tranche.contribution.mul(1e12).div(
             pool.totalTrancheContributions
@@ -280,9 +282,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(
             1e12
         );
-        emit Withdraw(_user, _pid, _trancheId, _wantAmt);
+        emit Withdraw(_user, _pid, _trancheId, _wantBal);
 
-        return _wantAmt;
+        return _wantBal;
     }
 
     /// @notice Delete a tranche from a user's tranches
@@ -307,20 +309,20 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Withdraws funds from a pool and converts the Want token into USDC
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche
-    /// @param _wantAmt value in Want tokens to withdraw (0 will result in harvest and uint256(-1) will result in max value)
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return Amount (in USDC) returned
     function withdrawalFullService(
         uint256 _pid,
         uint256 _trancheId,
-        uint256 _wantAmt,
+        bool _harvestOnly,
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         uint256 amount = _withdrawalFullService(
             _pid,
             msg.sender,
             _trancheId,
-            _wantAmt,
+            _harvestOnly,
             _maxMarketMovement
         );
         return amount;
@@ -330,14 +332,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _account address of user
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche
-    /// @param _wantAmt value in Want tokens to withdraw (0 will result in harvest and uint256(-1) will result in max value)
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return Amount (in USDC) returned
     function _withdrawalFullService(
         address _account,
         uint256 _pid,
         uint256 _trancheId,
-        uint256 _wantAmt,
+        uint256 _harvestOnly,
         uint256 _maxMarketMovement
     ) internal returns (uint256) {
         // Update tranche status
@@ -347,7 +349,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         IVault vault = IVault(poolInfo[_pid].vault);
 
         // Call core withdrawal function (returns actual amount withdrawn)
-        uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _wantAmt);
+        uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _harvestOnly);
 
         uint256 amount = vault.exchangeWantTokenForUSD(
             _user,
@@ -381,7 +383,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _fromPid,
             msg.sender,
             _fromTrancheId,
-            type(uint256).max,
+            true,
             _maxMarketMovement
         );
         // Redeposit

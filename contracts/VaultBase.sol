@@ -89,8 +89,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public token1ToEarnedPath;
 
     // Other
-    // Ledger of Want tokens held by user when making deposits/withdrawals
-    mapping(address => uint256) public wantTokensInHolding;
+    mapping(address => uint256) public wantTokensInHolding; // Ledger of Want tokens held by user when making deposits/withdrawals
+    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
 
     /* Events */
 
@@ -307,32 +307,65 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice buy back Zorro tokens, deposit them as liquidity, and burn the LP tokens (removing them from circulation and increasing scarcity)
     /// @param _earnedAmt The amount of Earned tokens (profit) to deposit as liquidity
+    /// @param _maxMarketMovementAllowed The max amount of slippage permitted for buyback
     /// @return the remaining earned token amount after buyback operations
-    function buyBack(uint256 _earnedAmt) internal virtual returns (uint256) {
+    function buyBack(uint256 _earnedAmt, uint256 _maxMarketMovementAllowed) internal virtual returns (uint256) {
         // If the buyback rate is 0, return the _earnedAmt and exit
         if (buyBackRate <= 0) {
             return _earnedAmt;
         }
         // Calculate the buyback amount via the buyBackRate parameters
         uint256 buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
-        if (earnedAddress == ZORROAddress) {
-            // If the Earned token is in fact the Zorro token, transfer the buyback amount to the burn address
-            IERC20(earnedAddress).safeTransfer(burnAddress, buyBackAmt);
-        } else {
-            // Allow the router to spend the Earned token up to the buyback amount
-            IERC20(earnedAddress).safeIncreaseAllowance(
-                uniRouterAddress,
-                buyBackAmt
-            );
-            // Swap the Earned token for the Zorro and send to the burn address
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                buyBackAmt,
+
+        // Swap earned token to underlying tokens
+        // TODO: Generalize this for 1, 2, 3, or 4 underlying tokens?
+        // TODO: Also consider how this needs to change for single staking vault
+        // TODO: Remember that we should not swap to token0, token1 necessarily, but the ZORRO/XXX tokens
+        // Authorize spending beforehand
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            buyBackAmt
+        );
+        // Swap to token 0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+                buyBackAmt.div(2),
                 slippageFactor,
-                earnedToZORROPath,
-                burnAddress,
+                earnedToToken0Path,
+                address(this),
                 block.timestamp.add(600)
+        );
+        // Swap to token 1
+        IAMMRouter02(uniRouterAddress).safeSwap(
+                buyBackAmt.div(2),
+                slippageFactor,
+                earnedToToken1Path,
+                address(this),
+                block.timestamp.add(600)
+        );
+        // Enter LP pool 
+        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token0Amt
             );
-        }
+        IERC20(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        (,, uint256 _liquidity) = IAMMRouter02(uniRouterAddress).addLiquidity(
+            token0Address,
+            token1Address,
+            token0Amt,
+            token1Amt,
+            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Burn liquidity token obtained
+        IERC20(uniPoolAddress).safeTransfer(burnAddress, _liquidity);
 
         // Return the Earned amount net of the buyback amount
         return _earnedAmt.sub(buyBackAmt);
@@ -378,7 +411,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(address _account, bool _harvestOnly)
         public
         virtual
         returns (uint256);
