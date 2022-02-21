@@ -310,6 +310,16 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @param _maxMarketMovementAllowed The max amount of slippage permitted for buyback
     /// @return the remaining earned token amount after buyback operations
     function buyBack(uint256 _earnedAmt, uint256 _maxMarketMovementAllowed) internal virtual returns (uint256) {
+        /*
+        TODO - Make this cross chain compatible
+        - Make an lpAndBurn() receiving func. It should mint zUSDC, swap for USDC -> ZOR,BNB, then addLiquidity, then burn liq token
+        - If this contract is NOT the homechain controller:
+        -- Swap earned (mul. by buyback rate) to USDC
+        -- Burn USDC (no need to lock first?) - smart ledger
+        -- Get xchain endpoint contract and call xchain func above (lpAndBurn())
+        -- Put in revert functions
+        - Otherwise do exactly as below
+        */
         // If the buyback rate is 0, return the _earnedAmt and exit
         if (buyBackRate <= 0) {
             return _earnedAmt;
@@ -369,6 +379,21 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
         // Return the Earned amount net of the buyback amount
         return _earnedAmt.sub(buyBackAmt);
+    }
+
+    /// @notice Collects fees for revenue share payable to Zorro stakers
+    /// @param _earnedAmt The Earned token amount (profits)
+    /// @return The Earned token amount net of rev share related fees
+    function revShareZorroStakers(uint256 _earnedAmt) internal virtual returns (uint256) {
+        /*
+        TODO implement this function 
+        - Create cross chain receiving func: payZorroStakersRevShare(), which mints zUSDC, swaps for USDC, and sends to Single Staking Vault
+        - Add state variables for revShare percentage, calculate amount
+        - swap amount of earned to USDC
+        - Burn USDC (no need to lock?) - smart ledger
+        - Call cross chain func above via endpoint contract
+        -- Put in revert functions
+        */
     }
 
     /// @notice distribute controller (performance) fees

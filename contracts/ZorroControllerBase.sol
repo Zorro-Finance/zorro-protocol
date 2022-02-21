@@ -180,6 +180,18 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @notice Update reward variables of the given pool to be up-to-date.
     /// @param _pid index of pool
     function updatePool(uint256 _pid) public {
+        /*
+        TODO Cross chain logic
+        - Check to see if address(this) is the Home controller contract TODO: Make sure homecontrollercontract can never be address(0)!
+        - If yes, perform logic exactly as outlined below
+        - If no, fetch current Zorro per block, and divide by this chain's block producing rate / BSC block producing rate
+        TODO: Consider storing zorro per block on every chain as a public variable, whose setter is a callback for Chainlink Oracle
+        - - mint zorro per block * num blocks elapsed
+        - - fetch endpoint contract
+        - - make cross-chain burn request
+        - Create a burnRewards() method for the above. It should burn the corresponding amt of ZOR from the public pool
+        */
+
         // Get the pool matching the given index
         PoolInfo storage pool = poolInfo[_pid];
 
