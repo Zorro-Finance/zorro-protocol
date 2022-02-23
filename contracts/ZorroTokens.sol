@@ -11,8 +11,20 @@ import "./helpers/Ownable.sol";
 
 /// @title The Zorro token (cross chain)
 contract Zorro is ERC20("ZORRO", "ZOR"), Ownable {
+    /// @notice Allows authorized minting of the Zorro token to a specified address
+    /// @param _to The address to mint to
+    /// @param _amount The amount to mint
     function mint(address _to, uint256 _amount) public onlyOwner {
+        // TODO: change modifier for this function
         _mint(_to, _amount);
+    }
+
+    /// @notice Allows authorized burning of the Zorro token from a specified account
+    /// @param _account The address to transfer ZOR from for burning
+    /// @param _amount The amount of ZOR to transfer and burn
+    function burn(address _account, uint256 _amount) public onlyOwner {
+        // TODO change modifier here
+        _burn(_account, _amount);
     }
 }
 

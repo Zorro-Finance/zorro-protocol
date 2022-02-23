@@ -11,6 +11,11 @@ import "./helpers/Ownable.sol";
 
 import "./helpers/ReentrancyGuard.sol";
 
+import "./ZorroTokens.sol"; // TODO: Consider using SafeERC20/OZ helper functions here
+
+import "./XchainEndpoint.sol";
+
+
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
@@ -80,7 +85,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public lockUSDCController; // TODO: Put in setter, constructor
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc. TODO: Put in setter/getter
     address public curveStablePoolAddress; // Pool contract address for swapping stablecoins TODO: Put in setter/getter
-    address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor
+    address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor TODO: Make sure homecontrollercontract can never be address(0)!
     // TODO: Do thorough analysis to ensure enough setters/constructors
 
     /* Setters */
@@ -181,15 +186,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @param _pid index of pool
     function updatePool(uint256 _pid) public {
         /*
-        TODO Cross chain logic
-        - Check to see if address(this) is the Home controller contract TODO: Make sure homecontrollercontract can never be address(0)!
-        - If yes, perform logic exactly as outlined below
-        - If no, fetch current Zorro per block, and divide by this chain's block producing rate / BSC block producing rate
-        TODO: Consider storing zorro per block on every chain as a public variable, whose setter is a callback for Chainlink Oracle
-        - - mint zorro per block * num blocks elapsed
-        - - fetch endpoint contract
-        - - make cross-chain burn request
-        - Create a burnRewards() method for the above. It should burn the corresponding amt of ZOR from the public pool
+        - TODO: This should be done automatically by an Oracle and stored as ZORROPerBlock fetch current Zorro per block, and divide by this chain's block producing rate / BSC block producing rate
         */
 
         // Get the pool matching the given index
@@ -211,14 +208,39 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 ZORROPerBlock = getZorroPerBlock();
         // Finally, multiply this by the number of elapsed blocks and the pool weighting
         uint256 ZORROReward = elapsedBlocks.mul(ZORROPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        // Transfer Zorro rewards to this contract from the Public Pool
-        IERC20(ZORRO).safeTransferFrom(publicPool, address(this), ZORROReward);
-        // Increment this pool's accumulated Zorro per share value by the reward amount
-        pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
-        // Update the pool's last reward block to the current block
-        pool.lastRewardBlock = block.number;
+
+        // Check whether this function requires cross chain activity or not
+        if (address(this) == homeChainZorroController) {
+            // On Home chain. NO cross chain pool updates required
+
+            // Transfer Zorro rewards to this contract from the Public Pool
+            IERC20(ZORRO).safeTransferFrom(publicPool, address(this), ZORROReward);
+            // Increment this pool's accumulated Zorro per share value by the reward amount
+            pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
+            // Update the pool's last reward block to the current block
+            pool.lastRewardBlock = block.number;
+        } else {
+            // On remote chain. Cross chain pool updates required
+
+            // Mint Zorro on this (remote) chain
+            Zorro(ZORRO).mint(address(this), ZORROReward);
+            // Get endpoint contract
+            address homeChainEndpointContract = endpointContracts[0]; // TODO: Is it safe to use the zero index here or should we declare a state variable for the home contract?
+            // Make cross-chain burn request
+            XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
+                homeChainZorroController,
+                abi.encodeWithSignature("receiveXChainBurnRewardsRequest(uint256 _amount)", ZORROReward),
+                ""
+            );
+        }
     }
 
+    /// @notice Receives an authorized burn request from another chain and burns the specified amount of ZOR tokens from the public pool
+    /// @param _amount The quantity of ZOR tokens to burn
+    function receiveXChainBurnRewardsRequest(uint256 _amount) external {
+        // TODO IMPORTANT: Only allow valid contract (endpoint contract?) to call this
+        Zorro(ZORRO).burn(publicPool, _amount); // TODO: Should we wrap this in Open Zeppelin somehow?
+    }
     /* Safety functions */
 
     /// @notice Safe ZORRO transfer function, just in case if rounding error causes pool to not have enough
