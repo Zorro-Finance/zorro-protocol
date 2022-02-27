@@ -86,7 +86,19 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc. TODO: Put in setter/getter
     address public curveStablePoolAddress; // Pool contract address for swapping stablecoins TODO: Put in setter/getter
     address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor TODO: Make sure homecontrollercontract can never be address(0)!
+    uint256 public chainId; // TODO: Setter, contructor. The ID/index of the chain that this contract is on
     // TODO: Do thorough analysis to ensure enough setters/constructors
+    mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed. TODO: Turn these numbers into enums
+    uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
+    uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
+    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%. TODO: Setter
+    address public zorroLPPool; // TODO: Constructor, setter. Main pool for Zorro liquidity
+    address public zorroLPPoolToken0; // TODO: Constructor, setter. For the dominant LP pool, the 0th token (usually ZOR)
+    address public zorroLPPoolToken1; // TODO: Constructor, setter. For the dominant LP pool, the 1st token
+    address public zorroStakingVault; // TODO: Constructor, setter. The vault for ZOR stakers on the BSC chain.
+    address[] public USDCToZORPath; // TODO: Constructor, setter. The router path from USDC to ZOR
+    address[] public USDCToZorroLPPoolToken0Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 0
+    address[] public USDCToZorroLPPoolToken1Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 1
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
@@ -227,6 +239,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             // Get endpoint contract
             address homeChainEndpointContract = endpointContracts[0]; // TODO: Is it safe to use the zero index here or should we declare a state variable for the home contract?
             // Make cross-chain burn request
+            // TODO: Revert action should indicate failure for burn request and accumulate it so that the next burn request will include it
             XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
                 homeChainZorroController,
                 abi.encodeWithSignature("receiveXChainBurnRewardsRequest(uint256 _amount)", ZORROReward),

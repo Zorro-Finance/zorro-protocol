@@ -329,28 +329,6 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         sendChainlinkRequestTo(oracleContract, req, oraclePayment);
     }
 
-    /// @notice Continues recovery process after receiving callback from Oracle to prove remote transaction failed
-    /// @param _transactionDidFail True if the transaction did indeed fail 
-    /// @param _blockHashOrigin The block header of the block on the origin chain associated with the cross chain transactions
-    function callbackRecovery(
-        bool _transactionDidFail,
-        uint256 _blockHashOrigin
-    ) external onlyAuthorizedOracle {
-        // Revert if did not actually fail
-        require(_transactionDidFail, "TX didnt fail");
-        // Sends Relayer the block hash and asks for all matching Zorro origin transactions in that block
-        // Create Chainlink Direct Request that queries Relayer w/ block header hash
-        Chainlink.Request memory req = buildChainlinkRequest(
-            getFailedTransactionsJobId,
-            address(this),
-            this.validateFailedTxProofsCallback.selector
-        );
-        req.addBytes("blockHash", _blockHashOrigin);
-        sendChainlinkRequestTo(relayerContract, req, oraclePayment);
-        // Update status
-        _blockHeaderHashes[_blockHashOrigin] = BLOCK_HEADER_HASH_PROCESSING_FAILURE;
-    }
-
     /// @notice Executes final recovery process after receiving callback from Relayer and proofs are validated
     /// @param _recoveryPayload Array of recovery instructions for each transaction
     /// @param _proofBlobs Array of proof blobs (one per tx)
@@ -434,6 +412,28 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         requestTxProofsForBlock(_blockHeaderHash);
         // Emit log
         emit OracleReceivedCrossChainBlock(_blockNumber);
+    }
+
+    /// @notice Continues recovery process after receiving callback from Oracle to prove remote transaction failed
+    /// @param _transactionDidFail True if the transaction did indeed fail 
+    /// @param _blockHashOrigin The block header of the block on the origin chain associated with the cross chain transactions
+    function callbackRecovery(
+        bool _transactionDidFail,
+        uint256 _blockHashOrigin
+    ) external onlyAuthorizedOracle {
+        // Revert if did not actually fail
+        require(_transactionDidFail, "TX didnt fail");
+        // Sends Relayer the block hash and asks for all matching Zorro origin transactions in that block
+        // Create Chainlink Direct Request that queries Relayer w/ block header hash
+        Chainlink.Request memory req = buildChainlinkRequest(
+            getFailedTransactionsJobId,
+            address(this),
+            this.validateFailedTxProofsCallback.selector
+        );
+        req.addBytes("blockHash", _blockHashOrigin);
+        sendChainlinkRequestTo(relayerContract, req, oraclePayment);
+        // Update status
+        _blockHeaderHashes[_blockHashOrigin] = BLOCK_HEADER_HASH_PROCESSING_FAILURE;
     }
 
     /* Encoding/Decoding */

@@ -22,6 +22,7 @@ import "./libraries/SafeMath.sol";
 
 import "./libraries/SafeSwap.sol";
 
+import "./ZorroController.sol";
 
 abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -65,6 +66,13 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public buyBackRate = 0; // Numerator for buyback ratio (100 = 1%)
     uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
     uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
+
+    // Revenue sharing - used to share rewards with ZOR stakers
+    uint256 public revShareRate = 0; // Numerator for revshare ratio (100 = 1%)
+    uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
+    uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
+
+    // Other
     address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
 
@@ -82,15 +90,23 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public constant slippageFactorUL = 995;
 
     // Swap routes
+    // TODO: Need explanation, constructor, setter for all below. 
     address[] public earnedToZORROPath;
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
     address[] public token0ToEarnedPath;
     address[] public token1ToEarnedPath;
+    address[] public earnedToZORLPPoolToken0Path;
+    address[] public earnedToZORLPPoolToken1Path;
 
     // Other
     mapping(address => uint256) public wantTokensInHolding; // Ledger of Want tokens held by user when making deposits/withdrawals
     mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
+
+    // Cross chain
+    uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
+    uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
+    mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
 
     /* Events */
 
@@ -305,95 +321,48 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     /* Performance fees & buyback */
 
-    /// @notice buy back Zorro tokens, deposit them as liquidity, and burn the LP tokens (removing them from circulation and increasing scarcity)
-    /// @param _earnedAmt The amount of Earned tokens (profit) to deposit as liquidity
-    /// @param _maxMarketMovementAllowed The max amount of slippage permitted for buyback
-    /// @return the remaining earned token amount after buyback operations
-    function buyBack(uint256 _earnedAmt, uint256 _maxMarketMovementAllowed) internal virtual returns (uint256) {
-        /*
-        TODO - Make this cross chain compatible
-        - Make an lpAndBurn() receiving func. It should mint zUSDC, swap for USDC -> ZOR,BNB, then addLiquidity, then burn liq token
-        - If this contract is NOT the homechain controller:
-        -- Swap earned (mul. by buyback rate) to USDC
-        -- Burn USDC (no need to lock first?) - smart ledger
-        -- Get xchain endpoint contract and call xchain func above (lpAndBurn())
-        -- Put in revert functions
-        - Otherwise do exactly as below
-        */
-        // If the buyback rate is 0, return the _earnedAmt and exit
-        if (buyBackRate <= 0) {
-            return _earnedAmt;
+    /// @notice Combines buyback and rev share operations
+    /// @param _earnedAmt The amount of Earned tokens (profit)
+    /// @return the remaining earned token amount after buyback and revshare operations
+    function buyBackAndRevShare(uint256 _earnedAmt)
+        internal
+        virtual
+        returns (uint256)
+    {
+        // TODO - implement
+
+        // Calculate buyback amount
+        uint256 _buyBackAmt = 0;
+        if (buyBackRate > 0) {
+            // Calculate the buyback amount via the buyBackRate parameters
+            _buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
         }
-        // Calculate the buyback amount via the buyBackRate parameters
-        uint256 buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
 
-        // Swap earned token to underlying tokens
-        // TODO: Generalize this for 1, 2, 3, or 4 underlying tokens?
-        // TODO: Also consider how this needs to change for single staking vault
-        // TODO: Remember that we should not swap to token0, token1 necessarily, but the ZORRO/XXX tokens
-        // Authorize spending beforehand
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            buyBackAmt
-        );
-        // Swap to token 0
-        IAMMRouter02(uniRouterAddress).safeSwap(
-                buyBackAmt.div(2),
-                slippageFactor,
-                earnedToToken0Path,
-                address(this),
-                block.timestamp.add(600)
-        );
-        // Swap to token 1
-        IAMMRouter02(uniRouterAddress).safeSwap(
-                buyBackAmt.div(2),
-                slippageFactor,
-                earnedToToken1Path,
-                address(this),
-                block.timestamp.add(600)
-        );
-        // Enter LP pool 
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-        IERC20(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token0Amt
-            );
-        IERC20(token1Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token1Amt
-        );
-        (,, uint256 _liquidity) = IAMMRouter02(uniRouterAddress).addLiquidity(
-            token0Address,
-            token1Address,
-            token0Amt,
-            token1Amt,
-            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-            address(this),
-            block.timestamp.add(600)
+        // Calculate revshare amount
+        uint256 _revShareAmt = 0;
+        if (_revShareAmt > 0) {
+            // Calculate the buyback amount via the buyBackRate parameters
+            _revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
+        }
+
+        // Fetch the controller contract that is associated with this Vault
+        ZorroController zorroController = ZorroController(
+            zorroControllerAddress
         );
 
-        // Burn liquidity token obtained
-        IERC20(uniPoolAddress).safeTransfer(burnAddress, _liquidity);
+        // Call buyBackAndRevShare on controller contract
+        zorroController.buyBackAndRevShare(
+            pid,
+            earnedAddress,
+            _buyBackAmt,
+            _revShareAmt,
+            earnedToZORROPath,
+            earnedToZORLPPoolToken0Path,
+            earnedToZORLPPoolToken1Path
+        );
 
-        // Return the Earned amount net of the buyback amount
-        return _earnedAmt.sub(buyBackAmt);
-    }
-
-    /// @notice Collects fees for revenue share payable to Zorro stakers
-    /// @param _earnedAmt The Earned token amount (profits)
-    /// @return The Earned token amount net of rev share related fees
-    function revShareZorroStakers(uint256 _earnedAmt) internal virtual returns (uint256) {
-        /*
-        TODO implement this function 
-        - Create cross chain receiving func: payZorroStakersRevShare(), which mints zUSDC, swaps for USDC, and sends to Single Staking Vault
-        - Add state variables for revShare percentage, calculate amount
-        - swap amount of earned to USDC
-        - Burn USDC (no need to lock?) - smart ledger
-        - Call cross chain func above via endpoint contract
-        -- Put in revert functions
-        */
+        // Return net earnings
+        return (_earnedAmt.sub(_buyBackAmt)).sub(_revShareAmt);
     }
 
     /// @notice distribute controller (performance) fees
