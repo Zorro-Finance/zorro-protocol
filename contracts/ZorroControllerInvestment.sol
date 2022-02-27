@@ -22,7 +22,6 @@ import "./interfaces/ICurveMetaPool.sol";
 
 import "./libraries/SafeSwap.sol";
 
-
 contract ZorroControllerInvestment is ZorroControllerBase {
     /*
     Libraries
@@ -220,9 +219,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             uint256 rewardsDue = 0;
             uint256 slashedRewards = 0;
             if (timeRemainingInCommitment > 0) {
-                slashedRewards = pendingRewards.mul(timeRemainingInCommitment).div(
-                    tranche.durationCommittedInWeeks.mul(oneWeek)
-                );
+                slashedRewards = pendingRewards
+                    .mul(timeRemainingInCommitment)
+                    .div(tranche.durationCommittedInWeeks.mul(oneWeek));
                 rewardsDue = pendingRewards.sub(slashedRewards);
             } else {
                 rewardsDue = pendingRewards;
@@ -244,8 +243,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
 
         // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-        uint256 sharesRemoved = IVault(poolInfo[_pid].vault)
-            .withdrawWantToken(_user, _harvestOnly);
+        uint256 sharesRemoved = IVault(poolInfo[_pid].vault).withdrawWantToken(
+            _user,
+            _harvestOnly
+        );
         uint256 contributionRemoved = getUserContribution(
             sharesRemoved,
             tranche.timeMultiplier
@@ -253,16 +254,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Update shares safely
         if (contributionRemoved > tranche.contribution) {
             tranche.contribution = 0;
-            pool.totalTrancheContributions = pool
-                .totalTrancheContributions
-                .sub(tranche.contribution);
+            pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
+                tranche.contribution
+            );
         } else {
             tranche.contribution = tranche.contribution.sub(
                 contributionRemoved
             );
-            pool.totalTrancheContributions = pool
-                .totalTrancheContributions
-                .sub(contributionRemoved);
+            pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
+                contributionRemoved
+            );
         }
         // Withdraw Want tokens from this contract to sender
         uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
@@ -274,7 +275,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         if (_wantBal == _wantAmountWithdrawable) {
             deleteTranche(_pid, _trancheId, _user);
         }
-        
+
         // Note: Tranche's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
         uint256 newTrancheShare = tranche.contribution.mul(1e12).div(
             pool.totalTrancheContributions
@@ -343,13 +344,19 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _maxMarketMovement
     ) internal returns (uint256) {
         // Update tranche status
-        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block.timestamp;
+        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block
+            .timestamp;
 
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
         // Call core withdrawal function (returns actual amount withdrawn)
-        uint256 wantAmtWithdrawn = _withdraw(_pid, _user, _trancheId, _harvestOnly);
+        uint256 wantAmtWithdrawn = _withdraw(
+            _pid,
+            _user,
+            _trancheId,
+            _harvestOnly
+        );
 
         uint256 amount = vault.exchangeWantTokenForUSD(
             _user,
@@ -460,16 +467,33 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get endpoint contract that interfaces with the remote chain
         address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
         // Extract amount of USDC to transfer into this contract from the payload
-        uint256 _amountUSDC = _endpointContract.extractValueFromPayload(_payload);
+        uint256 _amountUSDC = _endpointContract.extractValueFromPayload(
+            _payload
+        );
         // Verify that encoded user identity is in fact msg.sender.
-        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
-        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(
+            _payload
+        );
+        require(
+            _userIdentity == msg.sender,
+            "Payload sender doesnt match msg.sender"
+        );
         // Allow this contract to spend USDC
-        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _amountUSDC);
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
+            address(this),
+            _amountUSDC
+        );
         // Transfer USDC into this contract
-        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, address(this), _amountUSDC);
+        IERC20(defaultStablecoin).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amountUSDC
+        );
         // Lock USDC on the ledger
-        TokenLockController(lockUSDCController).lockFunds(msg.sender, _amountUSDC);
+        TokenLockController(lockUSDCController).lockFunds(
+            msg.sender,
+            _amountUSDC
+        );
         // Call contract layer
         (bool successful, ) = _endpointContract.call(
             abi.encodeWithSignature(
@@ -502,10 +526,18 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             defaultStablecoinIndex
         );
         // Call deposit function
-        _depositFullService(_pid, _account, _valueUSDC, _weeksCommitted, _vaultEnteredAt, _maxMarketMovement);
+        _depositFullService(
+            _pid,
+            _account,
+            _valueUSDC,
+            _weeksCommitted,
+            _vaultEnteredAt,
+            _maxMarketMovement
+        );
     }
 
     /* Withdrawals */
+
     /// @notice Prepares and sends a cross chain withdrwal request.
     /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the smart contract on the destination chain
@@ -518,8 +550,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get endpoint contract that interfaces with the remote chain
         address _endpointContract = XChainEndpoint(endpointContracts[_chainId]);
         // Verify that the encoded user identity is in fact msg.sender
-        address _userIdentity = _endpointContract.extractIdentityFromPayload(_payload);
-        require(_userIdentity == msg.sender, "Payload sender doesnt match msg.sender");
+        address _userIdentity = _endpointContract.extractIdentityFromPayload(
+            _payload
+        );
+        require(
+            _userIdentity == msg.sender,
+            "Payload sender doesnt match msg.sender"
+        );
         // Call contract layer
         (bool successful, ) = _endpointContract.call(
             abi.encodeWithSignature(
@@ -547,12 +584,23 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _amountUSDC = 0;
         if (tranche.exitedVaultStartingAt == 0) {
             // Call withdrawal function
-            _amountUSDC = _withdrawalFullService(_account, _pid, _trancheId, _wantAmt, _maxMarketMovement);
+            _amountUSDC = _withdrawalFullService(
+                _account,
+                _pid,
+                _trancheId,
+                _wantAmt,
+                _maxMarketMovement
+            );
             // Lock withdrawn USDC
-            TokenLockController(lockUSDCController).lockFunds(_account, _amountUSDC);   
+            TokenLockController(lockUSDCController).lockFunds(
+                _account,
+                _amountUSDC
+            );
         } else {
             // Lookup amount locked
-            _amountUSDC = TokenLockController(lockUSDCController).lockedFunds[_account];
+            _amountUSDC = TokenLockController(lockUSDCController).lockedFunds[
+                _account
+            ];
         }
 
         // Only proceed if there is something to withdraw
@@ -561,8 +609,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Prepare repatriation transaction
         bytes _destinationContract = abi.encodePacked(homeChainZorroController);
         bytes _payload = abi.encodeWithSignature(
-            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)", 
-            _account, _amountUSDC, _pid, _trancheId, _maxMarketMovement, address(this)
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)",
+            _account,
+            _amountUSDC,
+            _pid,
+            _trancheId,
+            _maxMarketMovement,
+            address(this)
         );
 
         // Call contract layer to dispatch cross chain transaction
@@ -577,8 +630,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         require(successful, "Repatriation call unsuccessful");
     }
 
-    // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all 
-    // arguments. We changed around the order of many args. 
+    // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
+    // arguments. We changed around the order of many args.
 
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _account The user on this chain who initiated the withdrawal request
@@ -627,10 +680,17 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
 
         // Unlock USDC principal
-        TokenLockController(lockUSDCController).unlockFunds(_account, _unlockableAmountUSDC, address(this));
+        TokenLockController(lockUSDCController).unlockFunds(
+            _account,
+            _unlockableAmountUSDC,
+            address(this)
+        );
         // Mint zUSDC (if applicable)
         if (_mintableAmountZUSDC > 0) {
-            ZUSDC(syntheticStablecoin).mint(address(this), _mintableAmountZUSDC);
+            ZUSDC(syntheticStablecoin).mint(
+                address(this),
+                _mintableAmountZUSDC
+            );
             // Swap zUSDC for USDC
             ICurveMetaPool(curveStablePoolAddress).safeSwap(
                 _mintableAmountZUSDC,
@@ -641,10 +701,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
         // Burn unused USDC (if applicable)
         if (_burnableAmountUSDC > 0) {
-            IERC20(defaultStablecoin).safeTransfer(burnAddress, _burnableAmountUSDC);
+            IERC20(defaultStablecoin).safeTransfer(
+                burnAddress,
+                _burnableAmountUSDC
+            );
         }
         // Transfer total USDC to wallet
-        uint256 _balanceUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        uint256 _balanceUSDC = IERC20(defaultStablecoin).balanceOf(
+            address(this)
+        );
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
         // TODO - how to prepare request such that it's generalized for any chain? E.g. abi encoding
@@ -673,15 +738,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Prepare cross chain request
         (bool success, bytes memory data) = _endpointContract.call(
             abi.encodeWithSignature(
-                "encodeUnlockRequest(address _account,uint256 _amountUSDC)", 
-                _account, _amountUSDC
+                "encodeUnlockRequest(address _account,uint256 _amountUSDC)",
+                _account,
+                _amountUSDC
             )
         );
         require(success, "Unsuccessful serialize unlock");
         bytes _payload = abi.decode(data, (bytes));
 
         // Call contract layer
-        (bool success1,) = _endpointContract.call(
+        (bool success1, ) = _endpointContract.call(
             abi.encodeWithSignature(
                 "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
                 _destinationContract,
@@ -693,19 +759,378 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     // TODO - consider having this emit an event
+    // TODO - visibility and modifiers
     /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
-    function receiveXChainUnlockRequest(
-        address _account,
-        uint256 _amountUSDC
-    ) public {
+    function receiveXChainUnlockRequest(address _account, uint256 _amountUSDC)
+        public
+    {
         // Get controller
-        TokenLockController lockController = TokenLockController(lockUSDCController);
+        TokenLockController lockController = TokenLockController(
+            lockUSDCController
+        );
         // Unlock user funds
         lockController.unlockFunds(_account, _amountUSDC, address(0));
         // Burn
         lockController.burnFunds(_amountUSDC);
+    }
+
+    /* Other Cross Chain */
+
+    /// @notice Performs both buyback and rev share operations for either on-chain or cross-chain
+    /// @param _pid The pool ID
+    /// @param _earnedAddress The address of the ERC20 earned token to buy back
+    /// @param _buybackAmout The amount of earned token to buyback
+    /// @param _revShareAmount The amount of earned token to share as revenue to the ZOR staking vault
+    /// @param _earnedToZORPath The router path for swapping from the Earn token to the ZOR token on BSC (home chain)
+    /// @param _earnedToZORLPPoolToken0Path The router path for swapping from the Earn token to the primary Zorro LP Pool's 0th token
+    /// @param _earnedToZORLPPoolToken1Path The router path for swapping from the Earn token to the primary Zorro LP Pool's 1st token
+    function buyBackAndRevShare(
+        uint256 _pid,
+        address _earnedAddress,
+        uint256 _buybackAmount, 
+        uint256 _revShareAmount,
+        address[] calldata _earnedToZORPath,
+        address[] calldata _earnedToZORLPPoolToken0Path,
+        address[] calldata _earnedToZORLPPoolToken1Path
+    ) public {
+        // TODO - implement
+        // TODO - modifiers and visibility
+        
+        // Increase allowance of earned token, to this contract
+        IERC20(token1Address).safeIncreaseAllowance(
+            address(this),
+            _earnedAddress
+        );
+
+        // Transfer buyback amount to this contract
+        SafeERC20(_earnedAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _buybackAmount
+        );
+
+        // Check to see if the controller contract is on the home chain (BSC)
+        if (address(this) == homeChainZorroController) {
+            // If on home chain, perform buyback logic as normal
+            buybackOnChain(_earnedAddress, _buybackAmount, _earnedToZORLPPoolToken0Path, _earnedToZORLPPoolToken1Path);
+            revShareOnChain(_earnedAddress, _earnedToZORPath, _revShareAmount);
+        } else {
+            // If on a foreign chain, send a cross chain request for LP + burn, and revenue sharing
+            distributeEarningsXChain(_pid, _earnedAddress, _buybackAmount, _revShareAmount);
+        }
+    }
+
+    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
+    /// @param _token The address of the token to buy back (usually the "Earn" token or USDC)
+    /// @param _buybackAmount The amount of Earn token to buy back  
+    /// @param _tokenToZORLPPoolToken0Path The router path for swapping from _token to the 0th token of the primary ZOR LP pool (usually ZOR)
+    /// @param _tokenToZORLPPoolToken1Path The router path for swapping from _token to the 1st token of the primary ZOR LP pool
+    function buybackOnChain(
+        address _token,
+        uint256 _buybackAmount,
+        address[] calldata _tokenToZORLPPoolToken0Path,
+        address[] calldata _tokenToZORLPPoolToken1Path
+    ) internal {
+        // Authorize spending beforehand
+        IERC20(_earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _buybackAmount
+        );
+        // Swap to Token 0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _buybackAmount.div(2),
+            defaultMaxMarketMovement,
+            _tokenToZORLPPoolToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+        // Swap to Token 1
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _buybackAmount.div(2),
+            defaultMaxMarketMovement,
+            _tokenToZORLPPoolToken1Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+        // Enter LP pool
+        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
+        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
+        IERC20(token0Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token0Amt
+        );
+        IERC20(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        (, , uint256 _liquidity) = IAMMRouter02(uniRouterAddress)
+            .addLiquidity(
+                zorroLPPoolToken0,
+                zorroLPPoolToken1,
+                token0Amt,
+                token1Amt,
+                token0Amt.mul(defaultMaxMarketMovement).div(1000),
+                token1Amt.mul(defaultMaxMarketMovement).div(1000),
+                address(this),
+                block.timestamp.add(600)
+            );
+
+        // Burn liquidity token obtained
+        IERC20(uniPoolAddress).safeTransfer(burnAddress, _liquidity);
+    }
+
+    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
+    /// @param _token The address of the token to be rev-shared
+    /// @param _tokenToZORPath The router path to swap _token to ZOR
+    /// @param _revShareAmount The amount of Earn token to share as revenue with ZOR stakers
+    function revShareOnChain(
+        address _token,
+        address[] calldata _tokenToZORPath,
+        uint256 _revShareAmount
+    ) internal {
+        // TODO - implement
+        // TODO - modifier, visibility
+
+        // Authorize spending beforehand
+        IERC20(_token).safeIncreaseAllowance(
+            uniRouterAddress,
+            _revShareAmount
+        );
+
+        // Swap to ZOR
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _revShareAmount,
+            defaultMaxMarketMovement,
+            _tokenToZORPath,
+            zorroStakingVault,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Prepares and sends an earnings distribution request cross-chain (back to the home chain)
+    /// @param _pid The pool ID associated with the vault which experienced earnings
+    /// @param _earnedAddress The address of the Earn token
+    /// @param _buybackAmount The amount of earned token to buyback
+    /// @param _revShareAmount The amount of earned token to share as revenue to the ZOR staking vault
+    function distributeEarningsXChain(
+        uint256 _pid,
+        address _earnedAddress,
+        uint256 _buybackAmount,
+        uint256 _revShareAmount
+    ) internal {
+        // Check lock to see if anything is pending for this block and pool. If so, revert
+        require(
+            lockedEarningsStatus[block.number][_pid] == 0,
+            "Xchain earnings lock pending"
+        );
+        
+        // Swap earned token for USDC
+        address[] memory _path = [_earnedAddress, defaultStablecoin];
+        SafeSwapUni(uniRouterAddress).safeSwap(
+            _buybackAmount.add(_revShareAmount),
+            defaultMaxMarketMovement,
+            _path,
+            address(this),
+            block.timestamp.add(600)
+        );
+        // Lock USDC on a ledger for this block and pid, with status of pending
+        uint256 _amountUSDC = IERC20(defaultStablecoin).balanceOf(
+            address(this)
+        );
+        TokenLockController(lockUSDCController).lockFunds(
+            address(this),
+            _amountUSDC
+        );
+        lockedEarningsStatus[block.number][_pid] = 1;
+        // Fetch xchain endpoint for home chain
+        XChainEndpoint xChainEndpoint = XChainEndpoint(
+            endpointContracts[0] // TODO: Is [0] the way to do this, or should we have an explicit variable that points to the home chain contract
+        );
+
+        // TODO: For ALL amounts post swap/add/remove liq, ALWAYS use balanceOf() rather than assuming original amount was correct. Do a full audit across the app for this
+
+        // Account for any previously failed earnings
+        uint256 _totalOriginalEarningsFees = _buybackAmount.add(_revShareAmount);
+        uint256 _amountBuybackUSDC = _amountUSDC.mul(_buybackAmount).div(_totalOriginalEarningsFees);
+        uint256 _amountRevShareUSDC = _amountUSDC.sub(_amountBuybackUSDC);
+        // Construct payload
+        bytes _payload = abi.encodeWithSignature(
+            "receiveXChainDistributionRequest(uint256 _chainId,bytes _callbackContract,uint256 _amountUSDCBuyback,uint256 _amountUSDCRevShare,uint256 _failedAmountUSDCBuyback,uint256 _failedAmountUSDCRevShare)",
+            chainId,
+            abi.encode(address(this)),
+            _accumulatedBuybackUSDC,
+            _accumulatedRevShareUSDC,
+            failedLockedBuybackUSDC,
+            failedLockedRevShareUSDC
+        );
+        // Revert payload: Upon failure, updates lock ledger to failed for this block and pool
+        bytes _recoveryPayload = abi.encodeWithSignature(
+            "recoverXChainFeeDist(uint256 _blockNumber,uint256 _pid,uint256 _amountBuybackUSDC,uint256 _amountRevShareUSDC)",
+            block.number,
+            _pid,
+            _amountUSDC
+        );
+        // Call the LP and burn function on the home chain
+        xChainEndpoint.sendXChainTransaction(
+            homeChainZorroController,
+            _payload,
+            _recoveryPayload
+        );
+    }
+
+
+    /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
+    /// @param _chainId The ID of the chain that this request originated from
+    /// @param _callbackContract Address of destination contract in bytes for the callback
+    /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
+    /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
+    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
+    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
+    function receiveXChainDistributionRequest(
+        uint256 _chainId,
+        bytes _callbackContract,
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare,
+        uint256 _failedAmountUSDCBuyback,
+        uint256 _failedAmountUSDCRevShare
+    ) public {
+        // TODO: modifiers and visibility
+        // TODO - implement
+
+        // Total USDC to perform operations
+        uint256 _amountUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
+
+        // Mint zUSDC
+        ZUSDC(syntheticStablecoin).mint(address(this), _amountUSDC);
+
+        // Swap to USDC
+        uint256 _amountZUSDC = IERC20(synthethicStablecoin).balanceOf(
+            address(this)
+        );
+        SafeSwapCurve(curveStablePoolAddress).safeSwap(
+            _amountZUSDC,
+            defaultMaxMarketMovement,
+            synthethicStablecoinIndex,
+            defaultStablecoinIndex
+        );
+        // Determine new USDC balances
+        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+
+        /* Buyback */
+        uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback.add(_failedAmountUSDCBuyback)).div(_amountUSDC);
+        buybackOnChain(_token, _buybackAmount, USDCToZorroLPPoolToken0Path, USDCToZorroLPPoolToken1Path);
+
+        /* Rev share */
+        uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
+        revShareOnChain(defaultStablecoin, USDCToZORPath, _revShareAmount);
+    }
+
+    /// @notice Receives an authorized request from remote chains to add liquidity to a ZOR LP pool and burn the LP token
+    /// @param _chainId The ID of the chain that this request originated from
+    /// @param _callbackContract Address of destination contract on the remote chain to call back to, in bytes
+    /// @param _amountUSDCBuyback Amount in USDC to buy back, add liquidity, and burn LP token for
+    /// @param _failedAmountUSDCBuyback Previously failed buyback amount being retried
+    // TODO - visibility and modifiers
+    function receiveXChainLPAndBurnRequest(
+        uint256 _chainId,
+        bytes _callbackContract,
+        uint256 _amountUSDCBuyback,
+        uint256 _failedAmountUSDCBuyback
+    ) internal {
+        
+        // Swap to ZOR and other pool token
+        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        address[] memory _pathUSDCToZORToken = [defaultStablecoin, ZORRO];
+        SafeSwapUni(uniRouterAddress).safeSwap(
+            _balUSDC.div(2),
+            defaultMaxMarketMovement,
+            _pathUSDCToZORToken,
+            address(this),
+            block.timestamp(600)
+        );
+        address[] memory _pathUSDCToToken0 = [
+            defaultStablecoin,
+            zorrolLPPoolCounterpartToken
+        ];
+        SafeSwapUni(uniRouterAddress).safeSwap(
+            _balUSDC.div(2),
+            defaultMaxMarketMovement,
+            _pathUSDCToToken0,
+            address(this),
+            block.timestamp(600)
+        );
+        // Add liquidity
+        (, , uint256 _liquidity) = IAMMRouter02(uniRouterAddress).addLiquidity(
+            token0Address,
+            token1Address,
+            token0Amt,
+            token1Amt,
+            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            address(this),
+            block.timestamp.add(600)
+        );
+        // Burn liquidity token
+        SafeERC20(zorroLPPool).safeTransfer(burnAddress, _liquidity);
+        // Send cross chain burn request back to the remote chain
+        XChainEndpoint endpointContract = XChainEndpoint(
+            endpointContracts[_chainId]
+        );
+        bytes _payload = abi.encodeWithSignature(
+            "receiveBurnLockedEarningsRequest(uint256 _amountUSDCBuyback,uint256 _amountUSDCRevShare,uint256 _failedAmountUSDCBuyback,uint256 _failedAmountUSDCRevShare)",
+            _amountUSDC
+        );
+        endpointContract.sendXChainTransaction(
+            _destinationContract,
+            _payload,
+            ""
+        );
+    }
+
+    /// @notice Receives cross chain request for burning any temporarily locked funds for earnings
+    /// @param _amountUSDCBuyback The amount in USDC that was bought back
+    /// @param _amountUSDCRevShare The amount in USDC that was rev-shared
+    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that was successfully retried
+    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that was successfully retried
+    function receiveBurnLockedEarningsRequest(
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare,
+        uint256 _failedAmountUSDCBuyback, 
+        uint256 _failedAmountUSDCRevShare
+    ) public {
+        // TODO: modifiers and visibility
+        // Calculate total amount to unlock and burn
+        uint256 _totalBurnableUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
+        // Unlock + burn
+        TokenLockController(lockUSDCController).unlockFunds(
+            address(this),
+            _totalBurnableUSDC,
+            burnAddress
+        );
+        // Decrement any failed amounts
+        failedLockedBuybackUSDC = failedLockedBuybackUSDC.sub(_failedAmountUSDCBuyback);
+        failedLockedRevShareUSDC = failedLockedRevShareUSDC.sub(_failedAmountUSDCRevShare);
+    }
+
+    /// @notice Recovery function for when home chain `receiveXChainDistributionRequest()` function fails
+    /// @param _blockNumber The block number on the remote chain that the earnings distribution was for
+    /// @param _pid The pool ID on the remote chain that the earnings distribution was from
+    /// @param _amountBuybackUSDC The amount of buyback in USDC attempted for cross chain operations
+    /// @param _amountRevShareUSDC The amount of revshare in USDC attempted for cross chain operations
+    function recoverXChainFeeDist(
+        uint256 _blockNumber,
+        uint256 _pid,
+        uint256 _amountBuybackUSDC,
+        uint256 _amountRevShareUSDC
+    ) public {
+        // TODO modifiers and visibility
+        // Marks locked earnings as operation as failed.
+        lockedEarningsStatus[_blockNumber][_pid] = 3;
+        // Update accumulated total of failed earnings
+        failedLockedBuybackUSDC = failedLockedBuybackUSDC.add(_amountBuybackUSDC);
+        failedLockedRevShareUSDC = failedLockedRevShareUSDC.add(_amountRevShareUSDC);
     }
 
     /* Safety */
@@ -715,15 +1140,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @dev Unlocks USDC and returns it to depositor
     /// @param _account The address of the depositor
     /// @param _amountUSDC The amount originally deposited (TODO: inclusive of fees?)
-    function revertXChainDeposit(address _account, uint256 _amountUSDC) public virtual {
+    function revertXChainDeposit(address _account, uint256 _amountUSDC)
+        public
+        virtual
+    {
         // Unlock & return to wallet
-        TokenLockController(lockUSDCController).unlockFunds(_account, _amountUSDC, _account);
+        TokenLockController(lockUSDCController).unlockFunds(
+            _account,
+            _amountUSDC,
+            _account
+        );
     }
-
-    // TODO - decide on what we're doing for emergencies
-    function emergencyWithdrawal() public {
-
-    }
-
-    // TODO - All the functions for updating pool rewards cross chain
 }
