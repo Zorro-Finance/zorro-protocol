@@ -41,7 +41,7 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     /// @notice Only allows functions to be executed where the sender is in contractLayerAuthorizedCallers
     modifier onlyAuthorizedCaller() {
         require(
-            contractLayerAuthorizedCallers(_msgSender()) > 0,
+            contractLayerAuthorizedCallers[_msgSender()] > 0,
             "Only authd contract caller allowed"
         );
         _;
@@ -74,7 +74,7 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     uint256 public oraclePayment; // Amount of LINK to pay Chainlink node operator
 
     mapping(address => uint8) public contractLayerAuthorizedCallers; // Mapping of allowed cross chain transaction callers. Mapping: address => 0 or 1. 1 means allowed.
-    mapping(bytes32 => uint8) private _blockHeaderHashes; // Stores block header hashes sent from Oracle. Mapping: hash => BLOCK_HEADER_HASH_* (see constants section)
+    mapping(bytes32 => uint8) public blockHeaderHashes; // Stores block header hashes sent from Oracle. Mapping: hash => BLOCK_HEADER_HASH_* (see constants section)
 
     /* Setters */
     /// @notice Sets the `authorizedOracle` address to a new address. This is designed to allow only a certain address to make calls
@@ -102,9 +102,9 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Sets the relayer contract that Chainlink calls should be made to
-    /// @param _relayerContract The oracle contract that the Chainlink node owns
-    function setOracleContract(address _oracleContract) public onlyOwner {
-      oracleContract = _oracleContract;
+    /// @param _relayerContract The relayer contract that the Chainlink node owns
+    function setRelayerContract(address _relayerContract) public onlyOwner {
+      relayerContract = _relayerContract;
     }
 
     /// @notice Sets the job ID for notifying the oracle of a block with cross chain activity
@@ -132,7 +132,7 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Sets the job ID for requesting all proofs and tx data for a block hash on the origin chain (for failed TXs)
-    /// @param _checkFailureJobId Job ID for checking failure state of a transaction on the relayer
+    /// @param _fetchFailedTransactionsJobId Job ID for checking failure state of a transaction on the relayer
     function setFetchFailedTransactionsJobId(bytes32 _fetchFailedTransactionsJobId) public onlyOwner {
       fetchFailedTransactionsJobId = _fetchFailedTransactionsJobId;
     }
@@ -156,9 +156,9 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _oraclePayment Amount of LINK to pay the node operator
     constructor(
         address _owner,
-        address[] _authorizedAddresses,
-        address[] _oracleContracts,
-        bytes32[] _jobIds,
+        address[] memory _authorizedAddresses,
+        address[] memory _oracleContracts,
+        bytes32[] memory _jobIds,
         uint256 _oraclePayment
     ) {
         // Set owner of this contract
@@ -204,10 +204,9 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @notice receives a validated transaction from the Relay layer and calls the on-chain destination contract to make a transaction
     /// @param _destinationContract Address of the destination contract to call to complete the cross chain transaction (in bytes to keep generic)
     /// @param _payload Payload in ABI encoded bytes (or equivalent depending on chain)
-    /// @param _revertPayload Same as above, except meant to be recovery instructions for sending chain in the event of failure (optional) (unused in this function, as it is meant for relayer to pick up)
     function receiveXChainTransaction(
         address _destinationContract,
-        bytes calldata _payload
+        bytes memory _payload
     ) internal {
         // Perform contract call with the abi encoded payload
         (bool success, ) = _destinationContract.call(_payload);
@@ -254,17 +253,17 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @notice Allows Endpoint to query Relayer for any transactions (and their proofs) matching the block hash provided
     /// @dev Meant to only be called internally by the Oracle layer. Triggers an async callback (validateTransactionsCallback)
     /// @param _blockHeaderHash Bytes representing the block header hash for the block of interest
-    function requestTxProofsForBlock(bytes calldata _blockHeaderHash) internal {
+    function requestTxProofsForBlock(bytes32 _blockHeaderHash) internal {
         // Create Chainlink Direct Request that queries Relayer w/ block header hash
         Chainlink.Request memory req = buildChainlinkRequest(
             requestProofJobId,
             address(this),
             this.validateTxProofsCallback.selector
         );
-        req.addBytes("blockHash", _blockHeaderHash);
+        req.addBytes("blockHash", abi.encodePacked(_blockHeaderHash));
         sendChainlinkRequestTo(relayerContract, req, oraclePayment);
         // Update status
-        _blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_IN_PROGRESS;
+        blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_IN_PROGRESS;
     }
 
     /// @notice Receives callback from Relayer in order to validate all cross chain transactions in a given block on the sending chain
@@ -273,45 +272,45 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _proofBlobs Array of proof blobs (one per tx)
     /// @param _blockHeaderHash The block header hash that was originally requested (will be checked against storage for authenticity)
     function validateTxProofsCallback(
-        address[] calldata _destinationContracts,
+        bytes[] calldata _destinationContracts,
         bytes[] calldata _payloads,
         bytes[] calldata _proofBlobs,
         bytes32 _blockHeaderHash
     ) external onlyAuthorizedRelayer {
         // Check that provided block hash was already sent by the oracle.
         require(
-            _blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
+            blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
             "Block hash not recorded"
         );
         require(
-            _blockHeaderHashes[_blockHeaderHash] ==
+            blockHeaderHashes[_blockHeaderHash] ==
                 BLOCK_HEADER_HASH_IN_PROGRESS,
             "Block hash not in progress"
         );
         // Iterate through length of _proofBlobs
         for (uint256 i = 0; i < _proofBlobs.length; i++) {
             // Get all values at current index
-            bytes _destinationContract = _destinationContracts[i];
-            bytes _payload = _payloads[i];
+            bytes memory _destinationContract = _destinationContracts[i];
+            bytes memory _payload = _payloads[i];
             // TODO - do we need to check if payload is in proof?
-            bytes _proofBlob = _proofBlobs[i];
+            bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
             (uint8 res, , , , , , , , , , , ) = txProof(
                 _blockHeaderHash,
-                proofBlob
+                _proofBlob
             );
             // If one proof is invalid, revert the entire transaction
             require(res == 1, "Failed to validate Tx Proof");
             // Call Contract Layer with payloads to finally execute the cross chain transaction
-            receiveXChainTransaction(_destinationContract, _payload);
+            receiveXChainTransaction(abi.decode(_destinationContract, (address)), _payload);
         }
         // Mark current hash as completed so that it does not run again
-        _blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED;
+        blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED;
     }
 
     /// @notice Starts recovery process on this chain, assuming that the remote chain transaction failed
     /// @dev To be called only by Relayer
-    /// @param _blockHashRemote The block header of the block on the origin chain in which the tx failed 
+    /// @param _blockHashOrigin The block header of the block on the origin chain in which the tx failed 
     /// @param _txHash The failed transaction hash on the remote chain
     function startRecovery(
         bytes calldata _blockHashOrigin,
@@ -330,7 +329,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     }
 
     /// @notice Executes final recovery process after receiving callback from Relayer and proofs are validated
-    /// @param _recoveryPayload Array of recovery instructions for each transaction
+    /// @param _recoveryPayloads Array of recovery instructions for each transaction
     /// @param _proofBlobs Array of proof blobs (one per tx)
     /// @param _blockHeaderHash The block header hash that was originally requested (will be checked against storage for authenticity)
     function validateFailedTxProofsCallback(
@@ -341,20 +340,20 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         // TODO
         // Check status
         require(
-            _blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
+            blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
             "Block hash not recorded"
         );
         require(
-            _blockHeaderHashes[_blockHeaderHash] == BLOCK_HEADER_HASH_PROCESSING_FAILURE,
+            blockHeaderHashes[_blockHeaderHash] == BLOCK_HEADER_HASH_PROCESSING_FAILURE,
             "Block hash not in progress"
         );
 
         // Iterate through all payloads/blobs
         for (uint256 i = 0; i < _proofBlobs.length; i++) {
             // Get all values at current index
-            bytes _recoveryPayload = _recoveryPayloads[i];
+            bytes memory _recoveryPayload = _recoveryPayloads[i];
             // TODO - do we need to check if payload is in proof?
-            bytes _proofBlob = _proofBlobs[i];
+            bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
             (uint8 res, , , , , , , , , , , ) = txProof(
                 _blockHeaderHash,
@@ -364,12 +363,12 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             require(res == 1, "Failed to validate Tx Proof");
             // TODO: Extract msg.sender from each proof (the calling contract). Here is just a dummy variable but it should be 
             // a value from the tuple return value from txProof() above. 
-            _originContract = address(0);
+            address _originContract = address(0);
             // Call origin contract with the recovery payload
             receiveXChainTransaction(_originContract, _recoveryPayload);
         }
         // Mark current hash as completed so that it does not run again
-        _blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED_FAILURE;
+        blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED_FAILURE;
     }
 
     /*
@@ -406,7 +405,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _blockHeaderHash A string of the block header hash from the sending chain
     function receiveOracleNotification(
         uint256 _blockNumber,
-        bytes calldata _blockHeaderHash
+        bytes32 _blockHeaderHash
     ) external onlyAuthorizedOracleController {
         // Call Relay layer with block header hash
         requestTxProofsForBlock(_blockHeaderHash);
@@ -419,21 +418,21 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _blockHashOrigin The block header of the block on the origin chain associated with the cross chain transactions
     function callbackRecovery(
         bool _transactionDidFail,
-        uint256 _blockHashOrigin
+        bytes32 _blockHashOrigin
     ) external onlyAuthorizedOracle {
         // Revert if did not actually fail
         require(_transactionDidFail, "TX didnt fail");
         // Sends Relayer the block hash and asks for all matching Zorro origin transactions in that block
         // Create Chainlink Direct Request that queries Relayer w/ block header hash
         Chainlink.Request memory req = buildChainlinkRequest(
-            getFailedTransactionsJobId,
+            fetchFailedTransactionsJobId,
             address(this),
             this.validateFailedTxProofsCallback.selector
         );
-        req.addBytes("blockHash", _blockHashOrigin);
+        req.addBytes("blockHash", abi.encodePacked(_blockHashOrigin));
         sendChainlinkRequestTo(relayerContract, req, oraclePayment);
         // Update status
-        _blockHeaderHashes[_blockHashOrigin] = BLOCK_HEADER_HASH_PROCESSING_FAILURE;
+        blockHeaderHashes[_blockHashOrigin] = BLOCK_HEADER_HASH_PROCESSING_FAILURE;
     }
 
     /* Encoding/Decoding */
@@ -442,7 +441,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @dev The _account parameter MUST be the first input argument of the receiving function on the remote chain (address (20-bit) datatype)
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
-    function extractIdentityFromPayload(bytes _payload) public view virtual returns (address) {
+    function extractIdentityFromPayload(bytes calldata _payload) public view virtual returns (address) {
         // TODO
         // Remove the first 4 bytes (Keccak 256 method signature)
         // Take the next 20 bits 
@@ -454,19 +453,19 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @dev The _value parameter MUST be the second input argument of the receiving function on the remote chain (uint256 data type)
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
-    function extractValueFromPayload(bytes _payload) public view virtual returns (address) {
+    function extractValueFromPayload(bytes calldata _payload) public view virtual returns (uint256) {
         // TODO
         // Remove the first 4 bytes (Keccak 256 method signature) + 20 bits (address)
         // Take the next 256 bits 
         // ABI decode to "uint256" datatype
-        // Return address
+        // Return number
     }
 
     /// @notice Takes a given account and amount and encodes an unlock request in bytes for EVM chains. Can be overriden for other chains
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     /// @return The ABI econded bytes. For other chains, it will be those chains' standard serializations in bytes.
-    function encodeUnlockRequest(address _account,uint256 _amountUSDC) public view virtual returns (bytes) {
+    function encodeUnlockRequest(address _account,uint256 _amountUSDC) public view virtual returns (bytes memory) {
         // Abi encode the payload and return it (override this for other chains, which use a different encoding)        
         return abi.encodeWithSignature(
             "receiveXChainUnlockRequest(address _account,uint256 _amountUSDC)", 

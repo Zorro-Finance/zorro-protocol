@@ -241,7 +241,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             // Make cross-chain burn request
             // TODO: Revert action should indicate failure for burn request and accumulate it so that the next burn request will include it
             XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
-                homeChainZorroController,
+                abi.encodePacked(homeChainZorroController),
                 abi.encodeWithSignature("receiveXChainBurnRewardsRequest(uint256 _amount)", ZORROReward),
                 ""
             );
