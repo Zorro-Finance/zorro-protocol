@@ -699,7 +699,12 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
         // TODO - how to prepare request such that it's generalized for any chain? E.g. abi encoding
-        sendXChainUnlockRequest();
+        sendXChainUnlockRequest(
+            _chainId, 
+            _account, 
+            _amountUSDC, 
+            _destinationContract
+        );
     }
 
     // TODO: Do we need to account for "dust" amounts? Too small amounts causing potential failures? Rounding errors? See Autofarm code
@@ -819,8 +824,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     function buybackOnChain(
         address _token,
         uint256 _buybackAmount,
-        address[] calldata _tokenToZORLPPoolToken0Path,
-        address[] calldata _tokenToZORLPPoolToken1Path
+        address[] memory _tokenToZORLPPoolToken0Path,
+        address[] memory _tokenToZORLPPoolToken1Path
     ) internal {
         // Authorize spending beforehand
         IERC20(_token).safeIncreaseAllowance(
@@ -876,7 +881,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _revShareAmount The amount of Earn token to share as revenue with ZOR stakers
     function revShareOnChain(
         address _token,
-        address[] calldata _tokenToZORPath,
+        address[] memory _tokenToZORPath,
         uint256 _revShareAmount
     ) internal {
         // TODO - implement
@@ -916,7 +921,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
         
         // Swap earned token for USDC
-        address[] memory _path = [_earnedAddress, defaultStablecoin];
+        address[] memory _path;
+        _path[0] = _earnedAddress;
+        _path[1] = defaultStablecoin;
         IAMMRouter02(uniRouterAddress).safeSwap(
             _buybackAmount.add(_revShareAmount),
             defaultMaxMarketMovement,
