@@ -10,6 +10,8 @@ import "./ZorroControllerInvestment.sol";
 
 import "./ZorroControllerAnalytics.sol";
 
+// TODO: In general, shouldn't these all be timelock contracts? 
+
 /* Main Contract */
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.
 contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroControllerInvestment, ZorroControllerAnalytics {
