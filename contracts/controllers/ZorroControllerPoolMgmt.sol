@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./ZorroControllerBase.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
 contract ZorroControllerPoolMgmt is ZorroControllerBase {
     using SafeMath for uint256;

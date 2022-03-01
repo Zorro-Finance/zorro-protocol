@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./interfaces/IAMMFarm.sol";
+import "../interfaces/IAMMFarm.sol";
 
-import "./interfaces/IAcryptosFarm.sol";
+import "../interfaces/IAcryptosFarm.sol";
 
-import "./interfaces/IAcryptosVault.sol";
+import "../interfaces/IAcryptosVault.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
 import "./VaultBase.sol";
 
-import "./interfaces/IBalancerVault.sol";
+import "../interfaces/IBalancerVault.sol";
 
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {

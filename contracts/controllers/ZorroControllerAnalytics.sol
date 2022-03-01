@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "./ZorroControllerBase.sol";
 
-import "./interfaces/IVault.sol";
+import "../interfaces/IVault.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
 contract ZorroControllerAnalytics is ZorroControllerBase {
     using SafeMath for uint256;

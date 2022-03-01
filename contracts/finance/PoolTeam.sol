@@ -2,17 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "./helpers/ModifiedPaymentSplitter.sol";
+import "../helpers/ModifiedPaymentSplitter.sol";
 
-import "./helpers/ModifiedVestingWallet.sol";
+import "../helpers/ModifiedVestingWallet.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
 /// @title PoolTeam: Manages the team (employee/advisors) pool via a modified PaymentSplitter contract
 contract PoolTeam is ModifiedPaymentSplitter, Ownable {

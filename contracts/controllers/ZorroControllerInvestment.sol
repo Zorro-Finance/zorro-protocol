@@ -4,21 +4,21 @@ pragma solidity ^0.8.0;
 
 import "./ZorroControllerBase.sol";
 
-import "./interfaces/IVault.sol";
+import "../interfaces/IVault.sol";
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
-import "./libraries/Math.sol";
+import "../libraries/Math.sol";
 
-import "./TokenLockController.sol";
+import "../tokens/TokenLockController.sol";
 
-import "./ZorroTokens.sol";
+import "../tokens/ZorroTokens.sol";
 
-import "./interfaces/ICurveMetaPool.sol";
+import "../interfaces/ICurveMetaPool.sol";
 
-import "./libraries/SafeSwap.sol";
+import "../libraries/SafeSwap.sol";
 
 contract ZorroControllerInvestment is ZorroControllerBase {
     /*

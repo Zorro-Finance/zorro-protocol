@@ -2,17 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./helpers/Pausable.sol";
+import "../helpers/Pausable.sol";
 
-import "./helpers/ReentrancyGuard.sol";
+import "../helpers/ReentrancyGuard.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
 // TODO: Need modifer that only allows certain contracts to call
 

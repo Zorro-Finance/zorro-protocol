@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
 contract PoolTreasury is Ownable {
   using SafeERC20 for IERC20;

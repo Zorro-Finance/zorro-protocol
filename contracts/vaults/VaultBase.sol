@@ -2,27 +2,27 @@
 
 pragma solidity ^0.8.0;
 
-import "./helpers/ReentrancyGuard.sol";
+import "../helpers/ReentrancyGuard.sol";
 
-import "./helpers/Pausable.sol";
+import "../helpers/Pausable.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./interfaces/IWBNB.sol";
+import "../interfaces/IWBNB.sol";
 
-import "./interfaces/IAMMRouter01.sol";
+import "../interfaces/IAMMRouter01.sol";
 
-import "./interfaces/IAMMRouter02.sol";
+import "../interfaces/IAMMRouter02.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
-import "./libraries/SafeSwap.sol";
+import "../libraries/SafeSwap.sol";
 
-import "./ZorroController.sol";
+import "../controllers/ZorroController.sol";
 
 abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;

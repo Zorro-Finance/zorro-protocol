@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "./helpers/ModifiedPaymentSplitter.sol";
+import "../helpers/ModifiedPaymentSplitter.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
 
 /// @title PoolFounders: Contract for managing finances/token allocation for the Founders pool. Ownable and intended to be controlled by a TimelockController

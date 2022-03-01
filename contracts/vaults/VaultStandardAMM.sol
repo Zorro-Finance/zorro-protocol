@@ -2,25 +2,25 @@
 
 pragma solidity ^0.8.0;
 
-import "./helpers/ERC20.sol";
+import "../helpers/ERC20.sol";
 
-import "./libraries/Address.sol";
+import "../libraries/Address.sol";
 
-import "./libraries/EnumerableSet.sol";
+import "../libraries/EnumerableSet.sol";
 
-import "./interfaces/IAMMFarm.sol";
+import "../interfaces/IAMMFarm.sol";
 
-import "./interfaces/IAMMRouter02.sol";
+import "../interfaces/IAMMRouter02.sol";
 
 import "./VaultBase.sol";
 
-import "./interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
-import "./libraries/SafeSwap.sol";
+import "../libraries/SafeSwap.sol";
 
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.

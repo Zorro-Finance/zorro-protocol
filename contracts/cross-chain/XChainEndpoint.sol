@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/ReentrancyGuard.sol";
+import "../helpers/ReentrancyGuard.sol";
 
-import "./helpers/Pausable.sol";
+import "../helpers/Pausable.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-import "./helpers/ProvethVerifier.sol";
+import "../helpers/ProvethVerifier.sol";
 
 /// @title XChainBaseLayer. Base contract for cross-chain functionality
 contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {

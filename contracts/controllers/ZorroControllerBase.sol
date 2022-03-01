@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./libraries/SafeERC20.sol";
+import "../libraries/SafeERC20.sol";
 
-import "./libraries/Math.sol";
+import "../libraries/Math.sol";
 
-import "./libraries/SafeMath.sol";
+import "../libraries/SafeMath.sol";
 
-import "./helpers/Ownable.sol";
+import "../helpers/Ownable.sol";
 
-import "./helpers/ReentrancyGuard.sol";
+import "../helpers/ReentrancyGuard.sol";
 
-import "./ZorroTokens.sol"; // TODO: Consider using SafeERC20/OZ helper functions here
+import "../tokens/ZorroTokens.sol"; // TODO: Consider using SafeERC20/OZ helper functions here
 
-import "./XchainEndpoint.sol";
+import "../cross-chain/XchainEndpoint.sol";
 
 
 /* Base Contract */
