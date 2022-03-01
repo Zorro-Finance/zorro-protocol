@@ -189,8 +189,10 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice wrap BNB (public version, only callable by gov)
     function wrapBNB() public virtual onlyAllowGov {
         _wrapBNB();
+        // TODO: Remove!
     }
 
+    // TODO: remove!
     /// @notice wrap BNB to WBNB
     function _wrapBNB() internal virtual {
         uint256 bnbBal = address(this).balance;
