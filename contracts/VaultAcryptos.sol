@@ -191,6 +191,8 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Update temporary holdings for user
         wantTokensInHolding[_account] = 0; // TODO <- change this to want tokens obtained.
+
+        return 0; // TODO: Change this to the actual value. This func still needs to be properly inputted
     }
 
     /// @notice Public function for farming Want token.

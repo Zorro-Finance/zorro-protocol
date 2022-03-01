@@ -565,6 +565,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
     function receiveXChainWithdrawalRequest(
         address _account,
+        uint256 _chainId,
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
@@ -598,9 +599,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Prepare repatriation transaction
         bytes memory _destinationContract = abi.encodePacked(homeChainZorroController);
         bytes memory _payload = abi.encodeWithSignature(
-            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)",
+            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _chainId,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)",
             _account,
             _amountUSDC,
+            _chainId,
             _pid,
             _trancheId,
             _maxMarketMovement,
@@ -622,6 +624,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _account The user on this chain who initiated the withdrawal request
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
+    /// @param _chainId The Chain ID of the remote chain that initiated this request
     /// @param _originalDepositUSDC The amount originally deposited into this tranche // TODO net- or gross- of fees? IMPORTANT
     /// @param _pid The pool ID on the remote chain that the user withdrew from
     /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
@@ -630,6 +633,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
+        uint256 _chainId,
         uint256 _originalDepositUSDC,
         uint256 _pid,
         uint256 _trancheId,
@@ -702,8 +706,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         sendXChainUnlockRequest(
             _chainId, 
             _account, 
-            _amountUSDC, 
-            _destinationContract
+            _withdrawnUSDC, 
+            abi.encodePacked(_callbackContract)
         );
     }
 
@@ -721,7 +725,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _chainId,
         address _account,
         uint256 _amountUSDC,
-        address _destinationContract
+        bytes memory _destinationContract
     ) internal {
         // Get endpoint contract
         address _endpointContract = endpointContracts[_chainId];
