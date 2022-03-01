@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./ZorroControllerBase.sol";
+import "./_ZorroControllerBase.sol";
 
 import "../interfaces/IVault.sol";
 

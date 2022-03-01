@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./VaultBase.sol";
+import "./_VaultBase.sol";
 
 
 /// @title VaultZorro. The Vault for staking the Zorro token

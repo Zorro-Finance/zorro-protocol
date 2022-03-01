@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 /* Dependencies */
-import "./ZorroControllerBase.sol";
+import "./_ZorroControllerBase.sol";
 
-import "./ZorroControllerPoolMgmt.sol";
+import "./_ZorroControllerPoolMgmt.sol";
 
-import "./ZorroControllerInvestment.sol";
+import "./_ZorroControllerInvestment.sol";
 
-import "./ZorroControllerAnalytics.sol";
+import "./_ZorroControllerAnalytics.sol";
 
 // TODO: In general, shouldn't these all be timelock contracts? 
 

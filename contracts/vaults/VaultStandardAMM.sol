@@ -10,7 +10,7 @@ import "../interfaces/IAMMFarm.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "./VaultBase.sol";
+import "./_VaultBase.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 

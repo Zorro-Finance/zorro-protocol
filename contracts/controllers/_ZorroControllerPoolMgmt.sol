@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ZorroControllerBase.sol";
+import "./_ZorroControllerBase.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
