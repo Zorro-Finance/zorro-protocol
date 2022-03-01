@@ -2,7 +2,7 @@
 
 pragma solidity >=0.6.12 <0.9.0;
 
-import "./IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 struct SingleSwap {
         bytes32 poolId;

@@ -16,7 +16,7 @@ interface IVault {
     function depositWantToken(address _account, uint256 _wantAmt) external returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(address _account, uint256 _wantAmt) external returns (uint256);
+    function withdrawWantToken(address _account, bool _harvestOnly) external returns (uint256);
 
     function exchangeWantTokenForUSD(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256);
 
