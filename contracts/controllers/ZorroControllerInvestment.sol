@@ -8,7 +8,7 @@ import "../interfaces/IVault.sol";
 
 import "../libraries/SafeERC20.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/Math.sol";
 

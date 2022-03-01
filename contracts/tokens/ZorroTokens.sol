@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../helpers/ERC20.sol";
 
-import "../libraries/Address.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import "../libraries/SafeERC20.sol";
 

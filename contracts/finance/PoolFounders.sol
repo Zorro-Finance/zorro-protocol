@@ -6,7 +6,7 @@ import "../helpers/ModifiedPaymentSplitter.sol";
 
 import "../helpers/Ownable.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../interfaces/IERC20.sol";
 

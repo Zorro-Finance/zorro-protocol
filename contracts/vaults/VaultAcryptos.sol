@@ -12,7 +12,7 @@ import "../interfaces/IAcryptosVault.sol";
 
 import "../interfaces/IERC20.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./VaultBase.sol";
 

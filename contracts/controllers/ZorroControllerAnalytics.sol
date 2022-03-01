@@ -6,7 +6,7 @@ import "./ZorroControllerBase.sol";
 
 import "../interfaces/IVault.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract ZorroControllerAnalytics is ZorroControllerBase {
     using SafeMath for uint256;

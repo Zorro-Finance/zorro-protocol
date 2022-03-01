@@ -18,7 +18,7 @@ import "../interfaces/IAMMRouter01.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/SafeSwap.sol";
 

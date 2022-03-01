@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import "../libraries/SafeERC20.sol";
 
-import "../libraries/Math.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../helpers/Ownable.sol";
 
@@ -21,7 +21,7 @@ import "../cross-chain/XchainEndpoint.sol";
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
 contract ZorroControllerBase is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
-    using Math for uint256;
+    using Math for uint256; // TODO: Do we need both Math and SafeMath?
     using SafeERC20 for IERC20;
 
     /* Structs */

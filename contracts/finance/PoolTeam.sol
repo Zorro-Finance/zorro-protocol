@@ -12,7 +12,7 @@ import "../libraries/SafeERC20.sol";
 
 import "../interfaces/IERC20.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /// @title PoolTeam: Manages the team (employee/advisors) pool via a modified PaymentSplitter contract
 contract PoolTeam is ModifiedPaymentSplitter, Ownable {

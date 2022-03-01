@@ -4,9 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../helpers/ERC20.sol";
 
-import "../libraries/Address.sol";
-
-import "../libraries/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import "../interfaces/IAMMFarm.sol";
 
@@ -18,7 +16,7 @@ import "../interfaces/IERC20.sol";
 
 import "../libraries/SafeERC20.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/SafeSwap.sol";
 

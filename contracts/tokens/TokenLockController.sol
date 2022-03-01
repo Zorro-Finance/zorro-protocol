@@ -12,7 +12,7 @@ import "../helpers/Pausable.sol";
 
 import "../helpers/ReentrancyGuard.sol";
 
-import "../libraries/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 // TODO: Need modifer that only allows certain contracts to call
 

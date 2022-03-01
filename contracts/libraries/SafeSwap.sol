@@ -6,7 +6,7 @@ import "../interfaces/IAMMRouter02.sol";
 
 import "../interfaces/ICurveMetaPool.sol";
 
-import "./SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 // TODO: Might want a V3 style router for better liquidity (e.g. Curve Finance/Uniswap V3) - create another function
 
