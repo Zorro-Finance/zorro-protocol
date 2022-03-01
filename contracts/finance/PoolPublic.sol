@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "../libraries/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../interfaces/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../helpers/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title PoolPublic: The public pool contract. Hold all Zorro tokens deemed for public pool at inception and gradually emits to ZorroController contract based on market conditions
 contract PoolPublic is Ownable {

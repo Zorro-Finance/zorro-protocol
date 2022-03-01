@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 /* Dependencies */
-import "../helpers/ERC20.sol";
-
 import "./ZorroControllerBase.sol";
 
 import "./ZorroControllerPoolMgmt.sol";
