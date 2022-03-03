@@ -20,9 +20,20 @@ import "../cross-chain/XchainEndpoint.sol";
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
 contract ZorroControllerBase is Ownable, ReentrancyGuard {
+    /* Libraries */
     using SafeMath for uint256;
     using Math for uint256; // TODO: Do we need both Math and SafeMath?
     using SafeERC20 for IERC20;
+
+    /* Modifiers */
+    /// @notice Only allows functions to be executed where the sender matches the authorizedOracle address
+    modifier onlyXChainEndpoints() {
+        require(
+            registeredXChainEndpoints[_msgSender()] > 0,
+            "only reg xchain endpoints"
+        );
+        _;
+    }
 
     /* Structs */
 
@@ -99,6 +110,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address[] public USDCToZORPath; // TODO: Constructor, setter. The router path from USDC to ZOR
     address[] public USDCToZorroLPPoolToken0Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 0
     address[] public USDCToZorroLPPoolToken1Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 1
+    mapping(address => address) public registeredXChainEndpoints; // TODO: Setter. The accepted list of cross chain endpoints that can call this contract. TODO: Is this the best way to do it, or should we also be checking function sigs.
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
@@ -159,7 +171,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /// @notice Number of pools in the Zorro protocol
     /// @return Number of pools
-    function poolLength() external view returns (uint256) {
+    function poolLength() public view returns (uint256) {
         return poolInfo.length;
     }
 
@@ -250,7 +262,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /// @notice Receives an authorized burn request from another chain and burns the specified amount of ZOR tokens from the public pool
     /// @param _amount The quantity of ZOR tokens to burn
-    function receiveXChainBurnRewardsRequest(uint256 _amount) external {
+    function receiveXChainBurnRewardsRequest(uint256 _amount) external onlyXChainEndpoints {
         // TODO IMPORTANT: Only allow valid contract (endpoint contract?) to call this
         Zorro(ZORRO).burn(publicPool, _amount); // TODO: Should we wrap this in Open Zeppelin somehow?
     }

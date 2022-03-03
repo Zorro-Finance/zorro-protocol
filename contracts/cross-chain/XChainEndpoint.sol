@@ -244,7 +244,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _transactionId Universal transaction ID (e.g. transaction hash) of the tx info that was successfully sent to the Relayer
     function sendTransactionPacketToRelayerCallback(
         bytes calldata _transactionId
-    ) external onlyAuthorizedOracle {
+    ) external onlyAuthorizedRelayer {
         // Emits notification to acknowledge transaction processed by relayer
         emit RelayerReceivedCrossChainTx(_transactionId);
     }
@@ -441,7 +441,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @dev The _account parameter MUST be the first input argument of the receiving function on the remote chain (address (20-bit) datatype)
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
-    function extractIdentityFromPayload(bytes calldata _payload) public view virtual returns (address) {
+    function extractIdentityFromPayload(bytes calldata _payload) public pure virtual returns (address) {
         // TODO
         // Remove the first 4 bytes (Keccak 256 method signature)
         // Take the next 20 bits 
@@ -453,7 +453,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @dev The _value parameter MUST be the second input argument of the receiving function on the remote chain (uint256 data type)
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
-    function extractValueFromPayload(bytes calldata _payload) public view virtual returns (uint256) {
+    function extractValueFromPayload(bytes calldata _payload) public pure virtual returns (uint256) {
         // TODO
         // Remove the first 4 bytes (Keccak 256 method signature) + 20 bits (address)
         // Take the next 256 bits 
@@ -465,7 +465,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     /// @return The ABI econded bytes. For other chains, it will be those chains' standard serializations in bytes.
-    function encodeUnlockRequest(address _account,uint256 _amountUSDC) public view virtual returns (bytes memory) {
+    function encodeUnlockRequest(address _account,uint256 _amountUSDC) public pure virtual returns (bytes memory) {
         // Abi encode the payload and return it (override this for other chains, which use a different encoding)        
         return abi.encodeWithSignature(
             "receiveXChainUnlockRequest(address _account,uint256 _amountUSDC)", 
