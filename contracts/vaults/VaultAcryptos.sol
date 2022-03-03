@@ -320,9 +320,9 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Reassign value of earned amount after distributing fees
-        earnedAmt = distributeFees(earnedAmt);
+        earnedAmt = _distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro, sharing revenue
-        earnedAmt = buyBackAndRevShare(earnedAmt);
+        earnedAmt = _buyBackAndRevShare(earnedAmt);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
         if (isCOREStaking || isSameAssetDeposit) {
@@ -367,6 +367,7 @@ contract VaultAcryptosSingle is VaultBase {
         _farm();
     }
 
+    // TODO: Put this in SafeSwap.sol like for Uni, Curve. e.g. SafeSwapBalancer
     function swapAcryptos(
         uint256 _amountIn,
         address _assetIn,
@@ -374,7 +375,7 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _slippageFactor
     ) internal {
         // Determine the limit based on the exchange rate
-        uint256 limit = getExchangeRate(balancerVaultAddress, _assetOut, _assetIn)
+        uint256 limit = _getExchangeRate(balancerVaultAddress, _assetOut, _assetIn)
             .mul(_slippageFactor)
             .div(1000);
         // Swap Earned token to token0
@@ -398,12 +399,13 @@ contract VaultAcryptosSingle is VaultBase {
         );
     }
 
+    // TODO: Put this in SafeSwap.sol with the above
     /// @notice Calculates exchange rate of token B per token A. Note: Ignores swap fees!
     /// @param _balancerVaultAddress Address of Acryptos/Balancer Vault
     /// @param _tokenA token A address
     /// @param _tokenB token B address
     /// @return exhange rate of token B per token A
-    function getExchangeRate(
+    function _getExchangeRate(
         address _balancerVaultAddress,
         address _tokenA, 
         address _tokenB

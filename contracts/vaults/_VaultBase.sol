@@ -326,7 +326,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
     /// @return the remaining earned token amount after buyback and revshare operations
-    function buyBackAndRevShare(uint256 _earnedAmt)
+    function _buyBackAndRevShare(uint256 _earnedAmt)
         internal
         virtual
         returns (uint256)
@@ -370,7 +370,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice distribute controller (performance) fees
     /// @param _earnedAmt The Earned token amount (profits)
     /// @return The Earned token amount net of distributed fees
-    function distributeFees(uint256 _earnedAmt)
+    function _distributeFees(uint256 _earnedAmt)
         internal
         virtual
         returns (uint256)
