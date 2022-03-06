@@ -110,7 +110,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address[] public USDCToZORPath; // TODO: Constructor, setter. The router path from USDC to ZOR
     address[] public USDCToZorroLPPoolToken0Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 0
     address[] public USDCToZorroLPPoolToken1Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 1
-    mapping(address => address) public registeredXChainEndpoints; // TODO: Setter. The accepted list of cross chain endpoints that can call this contract. TODO: Is this the best way to do it, or should we also be checking function sigs.
+    mapping(address => uint8) public registeredXChainEndpoints; // TODO: Setter. The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed. TODO: Is this the best way to do it, or should we also be checking function sigs.
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {

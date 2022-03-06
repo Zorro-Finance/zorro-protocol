@@ -12,8 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../interfaces/IWBNB.sol";
-
 import "../interfaces/IAMMRouter01.sol";
 
 import "../interfaces/IAMMRouter02.sol";
@@ -316,8 +314,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         virtual
         returns (uint256)
     {
-        // TODO - implement
-
         // Calculate buyback amount
         uint256 _buyBackAmt = 0;
         if (buyBackRate > 0) {
