@@ -84,7 +84,7 @@ contract VaultStandardAMM is VaultBase {
     function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
-        onlyOwner
+        onlyZorroController
         nonReentrant
         whenNotPaused
         returns (uint256)
@@ -130,7 +130,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override returns (uint256) {
+    ) public override onlyZorroController returns (uint256) {
         // TODO: Take in current market prices (oracle)
         // Swap USDC for token0
         address[] memory USDCToToken0Path;
@@ -234,7 +234,7 @@ contract VaultStandardAMM is VaultBase {
     /// @return the number of shares removed
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
-        onlyOwner
+        onlyZorroController
         nonReentrant
         override
         returns (uint256)
@@ -298,7 +298,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override returns (uint256) {
+    ) public virtual override onlyZorroController returns (uint256) {
         // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
         // Require Want tokens to already be in holdings
@@ -376,18 +376,13 @@ contract VaultStandardAMM is VaultBase {
         // Harvest farm tokens
         _unfarm(0);
 
-        // If the earned address is the WBNB token, wrap all BNB owned by this contract
-        if (earnedAddress == wbnbAddress) {
-            _wrapBNB();
-        }
-
         // Get the balance of the Earned token on this contract (CAKE, BANANA, etc.)
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Reassign value of earned amount after distributing fees
-        earnedAmt = distributeFees(earnedAmt);
+        earnedAmt = _distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro and sharing revenue w/ ZOR stakeholders
-        earnedAmt = buyBackAndRevShare(earnedAmt);
+        earnedAmt = _buyBackAndRevShare(earnedAmt);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
         if (isCOREStaking || isSameAssetDeposit) {

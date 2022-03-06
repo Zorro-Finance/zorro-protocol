@@ -68,7 +68,7 @@ contract VaultZorro is VaultBase {
     function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
-        onlyOwner
+        onlyZorroController
         nonReentrant
         whenNotPaused
         returns (uint256)
@@ -112,7 +112,7 @@ contract VaultZorro is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override returns (uint256) {
+    ) public override onlyZorroController returns (uint256) {
         // Update temporary holdings for user
         wantTokensInHolding[_account] = _amount;
 
@@ -129,6 +129,7 @@ contract VaultZorro is VaultBase {
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
         override
+        onlyZorroController
         onlyOwner
         nonReentrant
         returns (uint256)
@@ -183,7 +184,7 @@ contract VaultZorro is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override returns (uint256) {
+    ) public virtual override onlyZorroController returns (uint256) {
         // Require Want tokens to already be in holdings
         require(_amount <= wantTokensInHolding[_account], "Requested more Want tokens than are in holding");
 
@@ -207,12 +208,6 @@ contract VaultZorro is VaultBase {
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
-        }
-
-        // If the earned address is the WBNB token, wrap all BNB owned by this contract
-        // TODO Get rid of all this WBNB stuff! (Across whole app!)
-        if (earnedAddress == wbnbAddress) {
-            _wrapBNB();
         }
 
         // Get the balance of the Earned token on this contract (USDC)

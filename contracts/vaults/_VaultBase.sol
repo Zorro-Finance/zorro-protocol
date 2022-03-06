@@ -12,8 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../interfaces/IWBNB.sol";
-
 import "../interfaces/IAMMRouter01.sol";
 
 import "../interfaces/IAMMRouter02.sol";
@@ -186,21 +184,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         _unpause();
     }
 
-    /// @notice wrap BNB (public version, only callable by gov)
-    function wrapBNB() public virtual onlyAllowGov {
-        _wrapBNB();
-        // TODO: Remove!
-    }
-
-    // TODO: remove!
-    /// @notice wrap BNB to WBNB
-    function _wrapBNB() internal virtual {
-        uint256 bnbBal = address(this).balance;
-        if (bnbBal > 0) {
-            IWBNB(wbnbAddress).deposit{value: bnbBal}();
-        }
-    }
-
     /* Configuration */
 
     /// @notice Configure key fee parameters
@@ -305,6 +288,12 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         emit SetRewardsAddress(_rewardsAddress);
     }
 
+    /* Modifiers */
+    modifier onlyZorroController() {
+        require(_msgSender() == zorroControllerAddress, "!zorroController");
+        _;
+    }
+
     /* Safety Functions */
 
     /// @notice Safely transfer ERC20 tokens stuck in this contract to a specified address
@@ -326,13 +315,11 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
     /// @return the remaining earned token amount after buyback and revshare operations
-    function buyBackAndRevShare(uint256 _earnedAmt)
+    function _buyBackAndRevShare(uint256 _earnedAmt)
         internal
         virtual
         returns (uint256)
     {
-        // TODO - implement
-
         // Calculate buyback amount
         uint256 _buyBackAmt = 0;
         if (buyBackRate > 0) {
@@ -370,7 +357,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice distribute controller (performance) fees
     /// @param _earnedAmt The Earned token amount (profits)
     /// @return The Earned token amount net of distributed fees
-    function distributeFees(uint256 _earnedAmt)
+    function _distributeFees(uint256 _earnedAmt)
         internal
         virtual
         returns (uint256)

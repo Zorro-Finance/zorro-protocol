@@ -21,9 +21,7 @@ import "../interfaces/ICurveMetaPool.sol";
 import "../libraries/SafeSwap.sol";
 
 contract ZorroControllerInvestment is ZorroControllerBase {
-    /*
-    Libraries
-    */
+    /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using CustomMath for uint256;
@@ -367,7 +365,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         return amount;
     }
 
-    /// @notice Transfer all assets from a tranche in one vault to a new vault
+    /// @notice Transfer all assets from a tranche in one vault to a new vault (works on-chain only)
     /// @param _fromPid index of pool FROM
     /// @param _fromTrancheId index of tranche FROM
     /// @param _toPid index of pool TO
@@ -422,7 +420,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param durationInWeeks number of weeks committed into Vault
     /// @return multiplier factor, times 1e12
     function getTimeMultiplier(uint256 durationInWeeks)
-        private
+        public
         view
         returns (uint256)
     {
@@ -445,13 +443,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     function getUserContribution(
         uint256 _liquidityCommitted,
         uint256 _timeMultiplier
-    ) private pure returns (uint256) {
+    ) public pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
 
-    /* 
-    Cross Chain functions 
-    */
+    /* Cross Chain functions */
 
     /* Deposits */
 
@@ -511,7 +507,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
-    ) internal {
+    ) external onlyXChainEndpoints {
         // Mint corresponding amount of zUSDC
         ZUSDC(syntheticStablecoin).mint(address(this), _valueUSDC);
         // Swap zUSDC for USDC
@@ -569,7 +565,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
-    ) internal {
+    ) external onlyXChainEndpoints {
         // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
         // without the withdrawal and lock steps
         TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
@@ -621,6 +617,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
     // arguments. We changed around the order of many args.
 
+    // TODO: Even if it's only callable by XChainendpoints, should we consider making non-reentrant? Study OZ more carefully.
+
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _account The user on this chain who initiated the withdrawal request
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
@@ -639,7 +637,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _trancheId,
         uint256 _maxMarketMovement,
         address _callbackContract
-    ) external nonReentrant {
+    ) external onlyXChainEndpoints {
         // TODO: Complete function, docstrings
         /*
         TODO
@@ -753,22 +751,19 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         require(success1, "Unsuccessful xchain unlock");
     }
 
-    // TODO - consider having this emit an event
-    // TODO - visibility and modifiers
+    // TODO - consider having this emit an event - actually most of these ffunctions should be emitting events
     /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     function receiveXChainUnlockRequest(address _account, uint256 _amountUSDC)
-        public
+        external onlyXChainEndpoints
     {
         // Get controller
         TokenLockController lockController = TokenLockController(
             lockUSDCController
         );
-        // Unlock user funds
-        lockController.unlockFunds(_account, _amountUSDC, address(0));
-        // Burn
-        lockController.burnFunds(_amountUSDC);
+        // Unlock user funds & burn
+        lockController.unlockFunds(_account, _amountUSDC, burnAddress);
     }
 
     /* Other Cross Chain */
@@ -789,10 +784,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address[] calldata _earnedToZORPath,
         address[] calldata _earnedToZORLPPoolToken0Path,
         address[] calldata _earnedToZORLPPoolToken1Path
-    ) public {
-        // TODO - implement
-        // TODO - modifiers and visibility
-
+    ) external onlyXChainEndpoints {
         // Get total earnings fees
         uint256 _totalEarningsFees = _buybackAmount.add(_revShareAmount);
         
@@ -888,9 +880,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address[] memory _tokenToZORPath,
         uint256 _revShareAmount
     ) internal {
-        // TODO - implement
-        // TODO - modifier, visibility
-
         // Authorize spending beforehand
         IERC20(_token).safeIncreaseAllowance(
             uniRouterAddress,
@@ -995,10 +984,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare
-    ) public {
-        // TODO: modifiers and visibility
-        // TODO - implement
-
+    ) external onlyXChainEndpoints {
         // Total USDC to perform operations
         uint256 _amountUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
 
@@ -1054,8 +1040,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback, 
         uint256 _failedAmountUSDCRevShare
-    ) public {
-        // TODO: modifiers and visibility
+    ) external onlyXChainEndpoints {
         // Calculate total amount to unlock and burn
         uint256 _totalBurnableUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
         // Unlock + burn
@@ -1079,8 +1064,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _pid,
         uint256 _amountBuybackUSDC,
         uint256 _amountRevShareUSDC
-    ) public {
-        // TODO modifiers and visibility
+    ) external onlyXChainEndpoints {
         // Marks locked earnings as operation as failed.
         lockedEarningsStatus[_blockNumber][_pid] = 3;
         // Update accumulated total of failed earnings
@@ -1090,6 +1074,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Safety */
     // TODO: Get function visibilities, modifiers correct. Note that this is a different oracle. Consider emitting events too
+    // TODO: This func doesn't seem to be called from anywhere. Investigate. 
 
     /// @notice Called by oracle when the deposit logic on the remote chain failed, and the deposit logic on this chain thus needs to be reverted
     /// @dev Unlocks USDC and returns it to depositor

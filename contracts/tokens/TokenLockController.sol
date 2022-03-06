@@ -101,18 +101,4 @@ contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
     // Return amount unlocked
     return _amountToUnlock;
   }
-
-  /// @notice Burn funds that are held on this contract
-  /// @param _amount The amount of the token to burn
-  /// @return The amount burned
-  function burnFunds(uint256 _amount) public onlyAllowedOperators returns (uint256) {
-    // Get current balance on this contract
-    uint256 _currentBal = IERC20(lockableToken).balanceOf(address(this));
-    // Amount to burn must be less than total held by this contract
-    require(_amount <= _currentBal, "Cannot burn more than avail");
-    // Send funds to burn address
-    IERC20(lockableToken).safeTransfer(burnAddress, _amount);
-    // Return amount burned
-    return _amount;
-  }
 }
