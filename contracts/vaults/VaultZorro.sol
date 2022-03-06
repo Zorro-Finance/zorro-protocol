@@ -209,12 +209,6 @@ contract VaultZorro is VaultBase {
             require(msg.sender == govAddress, "!gov");
         }
 
-        // If the earned address is the WBNB token, wrap all BNB owned by this contract
-        // TODO Get rid of all this WBNB stuff! (Across whole app!)
-        if (earnedAddress == wbnbAddress) {
-            _wrapBNB();
-        }
-
         // Get the balance of the Earned token on this contract (USDC)
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 

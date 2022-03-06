@@ -376,11 +376,6 @@ contract VaultStandardAMM is VaultBase {
         // Harvest farm tokens
         _unfarm(0);
 
-        // If the earned address is the WBNB token, wrap all BNB owned by this contract
-        if (earnedAddress == wbnbAddress) {
-            _wrapBNB();
-        }
-
         // Get the balance of the Earned token on this contract (CAKE, BANANA, etc.)
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
