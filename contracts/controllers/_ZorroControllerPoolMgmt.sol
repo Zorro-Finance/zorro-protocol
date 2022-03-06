@@ -17,13 +17,11 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
     /// @param _want The address of the want token
     /// @param _withUpdate  Mass update all pools if set to true
     /// @param _vault The contract address of the underlying vault
-    /// @param _intermediaryToken The address of an intermediary token (i.e. what is returned back to the user upon withdrawal) or 0 (only applicable for protocols like Tranchess)
     function add(
         uint256 _allocPoint,
         IERC20 _want,
         bool _withUpdate,
-        address _vault,
-        address _intermediaryToken
+        address _vault
     ) public onlyOwner {
         // If _withUpdate provided, update all pools
         if (_withUpdate) {
@@ -41,8 +39,7 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
                 lastRewardBlock: lastRewardBlock,
                 accZORRORewards: 0,
                 totalTrancheContributions: 0,
-                vault: _vault,
-                intermediaryToken: _intermediaryToken
+                vault: _vault
             })
         );
     }
@@ -51,12 +48,10 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
     /// @param _pid The index of the pool ID
     /// @param _allocPoint The number of allocation points for this pool (aka "multiplier")
     /// @param _withUpdate  Mass update all pools if set to true
-    /// @param _intermediaryToken The address of an intermediary token (i.e. what is returned back to the user upon withdrawal) or 0 (only applicable for protocols like Tranchess)
     function set(
         uint256 _pid,
         uint256 _allocPoint,
-        bool _withUpdate, 
-        address _intermediaryToken
+        bool _withUpdate
     ) public onlyOwner {
         // If _withUpdate provided, update all pools
         if (_withUpdate) {
@@ -66,7 +61,6 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         // Update the key params for this pool
         poolInfo[_pid].allocPoint = _allocPoint;
-        poolInfo[_pid].intermediaryToken = _intermediaryToken;
     }
 
     /// @notice Updates reward variables of all pools

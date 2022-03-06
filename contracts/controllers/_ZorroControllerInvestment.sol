@@ -154,7 +154,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _maxMarketMovement
         );
 
-        // Make deposit or record claim depending on whether exchange is synchronous
+        // Make deposit
         // Call core deposit function
         _deposit(_pid, _user, wantAmt, _weeksCommitted, _vaultEnteredAt);
     }
