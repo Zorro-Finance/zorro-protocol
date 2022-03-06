@@ -11,9 +11,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "../tokens/ZorroTokens.sol"; // TODO: Consider using SafeERC20/OZ helper functions here
+import "../tokens/ZorroTokens.sol";
 
 import "../cross-chain/XchainEndpoint.sol";
+
+// TODO: Do thorough analysis to ensure enough setters/constructors
 
 
 /* Base Contract */
@@ -65,43 +67,59 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /* Variables */ 
 
     // Public variables and their initial values (check blockchain scanner for latest values)
-    // See constructor() for explanations
+    // Key tokens/addresses
     address public ZORRO;
     address public burnAddress = 0x000000000000000000000000000000000000dEaD;
-    uint256 public startBlock;
     address public publicPool; 
-    uint256 public baseRewardRateBasisPoints = 10;
-    uint256 public BSCMarketTVLUSD; 
-    uint256 public ZorroTotalVaultTVLUSD;
-    uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33%
+    // Rewards
+    uint256 public startBlock;
     uint256 public blocksPerDay = 28800; // Approximate
+    uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33%
     uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 1 = 0.01%
     uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20%
+    uint256 public BSCMarketTVLUSD; 
+    uint256 public ZorroTotalVaultTVLUSD;
     bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
-    // TODO: Are defaultStablecoin, syntheticStablecoin needed anymore?
-    address public defaultStablecoin; // TODO: Setter/constructor
-    address public syntheticStablecoin; // TODO: Setter/constructor
-    int128 public defaultStablecoinIndex; // Index in Curve metapool of default stablecoin (e.g. USDC) TODO: Setter/constructor
-    int128 public synthethicStablecoinIndex; // Index in Curve metapool of synthetic stablecoin (e.g. zUSDC) TODO: Setter/constructor
+    uint256 public baseRewardRateBasisPoints = 10;
+    // Stablecoins
+    address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
+    address public syntheticStablecoin; // Address of synthetic stablecoin (i.e. ZUSDC)
+    // Curve
+    address public curveStablePoolAddress; // Pool contract address for swapping stablecoins
+    int128 public curveDefaultStablecoinIndex; // Index in Curve metapool of default stablecoin (e.g. USDC)
+    int128 public curveSyntheticStablecoinIndex; // Index in Curve metapool of synthetic stablecoin (e.g. zUSDC)
+    // Zorro LP pool
+    address public zorroLPPool; // Main pool for Zorro liquidity
+    address public zorroLPPoolToken0; // For the dominant LP pool, the 0th token (usually ZOR)
+    address public zorroLPPoolToken1; // For the dominant LP pool, the 1st token
+    // Uni swaps
+    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
+    address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
+    address[] public USDCToZorroLPPoolToken1Path; // The router path from USDC to the primary Zorro LP pool, Token 1
+    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%. TODO: Setter
+
+    // Zorro Single Staking vault
+    address public zorroStakingVault; // The vault for ZOR stakers on the BSC chain.
+
+    // Cross-chain
+    address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing.
+    uint256 public chainId; // The ID/index of the chain that this contract is on
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
-    address public lockUSDCController; // TODO: Put in setter, constructor
-    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc. TODO: Put in setter/getter
-    address public curveStablePoolAddress; // Pool contract address for swapping stablecoins TODO: Put in setter/getter
-    address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing. TODO: setter/constructor TODO: Make sure homecontrollercontract can never be address(0)!
-    uint256 public chainId; // TODO: Setter, contructor. The ID/index of the chain that this contract is on
-    // TODO: Do thorough analysis to ensure enough setters/constructors
+    mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed. TODO: Is this the best way to do it, or should we also be checking function sigs.
+    address public lockUSDCController;
     mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed. TODO: Turn these numbers into enums
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
-    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%. TODO: Setter
-    address public zorroLPPool; // TODO: Constructor, setter. Main pool for Zorro liquidity
-    address public zorroLPPoolToken0; // TODO: Constructor, setter. For the dominant LP pool, the 0th token (usually ZOR)
-    address public zorroLPPoolToken1; // TODO: Constructor, setter. For the dominant LP pool, the 1st token
-    address public zorroStakingVault; // TODO: Constructor, setter. The vault for ZOR stakers on the BSC chain.
-    address[] public USDCToZORPath; // TODO: Constructor, setter. The router path from USDC to ZOR
-    address[] public USDCToZorroLPPoolToken0Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 0
-    address[] public USDCToZorroLPPoolToken1Path; // TODO: Constructor, setter. The router path from USDC to the primary Zorro LP pool, Token 1
-    mapping(address => uint8) public registeredXChainEndpoints; // TODO: Setter. The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed. TODO: Is this the best way to do it, or should we also be checking function sigs.
+
+    // Info of each pool
+    PoolInfo[] public poolInfo;
+    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address => list of tranches
+    mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo; 
+    // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
+    uint256 public totalAllocPoint = 0;
+    // Redeposit information (so contract knows settings for destination vault during an async redeposit event)
+    // Mapping: pool ID/index => user wallet address => RedepositInfo
+    mapping(uint256 => mapping(address => RedepositInfo)) public redepositInfo;
 
     /* Setters */
     function setStartBlock(uint256 _blockNumber) external onlyOwner {
@@ -137,17 +155,52 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     function setEndpointContracts(uint256 _chainId, address _endpointContract) external onlyOwner {
         endpointContracts[_chainId] = _endpointContract;
     }
-
-
-    // Info of each pool
-    PoolInfo[] public poolInfo;
-    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address => list of tranches
-    mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo; 
-    // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
-    uint256 public totalAllocPoint = 0;
-    // Redeposit information (so contract knows settings for destination vault during an async redeposit event)
-    // Mapping: pool ID/index => user wallet address => RedepositInfo
-    mapping(uint256 => mapping(address => RedepositInfo)) public redepositInfo;
+    function setDefaultStablecoin(address _defaultStablecoin) external onlyOwner {
+        defaultStablecoin = _defaultStablecoin;
+    }
+    function setSyntheticStablecoin(address _syntheticStablecoin) external onlyOwner {
+        syntheticStablecoin = _syntheticStablecoin;
+    }
+    function setCurveStablePoolAddress(address _curveStablePoolAddress) external onlyOwner {
+        curveStablePoolAddress = _curveStablePoolAddress;
+    }
+    function setLockUSDCController(address _lockUSDCController) external onlyOwner {
+        lockUSDCController = _lockUSDCController;
+    }
+    function setUniRouter(address _uniV2Router) external onlyOwner {
+        uniRouterAddress = _uniV2Router;
+    }
+    function setHomeChainZorroController(address _homeChainZorroController) external onlyOwner {
+        require(_homeChainZorroController != address(0), "cannot be 0 addr");
+        homeChainZorroController = _homeChainZorroController;
+    }
+    function setZorroLPPool(address _zorroLPPool) external onlyOwner {
+        zorroLPPool = _zorroLPPool;
+    }
+    function setZorroLPPoolToken0(address _token0) external onlyOwner {
+        zorroLPPoolToken0 = _token0;
+    }
+    function setZorroLPPoolToken1(address _token1) external onlyOwner {
+        zorroLPPoolToken1 = _token1;
+    }
+    function setZorroStakingVault(address _zorroStakingVault) external onlyOwner {
+        zorroStakingVault = _zorroStakingVault;
+    }
+    function setChainId(uint256 _chainId) external onlyOwner {
+        chainId = _chainId;
+    }
+    function registerXChainEndpoint(address _contract) external onlyOwner {
+        registeredXChainEndpoints[_contract] = 1;
+    }
+    function unRegisterXChainEndpoint(address _contract) external onlyOwner {
+        registeredXChainEndpoints[_contract] = 0;
+    }
+    function setUSDCToZorroLPPoolToken0Path(address[] memory _path) external onlyOwner {
+        USDCToZorroLPPoolToken0Path = _path;
+    }
+    function setUSDCToZorroLPPoolToken1Path(address[] memory _path) external onlyOwner {
+        USDCToZorroLPPoolToken1Path = _path;
+    }
 
     /* Events */
     event Deposit(address indexed user, uint256 indexed pid, uint256 wantAmount);
@@ -259,13 +312,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @param _to destination for funds
     /// @param _ZORROAmt quantity of Zorro tokens to send
     function safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
+        uint256 _xferAmt = _ZORROAmt;
         uint256 ZORROBal = IERC20(ZORRO).balanceOf(address(this));
-        // TODO: Change this to a safeTransfer() function (OpenZeppelin compliance)
         if (_ZORROAmt > ZORROBal) {
-            IERC20(ZORRO).transfer(_to, ZORROBal);
-        } else {
-            IERC20(ZORRO).transfer(_to, _ZORROAmt);
+            _xferAmt = ZORROBal;
         }
+        IERC20(ZORRO).safeTransfer(_to, _xferAmt);
     }
 
     /// @notice For owner to recover ERC20 tokens on this contract if stuck

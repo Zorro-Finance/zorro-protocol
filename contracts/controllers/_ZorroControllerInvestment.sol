@@ -514,8 +514,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         ICurveMetaPool(curveStablePoolAddress).safeSwap(
             _valueUSDC,
             _maxMarketMovement,
-            synthethicStablecoinIndex,
-            defaultStablecoinIndex
+            curveSyntheticStablecoinIndex,
+            curveDefaultStablecoinIndex
         );
         // Call deposit function
         _depositFullService(
@@ -683,8 +683,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             ICurveMetaPool(curveStablePoolAddress).safeSwap(
                 _mintableAmountZUSDC,
                 _maxMarketMovement,
-                synthethicStablecoinIndex,
-                defaultStablecoinIndex
+                curveSyntheticStablecoinIndex,
+                curveDefaultStablecoinIndex
             );
         }
         // Burn unused USDC (if applicable)
@@ -998,8 +998,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         ICurveMetaPool(curveStablePoolAddress).safeSwap(
             _amountZUSDC,
             defaultMaxMarketMovement,
-            synthethicStablecoinIndex,
-            defaultStablecoinIndex
+            curveSyntheticStablecoinIndex,
+            curveDefaultStablecoinIndex
         );
         // Determine new USDC balances
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
@@ -1010,6 +1010,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         /* Rev share */
         uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
+        // Determine appropriate swap path from USDC to ZOR depending on 
+        // whether ZOR is the 0th or 1st token in the LP pair
+        address[] memory USDCToZORPath;
+        if (zorroLPPoolToken0 == ZORRO) {
+            USDCToZORPath = USDCToZorroLPPoolToken0Path;
+        } else {
+            USDCToZORPath = USDCToZorroLPPoolToken1Path;
+        }
         revShareOnChain(defaultStablecoin, USDCToZORPath, _revShareAmount);
 
         // Send cross chain burn request back to the remote chain
