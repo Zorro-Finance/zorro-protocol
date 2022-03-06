@@ -288,6 +288,12 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         emit SetRewardsAddress(_rewardsAddress);
     }
 
+    /* Modifiers */
+    modifier onlyZorroController() {
+        require(_msgSender() == zorroControllerAddress, "!zorroController");
+        _;
+    }
+
     /* Safety Functions */
 
     /// @notice Safely transfer ERC20 tokens stuck in this contract to a specified address

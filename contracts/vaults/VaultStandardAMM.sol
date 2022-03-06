@@ -84,7 +84,7 @@ contract VaultStandardAMM is VaultBase {
     function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
-        onlyOwner
+        onlyZorroController
         nonReentrant
         whenNotPaused
         returns (uint256)
@@ -130,7 +130,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override returns (uint256) {
+    ) public override onlyZorroController returns (uint256) {
         // TODO: Take in current market prices (oracle)
         // Swap USDC for token0
         address[] memory USDCToToken0Path;
@@ -234,7 +234,7 @@ contract VaultStandardAMM is VaultBase {
     /// @return the number of shares removed
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
-        onlyOwner
+        onlyZorroController
         nonReentrant
         override
         returns (uint256)
@@ -298,7 +298,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override returns (uint256) {
+    ) public virtual override onlyZorroController returns (uint256) {
         // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
         // Require Want tokens to already be in holdings

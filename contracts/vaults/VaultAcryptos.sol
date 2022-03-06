@@ -75,12 +75,6 @@ contract VaultAcryptosSingle is VaultBase {
         transferOwnership(msg.sender);
     }
 
-    /* Modifiers */
-    modifier onlyZorroController() {
-        require(_msgSender() == zorroControllerAddress, "!zorroController");
-        _;
-    }
-
     /* State */
 
     address public balancerVaultAddress =
