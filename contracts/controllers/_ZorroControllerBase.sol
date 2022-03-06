@@ -16,6 +16,7 @@ import "../tokens/ZorroTokens.sol";
 import "../cross-chain/XchainEndpoint.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors
+// TODO: Generally: Convert uint8s to enums
 
 
 /* Base Contract */
@@ -96,7 +97,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
     address[] public USDCToZorroLPPoolToken1Path; // The router path from USDC to the primary Zorro LP pool, Token 1
-    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%. TODO: Setter
+    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
 
     // Zorro Single Staking vault
     address public zorroStakingVault; // The vault for ZOR stakers on the BSC chain.
@@ -104,10 +105,11 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     // Cross-chain
     address public homeChainZorroController; // Address of the home (BSC) chain ZorroController contract. For cross chain routing.
     uint256 public chainId; // The ID/index of the chain that this contract is on
+    uint8 public homeChainId = 0; // The chain ID of the home chain (BSC)
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
-    mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed. TODO: Is this the best way to do it, or should we also be checking function sigs.
+    mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed.
     address public lockUSDCController;
-    mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed. TODO: Turn these numbers into enums
+    mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed.
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
 
@@ -201,6 +203,9 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     function setUSDCToZorroLPPoolToken1Path(address[] memory _path) external onlyOwner {
         USDCToZorroLPPoolToken1Path = _path;
     }
+    function setDefaultMaxMarketMovement(uint256 _defaultMaxMarketMovement) external onlyOwner {
+        defaultMaxMarketMovement = _defaultMaxMarketMovement;
+    }
 
     /* Events */
     event Deposit(address indexed user, uint256 indexed pid, uint256 wantAmount);
@@ -289,7 +294,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             // Mint Zorro on this (remote) chain
             Zorro(ZORRO).mint(address(this), ZORROReward);
             // Get endpoint contract
-            address homeChainEndpointContract = endpointContracts[0]; // TODO: Is it safe to use the zero index here or should we declare a state variable for the home contract?
+            address homeChainEndpointContract = endpointContracts[homeChainId];
             // Make cross-chain burn request
             // TODO: Revert action should indicate failure for burn request and accumulate it so that the next burn request will include it
             XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
@@ -304,7 +309,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @param _amount The quantity of ZOR tokens to burn
     function receiveXChainBurnRewardsRequest(uint256 _amount) external onlyXChainEndpoints {
         // TODO IMPORTANT: Only allow valid contract (endpoint contract?) to call this
-        Zorro(ZORRO).burn(publicPool, _amount); // TODO: Should we wrap this in Open Zeppelin somehow?
+        Zorro(ZORRO).burn(publicPool, _amount);
     }
     /* Safety functions */
 

@@ -32,7 +32,6 @@ contract Zorro is ERC20("ZORRO", "ZOR"), ZorroControllerOwnable {
     /// @param _to The address to mint to
     /// @param _amount The amount to mint
     function mint(address _to, uint256 _amount) public onlyZorroController {
-        // TODO: change modifier for this function
         _mint(_to, _amount);
     }
 
@@ -40,7 +39,6 @@ contract Zorro is ERC20("ZORRO", "ZOR"), ZorroControllerOwnable {
     /// @param _account The address to transfer ZOR from for burning
     /// @param _amount The amount of ZOR to transfer and burn
     function burn(address _account, uint256 _amount) public onlyZorroController {
-        // TODO change modifier here
         _burn(_account, _amount);
     }
 }

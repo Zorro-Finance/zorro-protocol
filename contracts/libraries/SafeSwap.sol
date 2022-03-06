@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
-// TODO: Might want a V3 style router for better liquidity (e.g. Curve Finance/Uniswap V3) - create another function
 
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {

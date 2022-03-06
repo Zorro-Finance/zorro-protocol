@@ -20,6 +20,14 @@ import "../interfaces/ICurveMetaPool.sol";
 
 import "../libraries/SafeSwap.sol";
 
+
+// TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
+// arguments. We changed around the order of many args.
+// TODO: Do an overall audit of the code base to see where we should emit events. 
+// TODO: onlyXChainEndpoints modifier may not be enough. Imagine scenario where someone makes a cross-chain call to revertXChainDeposit()
+// but isn't authorized. We need to extract the cross-chain msg.sender to check. 
+
+
 contract ZorroControllerInvestment is ZorroControllerBase {
     /* Libraries */
     using SafeERC20 for IERC20;
@@ -145,7 +153,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
 
-        // TODO: Need to approve the Vault contract first?
+        // Approve spending
+        IERC20(defaultStablecoin).safeIncreaseAllowance(poolInfo[_pid].vault, _valueUSDC);
 
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(
@@ -479,6 +488,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             address(this),
             _amountUSDC
         );
+
+        // TODO: Need to collect a xchain deposit fee here! And the net amount of the deposit needs to be accounted for somehow.
+
         // Transfer USDC into this contract
         IERC20(defaultStablecoin).safeTransferFrom(
             msg.sender,
@@ -606,7 +618,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
 
         // Call contract layer to dispatch cross chain transaction
-        XChainEndpoint _xChainEndpoint = XChainEndpoint(endpointContracts[0]); // TODO: Need better system than [0] for home chain endpoint contract
+        XChainEndpoint _xChainEndpoint = XChainEndpoint(endpointContracts[homeChainId]);
         _xChainEndpoint.sendXChainTransaction(
             _destinationContract, 
             _payload, 
@@ -614,36 +626,29 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
     }
 
-    // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
-    // arguments. We changed around the order of many args.
-
-    // TODO: Even if it's only callable by XChainendpoints, should we consider making non-reentrant? Study OZ more carefully.
-
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _account The user on this chain who initiated the withdrawal request
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
     /// @param _chainId The Chain ID of the remote chain that initiated this request
-    /// @param _originalDepositUSDC The amount originally deposited into this tranche // TODO net- or gross- of fees? IMPORTANT
+    /// @param _originalNetDepositUSDC The amount originally deposited into this tranche, NET of fees
     /// @param _pid The pool ID on the remote chain that the user withdrew from
     /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
-    /// @param _maxMarketMovement factor to account for max market movement/slippage. // TODO - need definition
+    /// @param _maxMarketMovement factor to account for max market movement/slippage, expressed as numerator over 1000 (e.g. 950 => 950/1000 = 0.95 = 5% slippage)
     /// @param _callbackContract The remote contract that called this function.
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
         uint256 _chainId,
-        uint256 _originalDepositUSDC,
+        uint256 _originalNetDepositUSDC,
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement,
         address _callbackContract
-    ) external onlyXChainEndpoints {
-        // TODO: Complete function, docstrings
-        /*
-        TODO
-        - Need original deposit amount, which is stored on opposite chain. OR we maintain a xchain mapping on this chain by tranche
+    ) external onlyXChainEndpoints nonReentrant {
+        // TODO Need original deposit amount, which is stored on opposite chain. 
+        // OR we maintain a xchain mapping on this chain by tranche
+        // TODO: Why are pid, trancheId not being used here?
 
-        */
         // Initialize finance variables
         uint256 _profit = 0;
         uint256 _unlockableAmountUSDC = 0;
@@ -651,12 +656,12 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _burnableAmountUSDC = 0;
 
         // Update amounts depending on whether investment was profitable
-        if (_withdrawnUSDC >= _originalDepositUSDC) {
+        if (_withdrawnUSDC >= _originalNetDepositUSDC) {
             // Profitable
             // Calculate profit amount if a profit was made
-            _profit = _withdrawnUSDC.sub(_originalDepositUSDC);
+            _profit = _withdrawnUSDC.sub(_originalNetDepositUSDC);
             // Set the unlockable amount to the original deposit amount (principal) only
-            _unlockableAmountUSDC = _originalDepositUSDC;
+            _unlockableAmountUSDC = _originalNetDepositUSDC;
             // Set the mint amount to the proceeds.
             _mintableAmountZUSDC = _profit;
         } else {
@@ -664,7 +669,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             // Set the unlockable amount to the withdrawal amount
             _unlockableAmountUSDC = _withdrawnUSDC;
             // The burn amount to the loss amount
-            _burnableAmountUSDC = _originalDepositUSDC.sub(_withdrawnUSDC);
+            _burnableAmountUSDC = _originalNetDepositUSDC.sub(_withdrawnUSDC);
         }
 
         // Unlock USDC principal
@@ -700,29 +705,26 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
-        // TODO - how to prepare request such that it's generalized for any chain? E.g. abi encoding
         sendXChainUnlockRequest(
-            _chainId, 
             _account, 
             _withdrawnUSDC, 
+            _chainId, 
             abi.encodePacked(_callbackContract)
         );
     }
-
-    // TODO: Do we need to account for "dust" amounts? Too small amounts causing potential failures? Rounding errors? See Autofarm code
 
     /* Cross-chain unlocks */
 
     /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
     /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
-    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
+    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the contract on the remote chain to send the unlock request to
     function sendXChainUnlockRequest(
-        uint256 _chainId,
         address _account,
         uint256 _amountUSDC,
+        uint256 _chainId,
         bytes memory _destinationContract
     ) internal {
         // Get endpoint contract
@@ -751,7 +753,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         require(success1, "Unsuccessful xchain unlock");
     }
 
-    // TODO - consider having this emit an event - actually most of these ffunctions should be emitting events
     /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
@@ -934,11 +935,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
         lockedEarningsStatus[block.number][_pid] = 1;
         // Fetch xchain endpoint for home chain
-        XChainEndpoint xChainEndpoint = XChainEndpoint(
-            endpointContracts[0] // TODO: Is [0] the way to do this, or should we have an explicit variable that points to the home chain contract
-        );
-
-        // TODO: For ALL amounts post swap/add/remove liq, ALWAYS use balanceOf() rather than assuming original amount was correct. Do a full audit across the app for this
+        XChainEndpoint xChainEndpoint = XChainEndpoint(endpointContracts[homeChainId]);
 
         // Account for any previously failed earnings
         uint256 _totalOriginalEarningsFees = _buybackAmount.add(_revShareAmount);
@@ -1081,21 +1078,19 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /* Safety */
-    // TODO: Get function visibilities, modifiers correct. Note that this is a different oracle. Consider emitting events too
-    // TODO: This func doesn't seem to be called from anywhere. Investigate. 
-
     /// @notice Called by oracle when the deposit logic on the remote chain failed, and the deposit logic on this chain thus needs to be reverted
     /// @dev Unlocks USDC and returns it to depositor
     /// @param _account The address of the depositor
-    /// @param _amountUSDC The amount originally deposited (TODO: inclusive of fees?)
-    function revertXChainDeposit(address _account, uint256 _amountUSDC)
+    /// @param _netDepositUSDC The amount originally deposited, net of fees
+    function revertXChainDeposit(address _account, uint256 _netDepositUSDC)
         public
         virtual
+        onlyXChainEndpoints
     {
         // Unlock & return to wallet
         TokenLockController(lockUSDCController).unlockFunds(
             _account,
-            _amountUSDC,
+            _netDepositUSDC,
             _account
         );
     }

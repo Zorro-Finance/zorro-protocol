@@ -132,6 +132,10 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController returns (uint256) {
         // TODO: Take in current market prices (oracle)
+
+        // Safe transfer
+        IERC20(tokenUSDCAddress).safeTransferFrom(_account, address(this), _amount);
+
         // Swap USDC for token0
         address[] memory USDCToToken0Path;
         USDCToToken0Path[0] = tokenUSDCAddress;

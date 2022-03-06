@@ -337,7 +337,6 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         bytes[] calldata _proofBlobs,
         bytes32 _blockHeaderHash
     ) external onlyAuthorizedRelayer {
-        // TODO
         // Check status
         require(
             blockHeaderHashes[_blockHeaderHash] > BLOCK_HEADER_HASH_NOT_EXIST,
