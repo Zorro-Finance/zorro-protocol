@@ -32,7 +32,7 @@ contract VaultAcryptosSingle is VaultBase {
         address[] memory _addresses,
         uint256 _pid,
         bool _isCOREStaking,
-        bool _isSameAssetDeposit,
+        bool _isSingleAssetDeposit,
         bool _isZorroComp,
         address[] memory _earnedToZORROPath,
         address[] memory _earnedToToken0Path,
@@ -54,7 +54,7 @@ contract VaultAcryptosSingle is VaultBase {
         farmContractAddress = _addresses[7];
         pid = _pid;
         isCOREStaking = _isCOREStaking;
-        isSameAssetDeposit = _isSameAssetDeposit;
+        isSingleAssetDeposit = _isSingleAssetDeposit;
         isZorroComp = _isZorroComp;
 
         uniRouterAddress = _addresses[8];
@@ -318,7 +318,7 @@ contract VaultAcryptosSingle is VaultBase {
         earnedAmt = _buyBackAndRevShare(earnedAmt);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
-        if (isCOREStaking || isSameAssetDeposit) {
+        if (isCOREStaking || isSingleAssetDeposit) {
             // Update the last earn block
             lastEarnBlock = block.number;
             _farm();

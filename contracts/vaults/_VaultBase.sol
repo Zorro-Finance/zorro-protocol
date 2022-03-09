@@ -30,9 +30,9 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /* State */
     // TODO: Check to make sure these are all set
     // Vault characteristics
-    bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.)
-    bool public isSameAssetDeposit; // Same asset token (not LP pair) TODO: Check for understanding with single staking vaults
-    bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events
+    bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
+    bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
+    bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     // Pool/farm/token IDs/addresses
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
@@ -95,6 +95,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public earnedToZORLPPoolToken1Path;
     address[] public USDCToToken0Path;
     address[] public USDCToToken1Path;
+    address[] public token0ToUSDCPath;
+    address[] public token1ToUSDCPath;
 
 
     // Cross chain

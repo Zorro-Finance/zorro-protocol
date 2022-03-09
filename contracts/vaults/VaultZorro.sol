@@ -13,50 +13,39 @@ contract VaultZorro is VaultBase {
     using SafeSwapUni for IAMMRouter02;
 
     /* Constructor */
-    // TODO: token0address should be the Zorro token address
+    /// @notice Constructor
+    /// @param _addresses : [gov, Zorro controller, Zorro token, Uni v2 router address]
+    /// @param _pid : The pool ID in the Zorro Controller
+    /// @param _fees : [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+    /// @param _token0ToUSDCPath Router path to swap from Zorro to USDC
+    /// @param _USDCToToken0Path Router path to swap from USDC to ZORRO
     constructor(
         address[] memory _addresses,
         uint256 _pid,
-        bool _isCOREStaking,
-        bool _isSameAssetDeposit,
-        bool _isZorroComp,
-        address[] memory _earnedToZORROPath,
-        address[] memory _earnedToToken0Path,
-        address[] memory _earnedToToken1Path,
-        address[] memory _token0ToEarnedPath,
-        address[] memory _token1ToEarnedPath,
-        uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+        uint256[] memory _fees,
+        address[] memory _token0ToUSDCPath,
+        address[] memory _USDCToToken0Path
     ) {
         govAddress = _addresses[0];
         zorroControllerAddress = _addresses[1];
         ZORROAddress = _addresses[2];
+        wantAddress = _addresses[2];
+        token0Address = _addresses[2];
+        rewardsAddress = _addresses[2];
+        uniRouterAddress = _addresses[3];
 
-        wantAddress = _addresses[3];
-        token0Address = _addresses[4];
-        token1Address = _addresses[5];
-        earnedAddress = _addresses[6];
-
-        farmContractAddress = _addresses[7];
         pid = _pid;
-        isCOREStaking = _isCOREStaking;
-        isSameAssetDeposit = _isSameAssetDeposit;
-        isZorroComp = _isZorroComp;
-
-        uniRouterAddress = _addresses[8];
-        earnedToZORROPath = _earnedToZORROPath;
-        earnedToToken0Path = _earnedToToken0Path;
-        earnedToToken1Path = _earnedToToken1Path;
-        token0ToEarnedPath = _token0ToEarnedPath;
-        token1ToEarnedPath = _token1ToEarnedPath;
+        isCOREStaking = false;
+        isSingleAssetDeposit = true;
+        isZorroComp = false;
 
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[9];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[10];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
 
-        transferOwnership(zorroControllerAddress);
+        token0ToUSDCPath = _token0ToUSDCPath;
+        USDCToToken0Path = _USDCToToken0Path;
     }
 
     /* Investment Actions */
@@ -100,15 +89,37 @@ contract VaultZorro is VaultBase {
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _amount The USDC quantity to exchange
+    /// @param _amountUSDC The USDC quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amount,
+        uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // TODO implement (use VaultStandardAMM.sol as example)
-        return _amount;
+        // TODO: Take in current market prices (oracle)
+
+        // Get balance of deposited USDC
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        // Check that USDC was actually deposited
+        require(_amountUSDC > 0, "USDC deposit must be > 0");
+        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+
+        // Swap USDC for token0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            _maxMarketMovementAllowed,
+            USDCToToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Calculate resulting want token balance
+        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
+
+        // Transfer back to sender
+        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+
+        return _wantAmt;
     }
 
     /// @notice Public function for farming Want token.
@@ -116,7 +127,7 @@ contract VaultZorro is VaultBase {
 
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _account address of user
-    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal (Should ALWAYS be true for this contract)
+    /// @param _harvestOnly unused for this function (only here to comply with interface)
     /// @return the number of shares removed
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
@@ -146,9 +157,9 @@ contract VaultZorro is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
         }
         // Safety: cap _wantAmt at the total quantity of Want tokens locked
         if (wantLockedTotal < _wantAmt) {
@@ -166,25 +177,45 @@ contract VaultZorro is VaultBase {
 
     /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
-        // TODO implement!
-        return _amount;
+        // TODO: Take in current market prices (oracle)
+
+        // Get current Zorro balance
+        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        
+        // Preflight checks
+        require(_amount <= token0Amt, "Exceeded balance for ZOR deposit");
+
+        // Swap token0 for USDC
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amount,
+            _maxMarketMovementAllowed,
+            token0ToUSDCPath,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+
+        // Transfer back to sender
+        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, amountUSDC);
+
+        return amountUSDC;
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
     function earn(uint256 _maxMarketMovementAllowed)
         public
         override
         nonReentrant
         whenNotPaused
     {
-        // TODO: Take in price oracle to perform safe swaps
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -192,27 +223,7 @@ contract VaultZorro is VaultBase {
             require(msg.sender == govAddress, "!gov");
         }
 
-        // Get the balance of the Earned token on this contract (USDC)
-        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
-
-        // No distribution of fees/buyback
-
-        // Approve the router contract
-        IERC20(earnedAddress).safeApprove(uniRouterAddress, 0);
-        // Allow the router contract to spen up to earnedAmt
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            earnedAmt
-        );
-
-        // Swap earned token (USDC) to token0 (ZORRO)
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            earnedAmt,
-            _maxMarketMovementAllowed,
-            earnedToToken0Path,
-            address(this),
-            block.timestamp.add(600)
-        );
+        // (No distribution of fees/buyback)
 
         // Update last earned block
         lastEarnBlock = block.number;
