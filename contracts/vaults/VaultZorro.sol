@@ -36,7 +36,7 @@ contract VaultZorro is VaultBase {
         token1Address = _addresses[5];
         earnedAddress = _addresses[6];
 
-        farmContractAddress = _addresses[];
+        farmContractAddress = _addresses[7];
         pid = _pid;
         isCOREStaking = _isCOREStaking;
         isSameAssetDeposit = _isSameAssetDeposit;
@@ -72,11 +72,11 @@ contract VaultZorro is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Check to make sure Want token is already on this contract and held for this user
-        require(
-            _wantAmt <= wantTokensInHolding[_account],
-            "Exceeds Want tokens in holding for this user"
-        );
+        // Get balance of want token (the deposited amount)
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        // Check to see if Want token was actually deposited, Want amount already present
+        require(_wantAmt > 0, "Want token deposit must be > 0");
+        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -96,25 +96,18 @@ contract VaultZorro is VaultBase {
         // Update want locked total
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
 
-        // Clear holdings
-        wantTokensInHolding[_account] = 0;
-
         return sharesAdded;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _account The user account to transfer USDC from
     /// @param _amount The USDC quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of Want token obtained
     function exchangeUSDForWantToken(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Update temporary holdings for user
-        wantTokensInHolding[_account] = _amount;
-
+        // TODO implement (use VaultStandardAMM.sol as example)
         return _amount;
     }
 
@@ -168,28 +161,18 @@ contract VaultZorro is VaultBase {
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
-        // Update holdings
-        wantTokensInHolding[_account] = _wantAmt;
-
         return sharesRemoved;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _account The user account to transfer USDC from
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
-        // Require Want tokens to already be in holdings
-        require(_amount <= wantTokensInHolding[_account], "Requested more Want tokens than are in holding");
-
-        // Clear out temporary holdings for user
-        wantTokensInHolding[_account] = 0;
-
+        // TODO implement!
         return _amount;
     }
 

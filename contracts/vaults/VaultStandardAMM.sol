@@ -237,7 +237,7 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account address of user
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
-    /// @return the number of shares removed
+    /// @return The number of shares removed
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
         onlyZorroController

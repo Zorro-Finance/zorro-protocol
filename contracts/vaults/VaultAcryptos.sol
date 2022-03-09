@@ -128,11 +128,11 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Check to make sure Want token is already on this contract and held for this user
-        require(
-            _wantAmt <= wantTokensInHolding[_account],
-            "Exceeds Want tokens in holding for this user"
-        );
+        // Get balance of want token (the deposited amount)
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        // Check to see if Want token was actually deposited, Want amount already present
+        require(_wantAmt > 0, "Want token deposit must be > 0");
+        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -157,24 +157,24 @@ contract VaultAcryptosSingle is VaultBase {
             wantLockedTotal = wantLockedTotal.add(_wantAmt);
         }
 
-        // Clear holdings
-        wantTokensInHolding[_account];
-
         return sharesAdded;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _account The user account to transfer USDC from
-    /// @param _amount The USDC quantity to exchange
+    /// @param _amountUSDC The USDC quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of Want token obtained
     function exchangeUSDForWantToken(
-        address _account,
-        uint256 _amount,
+        uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Safe transfer
-        IERC20(tokenUSDCAddress).safeTransferFrom(_account, address(this), _amount);
+        // TODO: Take in current market prices (oracle)
+
+        // Get balance of deposited USDC
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        // Check that USDC was actually deposited
+        require(_amountUSDC > 0, "USDC deposit must be > 0");
+        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // TODO: For all swaps, join/exit pools: Ensure to use safety features to prevent front running
         // Swap USDC for tokens
@@ -193,9 +193,6 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Deposit tokens to get Want token (e.g. LP token)
         // TODO: joinPool: https://dev.balancer.fi/resources/joins-and-exits/pool-joins 
-
-        // Update temporary holdings for user
-        wantTokensInHolding[_account] = 0; // TODO <- change this to want tokens obtained.
 
         return 0; // TODO: Change this to the actual value. This func still needs to be properly inputted
     }
@@ -231,7 +228,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account The address of the owner of vault investment
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
-    /// @return the number of shares removed
+    /// @return The number of shares removed
     function withdrawWantToken(address _account, bool _harvestOnly)
         public
         virtual
@@ -285,19 +282,14 @@ contract VaultAcryptosSingle is VaultBase {
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
-        // Update holdings
-        wantTokensInHolding[_account] = _wantAmt;
-
         return sharesRemoved;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _account The user account to transfer USDC from
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
