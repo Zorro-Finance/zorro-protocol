@@ -43,23 +43,22 @@ contract VaultStandardAMM is VaultBase {
         address[] memory _token1ToEarnedPath,
         uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     ) {
-        wbnbAddress = _addresses[0];
-        govAddress = _addresses[1];
-        zorroControllerAddress = _addresses[2];
-        ZORROAddress = _addresses[3];
+        govAddress = _addresses[0];
+        zorroControllerAddress = _addresses[1];
+        ZORROAddress = _addresses[2];
 
-        wantAddress = _addresses[4];
-        token0Address = _addresses[5];
-        token1Address = _addresses[6];
-        earnedAddress = _addresses[7];
+        wantAddress = _addresses[3];
+        token0Address = _addresses[4];
+        token1Address = _addresses[5];
+        earnedAddress = _addresses[6];
 
-        farmContractAddress = _addresses[8];
+        farmContractAddress = _addresses[7];
         pid = _pid;
         isCOREStaking = _isCOREStaking;
         isSameAssetDeposit = _isSameAssetDeposit;
         isZorroComp = _isZorroComp;
 
-        uniRouterAddress = _addresses[9];
+        uniRouterAddress = _addresses[8];
         earnedToZORROPath = _earnedToZORROPath;
         earnedToToken0Path = _earnedToToken0Path;
         earnedToToken1Path = _earnedToToken1Path;
@@ -67,9 +66,9 @@ contract VaultStandardAMM is VaultBase {
         token1ToEarnedPath = _token1ToEarnedPath;
 
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[10];
+        rewardsAddress = _addresses[9];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[11];
+        burnAddress = _addresses[10];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
 
@@ -79,7 +78,8 @@ contract VaultStandardAMM is VaultBase {
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
-    /// @param _wantAmt amount of Want token to deposit/stake
+    /// @param _account The address of the end user account making the deposit
+    /// @param _wantAmt The amount of Want token to deposit (must already be transferred)
     /// @return Number of shares added
     function depositWantToken(address _account, uint256 _wantAmt)
         public
@@ -89,8 +89,11 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Check to make sure Want token is already on this contract and held for this user
-        require(_wantAmt <= wantTokensInHolding[_account], "Exceeds Want tokens in holding for this user");
+        // Get balance of want token (the deposited amount)
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        // Check to see if Want token was actually deposited, Want amount already present
+        require(_wantAmt > 0, "Want token deposit must be > 0");
+        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -115,33 +118,31 @@ contract VaultStandardAMM is VaultBase {
             wantLockedTotal = wantLockedTotal.add(_wantAmt);
         }
 
-        // Clear holdings
-        wantTokensInHolding[_account] = 0;
-
         return sharesAdded;
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _account The user account to transfer USDC from
-    /// @param _amount The USDC quantity to exchange
+    /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender
+    /// @param _amountUSDC The amount of USDC to exchange for Want token (must already be deposited on this contract)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of Want token obtained
     function exchangeUSDForWantToken(
-        address _account,
-        uint256 _amount,
+        uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
-        // Safe transfer
-        IERC20(tokenUSDCAddress).safeTransferFrom(_account, address(this), _amount);
+        // Get balance of deposited USDC
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        // Check that USDC was actually deposited
+        require(_amountUSDC > 0, "USDC deposit must be > 0");
+        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Swap USDC for token0
         address[] memory USDCToToken0Path;
         USDCToToken0Path[0] = tokenUSDCAddress;
         USDCToToken0Path[1] = token0Address;
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
+            _amountUSDC.div(2),
             _maxMarketMovementAllowed,
             USDCToToken0Path,
             address(this),
@@ -153,7 +154,7 @@ contract VaultStandardAMM is VaultBase {
         USDCToToken1Path[0] = tokenUSDCAddress;
         USDCToToken1Path[1] = token1Address;
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
+            _amountUSDC.div(2),
             _maxMarketMovementAllowed,
             USDCToToken1Path,
             address(this),
@@ -182,14 +183,15 @@ contract VaultStandardAMM is VaultBase {
             block.timestamp.add(600)
         );
 
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
-
-        // Update temporary holdings for user
-        wantTokensInHolding[_account] = wantAmt;
-
         // TODO: Account for pool with only one token
 
-        return wantAmt;
+        // Calculate resulting want token balance
+        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
+
+        // Transfer back to sender
+        IERC20(wantAddress).safeTransfer(msg.sender, _wantAmt);
+
+        return _wantAmt;
     }
 
     /// @notice Public function for farming Want token.
@@ -288,9 +290,6 @@ contract VaultStandardAMM is VaultBase {
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
-        // Update holdings
-        wantTokensInHolding[_account] = _wantAmt;
-
         return sharesRemoved;
     }
 
@@ -306,8 +305,6 @@ contract VaultStandardAMM is VaultBase {
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
-        // Require Want tokens to already be in holdings
-        // require(_amount <= wantTokensInHolding[_account], "Requested more Want tokens than are in holding");
 
         // // Exit LP pool 
         // uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
@@ -356,13 +353,7 @@ contract VaultStandardAMM is VaultBase {
 
         // // TODO - account for pool with only one token
 
-        // Clear out temporary holdings for user
-        wantTokensInHolding[_account] = 0;
-
         uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
-        // Update temporary holdings for user
-        wantTokensInHolding[_account] = 0;
 
         return amountUSDC;
     }

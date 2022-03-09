@@ -47,6 +47,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmt,
         uint256 _weeksCommitted
     ) public nonReentrant {
+        // Get pool info
+        PoolInfo storage pool = poolInfo[_pid];
+
+        // Safely allow this contract to transfer the Want token from the sender to the underlying Vault contract
+        pool.want.safeIncreaseAllowance(address(this), _wantAmt);
+
+        // Transfer the Want token from the user to the Vault contract
+        IERC20(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
+
+        // Call core deposit function
         _deposit(_pid, msg.sender, _wantAmt, _weeksCommitted, block.timestamp);
     }
 
@@ -54,7 +64,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be called indirectly through other functions
     /// @param _pid index of pool
     /// @param _user address of user
-    /// @param _wantAmt how much Want token to deposit
+    /// @param _wantAmt how much Want token to deposit (must already be sent to vault contract)
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @param _enteredVaultAt Date to backdate vault entry to
     function _deposit(
@@ -64,23 +74,21 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _weeksCommitted,
         uint256 _enteredVaultAt
     ) internal {
+        // Get pool info
+        PoolInfo storage pool = poolInfo[_pid];
+
         // Preflight checks
         require(_wantAmt > 0, "_wantAmt must be > 0!");
 
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
 
-        // Get pool info
-        PoolInfo storage pool = poolInfo[_pid];
-
-        // Safely allow the underlying Zorro Vault contract to transfer the Want token
-        pool.want.safeIncreaseAllowance(pool.vault, _wantAmt);
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
             _user,
             _wantAmt
         );
-        // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault
+        // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
         uint256 timeMultiplier = 1e12;
         if (pool.vault != zorroStakingVault) {
             // Determine the time multiplier value based on the duration committed to in weeks
@@ -154,18 +162,20 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
     ) internal {
-        // Get Vault contract
-        IVault vault = IVault(poolInfo[_pid].vault);
+        // Get Pool, Vault contract
+        address vaultAddr = poolInfo[_pid].vault;
+        IVault vault = IVault(vaultAddr);
 
-        // Approve spending
-        IERC20(defaultStablecoin).safeIncreaseAllowance(poolInfo[_pid].vault, _valueUSDC);
+        // Approve spending of USDC (from user to this contract)
+        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _valueUSDC);
+        // Safe transfer to Vault contract
+        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, vaultAddr, _valueUSDC);
 
         // Exchange USDC for Want token in the Vault contract
-        uint256 wantAmt = vault.exchangeUSDForWantToken(
-            _user,
-            _valueUSDC,
-            _maxMarketMovement
-        );
+        uint256 wantAmt = vault.exchangeUSDForWantToken(_valueUSDC, _maxMarketMovement);
+
+        // Transfer Want token back to Vault contract
+        IERC20(poolInfo[_pid].want).safeTransfer(vaultAddr, wantAmt);
 
         // Make deposit
         // Call core deposit function

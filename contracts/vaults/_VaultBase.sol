@@ -29,12 +29,13 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     /* State */
     // TODO: Check to make sure these are all set
+    // Vault characteristics
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.)
     bool public isSameAssetDeposit; // Same asset token (not LP pair) TODO: Check for understanding with single staking vaults
     bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events
-
-    address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
+    // Pool/farm/token IDs/addresses
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
+    address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
     address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
     address public token0Address; // Address of first (or only) token
     address public token1Address; // Address of second token in pair if applicable
@@ -42,51 +43,47 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address public token3Address; // Address of fourth token in pair if applicable TODO: Ensure these are in constructor
     address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
     address public tokenUSDCAddress; // USDC token address TODO: put this in constructor
+    // Other addresses
+    address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
+    address public rewardsAddress; // The TimelockController RewardsDistributor contract
+    // Routers/Pools
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address public uniPoolAddress; // Address of LP Pool address (e.g. PancakeV2Pair) TODO
-
-    address public wbnbAddress; // Address of WBNB token (used to wrap BNB)
+    // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
     address public ZORROAddress; // Address of Zorro ERC20 token
+    // Governance
     address public govAddress; // Timelock controller contract
     bool public onlyGov = true; // Enforce gov only access on certain functions
-
+    // Accounting
     uint256 public lastEarnBlock = 0; // Last recorded block for an earn() event
     uint256 public wantLockedTotal = 0; // Total Want tokens locked/staked for this Vault
     uint256 public sharesTotal = 0; // Total shares for this Vault
-
+    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
+    // Fees
     // Controller fee - used to fund operations
     uint256 public controllerFee = 0; // Numerator for controller fee rate (100 = 1%)
     uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
     uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
-
     // Buyback - used to elevate scarcity of Zorro token
     uint256 public buyBackRate = 0; // Numerator for buyback ratio (100 = 1%)
     uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
     uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
-
     // Revenue sharing - used to share rewards with ZOR stakers
     uint256 public revShareRate = 0; // Numerator for revshare ratio (100 = 1%)
     uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
     uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
-
-    // Other
-    address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
-    address public rewardsAddress; // The TimelockController RewardsDistributor contract
-
     // Entrance fee - goes to pool + prevents front-running
     uint256 public entranceFeeFactor = 9990; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
     uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
     uint256 public constant entranceFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = "lowerlimit"
-
     // Withdrawal fee - goes to pool
     uint256 public withdrawFeeFactor = 10000; // Numerator of withdrawal fee factor
     uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
     uint256 public constant withdrawFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = lowerlimit
-
+    // Slippage
     uint256 public slippageFactor = 950; // 950 = 5% default slippage tolerance
     uint256 public constant slippageFactorUL = 995;
-
     // Swap routes
     // TODO: Need explanation, constructor, setter for all below. 
     address[] public earnedToZORROPath;
@@ -97,9 +94,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public earnedToZORLPPoolToken0Path;
     address[] public earnedToZORLPPoolToken1Path;
 
-    // Other
-    mapping(address => uint256) public wantTokensInHolding; // Ledger of Want tokens held by user when making deposits/withdrawals
-    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
 
     // Cross chain
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
@@ -381,8 +375,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     // Deposits
     function exchangeUSDForWantToken(
-        address _account,
-        uint256 _amount,
+        uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 

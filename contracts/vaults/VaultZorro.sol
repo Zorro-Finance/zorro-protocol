@@ -27,23 +27,22 @@ contract VaultZorro is VaultBase {
         address[] memory _token1ToEarnedPath,
         uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     ) {
-        wbnbAddress = _addresses[0];
-        govAddress = _addresses[1];
-        zorroControllerAddress = _addresses[2];
-        ZORROAddress = _addresses[3];
+        govAddress = _addresses[0];
+        zorroControllerAddress = _addresses[1];
+        ZORROAddress = _addresses[2];
 
-        wantAddress = _addresses[4];
-        token0Address = _addresses[5];
-        token1Address = _addresses[6];
-        earnedAddress = _addresses[7];
+        wantAddress = _addresses[3];
+        token0Address = _addresses[4];
+        token1Address = _addresses[5];
+        earnedAddress = _addresses[6];
 
-        farmContractAddress = _addresses[8];
+        farmContractAddress = _addresses[];
         pid = _pid;
         isCOREStaking = _isCOREStaking;
         isSameAssetDeposit = _isSameAssetDeposit;
         isZorroComp = _isZorroComp;
 
-        uniRouterAddress = _addresses[9];
+        uniRouterAddress = _addresses[8];
         earnedToZORROPath = _earnedToZORROPath;
         earnedToToken0Path = _earnedToToken0Path;
         earnedToToken1Path = _earnedToToken1Path;
@@ -51,9 +50,9 @@ contract VaultZorro is VaultBase {
         token1ToEarnedPath = _token1ToEarnedPath;
 
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[10];
+        rewardsAddress = _addresses[9];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[11];
+        burnAddress = _addresses[10];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
 

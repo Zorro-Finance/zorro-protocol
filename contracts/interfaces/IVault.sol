@@ -11,7 +11,7 @@ interface IVault {
     function sharesTotal() external view returns (uint256);
 
     // Deposits
-    function exchangeUSDForWantToken(address _account, uint256 _amount, uint256 _maxMarketMovementAllowed) external returns (uint256);
+    function exchangeUSDForWantToken(uint256 _amountUSDC, uint256 _maxMarketMovementAllowed) external returns (uint256);
 
     function depositWantToken(address _account, uint256 _wantAmt) external returns (uint256);
 
