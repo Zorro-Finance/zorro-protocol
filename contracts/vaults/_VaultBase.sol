@@ -93,6 +93,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public token1ToEarnedPath;
     address[] public earnedToZORLPPoolToken0Path;
     address[] public earnedToZORLPPoolToken1Path;
+    address[] public USDCToToken0Path;
+    address[] public USDCToToken1Path;
 
 
     // Cross chain

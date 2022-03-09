@@ -138,9 +138,6 @@ contract VaultStandardAMM is VaultBase {
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Swap USDC for token0
-        address[] memory USDCToToken0Path;
-        USDCToToken0Path[0] = tokenUSDCAddress;
-        USDCToToken0Path[1] = token0Address;
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             _maxMarketMovementAllowed,
@@ -150,9 +147,6 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Swap USDC for token1 (if applicable)
-        address[] memory USDCToToken1Path;
-        USDCToToken1Path[0] = tokenUSDCAddress;
-        USDCToToken1Path[1] = token1Address;
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             _maxMarketMovementAllowed,
@@ -301,7 +295,6 @@ contract VaultStandardAMM is VaultBase {
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
-        // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
 
         // Exit LP pool 
