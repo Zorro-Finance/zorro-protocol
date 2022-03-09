@@ -128,6 +128,11 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
+    modifier onlyZorroController() {
+        require(_msgSender() == zorroControllerAddress, "!zorroController");
+        _;
+    }
+
     /* Maintenance Functions */
 
     /// @notice Converts dust tokens into earned tokens, which will be reinvested on the next earn()
@@ -173,7 +178,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    // TODO - are these needed or do they come for free? If not, consider where we need to add these for other pausable contracts
     /// @notice Pause contract
     function pause() public virtual onlyAllowGov {
         _pause();
@@ -286,12 +290,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     {
         rewardsAddress = _rewardsAddress;
         emit SetRewardsAddress(_rewardsAddress);
-    }
-
-    /* Modifiers */
-    modifier onlyZorroController() {
-        require(_msgSender() == zorroControllerAddress, "!zorroController");
-        _;
     }
 
     /* Safety Functions */

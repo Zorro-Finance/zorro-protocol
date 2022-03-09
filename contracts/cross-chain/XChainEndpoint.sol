@@ -441,7 +441,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
     function extractIdentityFromPayload(bytes calldata _payload) public pure virtual returns (address) {
-        // TODO
+        // TODO implement
         // Remove the first 4 bytes (Keccak 256 method signature)
         // Take the next 20 bits 
         // ABI decode to "address" datatype
@@ -453,7 +453,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
     function extractValueFromPayload(bytes calldata _payload) public pure virtual returns (uint256) {
-        // TODO
+        // TODO implement
         // Remove the first 4 bytes (Keccak 256 method signature) + 20 bits (address)
         // Take the next 256 bits 
         // ABI decode to "uint256" datatype

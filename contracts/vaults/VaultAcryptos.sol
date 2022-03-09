@@ -173,10 +173,10 @@ contract VaultAcryptosSingle is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController returns (uint256) {
+    ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Safe transfer
         IERC20(tokenUSDCAddress).safeTransferFrom(_account, address(this), _amount);
-        
+
         // TODO: For all swaps, join/exit pools: Ensure to use safety features to prevent front running
         // Swap USDC for tokens
         // TODO Consider using a batch swap here
@@ -239,6 +239,7 @@ contract VaultAcryptosSingle is VaultBase {
         override
         onlyZorroController
         nonReentrant
+        whenNotPaused
         returns (uint256)
     {
         uint256 _wantAmt = 0;
@@ -300,7 +301,7 @@ contract VaultAcryptosSingle is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override onlyZorroController returns (uint256) {
+    ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO implement
     }
 

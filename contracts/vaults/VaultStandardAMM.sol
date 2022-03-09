@@ -130,7 +130,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController returns (uint256) {
+    ) public override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
         // Safe transfer
@@ -240,6 +240,7 @@ contract VaultStandardAMM is VaultBase {
         public
         onlyZorroController
         nonReentrant
+        whenNotPaused
         override
         returns (uint256)
     {
@@ -302,7 +303,7 @@ contract VaultStandardAMM is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override onlyZorroController returns (uint256) {
+    ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
         // Require Want tokens to already be in holdings

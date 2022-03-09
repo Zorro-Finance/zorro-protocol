@@ -80,8 +80,12 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _user,
             _wantAmt
         );
-        // Determine the time multiplier value based on the duration committed to in weeks
-        uint256 timeMultiplier = getTimeMultiplier(_weeksCommitted);
+        // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault
+        uint256 timeMultiplier = 1e12;
+        if (pool.vault != zorroStakingVault) {
+            // Determine the time multiplier value based on the duration committed to in weeks
+            timeMultiplier = getTimeMultiplier(_weeksCommitted);
+        }
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
         uint256 contributionAdded = getUserContribution(
             sharesAdded,
@@ -244,7 +248,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
 
         // Get current amount in tranche
-        // TODO: Since single staking vault can receive more "earned" tokens over time, check carefully that we are accounting for relative share correctly
+        // TODO: For ZORRO single staking vault, the tranche contribution doesn't equate to how much the user should get back, as it's a revenue share
         uint256 _wantAmountWithdrawable = tranche.contribution.mul(1e12).div(
             tranche.timeMultiplier
         );
@@ -275,7 +279,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Withdraw Want tokens from this contract to sender
         uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
         if (_wantBal > 0) {
-            pool.want.safeTransfer(address(_user), _wantBal);
+            pool.want.safeTransfer(_user, _wantBal);
         }
 
         // Remove tranche from this user if it's a full withdrawal

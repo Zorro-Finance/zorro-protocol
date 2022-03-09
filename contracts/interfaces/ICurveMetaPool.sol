@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 interface ICurveMetaPool {
-    // TODO Verify data types (e.g. int128 vs uint128) on actual contract
     function base_coins(uint256 i) external view returns(address);
 
     function coins(uint256 i) external view returns(address);

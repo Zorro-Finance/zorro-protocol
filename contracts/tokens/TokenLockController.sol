@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-// TODO: Need modifer that only allows certain contracts to call
 
 /// @title TokenLockController. Contract for securely locking, unlocking, and burning tokens
 contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
@@ -28,7 +27,6 @@ contract TokenLockController is Ownable, Pausable, ReentrancyGuard {
   Constructor
   */
   constructor(address _owner) {
-    // TODO - complete this
     // Immediately transfer ownership to specified owner
     transferOwnership(_owner);
   }

@@ -112,7 +112,7 @@ contract VaultZorro is VaultBase {
         address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController returns (uint256) {
+    ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Update temporary holdings for user
         wantTokensInHolding[_account] = _amount;
 
