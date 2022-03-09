@@ -391,7 +391,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         returns (uint256);
 
     function exchangeWantTokenForUSD(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);

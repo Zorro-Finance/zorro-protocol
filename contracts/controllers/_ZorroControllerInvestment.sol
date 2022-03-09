@@ -136,6 +136,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement
     ) public nonReentrant {
+        // Get Pool, Vault contract
+        address vaultAddr = poolInfo[_pid].vault;
+        IVault vault = IVault(vaultAddr);
+
+        // Approve spending of USDC (from user to this contract)
+        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _valueUSDC);
+        // Safe transfer to Vault contract
+        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, vaultAddr, _valueUSDC);
+
+        // Run core full deposit 
         _depositFullService(
             _pid,
             msg.sender,
@@ -166,11 +176,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address vaultAddr = poolInfo[_pid].vault;
         IVault vault = IVault(vaultAddr);
 
-        // Approve spending of USDC (from user to this contract)
-        IERC20(defaultStablecoin).safeIncreaseAllowance(address(this), _valueUSDC);
-        // Safe transfer to Vault contract
-        IERC20(defaultStablecoin).safeTransferFrom(msg.sender, vaultAddr, _valueUSDC);
-
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(_valueUSDC, _maxMarketMovement);
 
@@ -192,7 +197,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _trancheId,
         bool _harvestOnly
     ) public nonReentrant returns (uint256) {
-        return _withdraw(_pid, msg.sender, _trancheId, _harvestOnly);
+        // Withdraw Want token
+        uint256 _wantAmt = _withdraw(_pid, msg.sender, _trancheId, _harvestOnly);
+        
+        // Transfer to user and return Want amount
+        IERC20(poolInfo[_pid].want).safeTransfer(msg.sender, _wantAmt);
+        
+        return _wantAmt;
     }
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
@@ -257,53 +268,24 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             }
         }
 
-        // Get current amount in tranche
-        // TODO: For ZORRO single staking vault, the tranche contribution doesn't equate to how much the user should get back, as it's a revenue share
-        uint256 _wantAmountWithdrawable = tranche.contribution.mul(1e12).div(
-            tranche.timeMultiplier
-        );
-
         // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-        uint256 sharesRemoved = IVault(poolInfo[_pid].vault).withdrawWantToken(
+        IVault(poolInfo[_pid].vault).withdrawWantToken(
             _user,
             _harvestOnly
         );
-        uint256 contributionRemoved = getUserContribution(
-            sharesRemoved,
-            tranche.timeMultiplier
-        );
+
         // Update shares safely
-        if (contributionRemoved > tranche.contribution) {
-            tranche.contribution = 0;
-            pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
-                tranche.contribution
-            );
-        } else {
-            tranche.contribution = tranche.contribution.sub(
-                contributionRemoved
-            );
-            pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
-                contributionRemoved
-            );
-        }
-        // Withdraw Want tokens from this contract to sender
+        pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
+            tranche.contribution
+        );
+        
+        // Calculate Want token balance
         uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
-        if (_wantBal > 0) {
-            pool.want.safeTransfer(_user, _wantBal);
-        }
 
-        // Remove tranche from this user if it's a full withdrawal
-        if (_wantBal == _wantAmountWithdrawable) {
-            deleteTranche(_pid, _trancheId, _user);
-        }
+        // All withdrawals are full withdrawals so delete the tranche
+        deleteTranche(_pid, _trancheId, _user);
 
-        // Note: Tranche's reward debt is issued on every deposit/withdrawal so that we don't count the full pool accumulation of ZORRO rewards.
-        uint256 newTrancheShare = tranche.contribution.mul(1e12).div(
-            pool.totalTrancheContributions
-        );
-        tranche.rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(
-            1e12
-        );
+        // Emit withdrawal event and return want balance
         emit Withdraw(_user, _pid, _trancheId, _wantBal);
 
         return _wantBal;
@@ -340,14 +322,19 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bool _harvestOnly,
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
-        uint256 amount = _withdrawalFullService(
+        // Withdraw Want token
+        uint256 _amountUSDC = _withdrawalFullService(
             msg.sender,
             _pid,
             _trancheId,
             _harvestOnly,
             _maxMarketMovement
         );
-        return amount;
+
+        // Send USDC funds back to sender
+        IERC20(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
+
+        return _amountUSDC;
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
@@ -365,8 +352,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _maxMarketMovement
     ) internal returns (uint256) {
         // Update tranche status
-        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block
-            .timestamp;
+        trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block.timestamp;
 
         // Get Vault contract
         IVault vault = IVault(poolInfo[_pid].vault);
@@ -379,8 +365,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _harvestOnly
         );
 
+        // Transfer Want token to Vault contract
+        IERC20(poolInfo[_pid].want).safeTransfer(poolInfo[_pid].vault, wantAmtWithdrawn);
+
         uint256 amount = vault.exchangeWantTokenForUSD(
-            _account,
             wantAmtWithdrawn,
             _maxMarketMovement
         );

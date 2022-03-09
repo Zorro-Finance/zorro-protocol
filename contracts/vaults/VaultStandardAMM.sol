@@ -189,7 +189,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
 
         // Transfer back to sender
-        IERC20(wantAddress).safeTransfer(msg.sender, _wantAmt);
+        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
         return _wantAmt;
     }
@@ -275,9 +275,9 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
         }
         // Safety: cap _wantAmt at the total quantity of Want tokens locked
         if (wantLockedTotal < _wantAmt) {
@@ -293,67 +293,66 @@ contract VaultStandardAMM is VaultBase {
         return sharesRemoved;
     }
 
-    /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _account The user account to transfer USDC from
+    /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Too many local variables. Consolidate after uncommenting below
         // TODO: Take in current market prices (oracle)
 
-        // // Exit LP pool 
-        // uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
-        // uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
-        // uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
-        // uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-        // uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-        // IAMMRouter02(uniRouterAddress).removeLiquidity(
-        //     token0Address, 
-        //     token1Address,  
-        //     _amount,  
-        //     amount0Min,  
-        //     amount1Min,  
-        //     address(this),  
-        //     block.timestamp.add(600)
-        // );
+        // Exit LP pool 
+        uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
+        uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
+        uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
+        uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+        uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+        IAMMRouter02(uniRouterAddress).removeLiquidity(
+            token0Address, 
+            token1Address,  
+            _amount,  
+            amount0Min,  
+            amount1Min,  
+            address(this),  
+            block.timestamp.add(600)
+        );
 
-        // // Swap tokens back to USDC
-        // uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        // uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-        // // Swap token0 for USDC
-        // address[] memory token0ToUSDCPath;
-        // token0ToUSDCPath[0] = token0Address;
-        // token0ToUSDCPath[1] = tokenUSDCAddress;
-        // _safeSwap(
-        //     uniRouterAddress,
-        //     token0Amt,
-        //     _maxMarketMovementAllowed,
-        //     token0ToUSDCPath,
-        //     address(this),
-        //     block.timestamp.add(600)
-        // );
+        // Swap tokens back to USDC
+        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        // Swap token0 for USDC
+        address[] memory token0ToUSDCPath;
+        token0ToUSDCPath[0] = token0Address;
+        token0ToUSDCPath[1] = tokenUSDCAddress;
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            token0Amt,
+            _maxMarketMovementAllowed,
+            token0ToUSDCPath,
+            address(this),
+            block.timestamp.add(600)
+        );
 
-        // // Swap token1 for USDC
-        // address[] memory token1ToUSDCPath;
-        // token1ToUSDCPath[0] = token1Address;
-        // token1ToUSDCPath[1] = tokenUSDCAddress;
-        // _safeSwap(
-        //     uniRouterAddress,
-        //     token1Amt,
-        //     _maxMarketMovementAllowed,
-        //     token1ToUSDCPath,
-        //     address(this),
-        //     block.timestamp.add(600)
-        // );
+        // Swap token1 for USDC
+        address[] memory token1ToUSDCPath;
+        token1ToUSDCPath[0] = token1Address;
+        token1ToUSDCPath[1] = tokenUSDCAddress;
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            token1Amt,
+            _maxMarketMovementAllowed,
+            token1ToUSDCPath,
+            address(this),
+            block.timestamp.add(600)
+        );
 
-        // // TODO - account for pool with only one token
+        // TODO - account for pool with only one token
 
         uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+
+        // Transfer back to sender
+        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, amountUSDC);
 
         return amountUSDC;
     }
