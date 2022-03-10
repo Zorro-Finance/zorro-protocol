@@ -807,8 +807,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Check to see if the controller contract is on the home chain (BSC)
         if (address(this) == homeChainZorroController) {
             // If on home chain, perform buyback logic as normal
-            buybackOnChain(_earnedAddress, _buybackAmount, _earnedToZORLPPoolToken0Path, _earnedToZORLPPoolToken1Path);
-            revShareOnChain(_earnedAddress, _earnedToZORPath, _revShareAmount);
+            // TODO: Problem here is that the earn token may not be swappable on PCS. The responsibility of this needs to be on the underlying Vault
+            _buybackOnChain(_earnedAddress, _buybackAmount, _earnedToZORLPPoolToken0Path, _earnedToZORLPPoolToken1Path);
+            _revShareOnChain(_earnedAddress, _earnedToZORPath, _revShareAmount);
         } else {
             // If on a foreign chain, send a cross chain request for LP + burn, and revenue sharing
             distributeEarningsXChain(_pid, _earnedAddress, _buybackAmount, _revShareAmount);
@@ -820,7 +821,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _buybackAmount The amount of Earn token to buy back  
     /// @param _tokenToZORLPPoolToken0Path The router path for swapping from _token to the 0th token of the primary ZOR LP pool (usually ZOR)
     /// @param _tokenToZORLPPoolToken1Path The router path for swapping from _token to the 1st token of the primary ZOR LP pool
-    function buybackOnChain(
+    function _buybackOnChain(
         address _token,
         uint256 _buybackAmount,
         address[] memory _tokenToZORLPPoolToken0Path,
@@ -878,7 +879,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _token The address of the token to be rev-shared
     /// @param _tokenToZORPath The router path to swap _token to ZOR
     /// @param _revShareAmount The amount of Earn token to share as revenue with ZOR stakers
-    function revShareOnChain(
+    function _revShareOnChain(
         address _token,
         address[] memory _tokenToZORPath,
         uint256 _revShareAmount
@@ -1005,7 +1006,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         /* Buyback */
         uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback.add(_failedAmountUSDCBuyback)).div(_amountUSDC);
-        buybackOnChain(defaultStablecoin, _buybackAmount, USDCToZorroLPPoolToken0Path, USDCToZorroLPPoolToken1Path);
+        _buybackOnChain(defaultStablecoin, _buybackAmount, USDCToZorroLPPoolToken0Path, USDCToZorroLPPoolToken1Path);
 
         /* Rev share */
         uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
@@ -1017,7 +1018,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         } else {
             USDCToZORPath = USDCToZorroLPPoolToken1Path;
         }
-        revShareOnChain(defaultStablecoin, USDCToZORPath, _revShareAmount);
+        _revShareOnChain(defaultStablecoin, USDCToZORPath, _revShareAmount);
 
         // Send cross chain burn request back to the remote chain
         XChainEndpoint endpointContract = XChainEndpoint(

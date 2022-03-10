@@ -137,47 +137,59 @@ contract VaultStandardAMM is VaultBase {
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
-        // Swap USDC for token0
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _maxMarketMovementAllowed,
-            USDCToToken0Path,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Swap USDC for token1 (if applicable)
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _maxMarketMovementAllowed,
-            USDCToToken1Path,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-        IERC20(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token0Amt
+        // For single token pools, simply swap to Want token right away
+        if (isSingleAssetDeposit) {
+            // Swap USDC for Want token
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amountUSDC,
+                _maxMarketMovementAllowed,
+                USDCToWantPath,
+                address(this),
+                block.timestamp.add(600)
             );
-        IERC20(token1Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token1Amt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            token0Address,
-            token1Address,
-            token0Amt,
-            token1Amt,
-            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-            address(this),
-            block.timestamp.add(600)
-        );
+        } else {
+            // For multi token pools (i.e. LP pools)
 
-        // TODO: Account for pool with only one token
+            // Swap USDC for token0
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _maxMarketMovementAllowed,
+                USDCToToken0Path,
+                address(this),
+                block.timestamp.add(600)
+            );
+
+            // Swap USDC for token1 (if applicable)
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _maxMarketMovementAllowed,
+                USDCToToken1Path,
+                address(this),
+                block.timestamp.add(600)
+            );
+
+            // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
+            uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+            uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+            IERC20(token0Address).safeIncreaseAllowance(
+                    uniRouterAddress,
+                    token0Amt
+                );
+            IERC20(token1Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token1Amt
+            );
+            IAMMRouter02(uniRouterAddress).addLiquidity(
+                token0Address,
+                token1Address,
+                token0Amt,
+                token1Amt,
+                token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+                token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
 
         // Calculate resulting want token balance
         uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
@@ -297,57 +309,86 @@ contract VaultStandardAMM is VaultBase {
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
-        // Exit LP pool 
-        uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
-        uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
-        uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
-        uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-        uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-        IAMMRouter02(uniRouterAddress).removeLiquidity(
-            token0Address, 
-            token1Address,  
-            _amount,  
-            amount0Min,  
-            amount1Min,  
-            address(this),  
-            block.timestamp.add(600)
-        );
+        // Init
+        uint256 _amountUSDC;
 
-        // Swap tokens back to USDC
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-        // Swap token0 for USDC
-        address[] memory token0ToUSDCPath;
-        token0ToUSDCPath[0] = token0Address;
-        token0ToUSDCPath[1] = tokenUSDCAddress;
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            token0Amt,
-            _maxMarketMovementAllowed,
-            token0ToUSDCPath,
-            address(this),
-            block.timestamp.add(600)
-        );
+        // Calculate Want token balance
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        
+        // Preflight checks
+        require(_amount <= _wantBal, "Exceeds want bal");
 
-        // Swap token1 for USDC
-        address[] memory token1ToUSDCPath;
-        token1ToUSDCPath[0] = token1Address;
-        token1ToUSDCPath[1] = tokenUSDCAddress;
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            token1Amt,
-            _maxMarketMovementAllowed,
-            token1ToUSDCPath,
-            address(this),
-            block.timestamp.add(600)
-        );
+        // Check if vault is for single asset staking
+        if (isSingleAssetDeposit) {
+            // If so, immediately swap the Want token for USDC
 
-        // TODO - account for pool with only one token
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amount,
+                _maxMarketMovementAllowed,
+                WantToUSDCPath,
+                address(this),
+                block.timestamp.add(600)
+            );
 
-        uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+
+        } else {
+            // If not, exit the LP pool and swap assets to USDC
+
+            // Exit LP pool 
+            uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
+            uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
+            uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
+            uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+            uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+            IAMMRouter02(uniRouterAddress).removeLiquidity(
+                token0Address, 
+                token1Address,  
+                _amount,  
+                amount0Min,  
+                amount1Min,  
+                address(this),  
+                block.timestamp.add(600)
+            );
+
+            // Swap tokens back to USDC
+            uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+            uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+            // Swap token0 for USDC
+            address[] memory token0ToUSDCPath;
+            token0ToUSDCPath[0] = token0Address;
+            token0ToUSDCPath[1] = tokenUSDCAddress;
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                token0Amt,
+                _maxMarketMovementAllowed,
+                token0ToUSDCPath,
+                address(this),
+                block.timestamp.add(600)
+            );
+
+            // Swap token1 for USDC (if applicable)
+            if (token1Address != address(0)) {
+                address[] memory token1ToUSDCPath;
+                token1ToUSDCPath[0] = token1Address;
+                token1ToUSDCPath[1] = tokenUSDCAddress;
+                IAMMRouter02(uniRouterAddress).safeSwap(
+                    token1Amt,
+                    _maxMarketMovementAllowed,
+                    token1ToUSDCPath,
+                    address(this),
+                    block.timestamp.add(600)
+                );
+            }
+
+            // Calculate USDC balance
+            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+
+        }
 
         // Transfer back to sender
-        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, amountUSDC);
+        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, _amountUSDC);
 
-        return amountUSDC;
+        return _amountUSDC;
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
