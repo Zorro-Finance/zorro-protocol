@@ -176,10 +176,12 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address vaultAddr = poolInfo[_pid].vault;
         IVault vault = IVault(vaultAddr);
 
+        // TODO: Safe increase allowance and xfer USDC to vault contract
+
         // Exchange USDC for Want token in the Vault contract
         uint256 wantAmt = vault.exchangeUSDForWantToken(_valueUSDC, _maxMarketMovement);
 
-        // Transfer Want token back to Vault contract
+        // Transfer Want token to Vault contract
         IERC20(poolInfo[_pid].want).safeTransfer(vaultAddr, wantAmt);
 
         // Make deposit

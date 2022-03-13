@@ -140,7 +140,7 @@ contract VaultStandardAMM is VaultBase {
         // TODO: Take in current market prices (oracle)
 
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(msg.sender);
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
@@ -152,7 +152,7 @@ contract VaultStandardAMM is VaultBase {
                 _amountUSDC,
                 _maxMarketMovementAllowed,
                 USDCToWantPath,
-                address(this),
+                msg.sender,
                 block.timestamp.add(600)
             );
         } else {
@@ -187,16 +187,11 @@ contract VaultStandardAMM is VaultBase {
                 uniRouterAddress,
                 token1Amt
             );
-            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed);
+            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, msg.sender);
         }
 
         // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
-
-        // Transfer back to sender
-        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
-
-        return _wantAmt;
+        return IERC20(wantAddress).balanceOf(msg.sender);
     }
 
     /// @notice Public function for farming Want token.
@@ -298,6 +293,9 @@ contract VaultStandardAMM is VaultBase {
         return sharesRemoved;
     }
 
+    // TODO: Replicate the changes made here for exchangeWantTokenForUSD on Acryptos and Single staking contracts. 
+    // This means transferring directly back to the contract to save on gas fees. 
+    // TODO: Maybe to save gas fees we can do a safeTransferFrom?
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
@@ -325,7 +323,7 @@ contract VaultStandardAMM is VaultBase {
                 _amount,
                 _maxMarketMovementAllowed,
                 WantToUSDCPath,
-                address(this),
+                msg.sender,
                 block.timestamp.add(600)
             );
 
@@ -335,56 +333,48 @@ contract VaultStandardAMM is VaultBase {
             // If not, exit the LP pool and swap assets to USDC
 
             // Exit LP pool 
-            _exitPool(_amount, _maxMarketMovementAllowed);
+            _exitPool(_amount, _maxMarketMovementAllowed, address(this));
 
             // Swap tokens back to USDC
             uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
             uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
             // Swap token0 for USDC
-            address[] memory token0ToUSDCPath;
-            token0ToUSDCPath[0] = token0Address;
-            token0ToUSDCPath[1] = tokenUSDCAddress;
             IAMMRouter02(uniRouterAddress).safeSwap(
                 token0Amt,
                 _maxMarketMovementAllowed,
                 token0ToUSDCPath,
-                address(this),
+                msg.sender,
                 block.timestamp.add(600)
             );
 
             // Swap token1 for USDC (if applicable)
             if (token1Address != address(0)) {
-                address[] memory token1ToUSDCPath;
-                token1ToUSDCPath[0] = token1Address;
-                token1ToUSDCPath[1] = tokenUSDCAddress;
                 IAMMRouter02(uniRouterAddress).safeSwap(
                     token1Amt,
                     _maxMarketMovementAllowed,
                     token1ToUSDCPath,
-                    address(this),
+                    msg.sender,
                     block.timestamp.add(600)
                 );
             }
 
-            // Calculate USDC balance
-            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
 
         }
 
-        // Transfer back to sender
-        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, _amountUSDC);
-
-        return _amountUSDC;
+        // Calculate USDC balance
+        return IERC20(tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     /// @notice Adds liquidity to the pool of this contract
     /// @param _token0Amt Quantity of Token0 to add
     /// @param _token1Amt Quantity of Token1 to add
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _recipient The recipient of the LP token
     function _joinPool(
         uint256 _token0Amt,
         uint256 _token1Amt,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _recipient
     ) internal {
         IAMMRouter02(uniRouterAddress).addLiquidity(
             token0Address,
@@ -393,7 +383,7 @@ contract VaultStandardAMM is VaultBase {
             _token1Amt,
             _token0Amt.mul(_maxMarketMovementAllowed).div(1000),
             _token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-            address(this),
+            _recipient,
             block.timestamp.add(600)
         );
     }
@@ -401,9 +391,11 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Removes liquidity from a pool and sends tokens back to this address
     /// @param _amountLP The amount of LP (Want) tokens to remove
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _recipient The recipient of the underlying tokens at pool exit
     function _exitPool(
         uint256 _amountLP, 
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _recipient
     ) internal {
         // Get token balances in LP pool
         uint256 _balance0 = IERC20(token0Address).balanceOf(poolAddress);
@@ -421,7 +413,7 @@ contract VaultStandardAMM is VaultBase {
             _amountLP,  
             _amount0Min,  
             _amount1Min,  
-            address(this),  
+            _recipient,
             block.timestamp.add(600)
         );
     }
@@ -504,7 +496,7 @@ contract VaultStandardAMM is VaultBase {
                 token1Amt
             );
             // Add liquidity
-            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed);
+            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, address(this));
         }
 
         // Update last earned block
