@@ -18,17 +18,6 @@ import "./_VaultBase.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
-/*
-TODO:
-*****************
-- Convert this contract to ONLY be for singleAssetDeposit
-- token0 IS the WANt token
-- No joining/exiting pools. Only Swapping
-- No need for token0,1,2,3 and no need for all the complex weight-basis-points vars
-*****************
-*/
-
-
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {
     /* Libraries */
@@ -38,51 +27,67 @@ contract VaultAcryptosSingle is VaultBase {
     using SafeSwapUni for IAMMRouter02;
 
     /* Constructor */
-    // TODO: @param descriptions
+    /// @notice Constructor
+    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress]
+    /// @param _pid Pool ID this Vault is associated with
+    /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
+    /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
+    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
+    /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+    /// @param _balancerPools Addresses of Balancer pools for performing swaps. Array of [balancerPoolUSDCToWant, balancerPoolUSDCToToken0]
+    /// @param _balancerPoolWeights Weights of assets in Balancer pools. Array of [balancerPoolUSDCWeightBasisPoints, balancerPoolWantWeightBasisPoints, balancerPoolEarnWeightBasisPoints, balancerPoolToken0WeightBasisPoints]
     constructor(
         address[] memory _addresses,
         uint256 _pid,
         bool _isCOREStaking,
-        bool _isSingleAssetDeposit,
         bool _isZorroComp,
-        address[] memory _earnedToZORROPath,
-        address[] memory _earnedToToken0Path,
-        address[] memory _earnedToToken1Path,
-        address[] memory _token0ToEarnedPath,
-        address[] memory _token1ToEarnedPath,
-        uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+        address[] memory _swapPaths,
+        uint16[] memory _swapPathStartIndexes,
+        uint256[] memory _fees,
+        bytes32[] memory _balancerPools,
+        uint256[] memory _balancerPoolWeights
     ) {
+        // Addresses
         govAddress = _addresses[0];
         zorroControllerAddress = _addresses[1];
         ZORROAddress = _addresses[2];
-
         wantAddress = _addresses[3];
         token0Address = _addresses[4];
-        token1Address = _addresses[5];
-        // TODO: Allow up to 4 token addresses
-        earnedAddress = _addresses[6];
+        earnedAddress = _addresses[5];
+        farmContractAddress = _addresses[6];
+        rewardsAddress = _addresses[7];
+        poolAddress = _addresses[8];
+        uniRouterAddress = _addresses[9];
 
-        farmContractAddress = _addresses[7];
+        // Vault config
         pid = _pid;
         isCOREStaking = _isCOREStaking;
-        isSingleAssetDeposit = _isSingleAssetDeposit;
+        isSingleAssetDeposit = true;
         isZorroComp = _isZorroComp;
 
-        uniRouterAddress = _addresses[8];
-        earnedToZORROPath = _earnedToZORROPath;
-        earnedToToken0Path = _earnedToToken0Path;
-        earnedToToken1Path = _earnedToToken1Path;
-        token0ToEarnedPath = _token0ToEarnedPath;
-        token1ToEarnedPath = _token1ToEarnedPath;
+        // Swap paths
+        _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
 
+        // Corresponding reverse paths
+        token0ToEarnedPath = _reversePath(earnedToToken0Path);
+        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+
+        // Fees
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[9];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[10];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
 
-        transferOwnership(msg.sender);
+        // Balancer pools
+        balancerPoolUSDCToWant = _balancerPools[0];
+        balancerPoolUSDCToToken0 = _balancerPools[1];
+
+        // Balancer token weights
+        balancerPoolUSDCWeightBasisPoints = _balancerPoolWeights[0];
+        balancerPoolWantWeightBasisPoints = _balancerPoolWeights[1];
+        balancerPoolEarnWeightBasisPoints = _balancerPoolWeights[2];
+        balancerPoolToken0WeightBasisPoints = _balancerPoolWeights[3];
     }
 
     /* State */
@@ -91,24 +96,15 @@ contract VaultAcryptosSingle is VaultBase {
         0xa82f327BBbF0667356D2935C6532d164b06cEced; // Address of Balancer/ACSI.finance Vault for swaps etc.
     bytes32 public balancerPoolEarnedToTokens =
         0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to underlying tokens.
-    bytes32 public balancerLPPool; // TODO: Constructor, setter
+    bytes32 public balancerLPPool;
     address public tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
     address public tokenACSI = 0x5b17b4d5e4009B5C43e3e3d63A5229F794cBA389;
-    bytes32 public balancerPoolUSDCToWant; // TODO: Constructor, setter
-    bytes32 public balancerPoolUSDCToToken0; // TODO: Constructor, setter
-    bytes32 public balancerPoolUSDCToToken1; // TODO: Constructor, setter
-    bytes32 public balancerPoolUSDCToToken2; // TODO: Constructor, setter
-    bytes32 public balancerPoolUSDCToToken3; // TODO: Constructor, setter
-    // TODO: Put this in constructor, setters (all of this)
+    bytes32 public balancerPoolUSDCToWant;
+    bytes32 public balancerPoolUSDCToToken0;
     uint256 public balancerPoolUSDCWeightBasisPoints;
     uint256 public balancerPoolWantWeightBasisPoints;
     uint256 public balancerPoolEarnWeightBasisPoints;
     uint256 public balancerPoolToken0WeightBasisPoints;
-    uint256 public balancerPoolToken1WeightBasisPoints;
-    uint256 public balancerPoolToken2WeightBasisPoints;
-    uint256 public balancerPoolToken3WeightBasisPoints;
-    uint256 public numTokens; // Number of tokens in the LP pool (number between 1 and 4, inclusive)
-    IAsset[] public poolAssets; // Assets for swapping using Balancer protocol. Should follow the order of Token0, Token1, Token2, Token3 up to the number of tokens
 
     /* Config */
 
@@ -126,16 +122,54 @@ contract VaultAcryptosSingle is VaultBase {
         balancerPoolEarnedToTokens = _balancerPoolEarnedToToken;
     }
 
-    function setBalancerPoolWantWeightBasisPoints(
-        uint256 _balancerPoolWantWeightBasisPoints
-    ) public onlyOwner {
-        balancerPoolWantWeightBasisPoints = _balancerPoolWantWeightBasisPoints;
+    function setBalancerLPPool(bytes32 _balancerLPPool) public onlyOwner {
+        balancerLPPool = _balancerLPPool;
+    }
+
+    function setTokenACS(address _tokenACS) public onlyOwner {
+        tokenACS = _tokenACS;
+    }
+
+    function setTokenACSI(address _tokenACSI) public onlyOwner {
+        tokenACSI = _tokenACSI;
+    }
+
+    function setBalancerPoolUSDCToWant(bytes32 _balancerPoolUSDCToWant)
+        public
+        onlyOwner
+    {
+        balancerPoolUSDCToWant = _balancerPoolUSDCToWant;
+    }
+
+    function setBalancerPoolUSDCToToken0(bytes32 _balancerPoolUSDCToToken0)
+        public
+        onlyOwner
+    {
+        balancerPoolUSDCToToken0 = _balancerPoolUSDCToToken0;
     }
 
     function setBalancerPoolUSDCWeightBasisPoints(
         uint256 _balancerPoolUSDCWeightBasisPoints
     ) public onlyOwner {
         balancerPoolUSDCWeightBasisPoints = _balancerPoolUSDCWeightBasisPoints;
+    }
+
+    function setBalancerPoolWantWeightBasisPoints(
+        uint256 _balancerPoolWantWeightBasisPoints
+    ) public onlyOwner {
+        balancerPoolWantWeightBasisPoints = _balancerPoolWantWeightBasisPoints;
+    }
+
+    function setBalancerPoolEarnWeightBasisPoints(
+        uint256 _balancerPoolEarnWeightBasisPoints
+    ) public onlyOwner {
+        balancerPoolEarnWeightBasisPoints = _balancerPoolEarnWeightBasisPoints;
+    }
+
+    function setBalancerPoolToken0WeightBasisPoints(
+        uint256 _balancerPoolToken0WeightBasisPoints
+    ) public onlyOwner {
+        balancerPoolToken0WeightBasisPoints = _balancerPoolToken0WeightBasisPoints;
     }
 
     /* Investment Actions */
@@ -202,87 +236,23 @@ contract VaultAcryptosSingle is VaultBase {
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Swap USDC for tokens
-        // Initialize token amounts
-        uint256[] memory maxAmountsIn;
-        // First check if this is a single asset staking vault or an LP pool
-        if (isSingleAssetDeposit) {
-            // Single asset. Swap from USDC directly to Want token
-            _safeSwap(
-                tokenUSDCAddress, 
-                wantAddress, 
-                _amountUSDC, 
-                _maxMarketMovementAllowed, 
-                USDCToWantPath,
-                balancerPoolUSDCWeightBasisPoints,
-                balancerPoolWantWeightBasisPoints
-            );
-        } else {
-            // Swap Token0
-            _safeSwap(
-                tokenUSDCAddress, 
-                token0Address, 
-                _amountUSDC.div(numTokens), 
-                _maxMarketMovementAllowed, 
-                USDCToToken0Path,
-                0,
-                0
-            );
-            maxAmountsIn[0] = _amountUSDC.div(numTokens);
 
-            if (numTokens > 1) {
-                // Swap Token1
-                _safeSwap(
-                    tokenUSDCAddress, 
-                    token1Address, 
-                    _amountUSDC.div(numTokens), 
-                    _maxMarketMovementAllowed, 
-                    USDCToToken1Path,
-                    0,
-                    0
-                );
-                maxAmountsIn[1] = _amountUSDC.div(numTokens);
-            }
-            if (numTokens > 2) {
-                // Swap Token2
-                _safeSwap(
-                    tokenUSDCAddress, 
-                    token2Address, 
-                    _amountUSDC.div(numTokens), 
-                    _maxMarketMovementAllowed, 
-                    USDCToToken2Path,
-                    0,
-                    0
-                );
-                maxAmountsIn[2] = _amountUSDC.div(numTokens);
-            }
-            if (numTokens > 3) {
-                // Swap Token3
-                _safeSwap(
-                    tokenUSDCAddress, 
-                    token3Address, 
-                    _amountUSDC.div(numTokens), 
-                    _maxMarketMovementAllowed, 
-                    USDCToToken3Path,
-                    0,
-                    0
-                );
-                maxAmountsIn[3] = _amountUSDC.div(numTokens);
-            }
+        // Single asset. Swap from USDC directly to Token0
+        _safeSwap(
+            tokenUSDCAddress,
+            token0Address,
+            _amountUSDC,
+            _maxMarketMovementAllowed,
+            USDCToToken0Path,
+            balancerPoolUSDCWeightBasisPoints,
+            balancerPoolToken0WeightBasisPoints
+        );
 
-            // Deposit tokens to get Want token (e.g. LP token)
-            JoinPoolRequest memory req = JoinPoolRequest({
-                assets: poolAssets,
-                maxAmountsIn: maxAmountsIn,
-                userData: "",
-                fromInternalBalance: false
-            });
-            IBalancerVault(balancerVaultAddress).joinPool(
-                balancerLPPool,
-                address(this),
-                address(this),
-                req
-            );
-        }
+        // Get new Token0 balance
+        uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
+
+        // Deposit token to get Want token
+        IAcryptosVault(poolAddress).deposit(_token0Bal);
 
         // Calculate resulting want token balance
         uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
@@ -321,7 +291,7 @@ contract VaultAcryptosSingle is VaultBase {
                 _balancerPoolTokenOutWeightBasisPoints
             );
         } else {
-            // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity 
+            // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountIn,
                 _maxMarketMovementAllowed,
@@ -376,7 +346,10 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _wantAmt = 0;
         if (!_harvestOnly) {
             uint256 _userNumShares = userShares[_account];
-            _wantAmt = IERC20(wantAddress).balanceOf(address(this)).mul(_userNumShares).div(sharesTotal);
+            _wantAmt = IERC20(wantAddress)
+                .balanceOf(address(this))
+                .mul(_userNumShares)
+                .div(sharesTotal);
         }
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
@@ -427,101 +400,36 @@ contract VaultAcryptosSingle is VaultBase {
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
-    ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
+    )
+        public
+        virtual
+        override
+        onlyZorroController
+        whenNotPaused
+        returns (uint256)
+    {
         // Init
         uint256 _amountUSDC;
 
         // Calculate Want token balance
         uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-        
+
         // Preflight checks
         require(_amount <= _wantBal, "Exceeds want bal");
 
-        // Check if vault is for single asset staking
-        if (isSingleAssetDeposit) {
-            // If so, immediately swap the Want token for USDC
+        // Immediately swap the Want token for USDC
+        _safeSwap(
+            wantAddress,
+            tokenUSDCAddress,
+            _amount,
+            _maxMarketMovementAllowed,
+            WantToUSDCPath,
+            balancerPoolWantWeightBasisPoints,
+            balancerPoolUSDCWeightBasisPoints
+        );
 
-            _safeSwap(
-                wantAddress, 
-                tokenUSDCAddress,
-                _amount, 
-                _maxMarketMovementAllowed, 
-                WantToUSDCPath, 
-                balancerPoolWantWeightBasisPoints, 
-                balancerPoolUSDCWeightBasisPoints
-            );
-
-            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
-        } else {
-            // If not, exit the LP pool and swap assets to USDC
-
-            // Exit LP pool
-            uint256[] memory minAssetsOut; // TODO: How to calculate the value of LP token?
-
-
-            ExitPoolRequest memory req = ExitPoolRequest({
-                assets: poolAssets,
-                minAmountsOut: minAssetsOut,
-                userData: "",
-                toInternalBalance: false
-            });
-            IBalancerVault(balancerVaultAddress).exitPool(
-                balancerLPPool,
-                address(this),
-                payable(address(this)),
-                req
-            );
-
-
-            uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
-            uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
-            uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
-            uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-            uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-            IAMMRouter02(uniRouterAddress).removeLiquidity(
-                token0Address, 
-                token1Address,  
-                _amount,  
-                amount0Min,  
-                amount1Min,  
-                address(this),  
-                block.timestamp.add(600)
-            );
-
-            // Swap tokens back to USDC
-            uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-            uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-            // Swap token0 for USDC
-            address[] memory token0ToUSDCPath;
-            token0ToUSDCPath[0] = token0Address;
-            token0ToUSDCPath[1] = tokenUSDCAddress;
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                token0Amt,
-                _maxMarketMovementAllowed,
-                token0ToUSDCPath,
-                address(this),
-                block.timestamp.add(600)
-            );
-
-            // Swap token1 for USDC (if applicable)
-            if (token1Address != address(0)) {
-                address[] memory token1ToUSDCPath;
-                token1ToUSDCPath[0] = token1Address;
-                token1ToUSDCPath[1] = tokenUSDCAddress;
-                IAMMRouter02(uniRouterAddress).safeSwap(
-                    token1Amt,
-                    _maxMarketMovementAllowed,
-                    token1ToUSDCPath,
-                    address(this),
-                    block.timestamp.add(600)
-                );
-            }
-
-            // Calculate USDC balance
-            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
-        }
+        // Calculate USDC balance
+        _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
 
         // Transfer back to sender
         IERC20(tokenUSDCAddress).safeTransfer(msg.sender, _amountUSDC);
@@ -531,7 +439,13 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    function earn(uint256 _maxMarketMovementAllowed) public virtual override nonReentrant whenNotPaused {
+    function earn(uint256 _maxMarketMovementAllowed)
+        public
+        virtual
+        override
+        nonReentrant
+        whenNotPaused
+    {
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -550,117 +464,26 @@ contract VaultAcryptosSingle is VaultBase {
         // Reassign value of earned amount after buying back a certain amount of Zorro, sharing revenue
         earnedAmt = _buyBackAndRevShare(earnedAmt);
 
-        // If staking a single token (CAKE, BANANA), farm that token and exit
-        if (isCOREStaking || isSingleAssetDeposit) {
-            // Update the last earn block
-            lastEarnBlock = block.number;
-            _farm();
-            return;
-        }
-
-        // Approve the Balancer Vault contract for swaps
-        IERC20(earnedAddress).safeApprove(balancerVaultAddress, 0);
-        // Allow the Balancer Vault contract to spen up to earnedAmt
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            balancerVaultAddress,
-            earnedAmt
+        // Swap Earn token for single asset token
+        _safeSwap(
+            earnedAddress,
+            token0Address,
+            earnedAmt,
+            _maxMarketMovementAllowed,
+            earnedToToken0Path,
+            balancerPoolEarnWeightBasisPoints,
+            balancerPoolToken0WeightBasisPoints
         );
 
-        // Swap Earned token to token0 if token0 is not the Earned token
-        if (earnedAddress != token0Address) {
-            _safeSwap(
-                earnedAddress, 
-                token0Address, 
-                earnedAmt, 
-                _maxMarketMovementAllowed, 
-                earnedToToken0Path,
-                balancerPoolEarnWeightBasisPoints, 
-                balancerPoolToken0WeightBasisPoints 
-            );
-        }
+        // Redeposit single asset token to get Want token
+        // Get new Token0 balance
+        uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
+        // Deposit token to get Want token
+        IAcryptosVault(poolAddress).deposit(_token0Bal);
 
-        if (numTokens > 1 && earnedAddress != token1Address) {
-            _safeSwap(
-                earnedAddress, 
-                token1Address, 
-                earnedAmt, 
-                _maxMarketMovementAllowed, 
-                earnedToToken1Path,
-                balancerPoolEarnWeightBasisPoints, 
-                balancerPoolToken1WeightBasisPoints
-            );
-        }
-
-        if (numTokens > 2 && earnedAddress != token2Address) {
-            _safeSwap(
-                earnedAddress, 
-                token2Address, 
-                earnedAmt, 
-                _maxMarketMovementAllowed, 
-                earnedToToken2Path,
-                balancerPoolEarnWeightBasisPoints, 
-                balancerPoolToken2WeightBasisPoints 
-            );
-        }
-
-        if (numTokens > 3 && earnedAddress != token3Address) {
-            _safeSwap(
-                earnedAddress, 
-                token3Address, 
-                earnedAmt, 
-                _maxMarketMovementAllowed, 
-                earnedToToken3Path,
-                balancerPoolEarnWeightBasisPoints, 
-                balancerPoolToken3WeightBasisPoints 
-            );
-        }
-
-        // Get balance of token0
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token2Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token3Amt = IERC20(token0Address).balanceOf(address(this));
-
-        // Check balances to determine whether to proceed
-        bool shouldRedeposit = false;
-        uint256[] memory maxAmountsIn;
-
-        shouldRedeposit = token0Amt > 0;
-        maxAmountsIn[0] = token0Amt;
-        if (numTokens > 1) {
-            shouldRedeposit = shouldRedeposit && token1Amt > 0;
-            maxAmountsIn[1] = token1Amt;
-        } 
-        if (numTokens > 2) {
-            shouldRedeposit = shouldRedeposit && token2Amt > 0;
-            maxAmountsIn[2] = token2Amt;
-        } 
-        if (numTokens > 3) {
-            shouldRedeposit = shouldRedeposit && token3Amt > 0;
-            maxAmountsIn[3] = token3Amt;
-        } else {
-            revert("Incorrect numTokens");
-        }
-        if (shouldRedeposit) {
-            // If eligible for redeposit, get Want token by providing liquidity
-            JoinPoolRequest memory req = JoinPoolRequest({
-                assets: poolAssets,
-                maxAmountsIn: maxAmountsIn,
-                userData: "",
-                fromInternalBalance: false
-            });
-            IBalancerVault(balancerVaultAddress).joinPool(
-                balancerLPPool,
-                address(this),
-                address(this),
-                req
-            );
-        }
-
-        // Update last earned block
+        // This vault is only for single asset deposits, so farm that token and exit
+        // Update the last earn block
         lastEarnBlock = block.number;
-
-        // Farm Want tokens obtained
         _farm();
     }
 }

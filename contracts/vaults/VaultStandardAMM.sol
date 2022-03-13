@@ -29,50 +29,58 @@ contract VaultStandardAMM is VaultBase {
     using SafeSwapUni for IAMMRouter02;
 
     /* Constructor */
-
+    /// @notice Constructor
+    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, token1Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress]
+    /// @param _pid Pool ID this Vault is associated with
+    /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
+    /// @param _isSingleAssetDeposit Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
+    /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
+    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
+    /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     constructor(
         address[] memory _addresses,
         uint256 _pid,
         bool _isCOREStaking,
         bool _isSingleAssetDeposit,
         bool _isZorroComp,
-        address[] memory _earnedToZORROPath,
-        address[] memory _earnedToToken0Path,
-        address[] memory _earnedToToken1Path,
-        address[] memory _token0ToEarnedPath,
-        address[] memory _token1ToEarnedPath,
-        uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+        address[] memory _swapPaths,
+        uint16[] memory _swapPathStartIndexes,
+        uint256[] memory _fees
     ) {
+        // Key addresses
         govAddress = _addresses[0];
         zorroControllerAddress = _addresses[1];
         ZORROAddress = _addresses[2];
-
         wantAddress = _addresses[3];
         token0Address = _addresses[4];
         token1Address = _addresses[5];
         earnedAddress = _addresses[6];
-
         farmContractAddress = _addresses[7];
+        rewardsAddress = _addresses[8];
+        poolAddress = _addresses[9];
+        uniRouterAddress = _addresses[10];
+
+        // Vault characteristics
         pid = _pid;
         isCOREStaking = _isCOREStaking;
         isSingleAssetDeposit = _isSingleAssetDeposit;
         isZorroComp = _isZorroComp;
 
-        uniRouterAddress = _addresses[8];
-        earnedToZORROPath = _earnedToZORROPath;
-        earnedToToken0Path = _earnedToToken0Path;
-        earnedToToken1Path = _earnedToToken1Path;
-        token0ToEarnedPath = _token0ToEarnedPath;
-        token1ToEarnedPath = _token1ToEarnedPath;
+        // Swap paths by unflattening _swapPaths
+        _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
 
+        // Corresponding reverse paths
+        token0ToEarnedPath = _reversePath(earnedToToken0Path);
+        token1ToEarnedPath = _reversePath(earnedToToken1Path);
+        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+        token1ToUSDCPath = _reversePath(USDCToToken1Path);
+
+        // Fees
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[9];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[10];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
-
-        transferOwnership(zorroControllerAddress);
     }
 
     /* Investment Actions */
@@ -179,16 +187,7 @@ contract VaultStandardAMM is VaultBase {
                 uniRouterAddress,
                 token1Amt
             );
-            IAMMRouter02(uniRouterAddress).addLiquidity(
-                token0Address,
-                token1Address,
-                token0Amt,
-                token1Amt,
-                token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-                token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-                address(this),
-                block.timestamp.add(600)
-            );
+            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed);
         }
 
         // Calculate resulting want token balance
@@ -336,20 +335,7 @@ contract VaultStandardAMM is VaultBase {
             // If not, exit the LP pool and swap assets to USDC
 
             // Exit LP pool 
-            uint256 balance0 = IERC20(token0Address).balanceOf(uniPoolAddress);
-            uint256 balance1 = IERC20(token1Address).balanceOf(uniPoolAddress);
-            uint256 totalSupply = IERC20(uniPoolAddress).totalSupply();
-            uint256 amount0Min = (_amount.mul(balance0).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-            uint256 amount1Min = (_amount.mul(balance1).div(totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
-            IAMMRouter02(uniRouterAddress).removeLiquidity(
-                token0Address, 
-                token1Address,  
-                _amount,  
-                amount0Min,  
-                amount1Min,  
-                address(this),  
-                block.timestamp.add(600)
-            );
+            _exitPool(_amount, _maxMarketMovementAllowed);
 
             // Swap tokens back to USDC
             uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
@@ -389,6 +375,55 @@ contract VaultStandardAMM is VaultBase {
         IERC20(tokenUSDCAddress).safeTransfer(msg.sender, _amountUSDC);
 
         return _amountUSDC;
+    }
+
+    /// @notice Adds liquidity to the pool of this contract
+    /// @param _token0Amt Quantity of Token0 to add
+    /// @param _token1Amt Quantity of Token1 to add
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    function _joinPool(
+        uint256 _token0Amt,
+        uint256 _token1Amt,
+        uint256 _maxMarketMovementAllowed
+    ) internal {
+        IAMMRouter02(uniRouterAddress).addLiquidity(
+            token0Address,
+            token1Address,
+            _token0Amt,
+            _token1Amt,
+            _token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+            _token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            address(this),
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Removes liquidity from a pool and sends tokens back to this address
+    /// @param _amountLP The amount of LP (Want) tokens to remove
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    function _exitPool(
+        uint256 _amountLP, 
+        uint256 _maxMarketMovementAllowed
+    ) internal {
+        // Get token balances in LP pool
+        uint256 _balance0 = IERC20(token0Address).balanceOf(poolAddress);
+        uint256 _balance1 = IERC20(token1Address).balanceOf(poolAddress);
+
+        // Get total supply and calculate min amounts desired based on slippage
+        uint256 _totalSupply = IERC20(poolAddress).totalSupply();
+        uint256 _amount0Min = (_amountLP.mul(_balance0).div(_totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+        uint256 _amount1Min = (_amountLP.mul(_balance1).div(_totalSupply)).mul(_maxMarketMovementAllowed).div(1000);
+
+        // Remove liquidity
+        IAMMRouter02(uniRouterAddress).removeLiquidity(
+            token0Address, 
+            token1Address,  
+            _amountLP,  
+            _amount0Min,  
+            _amount1Min,  
+            address(this),  
+            block.timestamp.add(600)
+        );
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -469,16 +504,7 @@ contract VaultStandardAMM is VaultBase {
                 token1Amt
             );
             // Add liquidity
-            IAMMRouter02(uniRouterAddress).addLiquidity(
-                token0Address,
-                token1Address,
-                token0Amt,
-                token1Amt,
-                token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-                token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-                address(this),
-                block.timestamp.add(600)
-            );
+            _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed);
         }
 
         // Update last earned block

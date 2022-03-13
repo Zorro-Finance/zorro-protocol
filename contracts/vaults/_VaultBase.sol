@@ -28,7 +28,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
 
     /* State */
-    // TODO: Check to make sure these are all set
+    // TODO: Setter
     // Vault characteristics
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
@@ -39,16 +39,14 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
     address public token0Address; // Address of first (or only) token
     address public token1Address; // Address of second token in pair if applicable
-    address public token2Address; // Address of third token in pair if applicable
-    address public token3Address; // Address of fourth token in pair if applicable TODO: Ensure these are in constructor
     address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
-    address public tokenUSDCAddress; // USDC token address TODO: put this in constructor
+    address public tokenUSDCAddress; // USDC token address
     // Other addresses
     address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
-    address public uniPoolAddress; // Address of LP Pool address (e.g. PancakeV2Pair) TODO
+    address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
     // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
     address public ZORROAddress; // Address of Zorro ERC20 token
@@ -86,23 +84,17 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public constant slippageFactorUL = 995;
     // Swap routes
     // TODO: Need explanation, constructor, setter for all below. 
+    address[] public USDCToToken0Path;
+    address[] public USDCToToken1Path;
+    address[] public token0ToUSDCPath;
+    address[] public token1ToUSDCPath;
     address[] public earnedToZORROPath;
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
-    address[] public earnedToToken2Path;
-    address[] public earnedToToken3Path;
     address[] public token0ToEarnedPath;
     address[] public token1ToEarnedPath;
-    address[] public token2ToEarnedPath;
-    address[] public token3ToEarnedPath;
     address[] public earnedToZORLPPoolToken0Path;
     address[] public earnedToZORLPPoolToken1Path;
-    address[] public USDCToToken0Path;
-    address[] public USDCToToken1Path;
-    address[] public USDCToToken2Path;
-    address[] public USDCToToken3Path;
-    address[] public token0ToUSDCPath;
-    address[] public token1ToUSDCPath;
     address[] public USDCToWantPath;
     address[] public WantToUSDCPath;
 
@@ -295,6 +287,54 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     {
         rewardsAddress = _rewardsAddress;
         emit SetRewardsAddress(_rewardsAddress);
+    }
+
+    /// @notice Takes an encoded (flattened) array of swap paths along with indexes, to set storage variables for swap paths
+    /// @dev ONLY to be called by constructor! NOTE: All paths must be specified (none can be skipped)
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
+    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
+    function _unpackSwapPaths(
+        address[] memory _swapPaths,
+        uint16[] memory _swapPathStartIndexes
+    ) internal {
+        uint16 _currentIndex = _swapPathStartIndexes[0];
+        uint256 _ct = 0;
+        for (uint16 i = 0; i < _swapPaths.length; ++i) {
+            uint16 _nextIndex = 0;
+            if (_ct < _swapPathStartIndexes.length) {
+                _nextIndex = _swapPathStartIndexes[_ct.add(1)];
+            }
+            if (i == 0 || i < _nextIndex) {
+                if (_ct == 0) {
+                    earnedToZORROPath[i] = _swapPaths[i];
+                } else if (_ct == 1) {
+                    earnedToToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 2) {
+                    earnedToToken1Path[i] = _swapPaths[i];
+                } else if (_ct == 3) {
+                    USDCToToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 4) {
+                    USDCToToken1Path[i] = _swapPaths[i];
+                } else if (_ct == 5) {
+                    earnedToZORLPPoolToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 6) {
+                    earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
+                } else {
+                    revert("bad swap paths");
+                }
+            }
+        }
+    }
+
+    /// @notice Gets the swap path in the opposite direction of a trade
+    /// @param _path The swap path to be reversed
+    /// @return An reversed path array
+    function _reversePath(address[] memory _path) internal pure returns (address[] memory) {
+        address[] memory _newPath;
+        for (uint16 i = 0; i < _path.length; ++i) {
+            _newPath[i] = _path[_path.length.sub(1).sub(i)];
+        }
+        return _newPath;
     }
 
     /* Safety Functions */
