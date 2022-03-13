@@ -152,7 +152,6 @@ library SafeSwapBalancer {
                 IERC20(_tokenA)
             );
         // Return exchange rate, accounting for weightings
-        // TODO - needs to be generalized for all 4 tokens
         return
             (cashA.div(_tokenAWeightBasisPoints)).div(
                 cashB.div(_tokenBWeightBasisPoints)

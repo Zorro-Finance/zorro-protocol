@@ -82,7 +82,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public slippageFactor = 950; // 950 = 5% default slippage tolerance
     uint256 public constant slippageFactorUL = 995;
     // Swap routes
-    // TODO: Need explanation, constructor, setter for all below. 
     address[] public USDCToToken0Path;
     address[] public USDCToToken1Path;
     address[] public token0ToUSDCPath;

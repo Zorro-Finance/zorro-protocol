@@ -308,7 +308,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @notice Receives an authorized burn request from another chain and burns the specified amount of ZOR tokens from the public pool
     /// @param _amount The quantity of ZOR tokens to burn
     function receiveXChainBurnRewardsRequest(uint256 _amount) external onlyXChainEndpoints {
-        // TODO IMPORTANT: Only allow valid contract (endpoint contract?) to call this
         Zorro(ZORRO).burn(publicPool, _amount);
     }
     /* Safety functions */
