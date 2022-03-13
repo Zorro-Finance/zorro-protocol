@@ -28,7 +28,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
 
     /* State */
-    // TODO: Setter
     // Vault characteristics
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
@@ -115,7 +114,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     event SetGov(address _govAddress);
     event SetOnlyGov(bool _onlyGov);
     event SetUniRouterAddress(address _uniRouterAddress);
-    event SetBurnAddress(address _buyBackAddress);
     event SetRewardsAddress(address _rewardsAddress);
 
     /* Modifiers */
@@ -128,6 +126,173 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     modifier onlyZorroController() {
         require(_msgSender() == zorroControllerAddress, "!zorroController");
         _;
+    }
+
+    /* Setters */
+
+    function setIsCOREStaking(bool _isCOREStaking) public onlyOwner {
+        isCOREStaking = _isCOREStaking;
+    }
+    function setIsSingleAssetDeposit(bool _isSingleAssetDeposit) public onlyOwner {
+        isSingleAssetDeposit = _isSingleAssetDeposit;
+    }
+    function setIsZorroComp(bool _isZorroComp) public onlyOwner {
+        isZorroComp = _isZorroComp;
+    }
+    function setPid(uint256 _pid) public onlyOwner {
+        pid = _pid;
+    }
+    function setFarmContractAddress(address _farmContractAddress) public onlyOwner {
+        farmContractAddress = _farmContractAddress;
+    }
+    function setToken0Address(address _token0Address) public onlyOwner {
+        token0Address = _token0Address;
+    }
+    function setToken1Address(address _token1Address) public onlyOwner {
+        token1Address = _token1Address;
+    }
+    function setEarnedAddress(address _earnedAddress) public onlyOwner {
+        earnedAddress = _earnedAddress;
+    }
+    function setTokenUSDCAddress(address _tokenUSDCAddress) public onlyOwner {
+        tokenUSDCAddress = _tokenUSDCAddress;
+    }
+    function setRewardsAddress(address _rewardsAddress) public onlyOwner {
+        rewardsAddress = _rewardsAddress;
+    }
+    function setUniRouterAddress(address _uniRouterAddress) public onlyOwner {
+        uniRouterAddress = _uniRouterAddress;
+    }
+    function setPoolAddress(address _poolAddress) public onlyOwner {
+        poolAddress = _poolAddress;
+    }
+    function setZorroControllerAddress(address _zorroControllerAddress) public onlyOwner {
+        zorroControllerAddress = _zorroControllerAddress;
+    }
+    function setZORROAddress(address _ZORROAddress) public onlyOwner {
+        ZORROAddress = _ZORROAddress;
+    }
+
+    /// @notice Set governor address
+    /// @param _govAddress The new gov address
+    function setGov(address _govAddress) public virtual onlyAllowGov {
+        govAddress = _govAddress;
+        emit SetGov(_govAddress);
+    }
+
+    /// @notice Set onlyGov property
+    /// @param _onlyGov whether onlyGov should be enforced
+    function setOnlyGov(bool _onlyGov) public virtual onlyAllowGov {
+        onlyGov = _onlyGov;
+        emit SetOnlyGov(_onlyGov);
+    }
+    
+    /// @notice Configure key fee parameters
+    /// @param _entranceFeeFactor Entrance fee numerator (higher means smaller percentage)
+    /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
+    /// @param _controllerFee Controller fee numerator
+    /// @param _buyBackRate Buy back rate fee numerator
+    /// @param _slippageFactor Slippage factor fee numerator
+    function setFeeSettings(
+        uint256 _entranceFeeFactor,
+        uint256 _withdrawFeeFactor,
+        uint256 _controllerFee,
+        uint256 _buyBackRate,
+        uint256 _slippageFactor
+    ) public virtual onlyAllowGov {
+        // Entrance fee
+        require(
+            _entranceFeeFactor >= entranceFeeFactorLL,
+            "_entranceFeeFactor too low"
+        );
+        require(
+            _entranceFeeFactor <= entranceFeeFactorMax,
+            "_entranceFeeFactor too high"
+        );
+        entranceFeeFactor = _entranceFeeFactor;
+
+        // Withdrawal fee
+        require(
+            _withdrawFeeFactor >= withdrawFeeFactorLL,
+            "_withdrawFeeFactor too low"
+        );
+        require(
+            _withdrawFeeFactor <= withdrawFeeFactorMax,
+            "_withdrawFeeFactor too high"
+        );
+        withdrawFeeFactor = _withdrawFeeFactor;
+
+        // Controller (performance) fee
+        require(_controllerFee <= controllerFeeUL, "_controllerFee too high");
+        controllerFee = _controllerFee;
+
+        // Buyback + LP
+        require(_buyBackRate <= buyBackRateUL, "_buyBackRate too high");
+        buyBackRate = _buyBackRate;
+
+        // Slippage tolerance
+        require(
+            _slippageFactor <= slippageFactorUL,
+            "_slippageFactor too high"
+        );
+        slippageFactor = _slippageFactor;
+
+        // Emit event with new settings
+        emit SetSettings(
+            _entranceFeeFactor,
+            _withdrawFeeFactor,
+            _controllerFee,
+            _buyBackRate,
+            _slippageFactor
+        );
+    }
+
+    /// @notice Takes an encoded (flattened) array of swap paths along with indexes, to set storage variables for swap paths
+    /// @dev ONLY to be called by constructor! NOTE: All paths must be specified (none can be skipped)
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
+    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
+    function _unpackSwapPaths(
+        address[] memory _swapPaths,
+        uint16[] memory _swapPathStartIndexes
+    ) internal {
+        uint16 _currentIndex = _swapPathStartIndexes[0];
+        uint256 _ct = 0;
+        for (uint16 i = 0; i < _swapPaths.length; ++i) {
+            uint16 _nextIndex = 0;
+            if (_ct < _swapPathStartIndexes.length) {
+                _nextIndex = _swapPathStartIndexes[_ct.add(1)];
+            }
+            if (i == 0 || i < _nextIndex) {
+                if (_ct == 0) {
+                    earnedToZORROPath[i] = _swapPaths[i];
+                } else if (_ct == 1) {
+                    earnedToToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 2) {
+                    earnedToToken1Path[i] = _swapPaths[i];
+                } else if (_ct == 3) {
+                    USDCToToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 4) {
+                    USDCToToken1Path[i] = _swapPaths[i];
+                } else if (_ct == 5) {
+                    earnedToZORLPPoolToken0Path[i] = _swapPaths[i];
+                } else if (_ct == 6) {
+                    earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
+                } else {
+                    revert("bad swap paths");
+                }
+            }
+        }
+    }
+
+    /// @notice Gets the swap path in the opposite direction of a trade
+    /// @param _path The swap path to be reversed
+    /// @return An reversed path array
+    function _reversePath(address[] memory _path) internal pure returns (address[] memory) {
+        address[] memory _newPath;
+        for (uint16 i = 0; i < _path.length; ++i) {
+            _newPath[i] = _path[_path.length.sub(1).sub(i)];
+        }
+        return _newPath;
     }
 
     /* Maintenance Functions */
@@ -183,158 +348,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice Unpause contract
     function unpause() public virtual onlyAllowGov {
         _unpause();
-    }
-
-    /* Configuration */
-
-    /// @notice Configure key fee parameters
-    /// @param _entranceFeeFactor Entrance fee numerator (higher means smaller percentage)
-    /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
-    /// @param _controllerFee Controller fee numerator
-    /// @param _buyBackRate Buy back rate fee numerator
-    /// @param _slippageFactor Slippage factor fee numerator
-    function setSettings(
-        uint256 _entranceFeeFactor,
-        uint256 _withdrawFeeFactor,
-        uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _slippageFactor
-    ) public virtual onlyAllowGov {
-        // Entrance fee
-        require(
-            _entranceFeeFactor >= entranceFeeFactorLL,
-            "_entranceFeeFactor too low"
-        );
-        require(
-            _entranceFeeFactor <= entranceFeeFactorMax,
-            "_entranceFeeFactor too high"
-        );
-        entranceFeeFactor = _entranceFeeFactor;
-
-        // Withdrawal fee
-        require(
-            _withdrawFeeFactor >= withdrawFeeFactorLL,
-            "_withdrawFeeFactor too low"
-        );
-        require(
-            _withdrawFeeFactor <= withdrawFeeFactorMax,
-            "_withdrawFeeFactor too high"
-        );
-        withdrawFeeFactor = _withdrawFeeFactor;
-
-        // Controller (performance) fee
-        require(_controllerFee <= controllerFeeUL, "_controllerFee too high");
-        controllerFee = _controllerFee;
-
-        // Buyback + LP
-        require(_buyBackRate <= buyBackRateUL, "_buyBackRate too high");
-        buyBackRate = _buyBackRate;
-
-        // Slippage tolerance
-        require(
-            _slippageFactor <= slippageFactorUL,
-            "_slippageFactor too high"
-        );
-        slippageFactor = _slippageFactor;
-
-        // Emit event with new settings
-        emit SetSettings(
-            _entranceFeeFactor,
-            _withdrawFeeFactor,
-            _controllerFee,
-            _buyBackRate,
-            _slippageFactor
-        );
-    }
-
-    /// @notice Set governor address
-    /// @param _govAddress The new gov address
-    function setGov(address _govAddress) public virtual onlyAllowGov {
-        govAddress = _govAddress;
-        emit SetGov(_govAddress);
-    }
-
-    /// @notice Set onlyGov property
-    /// @param _onlyGov whether onlyGov should be enforced
-    function setOnlyGov(bool _onlyGov) public virtual onlyAllowGov {
-        onlyGov = _onlyGov;
-        emit SetOnlyGov(_onlyGov);
-    }
-
-    /// @notice Set the address of the periphery/router contract (Pancakeswap/Apeswap/etc.)
-    function setUniRouterAddress(address _uniRouterAddress)
-        public
-        virtual
-        onlyAllowGov
-    {
-        uniRouterAddress = _uniRouterAddress;
-        emit SetUniRouterAddress(_uniRouterAddress);
-    }
-
-    /// @notice Set the burn address (for removing tokens out of existence)
-    /// @param _burnAddress the burn address
-    function setBurnAddress(address _burnAddress) public virtual onlyAllowGov {
-        burnAddress = _burnAddress;
-        emit SetBurnAddress(_burnAddress);
-    }
-
-    /// @notice set the address of the contract to send controller fees to
-    /// @param _rewardsAddress the address of the Rewards contract
-    function setRewardsAddress(address _rewardsAddress)
-        public
-        virtual
-        onlyAllowGov
-    {
-        rewardsAddress = _rewardsAddress;
-        emit SetRewardsAddress(_rewardsAddress);
-    }
-
-    /// @notice Takes an encoded (flattened) array of swap paths along with indexes, to set storage variables for swap paths
-    /// @dev ONLY to be called by constructor! NOTE: All paths must be specified (none can be skipped)
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
-    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
-    function _unpackSwapPaths(
-        address[] memory _swapPaths,
-        uint16[] memory _swapPathStartIndexes
-    ) internal {
-        uint16 _currentIndex = _swapPathStartIndexes[0];
-        uint256 _ct = 0;
-        for (uint16 i = 0; i < _swapPaths.length; ++i) {
-            uint16 _nextIndex = 0;
-            if (_ct < _swapPathStartIndexes.length) {
-                _nextIndex = _swapPathStartIndexes[_ct.add(1)];
-            }
-            if (i == 0 || i < _nextIndex) {
-                if (_ct == 0) {
-                    earnedToZORROPath[i] = _swapPaths[i];
-                } else if (_ct == 1) {
-                    earnedToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 2) {
-                    earnedToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 3) {
-                    USDCToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 4) {
-                    USDCToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 5) {
-                    earnedToZORLPPoolToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 6) {
-                    earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
-                } else {
-                    revert("bad swap paths");
-                }
-            }
-        }
-    }
-
-    /// @notice Gets the swap path in the opposite direction of a trade
-    /// @param _path The swap path to be reversed
-    /// @return An reversed path array
-    function _reversePath(address[] memory _path) internal pure returns (address[] memory) {
-        address[] memory _newPath;
-        for (uint16 i = 0; i < _path.length; ++i) {
-            _newPath[i] = _path[_path.length.sub(1).sub(i)];
-        }
-        return _newPath;
     }
 
     /* Safety Functions */

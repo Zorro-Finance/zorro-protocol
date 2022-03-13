@@ -26,6 +26,7 @@ contract VaultZorro is VaultBase {
         address[] memory _token0ToUSDCPath,
         address[] memory _USDCToToken0Path
     ) {
+        // Key addresses
         govAddress = _addresses[0];
         zorroControllerAddress = _addresses[1];
         ZORROAddress = _addresses[2];
@@ -34,18 +35,21 @@ contract VaultZorro is VaultBase {
         rewardsAddress = _addresses[2];
         uniRouterAddress = _addresses[3];
 
+        // Vault characteristics
         pid = _pid;
         isCOREStaking = false;
         isSingleAssetDeposit = true;
         isZorroComp = false;
 
+        // Swap paths
+        token0ToUSDCPath = _token0ToUSDCPath;
+        USDCToToken0Path = _USDCToToken0Path;
+
+        // Fees
         controllerFee = _fees[0];
         buyBackRate = _fees[1];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
-
-        token0ToUSDCPath = _token0ToUSDCPath;
-        USDCToToken0Path = _USDCToToken0Path;
     }
 
     /* Investment Actions */
