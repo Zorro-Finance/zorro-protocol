@@ -89,6 +89,7 @@ library SafeSwapBalancer {
     /// @param _slippageFactor The tolerable slippage expressed as the numerator over 1000. E.g. 950 => 950/1000 => 5% slippage tolerance
     /// @param _tokenAWeightBasisPoints The percent (in basis points) of Token A's weight in the balancer pool
     /// @param _tokenBWeightBasisPoints The percent (in basis points) of Token B's weight in the balancer pool
+    /// @param _destination The address to send swapped funds to (must be payable)
     function safeSwap(
         IBalancerVault _balancerVault,
         bytes32 _poolId,
@@ -97,7 +98,8 @@ library SafeSwapBalancer {
         address _assetOut,
         uint256 _slippageFactor,
         uint256 _tokenAWeightBasisPoints,
-        uint256 _tokenBWeightBasisPoints
+        uint256 _tokenBWeightBasisPoints,
+        address _destination
     ) public {
         // Determine the limit based on the exchange rate
         uint256 limit = _getExchangeRate(_balancerVault, _poolId, _assetOut, _assetIn, _tokenAWeightBasisPoints, _tokenBWeightBasisPoints)
@@ -116,7 +118,7 @@ library SafeSwapBalancer {
             FundManagement({
                 sender: address(this),
                 fromInternalBalance: false,
-                recipient: payable(address(this)),
+                recipient: payable(_destination),
                 toInternalBalance: false
             }),
             limit,

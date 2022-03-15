@@ -191,6 +191,12 @@ contract VaultZorro is VaultBase {
     ) public virtual override onlyZorroController returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
+        // TODO: Safer if we do safeTransferFrom() here, because otherwise
+        // the balance is already expected to be non-zero here (this IS
+        // the ZORRO single staking Vault after all, so someone could 
+        // take advantage). OR we could deploy a separate "farm" contract
+        // so that we can keep the same interface
+
         // Get current Zorro balance
         uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
         
@@ -202,16 +208,11 @@ contract VaultZorro is VaultBase {
             _amount,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
-            address(this),
+            msg.sender,
             block.timestamp.add(600)
         );
 
-        uint256 amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
-        // Transfer back to sender
-        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, amountUSDC);
-
-        return amountUSDC;
+        return IERC20(tokenUSDCAddress).balanceOf(address(this));
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.

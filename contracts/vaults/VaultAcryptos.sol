@@ -252,7 +252,8 @@ contract VaultAcryptosSingle is VaultBase {
             _maxMarketMovementAllowed,
             USDCToToken0Path,
             balancerPoolUSDCWeightBasisPoints,
-            balancerPoolToken0WeightBasisPoints
+            balancerPoolToken0WeightBasisPoints,
+            address(this)
         );
 
         // Get new Token0 balance
@@ -277,6 +278,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @param _balancerPoolTokenInWeightBasisPoints Percentage weight in basis points for _tokenIn (Only required for Balancer-style swaps)
     /// @param _balancerPoolTokenOutWeightBasisPoints Percentage weight in basis points for _tokenOut (Only required for Balancer-style swaps)
     /// @param _path Array of addresses describing the swap path (only required for Uniswap-style swaps. Leave blank for Balancer-style swaps)
+    /// @param _destination Address to send swapped funds to
     function _safeSwap(
         address _tokenIn,
         address _tokenOut,
@@ -284,7 +286,8 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         address[] memory _path,
         uint256 _balancerPoolTokenInWeightBasisPoints,
-        uint256 _balancerPoolTokenOutWeightBasisPoints
+        uint256 _balancerPoolTokenOutWeightBasisPoints,
+        address _destination
     ) internal {
         if (_tokenIn == tokenACS || _tokenIn == tokenACSI) {
             // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
@@ -295,7 +298,8 @@ contract VaultAcryptosSingle is VaultBase {
                 _tokenOut,
                 _maxMarketMovementAllowed,
                 _balancerPoolTokenInWeightBasisPoints,
-                _balancerPoolTokenOutWeightBasisPoints
+                _balancerPoolTokenOutWeightBasisPoints,
+                _destination
             );
         } else {
             // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
@@ -303,7 +307,7 @@ contract VaultAcryptosSingle is VaultBase {
                 _amountIn,
                 _maxMarketMovementAllowed,
                 _path,
-                address(this),
+                _destination,
                 block.timestamp.add(600)
             );
         }
@@ -400,8 +404,8 @@ contract VaultAcryptosSingle is VaultBase {
         return sharesRemoved;
     }
 
-    /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _amount The Want token quantity to exchange
+    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
+    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
@@ -432,16 +436,12 @@ contract VaultAcryptosSingle is VaultBase {
             _maxMarketMovementAllowed,
             WantToUSDCPath,
             balancerPoolWantWeightBasisPoints,
-            balancerPoolUSDCWeightBasisPoints
+            balancerPoolUSDCWeightBasisPoints,
+            msg.sender
         );
 
         // Calculate USDC balance
-        _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
-        // Transfer back to sender
-        IERC20(tokenUSDCAddress).safeTransfer(msg.sender, _amountUSDC);
-
-        return _amountUSDC;
+        return IERC20(tokenUSDCAddress).balanceOf(address(this));
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -479,7 +479,8 @@ contract VaultAcryptosSingle is VaultBase {
             _maxMarketMovementAllowed,
             earnedToToken0Path,
             balancerPoolEarnWeightBasisPoints,
-            balancerPoolToken0WeightBasisPoints
+            balancerPoolToken0WeightBasisPoints, 
+            address(this)
         );
 
         // Redeposit single asset token to get Want token

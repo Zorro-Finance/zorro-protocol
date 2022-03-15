@@ -154,6 +154,8 @@ contract VaultStandardAMM is VaultBase {
         // For single token pools, simply swap to Want token right away
         if (isSingleAssetDeposit) {
             // Swap USDC for Want token
+            // TODO: Is this correct? Can we go direct from USDC to Want or do we need 
+            // to deposit? E.g. like Acryptos
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountUSDC,
                 _maxMarketMovementAllowed,
@@ -194,6 +196,7 @@ contract VaultStandardAMM is VaultBase {
                 token1Amt
             );
             _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, msg.sender);
+            
         }
 
         // Calculate resulting want token balance
@@ -299,9 +302,6 @@ contract VaultStandardAMM is VaultBase {
         return sharesRemoved;
     }
 
-    // TODO***: Replicate the changes made here for exchangeWantTokenForUSD on Acryptos and Single staking contracts. 
-    // This means transferring directly back to the contract to save on gas fees. 
-    // TODO: Maybe to save gas fees we can do a safeTransferFrom?
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
@@ -332,9 +332,6 @@ contract VaultStandardAMM is VaultBase {
                 msg.sender,
                 block.timestamp.add(600)
             );
-
-            _amountUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-
         } else {
             // If not, exit the LP pool and swap assets to USDC
 
@@ -363,8 +360,6 @@ contract VaultStandardAMM is VaultBase {
                     block.timestamp.add(600)
                 );
             }
-
-
         }
 
         // Calculate USDC balance
