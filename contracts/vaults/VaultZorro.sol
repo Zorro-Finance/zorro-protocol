@@ -14,6 +14,7 @@ contract VaultZorro is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
+    /// @dev NOTE: Only to be deployed on home chain!
     /// @param _addresses : [gov, Zorro controller, Zorro token, Uni v2 router address]
     /// @param _pid : The pool ID in the Zorro Controller
     /// @param _fees : [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
@@ -40,6 +41,7 @@ contract VaultZorro is VaultBase {
         isCOREStaking = false;
         isSingleAssetDeposit = true;
         isZorroComp = false;
+        isHomeChain = true;
 
         // Swap paths
         token0ToUSDCPath = _token0ToUSDCPath;
@@ -234,5 +236,27 @@ contract VaultZorro is VaultBase {
 
         // Update want locked total
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
+    }
+
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) internal override {
+        // Dummy function to implement interface
+    }
+
+    function _revShareOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) internal override {
+        // Dummy function to implement interface
+    }
+
+    function _swapEarnedToUSDC(
+        uint256 _earnedAmount,
+        address _destination,
+        uint256 _maxMarketMovementAllowed
+    ) internal override {
+        // Dummy function to implement interface
     }
 }

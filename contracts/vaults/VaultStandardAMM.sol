@@ -30,12 +30,13 @@ contract VaultStandardAMM is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
-    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, token1Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress]
+    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, token1Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress, zorroLPPool, zorroLPPoolToken0, zorroLPPoolToken1]
     /// @param _pid Pool ID this Vault is associated with
     /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     /// @param _isSingleAssetDeposit Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
     /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
+    /// @param _isHomeChain Whether this contract is deployed on the home chain (BSC)
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path, earnedToUSDCPath]
     /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
     /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     constructor(
@@ -44,6 +45,7 @@ contract VaultStandardAMM is VaultBase {
         bool _isCOREStaking,
         bool _isSingleAssetDeposit,
         bool _isZorroComp,
+        bool _isHomeChain,
         address[] memory _swapPaths,
         uint16[] memory _swapPathStartIndexes,
         uint256[] memory _fees
@@ -60,12 +62,16 @@ contract VaultStandardAMM is VaultBase {
         rewardsAddress = _addresses[8];
         poolAddress = _addresses[9];
         uniRouterAddress = _addresses[10];
+        zorroLPPool = _addresses[11];
+        zorroLPPoolToken0 = _addresses[12];
+        zorroLPPoolToken1 = _addresses[13];
 
         // Vault characteristics
         pid = _pid;
         isCOREStaking = _isCOREStaking;
         isSingleAssetDeposit = _isSingleAssetDeposit;
         isZorroComp = _isZorroComp;
+        isHomeChain = _isHomeChain;
 
         // Swap paths by unflattening _swapPaths
         _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
@@ -293,7 +299,7 @@ contract VaultStandardAMM is VaultBase {
         return sharesRemoved;
     }
 
-    // TODO: Replicate the changes made here for exchangeWantTokenForUSD on Acryptos and Single staking contracts. 
+    // TODO***: Replicate the changes made here for exchangeWantTokenForUSD on Acryptos and Single staking contracts. 
     // This means transferring directly back to the contract to save on gas fees. 
     // TODO: Maybe to save gas fees we can do a safeTransferFrom?
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
@@ -438,7 +444,7 @@ contract VaultStandardAMM is VaultBase {
         // Reassign value of earned amount after distributing fees
         earnedAmt = _distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro and sharing revenue w/ ZOR stakeholders
-        earnedAmt = _buyBackAndRevShare(earnedAmt);
+        earnedAmt = _buyBackAndRevShare(earnedAmt, _maxMarketMovementAllowed);
 
         // If staking a single token (CAKE, BANANA), farm that token and exit
         if (isCOREStaking || isSingleAssetDeposit) {
@@ -504,5 +510,95 @@ contract VaultStandardAMM is VaultBase {
 
         // Farm Want token
         _farm();
+    }
+
+    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
+    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
+    /// @param _amount The amount of Earn token to buy back  
+    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed) internal override {
+        // Authorize spending beforehand
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
+
+        // Swap to Token 0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amount.div(2),
+            _maxMarketMovementAllowed,
+            earnedToZORLPPoolToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Swap to Token 1
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amount.div(2),
+            _maxMarketMovementAllowed,
+            earnedToZORLPPoolToken1Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Enter LP pool
+        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
+        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
+        IERC20(token0Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token0Amt
+        );
+        IERC20(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        IAMMRouter02(uniRouterAddress)
+            .addLiquidity(
+                zorroLPPoolToken0,
+                zorroLPPoolToken1,
+                token0Amt,
+                token1Amt,
+                token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+                token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+                burnAddress,
+                block.timestamp.add(600)
+            );
+    }
+
+    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
+    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
+    function _revShareOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed) internal override {
+        // Authorize spending beforehand
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
+
+        // Swap to ZOR
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amount,
+            _maxMarketMovementAllowed,
+            earnedToZORROPath,
+            zorroStakingVault,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Swaps Earn token to USDC and sends to destination specified
+    /// @param _earnedAmount Quantity of Earned tokens
+    /// @param _destination Address to send swapped USDC to
+    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
+    function _swapEarnedToUSDC(
+        uint256 _earnedAmount,
+        address _destination,
+        uint256 _maxMarketMovementAllowed
+    ) internal override {
+        // Perform swap with Uni router
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _earnedAmount,
+            _maxMarketMovementAllowed,
+            earnedToUSDCPath,
+            _destination,
+            block.timestamp.add(600)
+        );
     }
 }

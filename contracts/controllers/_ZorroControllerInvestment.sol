@@ -773,163 +773,23 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Other Cross Chain */
 
-    /// @notice Performs both buyback and rev share operations for either on-chain or cross-chain
-    /// @param _pid The pool ID
-    /// @param _earnedAddress The address of the ERC20 earned token to buy back
-    /// @param _buybackAmount The amount of earned token to buyback
-    /// @param _revShareAmount The amount of earned token to share as revenue to the ZOR staking vault
-    /// @param _earnedToZORPath The router path for swapping from the Earn token to the ZOR token on BSC (home chain)
-    /// @param _earnedToZORLPPoolToken0Path The router path for swapping from the Earn token to the primary Zorro LP Pool's 0th token
-    /// @param _earnedToZORLPPoolToken1Path The router path for swapping from the Earn token to the primary Zorro LP Pool's 1st token
-    function buyBackAndRevShare(
-        uint256 _pid,
-        address _earnedAddress,
-        uint256 _buybackAmount, 
-        uint256 _revShareAmount,
-        address[] calldata _earnedToZORPath,
-        address[] calldata _earnedToZORLPPoolToken0Path,
-        address[] calldata _earnedToZORLPPoolToken1Path
-    ) external onlyXChainEndpoints {
-        // Get total earnings fees
-        uint256 _totalEarningsFees = _buybackAmount.add(_revShareAmount);
-        
-        // Increase allowance of earned token, to this contract
-        IERC20(_earnedAddress).safeIncreaseAllowance(
-            address(this),
-            _totalEarningsFees
-        );
-
-        // Transfer buyback amount to this contract
-        IERC20(_earnedAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _totalEarningsFees
-        );
-
-        // Check to see if the controller contract is on the home chain (BSC)
-        if (address(this) == homeChainZorroController) {
-            // If on home chain, perform buyback logic as normal
-            // TODO: Problem here is that the earn token may not be swappable on PCS. The responsibility of this needs to be on the underlying Vault
-            _buybackOnChain(_earnedAddress, _buybackAmount, _earnedToZORLPPoolToken0Path, _earnedToZORLPPoolToken1Path);
-            _revShareOnChain(_earnedAddress, _earnedToZORPath, _revShareAmount);
-        } else {
-            // If on a foreign chain, send a cross chain request for LP + burn, and revenue sharing
-            distributeEarningsXChain(_pid, _earnedAddress, _buybackAmount, _revShareAmount);
-        }
-    }
-
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @param _token The address of the token to buy back (usually the "Earn" token or USDC)
-    /// @param _buybackAmount The amount of Earn token to buy back  
-    /// @param _tokenToZORLPPoolToken0Path The router path for swapping from _token to the 0th token of the primary ZOR LP pool (usually ZOR)
-    /// @param _tokenToZORLPPoolToken1Path The router path for swapping from _token to the 1st token of the primary ZOR LP pool
-    function _buybackOnChain(
-        address _token,
-        uint256 _buybackAmount,
-        address[] memory _tokenToZORLPPoolToken0Path,
-        address[] memory _tokenToZORLPPoolToken1Path
-    ) internal {
-        // Authorize spending beforehand
-        IERC20(_token).safeIncreaseAllowance(
-            uniRouterAddress,
-            _buybackAmount
-        );
-        // Swap to Token 0
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _buybackAmount.div(2),
-            defaultMaxMarketMovement,
-            _tokenToZORLPPoolToken0Path,
-            address(this),
-            block.timestamp.add(600)
-        );
-        // Swap to Token 1
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _buybackAmount.div(2),
-            defaultMaxMarketMovement,
-            _tokenToZORLPPoolToken1Path,
-            address(this),
-            block.timestamp.add(600)
-        );
-        // Enter LP pool
-        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
-        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
-        IERC20(_tokenToZORLPPoolToken0Path[0]).safeIncreaseAllowance(
-            uniRouterAddress,
-            token0Amt
-        );
-        IERC20(_tokenToZORLPPoolToken1Path[0]).safeIncreaseAllowance(
-            uniRouterAddress,
-            token1Amt
-        );
-        (, , uint256 _liquidity) = IAMMRouter02(uniRouterAddress)
-            .addLiquidity(
-                zorroLPPoolToken0,
-                zorroLPPoolToken1,
-                token0Amt,
-                token1Amt,
-                token0Amt.mul(defaultMaxMarketMovement).div(1000),
-                token1Amt.mul(defaultMaxMarketMovement).div(1000),
-                address(this),
-                block.timestamp.add(600)
-            );
-
-        // Burn liquidity token obtained
-        IERC20(zorroLPPool).safeTransfer(burnAddress, _liquidity);
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _token The address of the token to be rev-shared
-    /// @param _tokenToZORPath The router path to swap _token to ZOR
-    /// @param _revShareAmount The amount of Earn token to share as revenue with ZOR stakers
-    function _revShareOnChain(
-        address _token,
-        address[] memory _tokenToZORPath,
-        uint256 _revShareAmount
-    ) internal {
-        // Authorize spending beforehand
-        IERC20(_token).safeIncreaseAllowance(
-            uniRouterAddress,
-            _revShareAmount
-        );
-
-        // Swap to ZOR
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _revShareAmount,
-            defaultMaxMarketMovement,
-            _tokenToZORPath,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
-    }
-
+    // TODO: Note that it assumes USDC already transfered, and amounts are in USDC
     /// @notice Prepares and sends an earnings distribution request cross-chain (back to the home chain)
     /// @param _pid The pool ID associated with the vault which experienced earnings
-    /// @param _earnedAddress The address of the Earn token
-    /// @param _buybackAmount The amount of earned token to buyback
-    /// @param _revShareAmount The amount of earned token to share as revenue to the ZOR staking vault
+    /// @param _buybackAmountUSDC The amount of USDC to buyback
+    /// @param _revShareAmountUSDC The amount of USDC to share as revenue to the ZOR staking vault
     function distributeEarningsXChain(
         uint256 _pid,
-        address _earnedAddress,
-        uint256 _buybackAmount,
-        uint256 _revShareAmount
-    ) internal {
+        uint256 _buybackAmountUSDC,
+        uint256 _revShareAmountUSDC
+    ) public {
+        // TODO: Modifier to allow only from registered vaults
         // Check lock to see if anything is pending for this block and pool. If so, revert
         require(
             lockedEarningsStatus[block.number][_pid] == 0,
             "Xchain earnings lock pending"
         );
         
-        // Swap earned token for USDC
-        address[] memory _path;
-        _path[0] = _earnedAddress;
-        _path[1] = defaultStablecoin;
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _buybackAmount.add(_revShareAmount),
-            defaultMaxMarketMovement,
-            _path,
-            address(this),
-            block.timestamp.add(600)
-        );
         // Lock USDC on a ledger for this block and pid, with status of pending
         uint256 _amountUSDC = IERC20(defaultStablecoin).balanceOf(
             address(this)
@@ -939,20 +799,17 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _amountUSDC
         );
         lockedEarningsStatus[block.number][_pid] = 1;
+
         // Fetch xchain endpoint for home chain
         XChainEndpoint xChainEndpoint = XChainEndpoint(endpointContracts[homeChainId]);
 
-        // Account for any previously failed earnings
-        uint256 _totalOriginalEarningsFees = _buybackAmount.add(_revShareAmount);
-        uint256 _amountBuybackUSDC = _amountUSDC.mul(_buybackAmount).div(_totalOriginalEarningsFees);
-        uint256 _amountRevShareUSDC = _amountUSDC.sub(_amountBuybackUSDC);
         // Construct payload
         bytes memory _payload = abi.encodeWithSignature(
             "receiveXChainDistributionRequest(uint256 _chainId,bytes _callbackContract,uint256 _amountUSDCBuyback,uint256 _amountUSDCRevShare,uint256 _failedAmountUSDCBuyback,uint256 _failedAmountUSDCRevShare)",
             chainId,
             abi.encode(address(this)),
-            _amountBuybackUSDC,
-            _amountRevShareUSDC,
+            _buybackAmountUSDC,
+            _revShareAmountUSDC,
             failedLockedBuybackUSDC,
             failedLockedRevShareUSDC
         );
@@ -1008,7 +865,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         /* Buyback */
         uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback.add(_failedAmountUSDCBuyback)).div(_amountUSDC);
-        _buybackOnChain(defaultStablecoin, _buybackAmount, USDCToZorroLPPoolToken0Path, USDCToZorroLPPoolToken1Path);
+        _buybackOnChain(_buybackAmount);
 
         /* Rev share */
         uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
@@ -1020,7 +877,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         } else {
             USDCToZORPath = USDCToZorroLPPoolToken1Path;
         }
-        _revShareOnChain(defaultStablecoin, USDCToZORPath, _revShareAmount);
+        _revShareOnChain(_revShareAmount);
 
         // Send cross chain burn request back to the remote chain
         XChainEndpoint endpointContract = XChainEndpoint(
@@ -1037,6 +894,80 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _callbackContract,
             _payload,
             ""
+        );
+    }
+
+    /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
+    /// @param _amountUSDC Amount of USDC to add as liquidity
+    function _buybackOnChain(
+        uint256 _amountUSDC
+    ) internal {
+        // Authorize spending beforehand
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
+        // Swap to Token 0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            defaultMaxMarketMovement,
+            USDCToZorroLPPoolToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Swap to Token 1
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            defaultMaxMarketMovement,
+            USDCToZorroLPPoolToken1Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Enter LP pool
+        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
+        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
+        IERC20(zorroLPPoolToken0).safeIncreaseAllowance(
+            uniRouterAddress,
+            token0Amt
+        );
+        IERC20(zorroLPPoolToken0).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        IAMMRouter02(uniRouterAddress)
+            .addLiquidity(
+                zorroLPPoolToken0,
+                zorroLPPoolToken1,
+                token0Amt,
+                token1Amt,
+                token0Amt.mul(defaultMaxMarketMovement).div(1000),
+                token1Amt.mul(defaultMaxMarketMovement).div(1000),
+                burnAddress,
+                block.timestamp.add(600)
+            );
+    }
+
+    /// @notice Pays the ZOR single staking pool the revenue share amount specified
+    /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
+    function _revShareOnChain(
+        uint256 _amountUSDC
+    ) internal {
+        // Authorize spending beforehand
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
+        // Swap to ZOR
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC,
+            defaultMaxMarketMovement,
+            USDCToZorroPath,
+            zorroStakingVault,
+            block.timestamp.add(600)
         );
     }
 

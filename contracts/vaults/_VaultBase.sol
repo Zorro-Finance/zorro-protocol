@@ -32,6 +32,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
     bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
+    bool public isHomeChain; // Whether this is deployed on the home chain (BSC)
     // Pool/farm/token IDs/addresses
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
@@ -40,6 +41,10 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address public token1Address; // Address of second token in pair if applicable
     address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
     address public tokenUSDCAddress; // USDC token address
+    // Zorro LP pool
+    address public zorroLPPool; // Main pool for Zorro liquidity
+    address public zorroLPPoolToken0; // For the dominant LP pool, the 0th token (usually ZOR)
+    address public zorroLPPoolToken1; // For the dominant LP pool, the 1st token
     // Other addresses
     address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
@@ -49,6 +54,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
     address public ZORROAddress; // Address of Zorro ERC20 token
+    address public zorroStakingVault; // Address of ZOR single staking vault
     // Governance
     address public govAddress; // Timelock controller contract
     bool public onlyGov = true; // Enforce gov only access on certain functions
@@ -95,6 +101,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public earnedToZORLPPoolToken1Path;
     address[] public USDCToWantPath;
     address[] public WantToUSDCPath;
+    address[] public earnedToUSDCPath;
 
     // Cross chain
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
@@ -276,6 +283,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
                     earnedToZORLPPoolToken0Path[i] = _swapPaths[i];
                 } else if (_ct == 6) {
                     earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
+                } else if (_ct == 7) {
+                    earnedToUSDCPath[i] = _swapPaths[i];
                 } else {
                     revert("bad swap paths");
                 }
@@ -369,8 +378,9 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
+    /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc. 
     /// @return the remaining earned token amount after buyback and revshare operations
-    function _buyBackAndRevShare(uint256 _earnedAmt)
+    function _buyBackAndRevShare(uint256 _earnedAmt, uint256 _maxMarketMovementAllowed)
         internal
         virtual
         returns (uint256)
@@ -389,21 +399,28 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             _revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
         }
 
-        // Fetch the controller contract that is associated with this Vault
-        ZorroController zorroController = ZorroController(
-            zorroControllerAddress
-        );
+        // Routing: Determine whether on home chain or not
+        if (isHomeChain) {
+            // If on home chain, perform buyback, revshare locally
+            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed);
+            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed);
+        } else {
+            // Otherwise, contact controller, to make cross chain call
+            // Fetch the controller contract that is associated with this Vault
+            ZorroController zorroController = ZorroController(
+                zorroControllerAddress
+            );
 
-        // Call buyBackAndRevShare on controller contract
-        zorroController.buyBackAndRevShare(
-            pid,
-            earnedAddress,
-            _buyBackAmt,
-            _revShareAmt,
-            earnedToZORROPath,
-            earnedToZORLPPoolToken0Path,
-            earnedToZORLPPoolToken1Path
-        );
+            // Swap to Earn to USDC and send to zorro controller contract
+            _swapEarnedToUSDC(_buyBackAmt.add(_revShareAmt), zorroControllerAddress, _maxMarketMovementAllowed);
+
+            // Call buyBackAndRevShare on controller contract
+            zorroController.distributeEarningsXChain(
+                pid,
+                _buyBackAmt,
+                _revShareAmt
+            );
+        }
 
         // Return net earnings
         return (_earnedAmt.sub(_buyBackAmt)).sub(_revShareAmt);
@@ -458,6 +475,22 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
-    // Compounding
+    // Earnings/compounding
     function earn(uint256 _maxMarketMovementAllowed) public virtual;
+
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) internal virtual;
+
+    function _revShareOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) internal virtual;
+
+    function _swapEarnedToUSDC(
+        uint256 _earnedAmount,
+        address _destination,
+        uint256 _maxMarketMovementAllowed
+    ) internal virtual;
 }

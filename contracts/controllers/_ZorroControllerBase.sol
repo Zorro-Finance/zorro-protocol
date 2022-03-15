@@ -97,6 +97,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
     address[] public USDCToZorroLPPoolToken1Path; // The router path from USDC to the primary Zorro LP pool, Token 1
+    address[] public USDCToZorroPath; // The path to swap USDC to ZOR
     uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
 
     // Zorro Single Staking vault
