@@ -194,11 +194,11 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Get balance of want token (the deposited amount)
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-        // Check to see if Want token was actually deposited, Want amount already present
+        // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
-        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
+
+        // Transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _wantAmt);
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -419,24 +419,26 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Init
-        uint256 _amountUSDC;
-
-        // Calculate Want token balance
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-
         // Preflight checks
-        require(_amount <= _wantBal, "Exceeds want bal");
+        require(_amount > 0, "Want amt must be > 0");
 
-        // Immediately swap the Want token for USDC
-        // TODO**: Is it want -> usdc swap, or withdraw first? Want or Token0?
+        // Safely transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _amount);
+
+        // Withdraw Want token to get Token0
+        IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _amount);
+
+        // Swap Token0 for USDC
+        // Get Token0 balance
+        uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
+        // Swap Token0 -> USDC
         _safeSwap(
-            wantAddress,
+            token0Address,
             tokenUSDCAddress,
-            _amount,
+            _token0Bal,
             _maxMarketMovementAllowed,
-            WantToUSDCPath,
-            balancerPoolWantWeightBasisPoints,
+            token0ToUSDCPath,
+            balancerPoolToken0WeightBasisPoints,
             balancerPoolUSDCWeightBasisPoints,
             msg.sender
         );

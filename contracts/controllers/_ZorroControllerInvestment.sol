@@ -176,17 +176,15 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address vaultAddr = poolInfo[_pid].vault;
         IVault vault = IVault(vaultAddr);
 
-        // TODO: Safe increase allowance and xfer USDC to vault contract
-
         // Exchange USDC for Want token in the Vault contract
-        uint256 wantAmt = vault.exchangeUSDForWantToken(_valueUSDC, _maxMarketMovement);
+        uint256 _wantAmt = vault.exchangeUSDForWantToken(_valueUSDC, _maxMarketMovement);
 
-        // Transfer Want token to Vault contract
-        IERC20(poolInfo[_pid].want).safeTransfer(vaultAddr, wantAmt);
+        // Safe increase allowance and xfer Want to vault contract
+        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(vaultAddr, _wantAmt);
 
         // Make deposit
         // Call core deposit function
-        _deposit(_pid, _user, wantAmt, _weeksCommitted, _vaultEnteredAt);
+        _deposit(_pid, _user, _wantAmt, _weeksCommitted, _vaultEnteredAt);
     }
 
     /// @notice Fully withdraw Want tokens from underlying Vault.
@@ -355,23 +353,24 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     ) internal returns (uint256) {
         // Update tranche status
         trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block.timestamp;
-
         // Get Vault contract
-        IVault vault = IVault(poolInfo[_pid].vault);
+        address _vaultAddr = poolInfo[_pid].vault;
+        IVault vault = IVault(_vaultAddr);
 
         // Call core withdrawal function (returns actual amount withdrawn)
-        uint256 wantAmtWithdrawn = _withdraw(
+        uint256 _wantAmtWithdrawn = _withdraw(
             _pid,
             _account,
             _trancheId,
             _harvestOnly
         );
 
-        // Transfer Want token to Vault contract
-        IERC20(poolInfo[_pid].want).safeTransfer(poolInfo[_pid].vault, wantAmtWithdrawn);
+        // Safe increase spending of Vault contract for Want token
+        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(_vaultAddr, _wantAmtWithdrawn);
 
+        // Exchange Want for USD
         uint256 amount = vault.exchangeWantTokenForUSD(
-            wantAmtWithdrawn,
+            _wantAmtWithdrawn,
             _maxMarketMovement
         );
 

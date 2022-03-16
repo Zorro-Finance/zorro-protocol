@@ -67,11 +67,11 @@ contract VaultZorro is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Get balance of want token (the deposited amount)
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-        // Check to see if Want token was actually deposited, Want amount already present
+        // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
-        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
+
+        // Transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _wantAmt);
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -191,17 +191,11 @@ contract VaultZorro is VaultBase {
     ) public virtual override onlyZorroController returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
-        // TODO***: Safer if we do safeTransferFrom() here, because otherwise
-        // the balance is already expected to be non-zero here (this IS
-        // the ZORRO single staking Vault after all, so someone could 
-        // take advantage). OR we could deploy a separate "farm" contract
-        // so that we can keep the same interface
-
-        // Get current Zorro balance
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        
         // Preflight checks
-        require(_amount <= token0Amt, "Exceeded balance for ZOR deposit");
+        require(_amount > 0, "Want amt must be > 0");
+
+        // Safely transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _amount);
 
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(

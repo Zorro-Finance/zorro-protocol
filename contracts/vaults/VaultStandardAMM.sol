@@ -103,11 +103,11 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Get balance of want token (the deposited amount)
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-        // Check to see if Want token was actually deposited, Want amount already present
+        // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
-        require(_wantAmt <= _wantBal, "Exceeds Want bal for deposit");
+
+        // Transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _wantAmt);
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -310,14 +310,11 @@ contract VaultStandardAMM is VaultBase {
     ) public virtual override onlyZorroController whenNotPaused returns (uint256) {
         // TODO: Take in current market prices (oracle)
 
-        // Init
-        uint256 _amountUSDC;
-
-        // Calculate Want token balance
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
-        
         // Preflight checks
-        require(_amount <= _wantBal, "Exceeds want bal");
+        require(_amount > 0, "Want amt must be > 0");
+
+        // Safely transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _amount);
 
         // Check if vault is for single asset staking
         if (isSingleAssetDeposit) {
