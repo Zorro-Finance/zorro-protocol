@@ -102,6 +102,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     address[] public USDCToWantPath;
     address[] public WantToUSDCPath;
     address[] public earnedToUSDCPath;
+    address[] public USDCToZORROPath;
 
     // Cross chain
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
@@ -285,6 +286,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
                     earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
                 } else if (_ct == 7) {
                     earnedToUSDCPath[i] = _swapPaths[i];
+                } else if (_ct == 8) {
+                    USDCToZORROPath[i] = _swapPaths[i];
                 } else {
                     revert("bad swap paths");
                 }

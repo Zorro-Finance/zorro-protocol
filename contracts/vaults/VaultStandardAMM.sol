@@ -36,7 +36,7 @@ contract VaultStandardAMM is VaultBase {
     /// @param _isSingleAssetDeposit Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
     /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     /// @param _isHomeChain Whether this contract is deployed on the home chain (BSC)
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path, earnedToUSDCPath]
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path, earnedToUSDCPath, USDCToZORROPath]
     /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
     /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     constructor(
@@ -154,8 +154,6 @@ contract VaultStandardAMM is VaultBase {
         // For single token pools, simply swap to Want token right away
         if (isSingleAssetDeposit) {
             // Swap USDC for Want token
-            // TODO: Is this correct? Can we go direct from USDC to Want or do we need 
-            // to deposit? E.g. like Acryptos
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountUSDC,
                 _maxMarketMovementAllowed,
