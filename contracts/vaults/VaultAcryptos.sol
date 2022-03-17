@@ -659,15 +659,6 @@ contract VaultAcryptosSingle is VaultBase {
                 zorroStakingVault
             );
         }
-        
-        // Swap 
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount,
-            _maxMarketMovementAllowed,
-            earnedToZORROPath,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
     }
 
     /// @notice Swaps Earn token to USDC and sends to destination specified
