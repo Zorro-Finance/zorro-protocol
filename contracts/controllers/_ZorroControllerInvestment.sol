@@ -20,6 +20,8 @@ import "../interfaces/ICurveMetaPool.sol";
 
 import "../libraries/SafeSwap.sol";
 
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+
 
 // TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
 // arguments. We changed around the order of many args.
@@ -28,13 +30,14 @@ import "../libraries/SafeSwap.sol";
 // but isn't authorized. We need to extract the cross-chain msg.sender to check. 
 
 
-contract ZorroControllerInvestment is ZorroControllerBase {
+contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using CustomMath for uint256;
     using SafeSwapCurve for ICurveMetaPool;
     using SafeSwapUni for IAMMRouter02;
+    using Chainlink for Chainlink.Request;
 
     /* Cash flow */
 
@@ -528,6 +531,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Swap zUSDC for USDC
         ICurveMetaPool(curveStablePoolAddress).safeSwap(
             _valueUSDC,
+            1e12,
+            1e12,
             _maxMarketMovement,
             curveSyntheticStablecoinIndex,
             curveDefaultStablecoinIndex
@@ -690,6 +695,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             // Swap zUSDC for USDC
             ICurveMetaPool(curveStablePoolAddress).safeSwap(
                 _mintableAmountZUSDC,
+                1e12,
+                1e12,
                 _maxMarketMovement,
                 curveSyntheticStablecoinIndex,
                 curveDefaultStablecoinIndex
@@ -772,7 +779,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Other Cross Chain */
 
-    // TODO: Note that it assumes USDC already transfered, and amounts are in USDC
     /// @notice Prepares and sends an earnings distribution request cross-chain (back to the home chain)
     /// @param _pid The pool ID associated with the vault which experienced earnings
     /// @param _buybackAmountUSDC The amount of USDC to buyback
@@ -827,7 +833,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
     }
 
-
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
     /// @param _chainId The ID of the chain that this request originated from
     /// @param _callbackContract Address of destination contract in bytes for the callback
@@ -841,8 +846,39 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback,
-        uint256 _failedAmountUSDCRevShare
+        uint256 _failedAmountUSDCRevShare,
+        uint256 
     ) external onlyXChainEndpoints {
+        // Make Chainlink request to get ZOR price
+        Chainlink.Request memory req = buildChainlinkRequest(zorroPriceOracleJobId, address(this), this.buybackAndRevShare.selector);
+        req.addBytes("chainId", abi.encodePacked(_chainId));
+        req.addBytes("callbackContract", abi.encodePacked(_callbackContract));
+        req.addBytes("amountUSDCBuyback", abi.encodePacked(_amountUSDCBuyback));
+        req.addBytes("amountUSDCRevShare", abi.encodePacked(_amountUSDCRevShare));
+        req.addBytes("failedAmountUSDCBuyback", abi.encodePacked(_failedAmountUSDCBuyback));
+        req.addBytes("failedAmountUSDCRevShare", abi.encodePacked(_failedAmountUSDCRevShare));
+        sendChainlinkRequestTo(zorroPriceOracle, req, zorroPriceOracleFee);
+    }
+
+
+    /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
+    /// @param _chainId The ID of the chain that this request originated from
+    /// @param _callbackContract Address of destination contract in bytes for the callback
+    /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
+    /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
+    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
+    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
+    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
+    function buybackAndRevShare(
+        uint256 _chainId,
+        bytes calldata _callbackContract,
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare,
+        uint256 _failedAmountUSDCBuyback,
+        uint256 _failedAmountUSDCRevShare,
+        uint256 _ZORROExchangeRate
+    ) external onlyXChainEndpoints {
+        // TODO: Change modifier to 
         // Total USDC to perform operations
         uint256 _amountUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
 
@@ -855,6 +891,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
         ICurveMetaPool(curveStablePoolAddress).safeSwap(
             _amountZUSDC,
+            1e12,
+            1e12,
             defaultMaxMarketMovement,
             curveSyntheticStablecoinIndex,
             curveDefaultStablecoinIndex
@@ -864,19 +902,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         /* Buyback */
         uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback.add(_failedAmountUSDCBuyback)).div(_amountUSDC);
-        _buybackOnChain(_buybackAmount);
+        _buybackOnChain(_buybackAmount, _ZORROExchangeRate);
 
         /* Rev share */
         uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
-        // Determine appropriate swap path from USDC to ZOR depending on 
-        // whether ZOR is the 0th or 1st token in the LP pair
-        address[] memory USDCToZORPath;
-        if (zorroLPPoolToken0 == ZORRO) {
-            USDCToZORPath = USDCToZorroLPPoolToken0Path;
-        } else {
-            USDCToZORPath = USDCToZorroLPPoolToken1Path;
-        }
-        _revShareOnChain(_revShareAmount);
+        _revShareOnChain(_revShareAmount, _ZORROExchangeRate);
 
         // Send cross chain burn request back to the remote chain
         XChainEndpoint endpointContract = XChainEndpoint(
@@ -898,18 +928,36 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
     /// @param _amountUSDC Amount of USDC to add as liquidity
+    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
     function _buybackOnChain(
-        uint256 _amountUSDC
+        uint256 _amountUSDC,
+        uint256 _ZORROExchangeRate
     ) internal {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
+        
+        // Determine exchange rates using Oracle as necessary
+        uint256 _exchangeRateLPPoolToken0;
+        uint256 _exchangeRateLPPoolToken1;
+        // Assign ZOR exchange rate depending on which token it is in the pool (0, 1)
+        if (zorroLPPoolToken0 == ZORRO) {
+            _exchangeRateLPPoolToken0 = _ZORROExchangeRate;
+            (,int256 _amount1,,,) = _priceFeedLPPoolToken1.latestRoundData();
+            _exchangeRateLPPoolToken1 = uint256(_amount1);
+        } else if (zorroLPPoolToken1 == ZORRO) {
+            (,int256 _amount0,,,) = _priceFeedLPPoolToken0.latestRoundData();
+            _exchangeRateLPPoolToken0 = uint256(_amount0);
+            _exchangeRateLPPoolToken1 = _ZORROExchangeRate;
+        }
 
         // Swap to Token 0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
+            1e12,
+            _exchangeRateLPPoolToken0,
             defaultMaxMarketMovement,
             USDCToZorroLPPoolToken0Path,
             address(this),
@@ -919,6 +967,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Swap to Token 1
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
+            1e12,
+            _exchangeRateLPPoolToken1,
             defaultMaxMarketMovement,
             USDCToZorroLPPoolToken1Path,
             address(this),
@@ -951,8 +1001,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
     /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
+    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
     function _revShareOnChain(
-        uint256 _amountUSDC
+        uint256 _amountUSDC,
+        uint256 _ZORROExchangeRate
     ) internal {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
@@ -963,6 +1015,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Swap to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
+            1e12,
+            _ZORROExchangeRate,
             defaultMaxMarketMovement,
             USDCToZorroPath,
             zorroStakingVault,

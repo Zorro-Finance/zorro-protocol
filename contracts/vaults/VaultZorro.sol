@@ -97,13 +97,13 @@ contract VaultZorro is VaultBase {
     /// @notice Performs necessary operations to convert USDC into Want token
     /// @param _amountUSDC The USDC quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
     /// @return Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSDC,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // TODO: Take in current market prices (oracle)
-
         // Get balance of deposited USDC
         uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
@@ -113,6 +113,8 @@ contract VaultZorro is VaultBase {
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
+            _priceData.tokenUSDC,
+            _priceData.token0,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
             address(this),
@@ -184,13 +186,13 @@ contract VaultZorro is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
+    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
     /// @return Amount of USDC token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) public virtual override onlyZorroController returns (uint256) {
-        // TODO: Take in current market prices (oracle)
-
         // Preflight checks
         require(_amount > 0, "Want amt must be > 0");
 
@@ -200,6 +202,8 @@ contract VaultZorro is VaultBase {
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
+            _priceData.token0,
+            _priceData.tokenUSDC,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender,
@@ -211,7 +215,11 @@ contract VaultZorro is VaultBase {
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
     /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
-    function earn(uint256 _maxMarketMovementAllowed)
+    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
+    function earn(
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
+    )
         public
         override
         nonReentrant
@@ -235,14 +243,16 @@ contract VaultZorro is VaultBase {
 
     function _buybackOnChain(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal override {
         // Dummy function to implement interface
     }
 
     function _revShareOnChain(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal override {
         // Dummy function to implement interface
     }
@@ -250,7 +260,8 @@ contract VaultZorro is VaultBase {
     function _swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal override {
         // Dummy function to implement interface
     }

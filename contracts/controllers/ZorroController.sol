@@ -24,6 +24,9 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
     /// @param _homeChainZorroController The address of the home chain (BSC) Zorro controller contract
     /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, token0 of the LP pool, and token1 of the pool
     /// @param _chainId The ID of the chain that this contract is being deployed on
+    /// @param _priceFeeds Array of Chainlink price feeds: [_priceFeedLPPoolToken0, _priceFeedLPPoolToken1]
+    /// @param _zorroPriceOracle Address of Zorro Chainlink price oracle
+    /// @param _zorroPriceOracleJobId Job ID of Zorro Chainlink price oracle
     constructor(
         address _timelockOwner,
         address _publicPool,
@@ -31,7 +34,10 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
         address _lockUSDCController,
         address _homeChainZorroController,
         address[] memory _zorroLPPoolAddresses,
-        uint256 _chainId
+        uint256 _chainId,
+        address[] memory _priceFeeds,
+        address _zorroPriceOracle,
+        bytes32 _zorroPriceOracleJobId
     ) {
         // Assign owner as to timelock contract
         transferOwnership(_timelockOwner);
@@ -47,5 +53,9 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
         zorroLPPoolToken0 = _zorroLPPoolAddresses[1];
         zorroLPPoolToken1 = _zorroLPPoolAddresses[2];
         chainId = _chainId;
+        _priceFeedLPPoolToken0 = AggregatorV3Interface(_priceFeeds[0]);
+        _priceFeedLPPoolToken1 = AggregatorV3Interface(_priceFeeds[1]);
+        zorroPriceOracle = _zorroPriceOracle;
+        zorroPriceOracleJobId = _zorroPriceOracleJobId;
     }
 }

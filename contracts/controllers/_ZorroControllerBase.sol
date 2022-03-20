@@ -15,6 +15,8 @@ import "../tokens/ZorroTokens.sol";
 
 import "../cross-chain/XchainEndpoint.sol";
 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
 // TODO: Do thorough analysis to ensure enough setters/constructors
 // TODO: Generally: Convert uint8s to enums
 
@@ -113,6 +115,14 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed.
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
+
+    // Price Oracles
+    // TODO: Setters for all these
+    AggregatorV3Interface internal _priceFeedLPPoolToken0;
+    AggregatorV3Interface internal _priceFeedLPPoolToken1;
+    address public zorroPriceOracle;
+    uint256 public zorroPriceOracleFee;
+    bytes32 public zorroPriceOracleJobId;
 
     // Info of each pool
     PoolInfo[] public poolInfo;

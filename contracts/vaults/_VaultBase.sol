@@ -109,6 +109,17 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
     mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
 
+    /* Structs */
+    struct PriceData {
+        uint256 token0; // Value of Token 0 in USD, times 1e12
+        uint256 token1; // Value of Token 1 in USD, times 1e12
+        uint256 earnToken; // Value of Earn token in USD, times 1e12
+        uint256 lpPoolToken0; // Value of LP Pool Token 0 in USD, times 1e12
+        uint256 lpPoolToken1; // Value of LP Pool Token 1 in USD, times 1e12
+        uint256 zorroToken; // Value of Zorro Token in USD, times 1e12
+        uint256 tokenUSDC; // Value of USDC Token in USD, times 1e12
+    }
+
     /* Events */
 
     event SetSettings(
@@ -309,7 +320,9 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /* Maintenance Functions */
 
     /// @notice Converts dust tokens into earned tokens, which will be reinvested on the next earn()
-    function convertDustToEarned() public virtual whenNotPaused {
+    function convertDustToEarned(
+        PriceData calldata _priceData
+    ) public virtual whenNotPaused {
         // Only proceed if the contract is meant for autocompounding and is NOT for single staking (CAKE, BANANA, etc.)
         require(isZorroComp, "!isZorroComp");
         require(!isCOREStaking, "isCOREStaking");
@@ -323,8 +336,11 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             );
 
             // Swap all dust tokens to earned tokens
+            // TODO: This might need to be implemented by each sub contract, because of Balancer etc. 
             IAMMRouter02(uniRouterAddress).safeSwap(
                 token0Amt,
+                _priceData.token0,
+                _priceData.earnToken,
                 slippageFactor,
                 token0ToEarnedPath,
                 address(this),
@@ -343,6 +359,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             // Swap all dust tokens to earned tokens
             IAMMRouter02(uniRouterAddress).safeSwap(
                 token1Amt,
+                _priceData.token1,
+                _priceData.earnToken,
                 slippageFactor,
                 token1ToEarnedPath,
                 address(this),
@@ -382,8 +400,13 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
     /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc. 
+    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
     /// @return the remaining earned token amount after buyback and revshare operations
-    function _buyBackAndRevShare(uint256 _earnedAmt, uint256 _maxMarketMovementAllowed)
+    function _buyBackAndRevShare(
+        uint256 _earnedAmt, 
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
+    )
         internal
         virtual
         returns (uint256)
@@ -405,8 +428,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
         // Routing: Determine whether on home chain or not
         if (isHomeChain) {
             // If on home chain, perform buyback, revshare locally
-            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed);
-            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed);
+            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed, _priceData);
+            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _priceData);
         } else {
             // Otherwise, contact controller, to make cross chain call
             // Fetch the controller contract that is associated with this Vault
@@ -415,7 +438,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             );
 
             // Swap to Earn to USDC and send to zorro controller contract
-            _swapEarnedToUSDC(_buyBackAmt.add(_revShareAmt), zorroControllerAddress, _maxMarketMovementAllowed);
+            _swapEarnedToUSDC(_buyBackAmt.add(_revShareAmt), zorroControllerAddress, _maxMarketMovementAllowed, _priceData);
 
             // Call buyBackAndRevShare on controller contract
             zorroController.distributeEarningsXChain(
@@ -459,7 +482,8 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     // Deposits
     function exchangeUSDForWantToken(
         uint256 _amountUSDC,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) public virtual returns (uint256);
 
     function depositWantToken(address _account, uint256 _wantAmt)
@@ -475,25 +499,32 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) public virtual returns (uint256);
 
     // Earnings/compounding
-    function earn(uint256 _maxMarketMovementAllowed) public virtual;
+    function earn(
+        uint256 _maxMarketMovementAllowed, 
+        PriceData calldata _priceData
+    ) public virtual;
 
     function _buybackOnChain(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal virtual;
 
     function _revShareOnChain(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal virtual;
 
     function _swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        PriceData calldata _priceData
     ) internal virtual;
 }
