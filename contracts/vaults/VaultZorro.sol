@@ -5,7 +5,7 @@ import "./_VaultBase.sol";
 
 
 /// @title VaultZorro. The Vault for staking the Zorro token
-/// @dev Only to be deployed on BSC (the home of the ZOR token)
+/// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
     /* Libraries */
     using SafeERC20 for IERC20;

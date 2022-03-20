@@ -763,7 +763,7 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         require(success1, "Unsuccessful xchain unlock");
     }
 
-    /// @notice Receives a request from home chain (BSC) to unlock and burn temporarily withheld USDC.
+    /// @notice Receives a request from home chain to unlock and burn temporarily withheld USDC.
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     function receiveXChainUnlockRequest(address _account, uint256 _amountUSDC)
@@ -787,8 +787,7 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         uint256 _pid,
         uint256 _buybackAmountUSDC,
         uint256 _revShareAmountUSDC
-    ) public {
-        // TODO: Modifier to allow only from registered vaults
+    ) public onlyRegisteredVault(_pid) {
         // Check lock to see if anything is pending for this block and pool. If so, revert
         require(
             lockedEarningsStatus[block.number][_pid] == 0,
@@ -850,18 +849,19 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         uint256 
     ) external onlyXChainEndpoints {
         // Make Chainlink request to get ZOR price
-        Chainlink.Request memory req = buildChainlinkRequest(zorroPriceOracleJobId, address(this), this.buybackAndRevShare.selector);
+        Chainlink.Request memory req = buildChainlinkRequest(zorroControllerOraclePriceJobId, address(this), this.buybackAndRevShare.selector);
         req.addBytes("chainId", abi.encodePacked(_chainId));
         req.addBytes("callbackContract", abi.encodePacked(_callbackContract));
         req.addBytes("amountUSDCBuyback", abi.encodePacked(_amountUSDCBuyback));
         req.addBytes("amountUSDCRevShare", abi.encodePacked(_amountUSDCRevShare));
         req.addBytes("failedAmountUSDCBuyback", abi.encodePacked(_failedAmountUSDCBuyback));
         req.addBytes("failedAmountUSDCRevShare", abi.encodePacked(_failedAmountUSDCRevShare));
-        sendChainlinkRequestTo(zorroPriceOracle, req, zorroPriceOracleFee);
+        sendChainlinkRequestTo(zorroControllerOracle, req, zorroControllerOracleFee);
     }
 
 
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
+    /// @dev Can only be called by the Chainlink Oracle
     /// @param _chainId The ID of the chain that this request originated from
     /// @param _callbackContract Address of destination contract in bytes for the callback
     /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
@@ -877,8 +877,7 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare,
         uint256 _ZORROExchangeRate
-    ) external onlyXChainEndpoints {
-        // TODO: Change modifier to 
+    ) external onlyAllowedZORPriceOracle {
         // Total USDC to perform operations
         uint256 _amountUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
 

@@ -21,12 +21,12 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
     /// @notice Constructor
     /// @param _timelockOwner address of owner (should be a timelock)
     /// @param _lockUSDCController The address of the lock for USDC
-    /// @param _homeChainZorroController The address of the home chain (BSC) Zorro controller contract
+    /// @param _homeChainZorroController The address of the home chain Zorro controller contract
     /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, token0 of the LP pool, and token1 of the pool
     /// @param _chainId The ID of the chain that this contract is being deployed on
     /// @param _priceFeeds Array of Chainlink price feeds: [_priceFeedLPPoolToken0, _priceFeedLPPoolToken1]
-    /// @param _zorroPriceOracle Address of Zorro Chainlink price oracle
-    /// @param _zorroPriceOracleJobId Job ID of Zorro Chainlink price oracle
+    /// @param _zorroControllerOracle Address of Zorro Chainlink oracle for controller
+    /// @param _zorroControllerOracleJobIds Job ID array of Zorro Chainlink price oracle, Emissions oracle
     constructor(
         address _timelockOwner,
         address _publicPool,
@@ -36,8 +36,8 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
         address[] memory _zorroLPPoolAddresses,
         uint256 _chainId,
         address[] memory _priceFeeds,
-        address _zorroPriceOracle,
-        bytes32 _zorroPriceOracleJobId
+        address _zorroControllerOracle,
+        bytes32[] memory _zorroControllerOracleJobIds
     ) {
         // Assign owner as to timelock contract
         transferOwnership(_timelockOwner);
@@ -55,7 +55,8 @@ contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroC
         chainId = _chainId;
         _priceFeedLPPoolToken0 = AggregatorV3Interface(_priceFeeds[0]);
         _priceFeedLPPoolToken1 = AggregatorV3Interface(_priceFeeds[1]);
-        zorroPriceOracle = _zorroPriceOracle;
-        zorroPriceOracleJobId = _zorroPriceOracleJobId;
+        zorroControllerOracle = _zorroControllerOracle;
+        zorroControllerOraclePriceJobId = _zorroControllerOracleJobIds[0];
+        zorroControllerOracleEmissionsJobId = _zorroControllerOracleJobIds[1];
     }
 }

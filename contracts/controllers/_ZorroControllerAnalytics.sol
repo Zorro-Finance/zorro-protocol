@@ -24,7 +24,7 @@ contract ZorroControllerAnalytics is ZorroControllerBase {
         // IF we are on a block that is greater than the previous block this function was executed in
         if (block.number > pool.lastRewardBlock) {
             uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
-            uint256 ZORROPerBlock = getZorroPerBlock();
+            uint256 ZORROPerBlock = ZORROPerBlock;
             uint256 ZORROReward = elapsedBlocks.mul(ZORROPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
             accZORRORewards = accZORRORewards.add(ZORROReward);
         }

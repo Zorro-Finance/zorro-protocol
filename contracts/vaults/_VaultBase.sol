@@ -32,7 +32,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
     bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
-    bool public isHomeChain; // Whether this is deployed on the home chain (BSC)
+    bool public isHomeChain; // Whether this is deployed on the home chain
     // Pool/farm/token IDs/addresses
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
@@ -319,56 +319,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
 
     /* Maintenance Functions */
 
-    /// @notice Converts dust tokens into earned tokens, which will be reinvested on the next earn()
-    function convertDustToEarned(
-        PriceData calldata _priceData
-    ) public virtual whenNotPaused {
-        // Only proceed if the contract is meant for autocompounding and is NOT for single staking (CAKE, BANANA, etc.)
-        require(isZorroComp, "!isZorroComp");
-        require(!isCOREStaking, "isCOREStaking");
-
-        // Converts token0 dust (if any) to earned tokens
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        if (token0Address != earnedAddress && token0Amt > 0) {
-            IERC20(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token0Amt
-            );
-
-            // Swap all dust tokens to earned tokens
-            // TODO: This might need to be implemented by each sub contract, because of Balancer etc. 
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                token0Amt,
-                _priceData.token0,
-                _priceData.earnToken,
-                slippageFactor,
-                token0ToEarnedPath,
-                address(this),
-                block.timestamp.add(600)
-            );
-        }
-
-        // Converts token1 dust (if any) to earned tokens
-        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-        if (token1Address != earnedAddress && token1Amt > 0) {
-            IERC20(token1Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token1Amt
-            );
-
-            // Swap all dust tokens to earned tokens
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                token1Amt,
-                _priceData.token1,
-                _priceData.earnToken,
-                slippageFactor,
-                token1ToEarnedPath,
-                address(this),
-                block.timestamp.add(600)
-            );
-        }
-    }
-
     /// @notice Pause contract
     function pause() public virtual onlyAllowGov {
         _pause();
@@ -440,7 +390,7 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
             // Swap to Earn to USDC and send to zorro controller contract
             _swapEarnedToUSDC(_buyBackAmt.add(_revShareAmt), zorroControllerAddress, _maxMarketMovementAllowed, _priceData);
 
-            // Call buyBackAndRevShare on controller contract
+            // Call distributeEarningsXChain on controller contract
             zorroController.distributeEarningsXChain(
                 pid,
                 _buyBackAmt,
