@@ -292,7 +292,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             // Get all values at current index
             bytes memory _destinationContract = _destinationContracts[i];
             bytes memory _payload = _payloads[i];
-            // TODO - do we need to check if payload is in proof?
+            // TODO** - do we need to check if payload is in proof?
             bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
             (uint8 res, , , , , , , , , , , ) = txProof(
@@ -351,7 +351,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         for (uint256 i = 0; i < _proofBlobs.length; i++) {
             // Get all values at current index
             bytes memory _recoveryPayload = _recoveryPayloads[i];
-            // TODO - do we need to check if payload is in proof?
+            // TODO** - do we need to check if payload is in proof?
             bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
             (uint8 res, , , , , , , , , , , ) = txProof(
@@ -360,7 +360,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             );
             // If one proof is invalid, revert the entire transaction
             require(res == 1, "Failed to validate Tx Proof");
-            // TODO: Extract msg.sender from each proof (the calling contract). Here is just a dummy variable but it should be 
+            // TODO**: Extract msg.sender from each proof (the calling contract). Here is just a dummy variable but it should be 
             // a value from the tuple return value from txProof() above. 
             address _originContract = address(0);
             // Call origin contract with the recovery payload
@@ -441,7 +441,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
     function extractIdentityFromPayload(bytes calldata _payload) public pure virtual returns (address) {
-        // TODO implement
+        // TODO** implement
         // Remove the first 4 bytes (Keccak 256 method signature)
         // Take the next 20 bits 
         // ABI decode to "address" datatype
@@ -453,7 +453,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @param _payload The encoded (e.g. ABI encoded for EVM chains) function payload
     /// @return Extracted address
     function extractValueFromPayload(bytes calldata _payload) public pure virtual returns (uint256) {
-        // TODO implement
+        // TODO** implement
         // Remove the first 4 bytes (Keccak 256 method signature) + 20 bits (address)
         // Take the next 256 bits 
         // ABI decode to "uint256" datatype

@@ -19,6 +19,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors
 // TODO: Generally: Convert uint8s to enums
+// TODO: Do we have an infinite loop problem with cross chain reverts?
 
 /* Base Contract */
 
@@ -39,8 +40,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     }
 
     /// @notice Only allows functions to be executed where the sender matches the zorroPriceOracle address
-    modifier onlyAllowedZORPriceOracle() {
-        require(_msgSender() == zorroControllerOracle, "only ZOR oracle");
+    modifier onlyAllowZorroControllerOracle() {
+        require(_msgSender() == zorroControllerOracle, "only Zorro oracle");
         _;
     }
 
@@ -386,8 +387,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 _targetTVLCaptureBasisPoints,
         uint256 _ZorroTotalVaultTVLUSD,
         uint256 _publicPoolZORBalance
-    ) external {
-        // TODO: Modifier
+    ) external onlyAllowZorroControllerOracle {
         // Use the Rm formula to determine the percentage of the remaining public pool Zorro tokens to transfer to this contract as rewards
         uint256 ZORRODailyDistributionFactorBasisPoints = baseRewardRateBasisPoints
                 .mul(_totalMarketTVLUSD)
@@ -463,7 +463,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             // Get endpoint contract
             address homeChainEndpointContract = endpointContracts[homeChainId];
             // Make cross-chain burn request
-            // TODO: Revert action should indicate failure for burn request and accumulate it so that the next burn request will include it
             XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
                 abi.encodePacked(homeChainZorroController),
                 abi.encodeWithSignature(

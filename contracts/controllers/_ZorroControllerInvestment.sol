@@ -23,10 +23,10 @@ import "../libraries/SafeSwap.sol";
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 
-// TODO: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
+// TODO||: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
 // arguments. We changed around the order of many args.
 // TODO: Do an overall audit of the code base to see where we should emit events. 
-// TODO: onlyXChainEndpoints modifier may not be enough. Imagine scenario where someone makes a cross-chain call to revertXChainDeposit()
+// TODO*: onlyXChainEndpoints modifier may not be enough. Imagine scenario where someone makes a cross-chain call to revertXChainDeposit()
 // but isn't authorized. We need to extract the cross-chain msg.sender to check. 
 
 
@@ -495,7 +495,7 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
             _amountUSDC
         );
 
-        // TODO: Need to collect a xchain deposit fee here! And the net amount of the deposit needs to be accounted for somehow.
+        // TODO*: Need to collect a xchain deposit fee here! And the net amount of the deposit needs to be accounted for somehow.
 
         // Transfer USDC into this contract
         IERC20(defaultStablecoin).safeTransferFrom(
@@ -639,8 +639,6 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
     /// @param _chainId The Chain ID of the remote chain that initiated this request
     /// @param _originalNetDepositUSDC The amount originally deposited into this tranche, NET of fees
-    /// @param _pid The pool ID on the remote chain that the user withdrew from
-    /// @param _trancheId The ID of the tranche on the remote chain, that was originally used to deposit
     /// @param _maxMarketMovement factor to account for max market movement/slippage, expressed as numerator over 1000 (e.g. 950 => 950/1000 = 0.95 = 5% slippage)
     /// @param _callbackContract The remote contract that called this function.
     function receiveXChainRepatriationRequest(
@@ -648,15 +646,9 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         uint256 _withdrawnUSDC,
         uint256 _chainId,
         uint256 _originalNetDepositUSDC,
-        uint256 _pid,
-        uint256 _trancheId,
         uint256 _maxMarketMovement,
         address _callbackContract
     ) external onlyXChainEndpoints nonReentrant {
-        // TODO Need original deposit amount, which is stored on opposite chain. 
-        // OR we maintain a xchain mapping on this chain by tranche
-        // TODO: Why are pid, trancheId not being used here?
-
         // Initialize finance variables
         uint256 _profit = 0;
         uint256 _unlockableAmountUSDC = 0;
@@ -877,7 +869,7 @@ contract ZorroControllerInvestment is ZorroControllerBase, ChainlinkClient {
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare,
         uint256 _ZORROExchangeRate
-    ) external onlyAllowedZORPriceOracle {
+    ) external onlyAllowZorroControllerOracle {
         // Total USDC to perform operations
         uint256 _amountUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare).add(_failedAmountUSDCBuyback).add(_failedAmountUSDCRevShare);
 
