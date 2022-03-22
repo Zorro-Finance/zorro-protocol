@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -10,6 +11,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 import "../helpers/ProvethVerifier.sol";
+
+// TODO: What would this look like for non EVM chains? Would Proveth verifier need to change too?
 
 /// @title XChainBaseLayer. Base contract for cross-chain functionality
 contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
@@ -204,12 +207,15 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
     /// @notice receives a validated transaction from the Relay layer and calls the on-chain destination contract to make a transaction
     /// @param _destinationContract Address of the destination contract to call to complete the cross chain transaction (in bytes to keep generic)
     /// @param _payload Payload in ABI encoded bytes (or equivalent depending on chain)
+    /// @param _xChainSender The address of the remote chain sender (generalized to bytes)
     function receiveXChainTransaction(
         address _destinationContract,
-        bytes memory _payload
+        bytes memory _payload,
+        bytes memory _xChainSender
     ) internal {
+        bytes memory _payloadWithSender = bytes.concat(_payload, _xChainSender);
         // Perform contract call with the abi encoded payload
-        (bool success, ) = _destinationContract.call(_payload);
+        (bool success, ) = _destinationContract.call(_payloadWithSender);
         // Reverts if transaction does not succeed
         require(success, "Call to receiving contract failed");
     }
@@ -295,14 +301,14 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             // TODO** - do we need to check if payload is in proof?
             bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
-            (uint8 res, , , , , , , , , , , ) = txProof(
+            (uint8 res, , , , , address xChainSender, , , , , ,) = txProof(
                 _blockHeaderHash,
                 _proofBlob
             );
             // If one proof is invalid, revert the entire transaction
             require(res == 1, "Failed to validate Tx Proof");
             // Call Contract Layer with payloads to finally execute the cross chain transaction
-            receiveXChainTransaction(abi.decode(_destinationContract, (address)), _payload);
+            receiveXChainTransaction(abi.decode(_destinationContract, (address)), _payload, abi.encodePacked(xChainSender));
         }
         // Mark current hash as completed so that it does not run again
         blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED;
@@ -354,7 +360,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             // TODO** - do we need to check if payload is in proof?
             bytes memory _proofBlob = _proofBlobs[i];
             // For each proof, check against block header hash for validity
-            (uint8 res, , , , , , , , , , , ) = txProof(
+            (uint8 res, , , , , address xChainSender, , , , , ,) = txProof(
                 _blockHeaderHash,
                 _proofBlob
             );
@@ -364,7 +370,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             // a value from the tuple return value from txProof() above. 
             address _originContract = address(0);
             // Call origin contract with the recovery payload
-            receiveXChainTransaction(_originContract, _recoveryPayload);
+            receiveXChainTransaction(_originContract, _recoveryPayload, abi.encodePacked(xChainSender));
         }
         // Mark current hash as completed so that it does not run again
         blockHeaderHashes[_blockHeaderHash] = BLOCK_HEADER_HASH_PROCESSED_FAILURE;

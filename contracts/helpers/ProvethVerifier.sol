@@ -15,6 +15,7 @@ contract ProvethVerifier {
         uint256 nonce;
         uint256 gasprice;
         uint256 startgas;
+        address from;
         address to;
         uint256 value;
         bytes data;
@@ -25,6 +26,7 @@ contract ProvethVerifier {
         uint256 nonce;
         uint256 gasprice;
         uint256 startgas;
+        address from;
         address to;
         uint256 value;
         bytes data;
@@ -61,43 +63,65 @@ contract ProvethVerifier {
 
     function decodeUnsignedTx(bytes memory rlpUnsignedTx) internal pure returns (UnsignedTransaction memory t) {
         RLPReader.RLPItem[] memory fields = rlpUnsignedTx.toRlpItem().toList();
-        require(fields.length == 6);
-        address potentialAddress;
+        require(fields.length == 7);
+        address potentialAddressFrom;
+        address potentialAddressTo;
         bool isContractCreation;
+
+        // From
         if(isEmpty(fields[3])) {
-            potentialAddress = 0x0000000000000000000000000000000000000000;
+            potentialAddressFrom = 0x0000000000000000000000000000000000000000;
+        } else {
+            potentialAddressFrom = fields[3].toAddress();
+        }
+        // To
+        if(isEmpty(fields[4])) {
+            potentialAddressTo = 0x0000000000000000000000000000000000000000;
             isContractCreation = true;
         } else {
-            potentialAddress = fields[3].toAddress();
+            potentialAddressTo = fields[4].toAddress();
             isContractCreation = false;
         }
+
         t = UnsignedTransaction(
             fields[0].toUint(), // nonce
             fields[1].toUint(), // gasprice
             fields[2].toUint(), // startgas
-            potentialAddress,   // to
-            fields[4].toUint(), // value
-            fields[5].toBytes(), // data
+            potentialAddressFrom, // from
+            potentialAddressTo,   // to
+            fields[5].toUint(), // value
+            fields[6].toBytes(), // data
             isContractCreation
         );
     }
 
     function decodeSignedTx(bytes memory rlpSignedTx) internal pure returns (SignedTransaction memory t) {
         RLPReader.RLPItem[] memory fields = rlpSignedTx.toRlpItem().toList();
-        address potentialAddress;
+        address potentialAddressFrom;
+        address potentialAddressTo;
         bool isContractCreation;
+
+        // From
         if(isEmpty(fields[3])) {
-            potentialAddress = 0x0000000000000000000000000000000000000000;
+            potentialAddressFrom = 0x0000000000000000000000000000000000000000;
+        } else {
+            potentialAddressFrom = fields[3].toAddress();
+        }
+        // To
+        if(isEmpty(fields[4])) {
+            potentialAddressTo = 0x0000000000000000000000000000000000000000;
             isContractCreation = true;
         } else {
-            potentialAddress = fields[3].toAddress();
+            potentialAddressTo = fields[4].toAddress();
             isContractCreation = false;
         }
+
         t = SignedTransaction(
             fields[0].toUint(),
             fields[1].toUint(),
             fields[2].toUint(),
-            potentialAddress,
+            potentialAddressFrom,
+            potentialAddressTo,
             fields[4].toUint(),
             fields[5].toBytes(),
             fields[6].toUint(),
@@ -198,27 +222,27 @@ contract ProvethVerifier {
         uint256 nonce,
         uint256 gasprice,
         uint256 startgas,
+        address from,
         address to, // 20 byte address for "regular" tx,
                     // empty for contract creation tx
         uint256 value,
         bytes memory data,
         uint256 v,
         uint256 r,
-        uint256 s,
-        bool isContractCreation
+        uint256 s
     ) {
         SignedTransaction memory t;
         (result, index, t) = validateTxProof(blockHash, proofBlob);
         nonce = t.nonce;
         gasprice = t.gasprice;
         startgas = t.startgas;
+        from = t.from;
         to = t.to;
         value = t.value;
         data = t.data;
         v = t.v;
         r = t.r;
         s = t.s;
-        isContractCreation = t.isContractCreation;
     }
 
     function validateTxProof(

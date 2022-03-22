@@ -10,12 +10,14 @@ import "./_ZorroControllerInvestment.sol";
 
 import "./_ZorroControllerAnalytics.sol";
 
+import "./_ZorroControllerXChain.sol";
+
 // TODO: In general, shouldn't these all be timelock contracts? 
 // TODO: Make sure constructors and setters have all parameters as expected
 
 /* Main Contract */
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.
-contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroControllerInvestment, ZorroControllerAnalytics {
+contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroControllerInvestment, ZorroControllerAnalytics, ZorroControllerXChain {
     /* Constructor */
 
     /// @notice Constructor
