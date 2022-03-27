@@ -39,6 +39,15 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         _;
     }
 
+    /// @notice Only allows functions to be executed where the sender matches one of the authorized Zorro controllers
+    modifier onlyXChainZorroControllers(bytes memory _xChainSender) {
+        require(
+            registeredXChainControllers[_xChainSender],
+            "only reg xchain controllers"
+        );
+        _;
+    }
+
     /// @notice Only allows functions to be executed where the sender matches the zorroPriceOracle address
     modifier onlyAllowZorroControllerOracle() {
         require(_msgSender() == zorroControllerOracle, "only Zorro oracle");
@@ -124,10 +133,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint8 public homeChainId = 0; // The chain ID of the home chain
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
     mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed.
+    mapping(bytes => bool) public registeredXChainControllers; // Accepted list of cross chain Zorro controllers that can call this controller
     address public lockUSDCController;
     mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed.
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
+    address public xChainReceivingOracle; // Address of the oracle that is authorized to make calls to this contract (usually for reverts)
 
     // Oracles
     AggregatorV3Interface internal _priceFeedLPPoolToken0;
@@ -267,6 +278,18 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     function unRegisterXChainEndpoint(address _contract) external onlyOwner {
         registeredXChainEndpoints[_contract] = 0;
+    }
+
+    function registerXChainController(bytes memory _contract) external onlyOwner {
+        registeredXChainControllers[_contract] = true;
+    }
+
+    function unRegisterXChainController(bytes memory _contract) external onlyOwner {
+        registeredXChainControllers[_contract] = false;
+    }
+
+    function setXChainReceivingOracle(address _xChainReceivingOracle) external onlyOwner {
+        xChainReceivingOracle = _xChainReceivingOracle;
     }
 
     function setUSDCToZorroLPPoolToken0Path(address[] memory _path)

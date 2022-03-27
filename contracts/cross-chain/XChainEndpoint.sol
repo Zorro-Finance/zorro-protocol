@@ -12,7 +12,6 @@ import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 import "../helpers/ProvethVerifier.sol";
 
-// TODO: What would this look like for non EVM chains? Would Proveth verifier need to change too?
 
 /// @title XChainBaseLayer. Base contract for cross-chain functionality
 contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
@@ -51,6 +50,11 @@ contract XChainBaseLayer is Ownable, ReentrancyGuard, Pausable {
     }
 
     /* Events */
+    event SentXChainTransaction(
+        address indexed _xChainOrigin,
+        address indexed _xChainSender,
+        bytes indexed _payload
+    );
     event SentCrossChainBlockToOracle(uint256 indexed originChainBlockNumber);
     event OracleReceivedCrossChainBlock(uint256 indexed originChainBlockNumber);
     event RelayerReceivedCrossChainTx(bytes indexed transactionId);
@@ -201,6 +205,8 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
         sendTransactionPacketToRelayer(_destinationContract, _payload, _recoveryPayload);
         // Call oracle
         notifyOracle();
+        // Emit log
+        emit SentXChainTransaction(tx.origin, msg.sender, _payload);
     }
 
     /* Receiving chain */
@@ -304,7 +310,7 @@ contract XChainEndpoint is XChainBaseLayer, ChainlinkClient, ProvethVerifier {
             (uint8 res, , , , , address xChainSender, , , , , ,) = txProof(
                 _blockHeaderHash,
                 _proofBlob
-            );
+            ); 
             // If one proof is invalid, revert the entire transaction
             require(res == 1, "Failed to validate Tx Proof");
             // Call Contract Layer with payloads to finally execute the cross chain transaction

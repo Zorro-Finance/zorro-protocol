@@ -15,7 +15,6 @@ import "../interfaces/IAMMRouter02.sol";
 import "../libraries/SafeSwap.sol";
 
 
-
 contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /* Libraries */
     using Chainlink for Chainlink.Request;
@@ -24,9 +23,16 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
+    /* Modifiers */
+    /// @notice Ensures that the claimed x chain sender is actually a recognized oracle
+    // TODO: Check to see if this was supposed to be tx.origin or msg.sender?
+    modifier onlyAuthorizedXChainOracle(bytes memory _xChainSender) {
+        require(keccak256(_xChainSender) == keccak256(abi.encodePacked(xChainReceivingOracle)), "Unrecog rcvg oracle");
+        _;
+    }
+
 
     /* Deposits */
-
     /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
     /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the smart contract on the destination chain
@@ -81,6 +87,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
 
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveXChainDepositRequest(
         address _account,
         uint256 _valueUSDC,
@@ -88,14 +95,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
-        /*
-        TODO
-        - Modifier: Check to see if sender is authorized (need state variable: mapping)
-        - need setter
-        - Do this for whatever cross chain funcs need this modifier
-        */
+    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // TODO: Should each deposit record the cross chain identity too? Yes
         // TODO: Account should reflect the current chain identity
         // TODO: The identities must match.
@@ -130,8 +132,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     function sendXChainWithdrawalRequest(
         uint256 _chainId,
         bytes calldata _destinationContract,
-        bytes calldata _payload,
-        bytes memory _xChainSender
+        bytes calldata _payload
     ) external nonReentrant {
         // Get endpoint contract that interfaces with the remote chain
         XChainEndpoint _endpointContract = XChainEndpoint(
@@ -155,14 +156,16 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
 
     /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveXChainWithdrawalRequest(
         address _account,
         uint256 _chainId,
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
+    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
         // without the withdrawal and lock steps
         TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
@@ -224,6 +227,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @param _originalNetDepositUSDC The amount originally deposited into this tranche, NET of fees
     /// @param _maxMarketMovement factor to account for max market movement/slippage, expressed as numerator over 1000 (e.g. 950 => 950/1000 = 0.95 = 5% slippage)
     /// @param _callbackContract The remote contract that called this function.
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
@@ -231,8 +235,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _originalNetDepositUSDC,
         uint256 _maxMarketMovement,
         address _callbackContract,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints nonReentrant {
+    ) external onlyXChainEndpoints nonReentrant onlyXChainZorroControllers(_xChainSender) {
         // Initialize finance variables
         uint256 _profit = 0;
         uint256 _unlockableAmountUSDC = 0;
@@ -345,8 +350,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     function receiveXChainUnlockRequest(
         address _account,
         uint256 _amountUSDC,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
+    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // Get controller
         TokenLockController lockController = TokenLockController(
             lockUSDCController
@@ -419,6 +425,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
     /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
     /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveXChainDistributionRequest(
         uint256 _chainId,
         bytes calldata _callbackContract,
@@ -426,13 +433,14 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
+    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // Make Chainlink request to get ZOR price
         Chainlink.Request memory req = buildChainlinkRequest(
             zorroControllerOraclePriceJobId,
             address(this),
-            this.buybackAndRevShare.selector
+            this.buybackAndRevShareCallback.selector
         );
         req.addBytes("chainId", abi.encodePacked(_chainId));
         req.addBytes("callbackContract", abi.encodePacked(_callbackContract));
@@ -461,13 +469,15 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @param _amountUSDCRevShare The amount in USDC that was rev-shared
     /// @param _failedAmountUSDCBuyback The previously failed buyback amount that was successfully retried
     /// @param _failedAmountUSDCRevShare The previously failed revshare amount that was successfully retried
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveBurnLockedEarningsRequest(
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
+    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // Calculate total amount to unlock and burn
         uint256 _totalBurnableUSDC = _amountUSDCBuyback
             .add(_amountUSDCRevShare)
@@ -497,15 +507,14 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
     /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
     /// @param _ZORROExchangeRate ZOR per USD, times 1e12
-    function buybackAndRevShare(
+    function buybackAndRevShareCallback(
         uint256 _chainId,
         bytes calldata _callbackContract,
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
         uint256 _failedAmountUSDCBuyback,
         uint256 _failedAmountUSDCRevShare,
-        uint256 _ZORROExchangeRate,
-        bytes memory _xChainSender
+        uint256 _ZORROExchangeRate
     ) external onlyAllowZorroControllerOracle {
         // Total USDC to perform operations
         uint256 _amountUSDC = _amountUSDCBuyback
@@ -559,13 +568,15 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @param _pid The pool ID on the remote chain that the earnings distribution was from
     /// @param _amountBuybackUSDC The amount of buyback in USDC attempted for cross chain operations
     /// @param _amountRevShareUSDC The amount of revshare in USDC attempted for cross chain operations
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function recoverXChainFeeDist(
         uint256 _blockNumber,
         uint256 _pid,
         uint256 _amountBuybackUSDC,
         uint256 _amountRevShareUSDC,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) external onlyXChainEndpoints {
+    ) external onlyXChainEndpoints onlyAuthorizedXChainOracle(_xChainOrigin) {
         // Marks locked earnings as operation as failed.
         lockedEarningsStatus[_blockNumber][_pid] = 3;
         // Update accumulated total of failed earnings
@@ -581,11 +592,13 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /// @dev Unlocks USDC and returns it to depositor
     /// @param _account The address of the depositor
     /// @param _netDepositUSDC The amount originally deposited, net of fees
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function revertXChainDeposit(
         address _account,
         uint256 _netDepositUSDC,
+        bytes memory _xChainOrigin,
         bytes memory _xChainSender
-    ) public virtual onlyXChainEndpoints {
+    ) public virtual onlyXChainEndpoints onlyAuthorizedXChainOracle(_xChainOrigin) {
         // Unlock & return to wallet
         TokenLockController(lockUSDCController).unlockFunds(
             _account,
