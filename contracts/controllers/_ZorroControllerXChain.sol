@@ -8,8 +8,6 @@ import "../tokens/TokenLockController.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-import "../interfaces/ICurveMetaPool.sol";
-
 import "../interfaces/IAMMRouter02.sol";
 
 import "../libraries/SafeSwap.sol";
@@ -18,7 +16,6 @@ import "../libraries/SafeSwap.sol";
 contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     /* Libraries */
     using Chainlink for Chainlink.Request;
-    using SafeSwapCurve for ICurveMetaPool;
     using SafeSwapUni for IAMMRouter02;
     using SafeERC20 for IERC20;
     using SafeMath for uint256;

@@ -13,8 +13,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../tokens/ZorroTokens.sol";
 
-import "../cross-chain/XchainEndpoint.sol";
-
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors

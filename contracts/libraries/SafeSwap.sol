@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "../interfaces/ICurveMetaPool.sol";
-
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../interfaces/IBalancerVault.sol";
@@ -48,37 +46,6 @@ library SafeSwapUni {
                 _to,
                 _deadline
             );
-    }
-}
-
-/// @title SafeSwapCurve: Library for safe swapping of ERC20 tokens for Curve style protocols
-library SafeSwapCurve {
-    /* Libraries */
-    using SafeMath for uint256;
-
-    /* Functions */
-    /// @notice Safely swap tokens
-    /// @param _curvePool Curve pool contract
-    /// @param _amountIn The quantity of the origin token to swap
-    /// @param _priceTokenIn Price of tokenIn in USD, times 1e12
-    /// @param _priceTokenOut Price of tokenOut in USD, times 1e12
-    /// @param _slippageFactor The maximum slippage factor tolerated for this swap
-    /// @param _i The index of the token to transfer from
-    /// @param _j The index of the token to transfer to
-    function safeSwap(
-        ICurveMetaPool _curvePool,
-        uint256 _amountIn,
-        uint256 _priceTokenIn,
-        uint256 _priceTokenOut,
-        uint256 _slippageFactor,
-        int128 _i,
-        int128 _j
-    ) public {
-        // Calculate min amount out
-        uint256 _amountOut = (_amountIn.mul(_priceTokenIn).div(_priceTokenOut)).mul(_slippageFactor).div(1000);
-
-        // Exchange underlying and return swapped tokens to this address
-        _curvePool.exchange_underlying(_i, _j, _amountIn, _amountOut);
     }
 }
 

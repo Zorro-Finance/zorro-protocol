@@ -42,28 +42,3 @@ contract Zorro is ERC20("ZORRO", "ZOR"), ZorroControllerOwnable {
         _burn(_account, _amount);
     }
 }
-
-/// @title Zorro USD synthetic token (used for bridges)
-contract ZUSDC is ERC20("ZORRO_USDC", "ZUSDC"), ZorroControllerOwnable {
-    /* Constructor */
-    constructor(address _zorroController) {
-        zorroControllerAddress = _zorroController;
-    }
-
-    /* Functions */
-    /// @notice Mints ERC20 tokens
-    /// @dev Can only be called by owner
-    /// @param _to The address to send minted tokens to
-    /// @param _amount The amount of tokens to mint
-    function mint(address _to, uint256 _amount) public onlyZorroController {
-        _mint(_to, _amount);
-    }
-
-    /// @notice Burns ERC20 tokens
-    /// @dev Can only be called by owner
-    /// @param _account The address to burn tokens from
-    /// @param _amount The amount of tokens to burn
-    function burn(address _account, uint256 _amount) public onlyZorroController {
-        _burn(_account, _amount);
-    }
-}
