@@ -10,6 +10,8 @@ import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
+import "../interfaces/IVault.sol";
+
 import "../libraries/SafeSwap.sol";
 
 
@@ -39,6 +41,13 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes calldata _destinationContract,
         bytes calldata _payload
     ) external nonReentrant {
+        /* TODO
+        - Make logic below LayerZero compatible. Requirements:
+        -- Rather than accept a raw payload, use the current msg.sender identity, amount, pid, etc. (all args required for fullServiceDeposit)
+        -- ABI encode the request here instaed of relying on the payload to be submitted elsewhere.
+        -- Collect the appropriate deposit fee here. May need a separate function that the UI calls to get a quote first!
+        -- Call Stargate interface, send tokens
+
         // Get endpoint contract that interfaces with the remote chain
         XChainEndpoint _endpointContract = XChainEndpoint(
             endpointContracts[_chainId]
@@ -80,8 +89,17 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             _payload,
             ""
         );
+        */
     }
 
+    /*
+    TODO - modification required for this func:
+    - Need separate func to receive Stargate cross chain call
+    - Need a ledger that gets updated with the received amount, and awaits further processing
+    - Need a func that a Chainlink oracle can call and periodically trigger processing of outstanding deposits on the ledger
+    - Deposits should reflect the identity of both the origin sender and (optionally) the destnation chain address 
+    - Adjust modifiers accordingly
+    */
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
     /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
@@ -95,29 +113,21 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes memory _xChainOrigin,
         bytes memory _xChainSender
     ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // TODO: Should each deposit record the cross chain identity too? Yes
-        // TODO: Account should reflect the current chain identity
-        // TODO: The identities must match.
-        // Mint corresponding amount of zUSDC
-        ZUSDC(syntheticStablecoin).mint(address(this), _valueUSDC);
-        // Swap zUSDC for USDC
-        ICurveMetaPool(curveStablePoolAddress).safeSwap(
-            _valueUSDC,
-            1e12,
-            1e12,
-            _maxMarketMovement,
-            curveSyntheticStablecoinIndex,
-            curveDefaultStablecoinIndex
-        );
+        // TODO: Confirm that USDC value requested exists on the ledger for this user and hasn't been processed yet
+
         // Call deposit function
-        _depositFullService(
-            _pid,
-            _account,
-            _valueUSDC,
-            _weeksCommitted,
-            _vaultEnteredAt,
-            _maxMarketMovement
-        );
+        // TODO: Func below needs a pricedata struct. May require a call to an Oracle
+        // _depositFullService(
+        //     _pid,
+        //     _account,
+        //     _valueUSDC,
+        //     _weeksCommitted,
+        //     _vaultEnteredAt,
+        //     _maxMarketMovement
+        // );
+
+        // TODO: Show deposit has been transferred on the ledger (completed). Must be able to account for multiple deposits 
+        // in succession for the same user identity.
     }
 
     /* Withdrawals */
@@ -131,6 +141,11 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes calldata _destinationContract,
         bytes calldata _payload
     ) external nonReentrant {
+        /* TODO
+        - Rather than accept a raw payload, it should be a simple request for chainId, pid, trancheId. 100% withdrawal. ABI encoding can be done here
+        - Use LayerZero interface to make cross chain request
+        - Consider creating a separate func to query xchain fees (gas etc.) and send that amount in the "value" field
+
         // Get endpoint contract that interfaces with the remote chain
         XChainEndpoint _endpointContract = XChainEndpoint(
             endpointContracts[_chainId]
@@ -149,8 +164,14 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             _payload,
             ""
         );
+        */
     }
 
+    /*
+    TODO - modification required for this func:
+    - Need separate func to receive LayerZero cross chain call, should extract origin chain identity and use that for identifying the user's investment to withdraw
+    - Adjust modifiers accordingly
+    */
     /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
     /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
@@ -169,13 +190,15 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _amountUSDC = 0;
         if (tranche.exitedVaultStartingAt == 0) {
             // Call withdrawal function
-            _amountUSDC = _withdrawalFullService(
-                _account,
-                _pid,
-                _trancheId,
-                false,
-                _maxMarketMovement
-            );
+            // TODO: This requires a pricedata struct. Maybe make this an 
+            // Oracle call instead?
+            // _amountUSDC = _withdrawalFullService(
+            //     _account,
+            //     _pid,
+            //     _trancheId,
+            //     false,
+            //     _maxMarketMovement
+            // );
             // Lock withdrawn USDC
             TokenLockController(lockUSDCController).lockFunds(
                 _account,
@@ -183,6 +206,10 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             );
         } else {
             // Lookup amount locked
+            // TODO: Does this ledger need to be associated with the exact tranche amount? 
+            // This appears to simply lookup the total amount which may be missing information. 
+            // Actually since this is for reverts, might want to adopt a similar "ledger" model for deposits
+            // that accounts for failures on cross-chain transactions (esp. for repatriation flow).
             _amountUSDC = TokenLockController(lockUSDCController).lockedFunds(
                 _account
             );
@@ -191,6 +218,8 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         // Only proceed if there is something to withdraw
         require(_amountUSDC > 0, "Nothing to withdraw");
 
+        /*
+        TODO: Replace the following with a Stargate call. Should transfer 
         // Prepare repatriation transaction
         bytes memory _destinationContract = abi.encodePacked(
             homeChainZorroController
@@ -215,8 +244,15 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             _payload,
             ""
         );
+        */
     }
 
+    /*
+    TODO
+    - Consider using a "ledger" model here, accompanied by a recovery function, to account for failures
+    - Instead of minting zUSDC and swapping it, accept the USDC that has been transferred
+    - Cross chain unlock request should be a LayerZero call
+    */
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _account The user on this chain who initiated the withdrawal request
     /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
@@ -235,6 +271,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes memory _xChainOrigin,
         bytes memory _xChainSender
     ) external onlyXChainEndpoints nonReentrant onlyXChainZorroControllers(_xChainSender) {
+        /*
         // Initialize finance variables
         uint256 _profit = 0;
         uint256 _unlockableAmountUSDC = 0;
@@ -293,28 +330,31 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         );
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
-        sendXChainUnlockRequest(
+        _sendXChainUnlockRequest(
             _account,
             _withdrawnUSDC,
             _chainId,
             abi.encodePacked(_callbackContract)
         );
+        */
     }
 
     /* Unlocks */
 
+    // TODO: Make this a LayerZero call
     /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
     /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
     /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
     /// @param _destinationContract The address of the contract on the remote chain to send the unlock request to
-    function sendXChainUnlockRequest(
+    function _sendXChainUnlockRequest(
         address _account,
         uint256 _amountUSDC,
         uint256 _chainId,
         bytes memory _destinationContract
     ) internal {
+        // TODO: Replace entire call with a LayerZero request to the other chain. Q: How to deal with uncertain fee calculations?
         // Get endpoint contract
         address _endpointContract = endpointContracts[_chainId];
 
@@ -341,6 +381,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         require(success1, "Unsuccessful xchain unlock");
     }
 
+    // TODO This should be called from a LayerZero receiver
     /// @notice Receives a request from home chain to unlock and burn temporarily withheld USDC.
     /// @param _account The address of the wallet (cross chain identity) to unlock funds for
     /// @param _amountUSDC The amount in USDC that should be unlocked and burned
@@ -369,6 +410,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _buybackAmountUSDC,
         uint256 _revShareAmountUSDC
     ) public onlyRegisteredVault(_pid) {
+        /* 
+        TODO Convert this to a LayerZero call
+
         // Check lock to see if anything is pending for this block and pool. If so, revert
         require(
             lockedEarningsStatus[block.number][_pid] == 0,
@@ -413,6 +457,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             _payload,
             _recoveryPayload
         );
+        */
     }
 
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
@@ -495,6 +540,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         );
     }
 
+    // TODO: Ledger system in case this fails?
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
     /// @dev Can only be called by the Chainlink Oracle
     /// @param _chainId The ID of the chain that this request originated from
@@ -514,23 +560,12 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _ZORROExchangeRate
     ) external onlyAllowZorroControllerOracle {
         // Total USDC to perform operations
+        // TODO: How do failed amounts come into play here?
         uint256 _amountUSDC = _amountUSDCBuyback
             .add(_amountUSDCRevShare)
             .add(_failedAmountUSDCBuyback)
             .add(_failedAmountUSDCRevShare);
 
-        // Mint zUSDC
-        ZUSDC(syntheticStablecoin).mint(address(this), _amountUSDC);
-
-        // Swap to USDC
-        ICurveMetaPool(curveStablePoolAddress).safeSwap(
-            IERC20(syntheticStablecoin).balanceOf(address(this)),
-            1e12,
-            1e12,
-            defaultMaxMarketMovement,
-            curveSyntheticStablecoinIndex,
-            curveDefaultStablecoinIndex
-        );
         // Determine new USDC balances
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
 
@@ -545,6 +580,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         _revShareOnChain(_revShareAmount, _ZORROExchangeRate);
 
         // Send cross chain burn request back to the remote chain
+        /* 
+        TODO: Convert to LayerZero call
+
         XChainEndpoint endpointContract = XChainEndpoint(
             endpointContracts[_chainId]
         );
@@ -556,6 +594,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             _failedAmountUSDCRevShare
         );
         endpointContract.sendXChainTransaction(_callbackContract, _payload, "");
+        */
     }
 
     /* Reverts */

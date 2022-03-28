@@ -22,7 +22,11 @@ import "../libraries/SafeSwap.sol";
 
 import "../controllers/ZorroController.sol";
 
-abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
+import "../interfaces/IVault.sol";
+
+
+abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
+    /* Libraries */
     using SafeERC20 for IERC20;
     using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
@@ -108,17 +112,6 @@ abstract contract VaultBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
     uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
     mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
-
-    /* Structs */
-    struct PriceData {
-        uint256 token0; // Value of Token 0 in USD, times 1e12
-        uint256 token1; // Value of Token 1 in USD, times 1e12
-        uint256 earnToken; // Value of Earn token in USD, times 1e12
-        uint256 lpPoolToken0; // Value of LP Pool Token 0 in USD, times 1e12
-        uint256 lpPoolToken1; // Value of LP Pool Token 1 in USD, times 1e12
-        uint256 zorroToken; // Value of Zorro Token in USD, times 1e12
-        uint256 tokenUSDC; // Value of USDC Token in USD, times 1e12
-    }
 
     /* Events */
 

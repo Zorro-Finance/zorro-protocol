@@ -484,14 +484,15 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             // Get endpoint contract
             address homeChainEndpointContract = endpointContracts[homeChainId];
             // Make cross-chain burn request
-            XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
-                abi.encodePacked(homeChainZorroController),
-                abi.encodeWithSignature(
-                    "receiveXChainBurnRewardsRequest(uint256 _amount)",
-                    ZORROReward
-                ),
-                ""
-            );
+            // TODO: Make this a LayerZero request
+            // XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
+            //     abi.encodePacked(homeChainZorroController),
+            //     abi.encodeWithSignature(
+            //         "receiveXChainBurnRewardsRequest(uint256 _amount)",
+            //         ZORROReward
+            //     ),
+            //     ""
+            // );
         }
     }
 
@@ -501,6 +502,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         external
         onlyXChainEndpoints
     {
+        // TODO: Make sure to put the chain ID as an argument and emit an event. It will help to keep track of burns better. 
         Zorro(ZORRO).burn(publicPool, _amount);
     }
 
@@ -509,7 +511,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @notice Safe ZORRO transfer function, just in case if rounding error causes pool to not have enough
     /// @param _to destination for funds
     /// @param _ZORROAmt quantity of Zorro tokens to send
-    function safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
+    function _safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
         uint256 _xferAmt = _ZORROAmt;
         uint256 ZORROBal = IERC20(ZORRO).balanceOf(address(this));
         if (_ZORROAmt > ZORROBal) {
