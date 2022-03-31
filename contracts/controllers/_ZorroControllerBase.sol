@@ -127,6 +127,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     // Cross-chain
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing.
+    // TODO: Maybe convert to uint16?
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint8 public homeChainId = 0; // The chain ID of the home chain
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
@@ -137,6 +138,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
     address public xChainReceivingOracle; // Address of the oracle that is authorized to make calls to this contract (usually for reverts)
+    // TODO: Setters/contructors needed
+    mapping(uint256 => uint16) public stargateZorroChainMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    mapping(uint16 => uint256) public zorroStargateChainMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+    address public stargateRouter; // Address to on-chain Stargate router
+    uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
+    mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
 
     // Oracles
     AggregatorV3Interface internal _priceFeedLPPoolToken0;

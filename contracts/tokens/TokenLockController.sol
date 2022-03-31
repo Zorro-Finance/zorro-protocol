@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+// TODO: Do we even need this anymore? Are we even locking tokens?
 
 /// @title TokenLockController. Contract for securely locking, unlocking, and burning tokens
 contract TokenLockController is Ownable, Pausable, ReentrancyGuard {

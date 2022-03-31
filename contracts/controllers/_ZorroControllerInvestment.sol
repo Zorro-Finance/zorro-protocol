@@ -16,8 +16,7 @@ import "../tokens/ZorroTokens.sol";
 
 import "../libraries/SafeSwap.sol";
 
-// TODO||: VERY IMPORTANT: Once code is done, check all ABI encodings to make sure method signature string matches the order of all
-// arguments. We changed around the order of many args.
+// TODO||: VERY IMPORTANT: Once code is done, convert all ABI encoded raw strings to .selector calls
 // TODO: Do an overall audit of the code base to see where we should emit events.
 
 contract ZorroControllerInvestment is ZorroControllerBase {

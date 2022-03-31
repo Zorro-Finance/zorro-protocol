@@ -14,8 +14,16 @@ import "../interfaces/IVault.sol";
 
 import "../libraries/SafeSwap.sol";
 
+import "../interfaces/ILayerZeroEndpoint.sol";
 
-contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
+import "../interfaces/ILayerZeroReceiver.sol";
+
+import "../interfaces/IStargateReceiver.sol";
+
+import "../interfaces/IStargateRouter.sol";
+
+
+contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient, IStargateReceiver {
     /* Libraries */
     using Chainlink for Chainlink.Request;
     using SafeSwapUni for IAMMRouter02;
@@ -32,91 +40,218 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
 
 
     /* Deposits */
+
+    /// @notice Checks to see how much a cross chain deposit will cost
+    /// @param _chainId The Zorro Chain ID (not the LayerZero one)
+    /// @param _dstContract The destination contract address on the remote chain
+    /// @param _pid The pool ID on the remote chain
+    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _weeksCommitted Number of weeks to commit to a vault
+    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
+    /// @param _destWallet A valid address on the remote chain that can claim ownership
+    /// @return uint256 Expected fee to pay for bridging/cross chain execution
+    function checkXChainDepositFee(
+        uint256 _chainId,
+        bytes memory _dstContract,
+        uint256 _pid,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _maxMarketMovement,
+        bytes memory _destWallet
+    ) external view returns (uint256) {
+        // Init empty LZ object
+        IStargateRouter.lzTxObj memory _lzTxParams;
+
+        // Get payload
+        bytes memory _payload = _encodeXChainDepositPayload(
+            _pid, 
+            _valueUSDC, 
+            _weeksCommitted, 
+            block.timestamp,
+            _maxMarketMovement, 
+            abi.encodePacked(msg.sender),
+            _destWallet
+        );
+
+        // Calculate native gas fee and ZRO token fee (Layer Zero token)
+        (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter).quoteLayerZeroFee(
+            stargateZorroChainMap[_chainId], 
+            1, 
+            _dstContract, 
+            _payload, 
+            _lzTxParams
+        );
+
+        return _nativeFee.add(_lzFee);
+    }
+
+    function _encodeXChainDepositPayload(
+        uint256 _pid,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _vaultEnteredAt,
+        uint256 _maxMarketMovement,
+        bytes memory _originWallet,
+        bytes memory _destWallet
+    ) internal pure returns (bytes memory) {
+        // TODO: Change this to .selector for typesafety
+        return abi.encodeWithSignature(
+            "receiveXChainDepositRequest(uint256 _pid,uint256 _valueUSDC,uint256 _weeksCommitted,uint256 _vaultEnteredAt,uint256 _maxMarketMovement,bytes memory _originAccount,bytes memory _destAccount)", 
+            _pid, _valueUSDC, _weeksCommitted, _vaultEnteredAt, _maxMarketMovement, _originWallet, _destWallet
+        );
+    }
+
     /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
-    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
-    /// @param _destinationContract The address of the smart contract on the destination chain
-    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    /// @dev Requires appropriate fee to be paid via msg.value (use checkXChainDepositFee() above)
+    /// @param _chainId The Zorro Chain ID (not the LayerZero one)
+    /// @param _dstContract The destination contract address on the remote chain
+    /// @param _pid The pool ID on the remote chain
+    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _weeksCommitted Number of weeks to commit to a vault
+    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
+    /// @param _destWallet A valid address on the remote chain that can claim ownership
     function sendXChainDepositRequest(
         uint256 _chainId,
-        bytes calldata _destinationContract,
-        bytes calldata _payload
-    ) external nonReentrant {
-        /* TODO
-        - Make logic below LayerZero compatible. Requirements:
-        -- Rather than accept a raw payload, use the current msg.sender identity, amount, pid, etc. (all args required for fullServiceDeposit)
-        -- ABI encode the request here instaed of relying on the payload to be submitted elsewhere.
-        -- Collect the appropriate deposit fee here. May need a separate function that the UI calls to get a quote first!
-        -- Call Stargate interface, send tokens
+        bytes memory _dstContract,
+        uint256 _pid,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _maxMarketMovement,
+        bytes memory _destWallet
+    ) external nonReentrant payable {
+        // Require funds to be submitted with this message
+        require(msg.value > 0, "No fees submitted");
 
-        // Get endpoint contract that interfaces with the remote chain
-        XChainEndpoint _endpointContract = XChainEndpoint(
-            endpointContracts[_chainId]
-        );
-        // Extract amount of USDC to transfer into this contract from the payload
-        uint256 _amountUSDC = _endpointContract.extractValueFromPayload(
-            _payload
-        );
-        // Verify that encoded user identity is in fact msg.sender.
-        address _userIdentity = _endpointContract.extractIdentityFromPayload(
-            _payload
-        );
-        require(
-            _userIdentity == msg.sender,
-            "Payload sender doesnt match msg.sender"
-        );
         // Allow this contract to spend USDC
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             address(this),
-            _amountUSDC
+            _valueUSDC
         );
-
-        // TODO*: Need to collect a xchain deposit fee here! And the net amount of the deposit needs to be accounted for somehow.
 
         // Transfer USDC into this contract
         IERC20(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
-            _amountUSDC
+            _valueUSDC
         );
+
+        // Check balances
+        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+
+        // Generate payload
+        bytes memory _payload = _encodeXChainDepositPayload(
+            _pid, 
+            _balUSDC, 
+            _weeksCommitted, 
+            block.timestamp, 
+            _maxMarketMovement, 
+            abi.encodePacked(msg.sender), 
+            _destWallet
+        );
+
         // Lock USDC on the ledger
         TokenLockController(lockUSDCController).lockFunds(
             msg.sender,
-            _amountUSDC
+            _balUSDC
         );
-        // Call contract layer
-        _endpointContract.sendXChainTransaction(
-            _destinationContract,
-            _payload,
-            ""
+
+        // Call stargate to initiate bridge
+        IStargateRouter.lzTxObj memory _lzTxParams;
+        IStargateRouter(stargateRouter).swap{value: msg.value}(
+            stargateZorroChainMap[_chainId], 
+            stargateSwapPoolId, 
+            stargateDestPoolIds[_chainId], 
+            payable(msg.sender), 
+            _balUSDC, 
+            _balUSDC.mul(_maxMarketMovement).div(1000), 
+            _lzTxParams, 
+            _dstContract, 
+            _payload
         );
-        */
     }
+
+    /// @notice Receives stargate cross-chain calls
+    /// @dev Implements IStargateReceiver interface
+    function sgReceive(
+        uint16 _chainId,
+        bytes memory _srcAddress,
+        uint256 _nonce,
+        address _token,
+        uint256 amountLD,
+        bytes memory payload
+    ) public override {
+        // Map to Zorro chain ID
+        uint256 _zorroOriginChainId = zorroStargateChainMap[_chainId];
+        // Checks / authorization
+        // Amounts
+        uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
+        require(amountLD <= _tokenBal, "amountLD exceeds bal");
+        // Access
+        // Src address is a valid controller
+        require(registeredXChainControllers[_srcAddress], "unrecognized controller");
+
+        // Determine function based on signature
+        // Get func signature
+        bytes4 _funcSig = bytes4(payload);
+        // Match to appropriate func
+        if (this.receiveXChainDepositRequest.selector == _funcSig) {
+            // Decode params
+            // TODO: This includes the signature and should probably be removed
+            (
+                uint256 _pid,
+                uint256 _valueUSDC,
+                uint256 _weeksCommitted,
+                uint256 _vaultEnteredAt,
+                uint256 _maxMarketMovement,
+                bytes memory _originAccount,
+                bytes memory _destAccount
+            ) = abi.decode(payload, (uint256, uint256, uint256, uint256, uint256, bytes, bytes));
+
+            // Call receiving function for cross chain deposits
+            // Replace _valueUSDC to account for any slippage during bridging
+            this.receiveXChainDepositRequest(
+                _pid, 
+                amountLD, 
+                _weeksCommitted, 
+                _vaultEnteredAt, 
+                _maxMarketMovement, 
+                _originAccount, 
+                _destAccount
+            );
+        } else {
+            revert("Unrecognized func");
+        }
+    }
+
 
     /*
     TODO - modification required for this func:
-    - Need separate func to receive Stargate cross chain call
-    - Need a ledger that gets updated with the received amount, and awaits further processing
-    - Need a func that a Chainlink oracle can call and periodically trigger processing of outstanding deposits on the ledger
-    - Deposits should reflect the identity of both the origin sender and (optionally) the destnation chain address 
-    - Adjust modifiers accordingly
+    - Deposits should reflect the identity of both the origin sender and (optionally) the destination chain address 
     */
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
     /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
     function receiveXChainDepositRequest(
-        address _account,
-        uint256 _valueUSDC,
         uint256 _pid,
+        uint256 _valueUSDC,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement,
-        bytes memory _xChainOrigin,
-        bytes memory _xChainSender
-    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // TODO: Confirm that USDC value requested exists on the ledger for this user and hasn't been processed yet
+        bytes memory _originAccount,
+        bytes memory _destAccount
+    ) public {
+        // TODO: Implement this
+
+        // Doc strings
+
+        // Can only be called locally (but listed as public so that its function signature is visible)
+        
+        // Confirm that USDC value requested exists on the ledger for this user and hasn't been processed yet
+
+        // TODO: Needs to reflect both on- and cross-chain identity
 
         // Call deposit function
-        // TODO: Func below needs a pricedata struct. May require a call to an Oracle
+        // TODO: Func below needs a pricedata struct. Call Chainlink price feed
         // _depositFullService(
         //     _pid,
         //     _account,
@@ -125,9 +260,6 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         //     _vaultEnteredAt,
         //     _maxMarketMovement
         // );
-
-        // TODO: Show deposit has been transferred on the ledger (completed). Must be able to account for multiple deposits 
-        // in succession for the same user identity.
     }
 
     /* Withdrawals */
@@ -186,12 +318,12 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
     ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
         // without the withdrawal and lock steps
+        // TODO: Probably can take out this whole control flow of detecting whether withdrawal was attempted, exitedVaultStartingAt, TokenLockController, etc.
         TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
         uint256 _amountUSDC = 0;
         if (tranche.exitedVaultStartingAt == 0) {
             // Call withdrawal function
-            // TODO: This requires a pricedata struct. Maybe make this an 
-            // Oracle call instead?
+            // TODO: This requires a pricedata struct. Call chainlink price feed 
             // _amountUSDC = _withdrawalFullService(
             //     _account,
             //     _pid,
@@ -209,7 +341,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
             // TODO: Does this ledger need to be associated with the exact tranche amount? 
             // This appears to simply lookup the total amount which may be missing information. 
             // Actually since this is for reverts, might want to adopt a similar "ledger" model for deposits
-            // that accounts for failures on cross-chain transactions (esp. for repatriation flow).
+            // that accounts for failures on cross-chain transactions (esp. for repatriation flow). Ummmm, not anymore
             _amountUSDC = TokenLockController(lockUSDCController).lockedFunds(
                 _account
             );
@@ -330,6 +462,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         );
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
+        // TODO: If we're using Stargate/L0, probably don't need this unlock request anymore. 
         _sendXChainUnlockRequest(
             _account,
             _withdrawnUSDC,
@@ -479,6 +612,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes memory _xChainSender
     ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
         // Make Chainlink request to get ZOR price
+        // TODO: Don't do a Chainlink direct request. Use price feeds instead
         Chainlink.Request memory req = buildChainlinkRequest(
             zorroControllerOraclePriceJobId,
             address(this),
@@ -520,6 +654,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         bytes memory _xChainOrigin,
         bytes memory _xChainSender
     ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
+        // TODO: We can probably get rid of this entire function
         // Calculate total amount to unlock and burn
         uint256 _totalBurnableUSDC = _amountUSDCBuyback
             .add(_amountUSDCRevShare)
@@ -560,7 +695,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment, ChainlinkClient {
         uint256 _ZORROExchangeRate
     ) external onlyAllowZorroControllerOracle {
         // Total USDC to perform operations
-        // TODO: How do failed amounts come into play here?
+        // TODO: How do failed amounts come into play here? Will we even have failures now?
         uint256 _amountUSDC = _amountUSDCBuyback
             .add(_amountUSDCRevShare)
             .add(_failedAmountUSDCBuyback)
