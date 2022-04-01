@@ -63,7 +63,7 @@ contract ZorroControllerXChain is
             _weeksCommitted,
             block.timestamp,
             _maxMarketMovement,
-            abi.encodePacked(msg.sender),
+            msg.sender,
             _destWallet
         );
 
@@ -86,7 +86,7 @@ contract ZorroControllerXChain is
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement,
-        bytes memory _originWallet,
+        address _originWallet,
         bytes memory _destWallet
     ) internal pure returns (bytes memory) {
         // Calculate method signature
@@ -149,25 +149,33 @@ contract ZorroControllerXChain is
             _weeksCommitted,
             block.timestamp,
             _maxMarketMovement,
-            abi.encodePacked(msg.sender),
+            msg.sender,
             _destWallet
         );
 
-        // Lock USDC on the ledger
-        TokenLockController(lockUSDCController).lockFunds(msg.sender, _balUSDC);
-
         // Call stargate to initiate bridge
-        IStargateRouter.lzTxObj memory _lzTxParams;
+        _callStargateSwap(StargateSwapPayload({
+            chainId: _chainId, 
+            qty: _balUSDC, 
+            dstContract: _dstContract, 
+            payload: _payload, 
+            maxMarketMovement: _maxMarketMovement
+        }));
+    }
+
+    // TODO: Docstrings
+    function _callStargateSwap(StargateSwapPayload memory _swapPayload) internal {
+        IStargateRouter.lzTxObj memory _lzTxObj;
         IStargateRouter(stargateRouter).swap{value: msg.value}(
-            stargateZorroChainMap[_chainId],
+            stargateZorroChainMap[_swapPayload.chainId],
             stargateSwapPoolId,
-            stargateDestPoolIds[_chainId],
+            stargateDestPoolIds[_swapPayload.chainId],
             payable(msg.sender),
-            _balUSDC,
-            _balUSDC.mul(_maxMarketMovement).div(1000),
-            _lzTxParams,
-            _dstContract,
-            _payload
+            _swapPayload.qty,
+            _swapPayload.qty.mul(_swapPayload.maxMarketMovement).div(1000),
+            _lzTxObj,
+            _swapPayload.dstContract,
+            _swapPayload.payload
         );
     }
 

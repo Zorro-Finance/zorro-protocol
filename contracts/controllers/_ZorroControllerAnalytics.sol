@@ -8,6 +8,8 @@ import "../interfaces/IVault.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+// TODO: These don't take individual tranches into account. Do we need to? 
+
 contract ZorroControllerAnalytics is ZorroControllerBase {
     using SafeMath for uint256;
 

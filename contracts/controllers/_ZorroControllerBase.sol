@@ -71,6 +71,21 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 exitedVaultStartingAt; // The block timestamp for which the user attempted withdrawal (useful for tracking cross chain withdrawals)
     }
 
+    // Info of foreign tranche
+    struct ForeignTrancheInfo {
+        uint256 trancheIndex; // Index of tranche in trancheInfo
+        address localAccount; // Use account on chain
+    }
+
+    // Stargate swaps
+    struct StargateSwapPayload {
+        uint256 chainId;
+        uint256 qty;
+        bytes dstContract;
+        bytes payload;
+        uint256 maxMarketMovement;
+    }
+
     // Info of each pool
     struct PoolInfo {
         IERC20 want; // Want token contract.
@@ -154,8 +169,11 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     // Info of each pool
     PoolInfo[] public poolInfo;
-    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address => list of tranches
+    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address on-chain => list of tranches
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo;
+    // List of active tranches for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => list of ForeignTrancheInfo
+    mapping(uint256 => mapping(bytes => ForeignTrancheInfo[])) public foreignTrancheInfo;
+
     // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // Redeposit information (so contract knows settings for destination vault during an async redeposit event)

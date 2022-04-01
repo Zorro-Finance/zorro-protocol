@@ -54,7 +54,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Internal function for depositing Want tokens into Vault
     /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be called indirectly through other functions
     /// @param _pid index of pool
-    /// @param _account address of on-chain user
+    /// @param _account address of on-chain user (required for onchain, optional for cross-chain)
+    /// @param _foreignAccount address of origin chain user (for cross chain transactions it's required)
     /// @param _wantAmt how much Want token to deposit (must already be sent to vault contract)
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @param _enteredVaultAt Date to backdate vault entry to
@@ -75,9 +76,20 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Update the pool before anything to ensure rewards have been updated and transferred
         updatePool(_pid);
 
+        // Associate foreign and local account address, as applicable
+
+        // Get local chain account, as applicable
+        address _localAccount = _account;
+        if (_account == address(0)) {
+            // Foreign account MUST be provided
+            require(_foreignAccount.length > 0, "Neither foreign acct nor local acct provided");
+            // If no local account provided, truncate foreign chain address to 20-bytes
+            _localAccount = address(bytes20(_foreignAccount));
+        }
+
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
-            _account,
+            _localAccount,
             _foreignAccount,
             _wantAmt
         );
@@ -100,22 +112,48 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 newTrancheShare = contributionAdded.mul(1e12).div(
             pool.totalTrancheContributions
         );
-        uint256 rewardDebt = pool.accZORRORewards.mul(newTrancheShare).div(
-            1e12
+
+        // Create tranche info
+        TrancheInfo memory _trancheInfo = TrancheInfo({
+            contribution: contributionAdded,
+            timeMultiplier: timeMultiplier,
+            rewardDebt: pool.accZORRORewards.mul(newTrancheShare).div(1e12),
+            durationCommittedInWeeks: _weeksCommitted,
+            enteredVaultAt: _enteredVaultAt,
+            exitedVaultStartingAt: 0
+        });
+        _updateTrancheInfoForDeposit(
+            _pid,
+            _localAccount,
+            _foreignAccount,
+            _trancheInfo
         );
-        // Push a new tranche for this user
-        trancheInfo[_pid][_account].push(
-            TrancheInfo({
-                contribution: contributionAdded,
-                timeMultiplier: timeMultiplier,
-                rewardDebt: rewardDebt,
-                durationCommittedInWeeks: _weeksCommitted,
-                enteredVaultAt: _enteredVaultAt,
-                exitedVaultStartingAt: 0
-            })
-        );
+
         // Emit deposit event
-        emit Deposit(_account, _pid, _wantAmt);
+        emit Deposit(_localAccount, _pid, _wantAmt);
+    }
+
+    /// @notice Internal function for updating tranche ledger upon deposit
+    /// @param _pid Index of pool
+    /// @param _localAccount On-chain address
+    /// @param _foreignAccount Cross-chain address, if applicable
+    /// @param _trancheInfo TrancheInfo object
+    function _updateTrancheInfoForDeposit(
+        uint256 _pid, 
+        address _localAccount,
+        bytes memory _foreignAccount,
+        TrancheInfo memory _trancheInfo
+    ) internal {
+        // Push a new tranche for this on-chain user
+        trancheInfo[_pid][_localAccount].push(_trancheInfo);
+
+        // If foreign account provided, write the tranche info to the foreign account ledger as well
+        if (_foreignAccount.length > 0) {
+            foreignTrancheInfo[_pid][_foreignAccount].push(ForeignTrancheInfo({
+                trancheIndex: trancheLength(_pid, _localAccount).sub(1),
+                localAccount: _localAccount
+            }));  
+        }
     }
 
     /// @notice Deposits funds in a full service manner (performs autoswaps and obtains Want tokens)
@@ -206,6 +244,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmt = _withdraw(
             _pid,
             msg.sender,
+            "",
             _trancheId,
             _harvestOnly
         );
@@ -217,30 +256,54 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
+    /// @dev Can only specify one of _localAccount, _foreignAccount
     /// @param _pid index of pool
-    /// @param _account Address of the 
+    /// @param _localAccount Address of the on-chain account that the investment was made with
+    /// @param _foreignAccount Address of the foreign chain account that this inviestment was made with
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @return Amount of Want token withdrawn
     function _withdraw(
         uint256 _pid,
-        address _account,
+        address _localAccount,
+        bytes memory _foreignAccount,
         uint256 _trancheId,
         bool _harvestOnly
     ) internal returns (uint256) {
-        // Update the pool before anything to ensure rewards have been updated and transferred
-        updatePool(_pid);
+        // Can only specify one account (on-chain/foreign, but not both)
+        require(
+            (_localAccount == address(0) && _foreignAccount.length > 0) || (_localAccount != address(0) && _foreignAccount.length == 0),
+            "Only one account type allowed"
+        );
+        // Determine account type and associated values
+        TrancheInfo memory tranche;
+        if (_localAccount == address(0)) {
+            // On-chain withdrawal
+            tranche = trancheInfo[_pid][_localAccount][_trancheId];
+        } else {
+            // Cross-chain withdrawal
+            for (uint16 i = 0; i < foreignTrancheInfo[_pid][_foreignAccount].length; ++i) {
+                ForeignTrancheInfo memory _fti = foreignTrancheInfo[_pid][_foreignAccount][i];
+                if (_fti.trancheIndex == _trancheId) {
+                    tranche = trancheInfo[_pid][_fti.localAccount][_trancheId];
+                    break;
+                }
+            }
+        }
 
         // Get pool and current tranche info
         PoolInfo storage pool = poolInfo[_pid];
-        TrancheInfo storage tranche = trancheInfo[_pid][_account][_trancheId];
 
-        /* Preflight checks on contributions */
+        // Require non-zero tranche contribution
         require(tranche.contribution > 0, "tranche.contribution is 0");
+        // Require non-zero overall tranche contribution
         require(
             pool.totalTrancheContributions > 0,
             "totalTrancheContributions is 0"
         );
+
+        // Update the pool before anything to ensure rewards have been updated and transferred
+        updatePool(_pid);
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         uint256 trancheShare = tranche.contribution.mul(1e12).div(
@@ -270,7 +333,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 rewardsDue = pendingRewards;
             }
             // Transfer ZORRO rewards to user, net of any applicable slashing
-            _safeZORROTransfer(_account, rewardsDue);
+            // TODO: How does this work for cross chain?
+            _safeZORROTransfer(_localAccount, rewardsDue);
             // Transfer any slashed rewards to single Zorro staking vault, if applicable
             if (slashedRewards > 0) {
                 address singleStakingVaultZORRO = poolInfo[_pid].vault;
@@ -280,7 +344,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
 
         // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-        IVault(poolInfo[_pid].vault).withdrawWantToken(_account, _harvestOnly);
+        // TODO: Issue: this withdraws everything in the vault for the account, and not everything in the tranche
+        IVault(poolInfo[_pid].vault).withdrawWantToken(_localAccount, _foreignAccount, _harvestOnly);
 
         // Update shares safely
         pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
@@ -291,10 +356,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
 
         // All withdrawals are full withdrawals so delete the tranche
-        deleteTranche(_pid, _trancheId, _account);
+        deleteTranche(_pid, _trancheId, _localAccount, _foreignAccount);
 
         // Emit withdrawal event and return want balance
-        emit Withdraw(_account, _pid, _trancheId, _wantBal);
+        // TODO: Make this for foreign accounts too?
+        emit Withdraw(_localAccount, _pid, _trancheId, _wantBal);
 
         return _wantBal;
     }
@@ -302,20 +368,39 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Delete a tranche from a user's tranches
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche
-    /// @param _user User to remove tranche from
+    /// @param _account On-chain wallet to remove tranche from
+    /// @param _foreignAccount Cross-chain wallet to remove tranche from
     function deleteTranche(
         uint256 _pid,
         uint256 _trancheId,
-        address _user
+        address _account,
+        bytes memory _foreignAccount
     ) internal {
         // Determine the number of tranches
-        uint256 _trancheLength = trancheInfo[_pid][_user].length;
+        uint256 _trancheLength = trancheInfo[_pid][_account].length;
         // Shift tranche to current index
-        trancheInfo[_pid][_user][_trancheId] = trancheInfo[_pid][_user][
+        trancheInfo[_pid][_account][_trancheId] = trancheInfo[_pid][_account][
             _trancheLength - 1
         ];
         // Pop last item off of tranche array
-        trancheInfo[_pid][_user].pop();
+        trancheInfo[_pid][_account].pop();
+
+        if (_foreignAccount.length > 0) {
+            // Determine the number of foreign tranches
+            uint256 _foreignTrancheLength = foreignTrancheInfo[_pid][_foreignAccount].length;
+            // Iterate through foreign tranche array
+            for (uint8 i = 0; i < _foreignTrancheLength; ++i) {
+                if (foreignTrancheInfo[_pid][_foreignAccount][i].trancheIndex == _trancheId) {
+                    // Shift foreign tranche to current index
+                    foreignTrancheInfo[_pid][_foreignAccount][i] = foreignTrancheInfo[_pid][_foreignAccount][
+                        _foreignTrancheLength - 1
+                    ];
+                    // Pop last item off of foreign tranche array
+                    foreignTrancheInfo[_pid][_foreignAccount].pop();
+                }
+            }
+        }
+
     }
 
     /// @notice Withdraws funds from a pool and converts the Want token into USDC
@@ -333,6 +418,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Withdraw Want token
         uint256 _amountUSDC = _withdrawalFullService(
             msg.sender,
+            "",
             _pid,
             _trancheId,
             _harvestOnly,
@@ -346,7 +432,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
-    /// @param _account address of user
+    /// @param _account address of wallet on-chain
+    /// @param _foreignAccount address of wallet cross-chain (that originally made this deposit)
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
@@ -354,6 +441,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @return uint256 Amount (in USDC) returned
     function _withdrawalFullService(
         address _account,
+        bytes memory _foreignAccount,
         uint256 _pid,
         uint256 _trancheId,
         bool _harvestOnly,
@@ -370,6 +458,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantAmtWithdrawn = _withdraw(
             _pid,
             _account,
+            _foreignAccount,
             _trancheId,
             _harvestOnly
         );
@@ -410,6 +499,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Withdraw
         uint256 withdrawnUSDC = _withdrawalFullService(
             msg.sender,
+            "",
             _fromPid,
             _fromTrancheId,
             true,
@@ -421,6 +511,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         _depositFullService(
             _toPid,
             msg.sender,
+            "",
             withdrawnUSDC,
             weeksCommitted,
             enteredVaultAt,

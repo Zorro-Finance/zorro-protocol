@@ -470,13 +470,13 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @return uint256 Exchange rate vs USD, multiplied by 1e12
     function getExchangeRate(AggregatorV3Interface _priceFeed)
         public
-        pure
+        view
         virtual
         returns (uint256)
     {
         // Use price feed to determine exchange rates
         uint8 _decimals = _priceFeed.decimals();
-        (, int256 _price, , , ) = token0PriceFeed.latestRoundData();
+        (, int256 _price, , , ) = _priceFeed.latestRoundData();
 
         // Safeguard on signed integers
         require(_price >= 0, "neg prices not allowed");
