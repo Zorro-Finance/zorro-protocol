@@ -163,7 +163,8 @@ contract ZorroControllerXChain is
         }));
     }
 
-    // TODO: Docstrings
+    /// @notice Internal function for making swap calls to Stargate
+    /// @param _swapPayload Struct with key swap payload information for the call to the Stargate router
     function _callStargateSwap(StargateSwapPayload memory _swapPayload) internal {
         IStargateRouter.lzTxObj memory _lzTxObj;
         IStargateRouter(stargateRouter).swap{value: msg.value}(

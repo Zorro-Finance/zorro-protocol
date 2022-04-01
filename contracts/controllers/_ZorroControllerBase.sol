@@ -17,7 +17,6 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors
 // TODO: Generally: Convert uint8s to enums
-// TODO: Do we have an infinite loop problem with cross chain reverts?
 
 /* Base Contract */
 
@@ -142,7 +141,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     // Cross-chain
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing.
-    // TODO: Maybe convert to uint16?
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint8 public homeChainId = 0; // The chain ID of the home chain
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract

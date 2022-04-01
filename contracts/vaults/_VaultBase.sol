@@ -113,9 +113,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
     uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
     mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
-    // TODO: This mapping is a security vulnerability. There should be no way for a user to arbitrarily link themselves to a cross chain account
-    // Maybe this should be on the controller level instead?
-    mapping(bytes => address) internal _mapOriginToDestAddress; // Map origin chain address to on-chain address. Use to allow deposits/withdrawals to occur in the context of either chain's identity.
 
     // Price feeds
     // TODO: Constructor, setters
