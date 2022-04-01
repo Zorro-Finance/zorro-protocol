@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/Math.sol";
 
-import "../tokens/ZorroTokens.sol";
+import "../tokens/ZorroToken.sol";
 
 import "../libraries/SafeSwap.sol";
 
@@ -365,6 +365,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         return _wantBal;
     }
 
+    // TODO: Should we consider not deleting tranches? Gas!!!
     /// @notice Delete a tranche from a user's tranches
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche

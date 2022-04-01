@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerInvestment.sol";
 
-import "../tokens/TokenLockController.sol";
-
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 import "../interfaces/IAMMRouter02.sol";
@@ -25,7 +23,8 @@ import "../interfaces/IStargateRouter.sol";
 contract ZorroControllerXChain is
     ZorroControllerInvestment,
     ChainlinkClient,
-    IStargateReceiver
+    IStargateReceiver,
+    ILayerZeroReceiver
 {
     /* Libraries */
     using Chainlink for Chainlink.Request;
@@ -212,7 +211,7 @@ contract ZorroControllerXChain is
             (
                 ,
                 uint256 _pid,
-                uint256 _valueUSDC,
+                ,
                 uint256 _weeksCommitted,
                 uint256 _vaultEnteredAt,
                 uint256 _maxMarketMovement,
@@ -234,7 +233,7 @@ contract ZorroControllerXChain is
 
             // Call receiving function for cross chain deposits
             // Replace _valueUSDC to account for any slippage during bridging
-            this.receiveXChainDepositRequest(
+            _receiveXChainDepositRequest(
                 _pid,
                 amountLD,
                 _weeksCommitted,
@@ -243,9 +242,26 @@ contract ZorroControllerXChain is
                 _originAccount,
                 _destAccount
             );
+        } else if (this.receiveXChainRepatriationRequest.selector == _funcSig) {
+            // TODO: As above, decode params from payload, or simply .call(), but wrap in require(isSuccess).
+            // Forward request to repatriation function
+            _receiveXChainRepatriationRequest(
+                _account, 
+                _withdrawnUSDC, 
+                _chainId, 
+                _originalNetDepositUSDC, 
+                _maxMarketMovement, 
+                _callbackContract, 
+                _xChainOrigin, 
+                _xChainSender
+            );
         } else {
             revert("Unrecognized func");
         }
+    }
+
+    function lzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint _nonce, bytes memory _payload) override external {
+        // TODO: Implement in a similar way to sgReceive().
     }
 
     /// @notice Dummy func to allow .selector call above and guarantee typesafety for abi calls.
@@ -306,134 +322,199 @@ contract ZorroControllerXChain is
     /* Withdrawals */
 
     /// @notice Prepares and sends a cross chain withdrwal request.
+    /// @dev Requires value to be submitted to pay for cross chain transaction. Use checkXChainWithdrawalFee() to estimate fees
     /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
-    /// @param _destinationContract The address of the smart contract on the destination chain
-    /// @param _payload The input payload for the destination function, encoded in bytes (EVM ABI or equivalent depending on chain)
+    /// @param _pid The pool ID on the remote chain
+    /// @param _trancheId The ID of the tranche for the given user and pool
+    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     function sendXChainWithdrawalRequest(
-        uint256 _chainId,
-        bytes calldata _destinationContract,
-        bytes calldata _payload
-    ) external nonReentrant {
-        /* TODO
-        - Rather than accept a raw payload, it should be a simple request for chainId, pid, trancheId. 100% withdrawal. ABI encoding can be done here
-        - Use LayerZero interface to make cross chain request
-        - Consider creating a separate func to query xchain fees (gas etc.) and send that amount in the "value" field
-
-        // Get endpoint contract that interfaces with the remote chain
-        XChainEndpoint _endpointContract = XChainEndpoint(
-            endpointContracts[_chainId]
-        );
-        // Verify that the encoded user identity is in fact msg.sender
-        address _userIdentity = _endpointContract.extractIdentityFromPayload(
-            _payload
-        );
-        require(
-            _userIdentity == msg.sender,
-            "Payload sender doesnt match msg.sender"
-        );
-        // Call contract layer
-        _endpointContract.sendXChainTransaction(
-            _destinationContract,
-            _payload,
-            ""
-        );
-        */
-    }
-
-    /*
-    TODO - modification required for this func:
-    - Need separate func to receive LayerZero cross chain call, should extract origin chain identity and use that for identifying the user's investment to withdraw
-    - Adjust modifiers accordingly
-    */
-    /// @notice Receives a cross chain withdrawal request from the contract layer of the XchainEndpoint contract
-    /// @dev For params, see _withdrawalFullService() function declaration above. Executes idempotently.
-    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
-    function receiveXChainWithdrawalRequest(
-        address _account,
         uint256 _chainId,
         uint256 _pid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement,
-        bytes memory _xChainOrigin,
-        bytes memory _xChainSender
-    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // First check if withdrawal was already attempted (e.g. there was a cross chain failure). If so, redrive this function
-        // without the withdrawal and lock steps
-        // TODO: Probably can take out this whole control flow of detecting whether withdrawal was attempted, exitedVaultStartingAt, TokenLockController, etc.
-        // But maybe exitedVaultStartingAt is required even with stargate? Let's see
-        TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
-        uint256 _amountUSDC = 0;
-        if (tranche.exitedVaultStartingAt == 0) {
-            // Call withdrawal function
-            // _amountUSDC = _withdrawalFullService(
-            //     _account,
-            //     _pid,
-            //     _trancheId,
-            //     false,
-            //     _maxMarketMovement
-            // );
-            // Lock withdrawn USDC
-            TokenLockController(lockUSDCController).lockFunds(
-                _account,
-                _amountUSDC
-            );
-        } else {
-            // Lookup amount locked
-            // TODO: Does this ledger need to be associated with the exact tranche amount?
-            // This appears to simply lookup the total amount which may be missing information.
-            // Actually since this is for reverts, might want to adopt a similar "ledger" model for deposits
-            // that accounts for failures on cross-chain transactions (esp. for repatriation flow). Ummmm, not anymore
-            _amountUSDC = TokenLockController(lockUSDCController).lockedFunds(
-                _account
-            );
-        }
+        uint256 _maxMarketMovement
+    ) external payable nonReentrant {
+        // Prep payload
 
-        // Only proceed if there is something to withdraw
-        require(_amountUSDC > 0, "Nothing to withdraw");
-
-        /*
-        TODO: Replace the following with a Stargate call. Should transfer 
-        // Prepare repatriation transaction
-        bytes memory _destinationContract = abi.encodePacked(
-            homeChainZorroController
+        // Send LayerZero request
+        ILayerZeroEndpoint(layerZeroEndpoint).send(
+            _dstChainId, 
+            _destination, 
+            _payload, 
+            _refundAddress, 
+            _zroPaymentAddress, 
+            _adapterParams
         );
-        bytes memory _payload = abi.encodeWithSignature(
-            "receiveXChainRepatriationRequest(address _account,uint256 _withdrawnUSDC,uint256 _chainId,uint256 _pid,uint256 _trancheId,uint256 _maxMarketMovement,address _callbackContract)",
-            _account,
-            _amountUSDC,
+    }
+
+    /// @notice Checks to see how much a cross chain deposit will cost
+    /// @param _chainId The Zorro Chain ID (not the LayerZero one)
+    /// @param _dstContract The destination contract address on the remote chain
+    /// @param _pid The pool ID on the remote chain
+    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _weeksCommitted Number of weeks to commit to a vault
+    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
+    /// @param _destWallet A valid address on the remote chain that can claim ownership
+    /// @return uint256 Expected fee to pay for bridging/cross chain execution
+    function checkXChainWithdrawalFee(
+        uint256 _chainId,
+        bytes memory _dstContract,
+        uint256 _pid,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _maxMarketMovement,
+        bytes memory _destWallet
+    ) external view returns (uint256) {
+        // TODO: Implement
+        // Init empty LZ object
+        IStargateRouter.lzTxObj memory _lzTxParams;
+
+        // Get payload
+        bytes memory _payload = _encodeXChainWithdrawalPayload(
+            _pid,
+            _valueUSDC,
+            _weeksCommitted,
+            block.timestamp,
+            _maxMarketMovement,
+            msg.sender,
+            _destWallet
+        );
+
+        // Calculate native gas fee and ZRO token fee (Layer Zero token)
+        (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
+            .quoteLayerZeroFee(
+                stargateZorroChainMap[_chainId],
+                1,
+                _dstContract,
+                _payload,
+                _lzTxParams
+            );
+
+        return _nativeFee.add(_lzFee);
+    }
+
+    // TODO: docstrings
+    function _encodeXChainWithdrawalPayload(
+        bytes memory _foreignAccount,
+        uint256 _chainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _maxMarketMovement
+    ) internal pure returns (bytes memory) {
+        // TODO: Implement
+        // Calculate method signature
+        bytes4 _sig = this.receiveXChainWithdrawalRequest.selector;
+        // Calculate abi encoded bytes for input args
+        bytes memory _inputs = abi.encode(
+            _foreignAccount,
             _chainId,
             _pid,
             _trancheId,
-            _maxMarketMovement,
-            address(this)
+            _maxMarketMovement
         );
-
-        // Call contract layer to dispatch cross chain transaction
-        XChainEndpoint _xChainEndpoint = XChainEndpoint(
-            endpointContracts[homeChainId]
-        );
-        _xChainEndpoint.sendXChainTransaction(
-            _destinationContract,
-            _payload,
-            ""
-        );
-        */
+        // Concatenate bytes of signature and inputs
+        return bytes.concat(_sig, _inputs);
     }
 
-    /*
-    TODO
-    - Consider using a "ledger" model here, accompanied by a recovery function, to account for failures
-    - Instead of minting zUSDC and swapping it, accept the USDC that has been transferred
-    - Cross chain unlock request should be a LayerZero call
-    */
-    /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
-    /// @param _account The user on this chain who initiated the withdrawal request
-    /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
-    /// @param _chainId The Chain ID of the remote chain that initiated this request
-    /// @param _originalNetDepositUSDC The amount originally deposited into this tranche, NET of fees
-    /// @param _maxMarketMovement factor to account for max market movement/slippage, expressed as numerator over 1000 (e.g. 950 => 950/1000 = 0.95 = 5% slippage)
-    /// @param _callbackContract The remote contract that called this function.
-    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
+    /// @notice Dummy func to allow .selector call above and guarantee typesafety for abi calls.
+    /// @dev Should never ever be actually called.
+    function receiveXChainWithdrawalRequest(
+        bytes memory _foreignAccount,
+        uint256 _chainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _maxMarketMovement
+    ) public {
+        // Revert to make sure this function never gets called
+        revert("illegal dummy func call");
+
+        // But still include the function call here anyway to satisfy type safety requirements in case there is a change
+        _receiveXChainWithdrawalRequest(
+            _foreignAccount,
+            _chainId,
+            _pid,
+            _trancheId,
+            _maxMarketMovement
+        );
+    }
+
+    // TODO: docstrings
+    function _receiveXChainWithdrawalRequest(
+        bytes memory _foreignAccount,
+        uint256 _chainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _maxMarketMovement
+    ) internal {
+        // Get on-chain account using foreign account as guide
+        address _account;
+        for(uint i = 0; i < foreignTrancheInfo[_pid][_foreignAccount].length; ++i) {
+            ForeignTrancheInfo memory _fti = foreignTrancheInfo[_pid][_foreignAccount][i];
+            if (_fti.trancheIndex == _trancheId) {
+                _account = _fti.localAccount;
+                break;
+            }
+        }
+
+        // Get tranche
+        TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
+
+        // Withdraw funds
+        _withdrawalFullService(
+            _account, 
+            _foreignAccount, 
+            _pid, 
+            _trancheId, 
+            false, 
+            _maxMarketMovement
+        );
+
+        // Get USDC bal
+        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+
+        // Only proceed if there is something to withdraw
+        require(_balUSDC > 0, "Nothing to withdraw");
+
+        // Repatriate funds
+        // Get payload
+        bytes memory _payload = _encodeXChainRepatriationPayload(
+            _chainId, 
+            _pid, 
+            _dstAccount, 
+            _trancheId
+        );
+        // Call Stargate
+        _callStargateSwap(StargateSwapPayload({
+            chainId: _chainId, 
+            qty: _balUSDC, 
+            dstContract: _dstContract, 
+            payload: _payload, 
+            maxMarketMovement: _maxMarketMovement
+        }));
+    }
+
+    // TODO: docstrings
+    function _encodeXChainRepatriationPayload(
+        uint256 _chainId,
+        uint256 _pid,
+        bytes memory _dstAccount,
+        uint256 _trancheId
+    ) internal pure returns (bytes memory) {
+        // Calculate method signature
+        bytes4 _sig = this.receiveXChainRepatriationRequest.selector;
+        // Calculate abi encoded bytes for input args
+        bytes memory _inputs = abi.encode(
+            _foreignAccount,
+            _chainId,
+            _pid,
+            _trancheId,
+            _maxMarketMovement
+        );
+        // Concatenate bytes of signature and inputs
+        return bytes.concat(_sig, _inputs);
+    }
+
+    /// @notice Dummy func to allow .selector call above and guarantee typesafety for abi calls.
+    /// @dev Should never ever be actually called.
     function receiveXChainRepatriationRequest(
         address _account,
         uint256 _withdrawnUSDC,
@@ -444,10 +525,40 @@ contract ZorroControllerXChain is
         bytes memory _xChainOrigin,
         bytes memory _xChainSender
     )
-        external
-        onlyXChainEndpoints
-        nonReentrant
-        onlyXChainZorroControllers(_xChainSender)
+        public
+    {
+        // Revert to make sure this function never gets called
+        revert("illegal dummy func call");
+
+        // But still include the function call here anyway to satisfy type safety requirements in case there is a change
+        _receiveXChainWithdrawalRequest(
+            _foreignAccount,
+            _chainId,
+            _pid,
+            _trancheId,
+            _maxMarketMovement
+        );
+    }
+
+    /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
+    /// @param _account The user on this chain who initiated the withdrawal request
+    /// @param _withdrawnUSDC The amount of USDC withdrawn on the remote chain
+    /// @param _chainId The Chain ID of the remote chain that initiated this request
+    /// @param _originalNetDepositUSDC The amount originally deposited into this tranche, NET of fees
+    /// @param _maxMarketMovement factor to account for max market movement/slippage, expressed as numerator over 1000 (e.g. 950 => 950/1000 = 0.95 = 5% slippage)
+    /// @param _callbackContract The remote contract that called this function.
+    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
+    function _receiveXChainRepatriationRequest(
+        address _account,
+        uint256 _withdrawnUSDC,
+        uint256 _chainId,
+        uint256 _originalNetDepositUSDC,
+        uint256 _maxMarketMovement,
+        address _callbackContract,
+        bytes memory _xChainOrigin,
+        bytes memory _xChainSender
+    )
+        internal
     {
         /*
         // Initialize finance variables
@@ -508,7 +619,6 @@ contract ZorroControllerXChain is
         );
         IERC20(defaultStablecoin).transfer(_account, _balanceUSDC);
         // Send cross-chain burn request for the USDC that has been temporarily locked on the opposite chain
-        // TODO: If we're using Stargate/L0, probably don't need this unlock request anymore. 
         _sendXChainUnlockRequest(
             _account,
             _withdrawnUSDC,
@@ -570,12 +680,12 @@ contract ZorroControllerXChain is
         bytes memory _xChainOrigin,
         bytes memory _xChainSender
     ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // Get controller
-        TokenLockController lockController = TokenLockController(
-            lockUSDCController
-        );
-        // Unlock user funds & burn
-        lockController.unlockFunds(_account, _amountUSDC, burnAddress);
+        // // Get controller
+        // TokenLockController lockController = TokenLockController(
+        //     lockUSDCController
+        // );
+        // // Unlock user funds & burn
+        // lockController.unlockFunds(_account, _amountUSDC, burnAddress);
     }
 
     /* Earnings/Distribution */
@@ -697,11 +807,11 @@ contract ZorroControllerXChain is
             .add(_failedAmountUSDCBuyback)
             .add(_failedAmountUSDCRevShare);
         // Unlock + burn
-        TokenLockController(lockUSDCController).unlockFunds(
-            address(this),
-            _totalBurnableUSDC,
-            burnAddress
-        );
+        // TokenLockController(lockUSDCController).unlockFunds(
+        //     address(this),
+        //     _totalBurnableUSDC,
+        //     burnAddress
+        // );
         // Decrement any failed amounts
         failedLockedBuybackUSDC = failedLockedBuybackUSDC.sub(
             _failedAmountUSDCBuyback
