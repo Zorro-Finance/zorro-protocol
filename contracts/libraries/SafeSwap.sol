@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
+// TODO:     - [ ] If price struct values are zero, use on-chain getAmountsOut
+
 
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {

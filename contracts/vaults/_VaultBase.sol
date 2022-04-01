@@ -24,6 +24,7 @@ import "../controllers/ZorroController.sol";
 
 import "../interfaces/IVault.sol";
 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
@@ -47,8 +48,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address public tokenUSDCAddress; // USDC token address
     // Zorro LP pool
     address public zorroLPPool; // Main pool for Zorro liquidity
-    address public zorroLPPoolToken0; // For the dominant LP pool, the 0th token (usually ZOR)
-    address public zorroLPPoolToken1; // For the dominant LP pool, the 1st token
+    address public zorroLPPoolOtherToken; // For the dominant LP pool, the token paired with the ZOR token
     // Other addresses
     address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
@@ -101,17 +101,36 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address[] public earnedToToken1Path;
     address[] public token0ToEarnedPath;
     address[] public token1ToEarnedPath;
-    address[] public earnedToZORLPPoolToken0Path;
-    address[] public earnedToZORLPPoolToken1Path;
+    address[] public earnedToZORLPPoolOtherTokenPath;
     address[] public USDCToWantPath;
     address[] public WantToUSDCPath;
     address[] public earnedToUSDCPath;
     address[] public USDCToZORROPath;
+    // TODO: Constructor/setter
+    address[] public USDCToZORLPPoolOtherTokenPath;
 
     // Cross chain
     uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
     uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
     mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
+    // TODO: This mapping is a security vulnerability. There should be no way for a user to arbitrarily link themselves to a cross chain account
+    // Maybe this should be on the controller level instead?
+    mapping(bytes => address) internal _mapOriginToDestAddress; // Map origin chain address to on-chain address. Use to allow deposits/withdrawals to occur in the context of either chain's identity.
+
+    // Price feeds
+    // TODO: Constructor, setters
+    AggregatorV3Interface public token0PriceFeed; // Token0 price feed
+    AggregatorV3Interface public token1PriceFeed; // Token1 price feed
+    AggregatorV3Interface public earnTokenPriceFeed; // Price feed of Earn token
+    AggregatorV3Interface public lpPoolOtherTokenPriceFeed; // Price feed of token that is NOT ZOR in liquidity pool
+    AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
+
+    /* Structs */
+    struct ExchangeRates {
+        uint256 earn; // Exchange rate of earn token, times 1e12
+        uint256 ZOR; // Exchange rate of ZOR token, times 1e12
+        uint256 lpPoolOtherToken; // Exchange rate of token paired with ZOR in LP pool
+    }
 
     /* Events */
 
@@ -144,42 +163,64 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     function setIsCOREStaking(bool _isCOREStaking) public onlyOwner {
         isCOREStaking = _isCOREStaking;
     }
-    function setIsSingleAssetDeposit(bool _isSingleAssetDeposit) public onlyOwner {
+
+    function setIsSingleAssetDeposit(bool _isSingleAssetDeposit)
+        public
+        onlyOwner
+    {
         isSingleAssetDeposit = _isSingleAssetDeposit;
     }
+
     function setIsZorroComp(bool _isZorroComp) public onlyOwner {
         isZorroComp = _isZorroComp;
     }
+
     function setPid(uint256 _pid) public onlyOwner {
         pid = _pid;
     }
-    function setFarmContractAddress(address _farmContractAddress) public onlyOwner {
+
+    function setFarmContractAddress(address _farmContractAddress)
+        public
+        onlyOwner
+    {
         farmContractAddress = _farmContractAddress;
     }
+
     function setToken0Address(address _token0Address) public onlyOwner {
         token0Address = _token0Address;
     }
+
     function setToken1Address(address _token1Address) public onlyOwner {
         token1Address = _token1Address;
     }
+
     function setEarnedAddress(address _earnedAddress) public onlyOwner {
         earnedAddress = _earnedAddress;
     }
+
     function setTokenUSDCAddress(address _tokenUSDCAddress) public onlyOwner {
         tokenUSDCAddress = _tokenUSDCAddress;
     }
+
     function setRewardsAddress(address _rewardsAddress) public onlyOwner {
         rewardsAddress = _rewardsAddress;
     }
+
     function setUniRouterAddress(address _uniRouterAddress) public onlyOwner {
         uniRouterAddress = _uniRouterAddress;
     }
+
     function setPoolAddress(address _poolAddress) public onlyOwner {
         poolAddress = _poolAddress;
     }
-    function setZorroControllerAddress(address _zorroControllerAddress) public onlyOwner {
+
+    function setZorroControllerAddress(address _zorroControllerAddress)
+        public
+        onlyOwner
+    {
         zorroControllerAddress = _zorroControllerAddress;
     }
+
     function setZORROAddress(address _ZORROAddress) public onlyOwner {
         ZORROAddress = _ZORROAddress;
     }
@@ -197,7 +238,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         onlyGov = _onlyGov;
         emit SetOnlyGov(_onlyGov);
     }
-    
+
     /// @notice Configure key fee parameters
     /// @param _entranceFeeFactor Entrance fee numerator (higher means smaller percentage)
     /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
@@ -285,12 +326,10 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
                 } else if (_ct == 4) {
                     USDCToToken1Path[i] = _swapPaths[i];
                 } else if (_ct == 5) {
-                    earnedToZORLPPoolToken0Path[i] = _swapPaths[i];
+                    earnedToZORLPPoolOtherTokenPath[i] = _swapPaths[i];
                 } else if (_ct == 6) {
-                    earnedToZORLPPoolToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 7) {
                     earnedToUSDCPath[i] = _swapPaths[i];
-                } else if (_ct == 8) {
+                } else if (_ct == 7) {
                     USDCToZORROPath[i] = _swapPaths[i];
                 } else {
                     revert("bad swap paths");
@@ -302,7 +341,11 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @notice Gets the swap path in the opposite direction of a trade
     /// @param _path The swap path to be reversed
     /// @return An reversed path array
-    function _reversePath(address[] memory _path) internal pure returns (address[] memory) {
+    function _reversePath(address[] memory _path)
+        internal
+        pure
+        returns (address[] memory)
+    {
         address[] memory _newPath;
         for (uint16 i = 0; i < _path.length; ++i) {
             _newPath[i] = _path[_path.length.sub(1).sub(i)];
@@ -342,18 +385,14 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
-    /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc. 
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    /// @return the remaining earned token amount after buyback and revshare operations
+    /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc.
+    /// @return uint256 the remaining earned token amount after buyback and revshare operations
+    /// @param _rates ExchangeRates struct with realtime rates information for swaps
     function _buyBackAndRevShare(
-        uint256 _earnedAmt, 
+        uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
-    )
-        internal
-        virtual
-        returns (uint256)
-    {
+        ExchangeRates memory _rates
+    ) internal virtual returns (uint256) {
         // Calculate buyback amount
         uint256 _buyBackAmt = 0;
         if (buyBackRate > 0) {
@@ -371,8 +410,8 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         // Routing: Determine whether on home chain or not
         if (isHomeChain) {
             // If on home chain, perform buyback, revshare locally
-            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed, _priceData);
-            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _priceData);
+            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed, _rates);
+            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _rates);
         } else {
             // Otherwise, contact controller, to make cross chain call
             // Fetch the controller contract that is associated with this Vault
@@ -381,7 +420,12 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
             );
 
             // Swap to Earn to USDC and send to zorro controller contract
-            _swapEarnedToUSDC(_buyBackAmt.add(_revShareAmt), zorroControllerAddress, _maxMarketMovementAllowed, _priceData);
+            _swapEarnedToUSDC(
+                _buyBackAmt.add(_revShareAmt),
+                zorroControllerAddress,
+                _maxMarketMovementAllowed,
+                _rates
+            );
 
             // Call distributeEarningsXChain on controller contract
             zorroController.distributeEarningsXChain(
@@ -420,54 +464,72 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         return _earnedAmt;
     }
 
+    /// @notice Calculates exchange rate vs USD for a given priceFeed
+    /// @dev Assumes price feed is in USD. If not, either multiply obtained exchange rate with another, or override this func.
+    /// @param _priceFeed The Chainlink price feed
+    /// @return uint256 Exchange rate vs USD, multiplied by 1e12
+    function getExchangeRate(AggregatorV3Interface _priceFeed)
+        public
+        pure
+        virtual
+        returns (uint256)
+    {
+        // Use price feed to determine exchange rates
+        uint8 _decimals = _priceFeed.decimals();
+        (, int256 _price, , , ) = token0PriceFeed.latestRoundData();
+
+        // Safeguard on signed integers
+        require(_price >= 0, "neg prices not allowed");
+
+        // Get the price of the token times 1e12, accounting for decimals
+        return uint256(_price).mul(1e12).div(10**_decimals);
+    }
+
     /* Abstract methods */
 
     // Deposits
     function exchangeUSDForWantToken(
         uint256 _amountUSDC,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
-    function depositWantToken(address _account, uint256 _wantAmt)
-        public
-        virtual
-        returns (uint256);
+    function depositWantToken(
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _wantAmt
+    ) public virtual returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(address _account, bool _harvestOnly)
-        public
-        virtual
-        returns (uint256);
+    function withdrawWantToken(
+        address _account,
+        bytes memory _foreignAccount,
+        bool _harvestOnly
+    ) public virtual returns (uint256);
 
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
     // Earnings/compounding
-    function earn(
-        uint256 _maxMarketMovementAllowed, 
-        PriceData calldata _priceData
-    ) public virtual;
+    function earn(uint256 _maxMarketMovementAllowed) public virtual;
 
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal virtual;
 
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal virtual;
 
     function _swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal virtual;
 }

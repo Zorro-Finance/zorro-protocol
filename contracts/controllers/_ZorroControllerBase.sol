@@ -134,7 +134,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed.
     mapping(bytes => bool) public registeredXChainControllers; // Accepted list of cross chain Zorro controllers that can call this controller
     address public lockUSDCController;
-    mapping(uint256 => mapping(uint256 => uint8)) public lockedEarningsStatus; // Tracks status of cross chain locked earnings. Mapping: block number => pid => status. Statuses: 0: None, 1: Pending, 2: Completed successfully, 3: Failed.
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
     address public xChainReceivingOracle; // Address of the oracle that is authorized to make calls to this contract (usually for reverts)

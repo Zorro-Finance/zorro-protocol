@@ -28,12 +28,12 @@ contract VaultAcryptosSingle is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
-    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress, zorroLPPool, zorroLPPoolToken0, zorroLPPoolToken1]
+    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress, zorroLPPool, zorroLPPoolOtherToken]
     /// @param _pid Pool ID this Vault is associated with
     /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     /// @param _isHomeChain Whether this contract is deployed on the home chain
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path, earnedToUSDCPath, USDCToZORROPath]
+    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolOtherTokenPath, earnedToUSDCPath, USDCToZORROPath]
     /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
     /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
     /// @param _balancerPools Addresses of Balancer pools for performing swaps. Array of [balancerPoolUSDCToWant, balancerPoolUSDCToToken0]
@@ -60,8 +60,7 @@ contract VaultAcryptosSingle is VaultBase {
         poolAddress = _addresses[8];
         uniRouterAddress = _addresses[9];
         zorroLPPool = _addresses[10];
-        zorroLPPoolToken0 = _addresses[11];
-        zorroLPPoolToken1 = _addresses[12];
+        zorroLPPoolOtherToken = _addresses[11];
 
         // Vault config
         pid = _pid;
@@ -147,8 +146,12 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _account address of user that this deposit is intended for
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    /// @return uint256 Number of shares added
+    function depositWantToken(
+        address _account,
+        bytes memory _foreignAccount, // TODO: Docstrings for all funcs that have "foreignAccount"
+        uint256 _wantAmt
+    )
         public
         virtual
         override
@@ -196,18 +199,19 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Performs necessary operations to convert USDC into Want token
     /// @param _amountUSDC The USDC quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    /// @return Amount of Want token obtained
+    /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSDC,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
         uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
 
         // Swap USDC for tokens
 
@@ -216,8 +220,8 @@ contract VaultAcryptosSingle is VaultBase {
             tokenUSDCAddress,
             token0Address,
             _amountUSDC,
-            _priceData.tokenUSDC,
-            _priceData.token0,
+            1e12,
+            _token0ExchangeRate,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
             address(this)
@@ -314,8 +318,12 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account The address of the owner of vault investment
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
-    /// @return The number of shares removed
-    function withdrawWantToken(address _account, bool _harvestOnly)
+    /// @return uint256 The number of shares removed
+    function withdrawWantToken(
+        address _account,
+        bytes memory _foreignAccount,
+        bool _harvestOnly
+    )
         public
         virtual
         override
@@ -377,12 +385,10 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    /// @return Amount of USDC token obtained
+    /// @return uint256 Amount of USDC token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     )
         public
         virtual
@@ -404,6 +410,9 @@ contract VaultAcryptosSingle is VaultBase {
         // Withdraw Want token to get Token0
         IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _amount);
 
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+
         // Swap Token0 for USDC
         // Get Token0 balance
         uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
@@ -412,8 +421,8 @@ contract VaultAcryptosSingle is VaultBase {
             token0Address,
             tokenUSDCAddress,
             _token0Bal,
-            _priceData.token0,
-            _priceData.tokenUSDC,
+            _token0ExchangeRate,
+            1e12,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender
@@ -425,10 +434,8 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
     function earn(
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public virtual override nonReentrant whenNotPaused {
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
@@ -443,18 +450,35 @@ contract VaultAcryptosSingle is VaultBase {
         // Get the balance of the Earned token on this contract (ACS, etc.)
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
+        // Get exchange rate from price feed
+        uint256 _earnTokenExchangeRate = getExchangeRate(earnTokenPriceFeed);
+        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+        uint256 _ZORExchangeRate = getExchangeRate(ZORPriceFeed);
+        uint256 _lpPoolOtherTokenExchangeRate = getExchangeRate(ZORPriceFeed);
+        // Create rates struct
+        ExchangeRates memory _rates = ExchangeRates({
+            earn: _earnTokenExchangeRate,
+            ZOR: _ZORExchangeRate,
+            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
+        });
+
         // Reassign value of earned amount after distributing fees
         earnedAmt = _distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro, sharing revenue
-        earnedAmt = _buyBackAndRevShare(earnedAmt, _maxMarketMovementAllowed, _priceData);
+        earnedAmt = _buyBackAndRevShare(
+            earnedAmt,
+            _maxMarketMovementAllowed,
+            _rates
+        );
+
 
         // Swap Earn token for single asset token
         _safeSwap(
             earnedAddress,
             token0Address,
             earnedAmt,
-            _priceData.earnToken,
-            _priceData.token0,
+            _earnTokenExchangeRate,
+            _token0ExchangeRate,
             _maxMarketMovementAllowed,
             earnedToToken0Path,
             address(this)
@@ -469,6 +493,7 @@ contract VaultAcryptosSingle is VaultBase {
         // This vault is only for single asset deposits, so farm that token and exit
         // Update the last earn block
         lastEarnBlock = block.number;
+        // Farm LP token
         _farm();
     }
 
@@ -476,11 +501,12 @@ contract VaultAcryptosSingle is VaultBase {
     /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
     /// @param _amount The amount of Earn token to buy back
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed, PriceData calldata _priceData)
-        internal
-        override
-    {
+    /// @param _rates ExchangeRates struct with realtime rates information for swaps
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates
+    ) internal override {
         // Authorize spending beforehand
         IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
 
@@ -494,8 +520,8 @@ contract VaultAcryptosSingle is VaultBase {
                 earnedAddress,
                 tokenUSDCAddress,
                 _amount,
-                _priceData.earnToken,
-                _priceData.tokenUSDC,
+                _rates.earn,
+                1e12,
                 _maxMarketMovementAllowed,
                 earnedToUSDCPath,
                 address(this)
@@ -506,80 +532,74 @@ contract VaultAcryptosSingle is VaultBase {
                 address(this)
             );
 
-            // USDC -> LP Pool Token 0
-            address[] memory _USDCToLPToken0Path;
-            _USDCToLPToken0Path[0] = tokenUSDCAddress;
-            _USDCToLPToken0Path[1] = zorroLPPoolToken0;
+            // USDC -> LP Pool ZOR token
             _safeSwap(
                 tokenUSDCAddress,
-                zorroLPPoolToken0,
+                ZORROAddress,
                 _balUSDC.div(2),
-                _priceData.tokenUSDC,
-                _priceData.lpPoolToken0,
+                1e12,
+                _rates.ZOR,
                 _maxMarketMovementAllowed,
-                _USDCToLPToken0Path,
+                USDCToZORROPath,
                 address(this)
             );
 
-            // USDC -> LP Pool Token 1
-            address[] memory _USDCToLPToken1Path;
-            _USDCToLPToken1Path[0] = tokenUSDCAddress;
-            _USDCToLPToken1Path[1] = zorroLPPoolToken1;
+            // USDC -> LP Pool Other token
             _safeSwap(
                 tokenUSDCAddress,
-                zorroLPPoolToken1,
+                zorroLPPoolOtherToken,
                 _balUSDC.div(2),
-                _priceData.tokenUSDC,
-                _priceData.lpPoolToken1,
+                1e12,
+                _rates.lpPoolOtherToken,
                 _maxMarketMovementAllowed,
-                _USDCToLPToken1Path,
+                USDCToZORLPPoolOtherTokenPath,
                 address(this)
             );
         } else {
-            // Swap directly to LPPool Tokens 0, 1
+            // Swap directly to LPPool Tokens (ZOR + other token)
 
-            // Swap Earn to Token 0 of LP pool
+            // Swap Earn to ZOR Token of LP pool
             _safeSwap(
                 earnedAddress,
-                zorroLPPoolToken0,
-                _amount,
-                _priceData.earnToken,
-                _priceData.lpPoolToken0,
+                ZORROAddress,
+                _amount.div(2),
+                _rates.earn,
+                _rates.lpPoolOtherToken,
                 _maxMarketMovementAllowed,
-                earnedToZORLPPoolToken0Path,
+                earnedToZORROPath,
                 address(this)
             );
-            // Swap Earn to Token 1 of LP pool
+            // Swap Earn to other token of LP pool
             _safeSwap(
                 earnedAddress,
-                zorroLPPoolToken1,
-                _amount,
-                _priceData.earnToken,
-                _priceData.lpPoolToken1,
+                zorroLPPoolOtherToken,
+                _amount.div(2),
+                _rates.earn,
+                _rates.lpPoolOtherToken,
                 _maxMarketMovementAllowed,
-                earnedToZORLPPoolToken1Path,
+                earnedToZORLPPoolOtherTokenPath,
                 address(this)
             );
         }
 
-        // Enter LP pool
-        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
-        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
-        IERC20(token0Address).safeIncreaseAllowance(
+        // Enter LP pool and send received token to the burn address
+        uint256 zorroTokenAmt = IERC20(ZORROAddress).balanceOf(address(this));
+        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(address(this));
+        IERC20(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
-            token0Amt
+            zorroTokenAmt
         );
-        IERC20(token1Address).safeIncreaseAllowance(
+        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
             uniRouterAddress,
-            token1Amt
+            otherTokenAmt
         );
         IAMMRouter02(uniRouterAddress).addLiquidity(
-            zorroLPPoolToken0,
-            zorroLPPoolToken1,
-            token0Amt,
-            token1Amt,
-            token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-            token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            ZORROAddress,
+            zorroLPPoolOtherToken,
+            zorroTokenAmt,
+            otherTokenAmt,
+            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
+            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
             burnAddress,
             block.timestamp.add(600)
         );
@@ -588,11 +608,11 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
     /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
     /// @param _maxMarketMovementAllowed Max slippage. 950 = 5%, 990 = 1%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
+    /// @param _rates ExchangeRates struct with realtime rates information for swaps
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
         IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
@@ -606,8 +626,8 @@ contract VaultAcryptosSingle is VaultBase {
                 earnedAddress,
                 tokenUSDCAddress,
                 _amount,
-                _priceData.earnToken,
-                _priceData.tokenUSDC,
+                _rates.earn,
+                1e12,
                 _maxMarketMovementAllowed,
                 earnedToZORROPath,
                 address(this)
@@ -620,8 +640,8 @@ contract VaultAcryptosSingle is VaultBase {
                 tokenUSDCAddress,
                 ZORROAddress,
                 _balUSDC,
-                _priceData.tokenUSDC,
-                _priceData.zorroToken,
+                1e12,
+                _rates.ZOR,
                 _maxMarketMovementAllowed,
                 USDCToZORROPath,
                 zorroStakingVault
@@ -632,8 +652,8 @@ contract VaultAcryptosSingle is VaultBase {
                 earnedAddress,
                 ZORROAddress,
                 _amount,
-                _priceData.earnToken,
-                _priceData.zorroToken,
+                _rates.earn,
+                _rates.ZOR,
                 _maxMarketMovementAllowed,
                 earnedToZORROPath,
                 zorroStakingVault
@@ -645,19 +665,20 @@ contract VaultAcryptosSingle is VaultBase {
     /// @param _earnedAmount Quantity of Earned tokens
     /// @param _destination Address to send swapped USDC to
     /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
+    /// @param _rates ExchangeRates struct with realtime rates information for swaps
     function _swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal override {
+        // Swap earned to USDC
         _safeSwap(
             earnedAddress,
             tokenUSDCAddress,
             _earnedAmount,
-            _priceData.earnToken,
-            _priceData.tokenUSDC,
+            _rates.earn,
+            1e12,
             _maxMarketMovementAllowed,
             earnedToUSDCPath,
             _destination

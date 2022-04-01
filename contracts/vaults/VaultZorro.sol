@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
-
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -58,8 +57,12 @@ contract VaultZorro is VaultBase {
 
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    /// @return uiint256 Number of shares added
+    function depositWantToken(
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _wantAmt
+    )
         public
         override
         onlyZorroController
@@ -71,7 +74,11 @@ contract VaultZorro is VaultBase {
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
         // Transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _wantAmt);
+        IERC20(wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _wantAmt
+        );
 
         // Set sharesAdded to the Want token amount specified
         uint256 sharesAdded = _wantAmt;
@@ -97,12 +104,10 @@ contract VaultZorro is VaultBase {
     /// @notice Performs necessary operations to convert USDC into Want token
     /// @param _amountUSDC The USDC quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    /// @return Amount of Want token obtained
+    /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSDC,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
         uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
@@ -110,11 +115,14 @@ contract VaultZorro is VaultBase {
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            _priceData.tokenUSDC,
-            _priceData.token0,
+            1e12,
+            _token0ExchangeRate,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
             address(this),
@@ -136,8 +144,12 @@ contract VaultZorro is VaultBase {
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _account address of user
     /// @param _harvestOnly unused for this function (only here to comply with interface)
-    /// @return the number of shares removed
-    function withdrawWantToken(address _account, bool _harvestOnly)
+    /// @return uint256 the number of shares removed
+    function withdrawWantToken(
+        address _account,
+        bytes memory _foreignAccount,
+        bool _harvestOnly
+    )
         public
         override
         onlyZorroController
@@ -146,7 +158,10 @@ contract VaultZorro is VaultBase {
         returns (uint256)
     {
         uint256 _userNumShares = userShares[_account];
-        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this)).mul(_userNumShares).div(sharesTotal);
+        uint256 _wantAmt = IERC20(wantAddress)
+            .balanceOf(address(this))
+            .mul(_userNumShares)
+            .div(sharesTotal);
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -186,24 +201,29 @@ contract VaultZorro is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    /// @return Amount of USDC token obtained
+    /// @return uint256 Amount of USDC token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
         // Preflight checks
         require(_amount > 0, "Want amt must be > 0");
 
         // Safely transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
 
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
-            _priceData.token0,
-            _priceData.tokenUSDC,
+            _token0ExchangeRate,
+            1e12,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender,
@@ -215,11 +235,7 @@ contract VaultZorro is VaultBase {
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
     /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
-    /// @param _priceData A PriceData struct containing the latest prices for relevant tokens
-    function earn(
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
-    )
+    function earn(uint256 _maxMarketMovementAllowed)
         public
         override
         nonReentrant
@@ -241,18 +257,17 @@ contract VaultZorro is VaultBase {
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
     }
 
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
-    ) internal override {
+    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed, ExchangeRates memory _rates)
+        internal
+        override
+    {
         // Dummy function to implement interface
     }
 
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal override {
         // Dummy function to implement interface
     }
@@ -261,7 +276,7 @@ contract VaultZorro is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        PriceData calldata _priceData
+        ExchangeRates memory _rates
     ) internal override {
         // Dummy function to implement interface
     }

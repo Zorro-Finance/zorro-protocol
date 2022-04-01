@@ -17,6 +17,7 @@ import "../tokens/ZorroTokens.sol";
 import "../libraries/SafeSwap.sol";
 
 // TODO||: VERY IMPORTANT: Once code is done, convert all ABI encoded raw strings to .selector calls
+// TODO: VERY IMPORTANT: Make sure all .call()s are followed by a require(success). Otherwise danger.
 // TODO: Do an overall audit of the code base to see where we should emit events.
 
 contract ZorroControllerInvestment is ZorroControllerBase {
@@ -47,19 +48,20 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         IERC20(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
 
         // Call core deposit function
-        _deposit(_pid, msg.sender, _wantAmt, _weeksCommitted, block.timestamp);
+        _deposit(_pid, msg.sender, "", _wantAmt, _weeksCommitted, block.timestamp);
     }
 
     /// @notice Internal function for depositing Want tokens into Vault
     /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be called indirectly through other functions
     /// @param _pid index of pool
-    /// @param _user address of user
+    /// @param _account address of on-chain user
     /// @param _wantAmt how much Want token to deposit (must already be sent to vault contract)
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @param _enteredVaultAt Date to backdate vault entry to
     function _deposit(
         uint256 _pid,
-        address _user,
+        address _account,
+        bytes memory _foreignAccount,
         uint256 _wantAmt,
         uint256 _weeksCommitted,
         uint256 _enteredVaultAt
@@ -75,7 +77,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
-            _user,
+            _account,
+            _foreignAccount,
             _wantAmt
         );
         // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
@@ -101,7 +104,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             1e12
         );
         // Push a new tranche for this user
-        trancheInfo[_pid][_user].push(
+        trancheInfo[_pid][_account].push(
             TrancheInfo({
                 contribution: contributionAdded,
                 timeMultiplier: timeMultiplier,
@@ -112,7 +115,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             })
         );
         // Emit deposit event
-        emit Deposit(_user, _pid, _wantAmt);
+        emit Deposit(_account, _pid, _wantAmt);
     }
 
     /// @notice Deposits funds in a full service manner (performs autoswaps and obtains Want tokens)
@@ -120,13 +123,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _valueUSDC value in USDC (in ether units) to deposit
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @param _priceData struct containing relevant exchange rates for key tokens when making deposit
     function depositFullService(
         uint256 _pid,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovement
     ) public nonReentrant {
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
@@ -147,31 +148,31 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         _depositFullService(
             _pid,
             msg.sender,
+            "",
             _valueUSDC,
             _weeksCommitted,
             block.timestamp,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
     }
 
     /// @notice Private function for depositing
     /// @dev Dangerous method, as vaultEnteredAt can be backdated
     /// @param _pid index of pool to deposit into
-    /// @param _user address of user
+    /// @param _account address of user on-chain
+    /// @param _foreignAccount the cross chain wallet that initiated this call, if applicable.
     /// @param _valueUSDC value in USDC (in ether units) to deposit
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _vaultEnteredAt date that the vault was entered at
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @param _priceData struct containing relevant exchange rates for key tokens when making deposit
     function _depositFullService(
         uint256 _pid,
-        address _user,
+        address _account,
+        bytes memory _foreignAccount,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
-        uint256 _maxMarketMovement,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovement
     ) internal {
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
@@ -180,8 +181,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Exchange USDC for Want token in the Vault contract
         uint256 _wantAmt = vault.exchangeUSDForWantToken(
             _valueUSDC,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
 
         // Safe increase allowance and xfer Want to vault contract
@@ -189,7 +189,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         // Make deposit
         // Call core deposit function
-        _deposit(_pid, _user, _wantAmt, _weeksCommitted, _vaultEnteredAt);
+        _deposit(_pid, _account, _foreignAccount, _wantAmt, _weeksCommitted, _vaultEnteredAt);
     }
 
     /// @notice Fully withdraw Want tokens from underlying Vault.
@@ -218,12 +218,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
     /// @param _pid index of pool
+    /// @param _account Address of the 
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @return Amount of Want token withdrawn
     function _withdraw(
         uint256 _pid,
-        address _user,
+        address _account,
         uint256 _trancheId,
         bool _harvestOnly
     ) internal returns (uint256) {
@@ -232,7 +233,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         // Get pool and current tranche info
         PoolInfo storage pool = poolInfo[_pid];
-        TrancheInfo storage tranche = trancheInfo[_pid][_user][_trancheId];
+        TrancheInfo storage tranche = trancheInfo[_pid][_account][_trancheId];
 
         /* Preflight checks on contributions */
         require(tranche.contribution > 0, "tranche.contribution is 0");
@@ -269,7 +270,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 rewardsDue = pendingRewards;
             }
             // Transfer ZORRO rewards to user, net of any applicable slashing
-            _safeZORROTransfer(_user, rewardsDue);
+            _safeZORROTransfer(_account, rewardsDue);
             // Transfer any slashed rewards to single Zorro staking vault, if applicable
             if (slashedRewards > 0) {
                 address singleStakingVaultZORRO = poolInfo[_pid].vault;
@@ -279,7 +280,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
 
         // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-        IVault(poolInfo[_pid].vault).withdrawWantToken(_user, _harvestOnly);
+        IVault(poolInfo[_pid].vault).withdrawWantToken(_account, _harvestOnly);
 
         // Update shares safely
         pool.totalTrancheContributions = pool.totalTrancheContributions.sub(
@@ -290,10 +291,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantBal = IERC20(pool.want).balanceOf(address(this));
 
         // All withdrawals are full withdrawals so delete the tranche
-        deleteTranche(_pid, _trancheId, _user);
+        deleteTranche(_pid, _trancheId, _account);
 
         // Emit withdrawal event and return want balance
-        emit Withdraw(_user, _pid, _trancheId, _wantBal);
+        emit Withdraw(_account, _pid, _trancheId, _wantBal);
 
         return _wantBal;
     }
@@ -322,14 +323,12 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @param _priceData struct containing relevant exchange rates for key tokens when making deposit
     /// @return Amount (in USDC) returned
     function withdrawalFullService(
         uint256 _pid,
         uint256 _trancheId,
         bool _harvestOnly,
-        uint256 _maxMarketMovement,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
         uint256 _amountUSDC = _withdrawalFullService(
@@ -337,8 +336,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _pid,
             _trancheId,
             _harvestOnly,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
 
         // Send USDC funds back to sender
@@ -353,15 +351,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @param _priceData struct containing relevant exchange rates for key tokens when making deposit
-    /// @return Amount (in USDC) returned
+    /// @return uint256 Amount (in USDC) returned
     function _withdrawalFullService(
         address _account,
         uint256 _pid,
         uint256 _trancheId,
         bool _harvestOnly,
-        uint256 _maxMarketMovement,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovement
     ) internal returns (uint256) {
         // Update tranche status
         trancheInfo[_pid][_account][_trancheId].exitedVaultStartingAt = block
@@ -387,8 +383,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Exchange Want for USD
         uint256 amount = vault.exchangeWantTokenForUSD(
             _wantAmtWithdrawn,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
 
         return amount;
@@ -399,13 +394,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _fromTrancheId index of tranche FROM
     /// @param _toPid index of pool TO
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @param _priceData struct containing relevant exchange rates for key tokens when making deposit
     function transferInvestment(
         uint256 _fromPid,
         uint256 _fromTrancheId,
         uint256 _toPid,
-        uint256 _maxMarketMovement,
-        PriceData calldata _priceData
+        uint256 _maxMarketMovement
     ) public nonReentrant {
         // Get weeks committed and entered at
         uint256 weeksCommitted = trancheInfo[_fromPid][msg.sender][
@@ -420,8 +413,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _fromPid,
             _fromTrancheId,
             true,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
         // Redeposit
         address[] memory sourceTokens;
@@ -432,8 +424,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             withdrawnUSDC,
             weeksCommitted,
             enteredVaultAt,
-            _maxMarketMovement,
-            _priceData
+            _maxMarketMovement
         );
         emit TransferInvestment(msg.sender, _fromPid, _fromTrancheId, _toPid);
     }
