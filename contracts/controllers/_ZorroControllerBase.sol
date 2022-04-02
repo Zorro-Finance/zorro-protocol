@@ -76,15 +76,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         address localAccount; // Use account on chain
     }
 
-    // Stargate swaps
-    struct StargateSwapPayload {
-        uint256 chainId;
-        uint256 qty;
-        bytes dstContract;
-        bytes payload;
-        uint256 maxMarketMovement;
-    }
-
     // Info of each pool
     struct PoolInfo {
         IERC20 want; // Want token contract.
@@ -143,6 +134,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing.
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint8 public homeChainId = 0; // The chain ID of the home chain
+    // TODO: Rename this to "controllerContracts" and probably should be bytes NOT address
     mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
     mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed.
     mapping(bytes => bool) public registeredXChainControllers; // Accepted list of cross chain Zorro controllers that can call this controller
