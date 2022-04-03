@@ -455,20 +455,21 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /// @notice Update reward variables of the given pool to be up-to-date.
     /// @param _pid index of pool
-    function updatePool(uint256 _pid) public {
+    /// @return uint256 Amount of ZOR rewards minted (useful for cross chain)
+    function updatePool(uint256 _pid) public returns (uint256) {
         // Get the pool matching the given index
         PoolInfo storage pool = poolInfo[_pid];
 
         // If current block is <= last reward block, exit
         if (block.number <= pool.lastRewardBlock) {
-            return;
+            return 0;
         }
 
         // Determine how many blocks have elapsed since the last updatePool() operation for this pool
         uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
         // If no elapsed blocks have occured, exit
         if (elapsedBlocks <= 0) {
-            return;
+            return 0;
         }
 
         // Finally, multiply rewards/block by the number of elapsed blocks and the pool weighting
@@ -491,34 +492,16 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
             pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
             // Update the pool's last reward block to the current block
             pool.lastRewardBlock = block.number;
+            // Return 0, no ZOR minted because we're on chain
+            return 0;
         } else {
             // On remote chain. Cross chain pool updates required
 
             // Mint Zorro on this (remote) chain
             Zorro(ZORRO).mint(address(this), ZORROReward);
-            // Get endpoint contract
-            address homeChainEndpointContract = endpointContracts[homeChainId];
-            // Make cross-chain burn request
-            // TODO: Make this a LayerZero request
-            // XChainEndpoint(homeChainEndpointContract).sendXChainTransaction(
-            //     abi.encodePacked(homeChainZorroController),
-            //     abi.encodeWithSignature(
-            //         "receiveXChainBurnRewardsRequest(uint256 _amount)",
-            //         ZORROReward
-            //     ),
-            //     ""
-            // );
+            // Return ZOR minted
+            return ZORROReward;
         }
-    }
-
-    /// @notice Receives an authorized burn request from another chain and burns the specified amount of ZOR tokens from the public pool
-    /// @param _amount The quantity of ZOR tokens to burn
-    function receiveXChainBurnRewardsRequest(uint256 _amount)
-        external
-        onlyXChainEndpoints
-    {
-        // TODO: Make sure to put the chain ID as an argument and emit an event. It will help to keep track of burns better. 
-        Zorro(ZORRO).burn(publicPool, _amount);
     }
 
     /* Safety functions */

@@ -6,6 +6,9 @@ import "./_ZorroControllerXChain.sol";
 
 
 contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
+    /* Libraries */
+    using SafeMath for uint256;
+
     /* Fees */
 
     /* Fees::withdrawals */
@@ -59,8 +62,37 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
     /* Fees::repatriation */
 
     // TODO: Docstrings
-    function _checkXChainRepatriationFee() internal view returns (uint256) {
-        // TODO: Implement
+    function _checkXChainRepatriationFee(
+        uint256 _originChainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        bytes memory _originRecipient,
+        uint256 _burnableZORRewards
+    ) internal view returns (uint256) {
+        // Init empty LZ object
+        IStargateRouter.lzTxObj memory _lzTxParams;
+
+        // Get payload
+        bytes memory _payload = _encodeXChainRepatriationPayload(
+            _originChainId, 
+            _pid, 
+            _trancheId, 
+            _originRecipient, 
+            _burnableZORRewards
+        );
+        bytes memory _dstContract = abi.encodePacked(endpointContracts[_originChainId]);
+
+        // Calculate native gas fee and ZRO token fee (Layer Zero token)
+        (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
+            .quoteLayerZeroFee(
+                stargateZorroChainMap[_originChainId],
+                1,
+                _dstContract,
+                _payload,
+                _lzTxParams
+            );
+        
+        return _nativeFee.add(_lzFee);
     }
 
     /* Encoding (payloads) */
@@ -75,7 +107,6 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) internal pure returns (bytes memory) {
-        // TODO: Implement
         // Calculate method signature
         bytes4 _sig = this.receiveXChainWithdrawalRequest.selector;
         // Calculate abi encoded bytes for input args
@@ -157,8 +188,16 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
     /* Sending::repatriation */
 
     // TODO: Docstrings
-    function _sendXChainRepatriationRequest() internal {
+    function _sendXChainRepatriationRequest(
+
+    ) internal {
         // TODO: implement
+
+        // Prep payload
+
+        // Destination info 
+
+        // Send Stargate request
     }
 
     /* Receiving */
@@ -215,7 +254,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
 
         // Withdraw funds
-        _withdrawalFullService(
+        (,uint256 _mintedZORRewards) = _withdrawalFullService(
             _account,
             _originAccount,
             _pid,
@@ -223,15 +262,6 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
             false,
             _maxMarketMovement
         );
-
-        // TODO: Very important: Determine burnable rewards for real during:
-        /*
-        1. Deposits (xchain)
-        2. Withdrawals (xchain)
-        For now, just setting it to zero. (Dummy value)
-        */
-        uint256 _burnableZORRewards = 0;
-
 
         // Get USDC bal
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
@@ -246,7 +276,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
             _pid,
             _trancheId,
             _originAccount,
-            _burnableZORRewards
+            _mintedZORRewards
         );
         // Get origin chain destination
         bytes memory _dstContract = abi.encodePacked(endpointContracts[_originChainId]);
@@ -303,7 +333,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
         // Burn ZOR rewards as applicable (since rewards were minted on the other chain)
         if (_burnableZORRewards > 0) {
-            // TODO: Burn ZOR
+            Zorro(ZORRO).burn(publicPool, _burnableZORRewards);
         }
     }
 }

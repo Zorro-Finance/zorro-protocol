@@ -65,11 +65,12 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
 
     /// @notice Updates reward variables of all pools
     /// @dev Be careful of gas fees!
-    function massUpdatePools() public {
+    /// @return _mintedZOR total amount of ZOR rewards minted (useful for cross chain)
+    function massUpdatePools() public returns (uint256 _mintedZOR) {
         uint256 length = poolInfo.length;
         // Iterate through each pool and run updatePool()
         for (uint256 pid = 0; pid < length; ++pid) {
-            this.updatePool(pid);
+           _mintedZOR = _mintedZOR.add(this.updatePool(pid));
         }
     }
 }
