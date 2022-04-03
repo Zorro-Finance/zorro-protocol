@@ -149,7 +149,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @return uint256 Number of shares added
     function depositWantToken(
         address _account,
-        bytes memory _foreignAccount, // TODO: Docstrings for all funcs that have "foreignAccount"
+        bytes memory _foreignAccount,
         uint256 _wantAmt
     )
         public

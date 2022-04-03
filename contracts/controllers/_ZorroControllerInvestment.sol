@@ -357,7 +357,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         return (_wantBal, _mintedZORRewards);
     }
 
-    /// @notice TODO docstrings
+    /// @notice Get tranche based on tranche ID and account information 
+    /// @dev Takes into account potential cross chain identities
+    /// @param _pid Pool ID
+    /// @param _trancheId Tranche ID
+    /// @param _foreignAccount Identity of the foreign account that the tranche might be associated with 
+    /// @param _localAccount Identity of the account on the local chain that the tranche might be associated with
+    /// @return _tranche TrancheInfo object for the tranche found
     function _getTranche(
         uint256 _pid,
         uint256 _trancheId,
@@ -385,13 +391,21 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         }
     }
 
-    /// @notice TODO docstrings
+    /// @notice Pays out pending rewards
+    /// @param _pid Pool ID
+    /// @param _tranche TrancheInfo object 
+    /// @param _pendingRewards Qty of ZOR tokens as pending rewards
+    /// @param _localAccount Local account associated with tranche
     function _payPendingRewards(
         uint256 _pid,
         TrancheInfo memory _tranche,
         uint256 _pendingRewards,
         address _localAccount
     ) internal {
+        // Only process rewards > 0
+        if (_pendingRewards <= 0) {
+            return;
+        }
         // Check if this is an early withdrawal
         // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
         // If not, distribute rewards as normal

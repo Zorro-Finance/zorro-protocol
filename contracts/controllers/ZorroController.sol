@@ -21,6 +21,7 @@ import "./_ZorroControllerXChainEarn.sol";
 
 // TODO: In general, shouldn't these all be timelock contracts?
 // TODO: Make sure constructors and setters have all parameters as expected
+// TODO: General: Complete audit of docstrings and make sure they make sense
 
 /* Main Contract */
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.

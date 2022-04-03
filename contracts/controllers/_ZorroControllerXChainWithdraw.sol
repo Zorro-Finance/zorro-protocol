@@ -8,6 +8,15 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
 
+    /* Events */
+    event XChainRepatriation(
+        uint256 indexed _pid,
+        address indexed _originRecipient,
+        uint256 indexed _burnableZORRewards,
+        uint256 _trancheId,
+        uint256 _originChainId
+    );
+
     /* Fees */
 
     /* Fees::withdrawals */
@@ -65,7 +74,13 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
     /* Fees::repatriation */
 
-    // TODO: Docstrings
+    /// @notice Estimates fees for repatriation operation
+    /// @param _originChainId Zorro chain ID of chain to which funds are to be repatriated to
+    /// @param _pid Pool ID on current chain
+    /// @param _trancheId ID of tranche on current chain that funds were withdrawn from
+    /// @param _originRecipient Recipient of funds on the origin chain
+    /// @param _burnableZORRewards Quantity of ZOR tokens minted for rewards here that need to be burned on the home chain
+    /// @return uint256 Estimated fee in native tokens
     function _checkXChainRepatriationFee(
         uint256 _originChainId,
         uint256 _pid,
@@ -105,7 +120,13 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
     /* Encoding::withdrawals */
 
-    // TODO: docstrings
+    /// @notice Encodes payload for making cross chan withdrawal
+    /// @param _originChainId Chain that withdrawal request originated from
+    /// @param _originAccount Account on origin chain that withdrawal request originated from
+    /// @param _pid Pool ID on remote chain
+    /// @param _trancheId Tranche ID on remote chain
+    /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
+    /// @return bytes ABI encoded payload
     function _encodeXChainWithdrawalPayload(
         uint256 _originChainId,
         bytes memory _originAccount,
@@ -129,7 +150,13 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
     /* Encoding::repatriation */
 
-    // TODO: docstrings
+    /// @notice Encodes payload for making cross chain repatriation
+    /// @param _originChainId Zorro chain ID of chain that funds shall be repatriated back to
+    /// @param _pid Pool ID on current chain that withdrawal came from
+    /// @param _trancheId Tranche ID on current chain that withdrawal came from
+    /// @param _originRecipient Recipient on home chain that repatriated funds shall be sent to
+    /// @param _burnableZORRewards Qty of minted ZOR that needs to be burned on the home chain
+    /// @return bytes ABI encoded payload
     function _encodeXChainRepatriationPayload(
         uint256 _originChainId,
         uint256 _pid,
@@ -197,7 +224,14 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
     /* Sending::repatriation */
 
-    // TODO: Docstrings
+    /// @notice Prepares and sends cross chain repatriation request via Stargate
+    /// @param _originChainId Chain ID of origin chain that repatriation shall go to
+    /// @param _pid Pool ID on current chain that withdrawal came from
+    /// @param _trancheId Tranche ID on current chain that withdrawal came from
+    /// @param _originRecipient Recipient on home chain that repatriate funds shall go to
+    /// @param _amountUSDC Amount withdrawn, to be repatriated
+    /// @param _burnableZORRewards ZOR rewards minted, to be burned from the public pool on the home chain
+    /// @param _maxMarketMovementAllowed Acceptable slippage (950 = 5%, 990 = 1%, etc.)
     function _sendXChainRepatriationRequest(
         uint256 _originChainId,
         uint256 _pid,
@@ -258,7 +292,12 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         );
     }
 
-    // TODO: docstrings
+    /// @notice Handler for receiving withdrawal requests
+    /// @param _originChainId Zorro Chain ID of the chain that this request came from
+    /// @param _originAccount Wallet address of sender who initiated this request on the origin chain
+    /// @param _pid Pool ID to withdraw from
+    /// @param _trancheId Tranche ID to withdraw from
+    /// @param _maxMarketMovement Slippage factor (e.g. 950 = 5%, 990 = 1%, etc.)
     function _receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
@@ -347,7 +386,14 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         bytes memory _originRecipient,
         uint256 _burnableZORRewards
     ) internal {
-        // Emit repatriation event TODO
+        // Emit repatriation event
+        emit XChainRepatriation(
+            _pid,
+            abi.decode(_originRecipient, (address)),
+            _burnableZORRewards,
+            _trancheId,
+            _originChainId
+        );
 
         // Burn ZOR rewards as applicable (since rewards were minted on the other chain)
         if (_burnableZORRewards > 0) {
