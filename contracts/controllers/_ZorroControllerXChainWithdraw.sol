@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChain.sol";
 
-
 contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
@@ -25,15 +24,15 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) external view returns (uint256) {
-        // Get destination 
+        // Get destination
         uint16 _dstChainId = stargateZorroChainMap[_zorroChainId];
 
         // Prepare encoding
         bytes memory _payload = _encodeXChainWithdrawalPayload(
             chainId,
-            abi.encodePacked(msg.sender),  
-            _pid, 
-            _trancheId, 
+            abi.encodePacked(msg.sender),
+            _pid,
+            _trancheId,
             _maxMarketMovement
         );
 
@@ -41,19 +40,24 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         bytes memory _adapterParams = _getLZAdapterParamsForWithdraw();
 
         // Query LayerZero for quote
-        (uint256 _nativeFee,) = ILayerZeroEndpoint(layerZeroEndpoint).estimateFees(
-            _dstChainId, 
-            address(this), 
-            _payload, 
-            false, 
-            _adapterParams
-        );
-        // TODO: Check if we need to sum these values or what? Need to better understand fee estimation in general: Oracle, relayer fees etc. 
+        (uint256 _nativeFee, ) = ILayerZeroEndpoint(layerZeroEndpoint)
+            .estimateFees(
+                _dstChainId,
+                address(this),
+                _payload,
+                false,
+                _adapterParams
+            );
+        // TODO: Check if we need to sum these values or what? Need to better understand fee estimation in general: Oracle, relayer fees etc.
         return _nativeFee;
     }
 
     /// @notice Encodes adapter params to provide more gas for destination
-    function _getLZAdapterParamsForWithdraw() internal pure returns (bytes memory) {
+    function _getLZAdapterParamsForWithdraw()
+        internal
+        pure
+        returns (bytes memory)
+    {
         uint16 _version = 1;
         uint256 _gasForDestinationLZReceive = 350000;
         return abi.encodePacked(_version, _gasForDestinationLZReceive);
@@ -74,13 +78,15 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
 
         // Get payload
         bytes memory _payload = _encodeXChainRepatriationPayload(
-            _originChainId, 
-            _pid, 
-            _trancheId, 
-            _originRecipient, 
+            _originChainId,
+            _pid,
+            _trancheId,
+            _originRecipient,
             _burnableZORRewards
         );
-        bytes memory _dstContract = abi.encodePacked(endpointContracts[_originChainId]);
+        bytes memory _dstContract = abi.encodePacked(
+            endpointContracts[_originChainId]
+        );
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
         (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
@@ -91,7 +97,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
                 _payload,
                 _lzTxParams
             );
-        
+
         return _nativeFee.add(_lzFee);
     }
 
@@ -164,40 +170,66 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
     ) external payable nonReentrant {
         // Prep payload
         bytes memory _payload = _encodeXChainWithdrawalPayload(
-            chainId, 
+            chainId,
             abi.encodePacked(msg.sender),
             _pid,
-            _trancheId, 
+            _trancheId,
             _maxMarketMovement
         );
 
         // Destination info
-        bytes memory _dstContract = abi.encodePacked(endpointContracts[_destZorroChainId]);
+        bytes memory _dstContract = abi.encodePacked(
+            endpointContracts[_destZorroChainId]
+        );
 
         // Send LayerZero request
-        _callLZSend(LZMessagePayload({
-            zorroChainId: _destZorroChainId,
-            destinationContract: _dstContract,
-            payload: _payload,
-            refundAddress: payable(msg.sender),
-            _zroPaymentAddress: address(0),
-            adapterParams: _getLZAdapterParamsForWithdraw()
-        }));
+        _callLZSend(
+            LZMessagePayload({
+                zorroChainId: _destZorroChainId,
+                destinationContract: _dstContract,
+                payload: _payload,
+                refundAddress: payable(msg.sender),
+                _zroPaymentAddress: address(0),
+                adapterParams: _getLZAdapterParamsForWithdraw()
+            })
+        );
     }
 
     /* Sending::repatriation */
 
     // TODO: Docstrings
     function _sendXChainRepatriationRequest(
-
+        uint256 _originChainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        bytes memory _originRecipient,
+        uint256 _amountUSDC,
+        uint256 _burnableZORRewards,
+        uint256 _maxMarketMovementAllowed
     ) internal {
-        // TODO: implement
-
         // Prep payload
-
-        // Destination info 
+        bytes memory _payload = _encodeXChainRepatriationPayload(
+            _originChainId,
+            _pid,
+            _trancheId,
+            _originRecipient,
+            _burnableZORRewards
+        );
+        // Destination info
+        bytes memory _dstContract = abi.encodePacked(
+            endpointContracts[_originChainId]
+        );
 
         // Send Stargate request
+        _callStargateSwap(
+            StargateSwapPayload({
+                chainId: _originChainId,
+                qty: _amountUSDC,
+                dstContract: _dstContract,
+                payload: _payload,
+                maxMarketMovement: _maxMarketMovementAllowed
+            })
+        );
     }
 
     /* Receiving */
@@ -250,11 +282,8 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
             }
         }
 
-        // Get tranche
-        TrancheInfo memory tranche = trancheInfo[_pid][_account][_trancheId];
-
         // Withdraw funds
-        (,uint256 _mintedZORRewards) = _withdrawalFullService(
+        (, uint256 _mintedZORRewards) = _withdrawalFullService(
             _account,
             _originAccount,
             _pid,
@@ -270,25 +299,14 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         require(_balUSDC > 0, "Nothing to withdraw");
 
         // Repatriate funds
-        // Get payload
-        bytes memory _payload = _encodeXChainRepatriationPayload(
+        _sendXChainRepatriationRequest(
             _originChainId,
             _pid,
             _trancheId,
             _originAccount,
-            _mintedZORRewards
-        );
-        // Get origin chain destination
-        bytes memory _dstContract = abi.encodePacked(endpointContracts[_originChainId]);
-        // Call Stargate
-        _callStargateSwap(
-            StargateSwapPayload({
-                chainId: _originChainId,
-                qty: _balUSDC,
-                dstContract: _dstContract,
-                payload: _payload,
-                maxMarketMovement: _maxMarketMovement
-            })
+            _balUSDC,
+            _mintedZORRewards,
+            _maxMarketMovement
         );
     }
 

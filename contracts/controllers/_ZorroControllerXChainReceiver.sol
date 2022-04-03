@@ -84,14 +84,7 @@ contract ZorroControllerXChainReceiver is
                 uint256 _burnableZORRewards
             ) = abi.decode(
                     payload,
-                    (
-                        bytes4,
-                        uint256,
-                        uint256,
-                        uint256,
-                        bytes,
-                        uint256
-                    )
+                    (bytes4, uint256, uint256, uint256, bytes, uint256)
                 );
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
@@ -112,7 +105,46 @@ contract ZorroControllerXChainReceiver is
         uint64 _nonce,
         bytes calldata _payload
     ) external override {
-        // TODO: Implement in a similar way to sgReceive().
-        // Need receiveXChainWithdrawalRequest
+        // Map to Zorro chain ID
+        uint256 _zorroOriginChainId = zorroStargateChainMap[_srcChainId];
+        
+        // Access
+        // Src address is a valid controller
+        // TODO: Might need to validate that the srcAddress is on the expected chain too
+        require(
+            registeredXChainControllers[_srcAddress],
+            "unrecognized controller"
+        );
+
+        // Determine function based on signature
+        // Get func signature
+        bytes4 _funcSig = bytes4(_payload);
+        // Match to appropriate func
+        if (this.receiveXChainWithdrawalRequest.selector == _funcSig) {
+            // Decode params
+            (
+                ,
+                uint256 _originChainId,
+                bytes memory _originAccount,
+                uint256 _pid,
+                uint256 _trancheId,
+                uint256 _maxMarketMovement
+            ) = abi.decode(
+                    _payload,
+                    (bytes4, uint256, bytes, uint256, uint256, uint256)
+                );
+
+            // Call receiving function for cross chain withdrawals
+            // Replace _valueUSDC to account for any slippage during bridging
+            _receiveXChainWithdrawalRequest(
+                _originChainId,
+                _originAccount,
+                _pid,
+                _trancheId,
+                _maxMarketMovement
+            );
+        } else {
+            revert("Unrecognized func");
+        }
     }
 }
