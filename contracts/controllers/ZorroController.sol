@@ -19,7 +19,6 @@ import "./_ZorroControllerXChainWithdraw.sol";
 import "./_ZorroControllerXChainEarn.sol";
 
 
-// TODO: In general, shouldn't these all be timelock contracts?
 // TODO: Make sure constructors and setters have all parameters as expected
 // TODO: General: Complete audit of docstrings and make sure they make sense
 
@@ -38,9 +37,9 @@ contract ZorroController is
     /// @param _timelockOwner address of owner (should be a timelock)
     /// @param _lockUSDCController The address of the lock for USDC
     /// @param _homeChainZorroController The address of the home chain Zorro controller contract
-    /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, token0 of the LP pool, and token1 of the pool
+    /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, the counterparty token to the ZOR LP pool
     /// @param _chainId The ID of the chain that this contract is being deployed on
-    /// @param _priceFeeds Array of Chainlink price feeds: [_priceFeedLPPoolToken0, _priceFeedLPPoolToken1]
+    /// @param _priceFeeds Array of Chainlink price feeds: [priceFeedZOR, priceFeedLPPoolOtherToken]
     /// @param _zorroControllerOracle Address of Zorro Chainlink oracle for controller
     /// @param _zorroControllerOracleJobIds Job ID array of Zorro Chainlink price oracle, Emissions oracle
     constructor(
@@ -66,11 +65,10 @@ contract ZorroController is
         require(_homeChainZorroController != address(0), "cannot be 0 addr");
         homeChainZorroController = _homeChainZorroController;
         zorroLPPool = _zorroLPPoolAddresses[0];
-        zorroLPPoolToken0 = _zorroLPPoolAddresses[1];
-        zorroLPPoolToken1 = _zorroLPPoolAddresses[2];
+        zorroLPPoolOtherToken = _zorroLPPoolAddresses[1];
         chainId = _chainId;
-        _priceFeedLPPoolToken0 = AggregatorV3Interface(_priceFeeds[0]);
-        _priceFeedLPPoolToken1 = AggregatorV3Interface(_priceFeeds[1]);
+        priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
         zorroControllerOracle = _zorroControllerOracle;
         zorroControllerOraclePriceJobId = _zorroControllerOracleJobIds[0];
         zorroControllerOracleEmissionsJobId = _zorroControllerOracleJobIds[1];

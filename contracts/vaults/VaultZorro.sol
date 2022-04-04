@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
+
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -10,6 +11,7 @@ contract VaultZorro is VaultBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
     /// @notice Constructor
@@ -60,7 +62,6 @@ contract VaultZorro is VaultBase {
     /// @return uiint256 Number of shares added
     function depositWantToken(
         address _account,
-        bytes memory _foreignAccount,
         uint256 _wantAmt
     )
         public
@@ -116,7 +117,7 @@ contract VaultZorro is VaultBase {
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -143,12 +144,11 @@ contract VaultZorro is VaultBase {
 
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _account address of user
-    /// @param _harvestOnly unused for this function (only here to comply with interface)
+    /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 the number of shares removed
     function withdrawWantToken(
         address _account,
-        bytes memory _foreignAccount,
-        bool _harvestOnly
+        uint256 _wantAmt
     )
         public
         override
@@ -157,11 +157,8 @@ contract VaultZorro is VaultBase {
         nonReentrant
         returns (uint256)
     {
-        uint256 _userNumShares = userShares[_account];
-        uint256 _wantAmt = IERC20(wantAddress)
-            .balanceOf(address(this))
-            .mul(_userNumShares)
-            .div(sharesTotal);
+        // Preflight checks
+        require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -217,7 +214,7 @@ contract VaultZorro is VaultBase {
         );
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(

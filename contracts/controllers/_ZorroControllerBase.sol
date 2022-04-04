@@ -118,8 +118,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     int128 public curveSyntheticStablecoinIndex; // Index in Curve metapool of synthetic stablecoin (e.g. zUSDC)
     // Zorro LP pool
     address public zorroLPPool; // Main pool for Zorro liquidity
-    address public zorroLPPoolToken0; // For the dominant LP pool, the 0th token (usually ZOR)
-    address public zorroLPPoolToken1; // For the dominant LP pool, the 1st token
+    address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
     // Uni swaps
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
@@ -151,8 +150,10 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
 
     // Oracles
-    AggregatorV3Interface internal _priceFeedLPPoolToken0;
-    AggregatorV3Interface internal _priceFeedLPPoolToken1;
+    // TODO: Need constructors/setters.
+    AggregatorV3Interface public priceFeedZOR;
+    AggregatorV3Interface public priceFeedLPPoolOtherToken;
+    // TODO: Are these below even needed anymore? Perhaps we're only doing CL price feeds
     address public zorroControllerOracle;
     uint256 public zorroControllerOracleFee;
     bytes32 public zorroControllerOraclePriceJobId;
@@ -266,12 +267,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         zorroLPPool = _zorroLPPool;
     }
 
-    function setZorroLPPoolToken0(address _token0) external onlyOwner {
-        zorroLPPoolToken0 = _token0;
-    }
-
-    function setZorroLPPoolToken1(address _token1) external onlyOwner {
-        zorroLPPoolToken1 = _token1;
+    function setZorroLPPoolOtherToken(address _token) external onlyOwner {
+        zorroLPPoolOtherToken = _token;
     }
 
     function setZorroStakingVault(address _zorroStakingVault)
@@ -326,18 +323,18 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         defaultMaxMarketMovement = _defaultMaxMarketMovement;
     }
 
-    function setPriceFeedLPPoolToken0(address _priceFeedLPPoolToken)
+    function setPriceFeedZOR(address _priceFeedZOR)
         external
         onlyOwner
     {
-        _priceFeedLPPoolToken0 = AggregatorV3Interface(_priceFeedLPPoolToken);
+        priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
     }
 
-    function setPriceFeedLPPoolToken1(address _priceFeedLPPoolToken)
+    function setPriceFeedLPPoolOtherToken(address _priceFeedLPPoolOtherToken)
         external
         onlyOwner
     {
-        _priceFeedLPPoolToken1 = AggregatorV3Interface(_priceFeedLPPoolToken);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeedLPPoolOtherToken);
     }
 
     function setZorroControllerOracle(address _zorroControllerOracle) external onlyOwner {

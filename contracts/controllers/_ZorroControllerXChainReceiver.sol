@@ -74,7 +74,6 @@ contract ZorroControllerXChainReceiver is
             );
         } else if (this.receiveXChainRepatriationRequest.selector == _funcSig) {
             // Decode params from payload
-            // TODO: Make sure not to get _chainIds mixed up here
             (
                 ,
                 uint256 _originChainId,
@@ -93,6 +92,23 @@ contract ZorroControllerXChainReceiver is
                 _trancheId,
                 _originRecipient,
                 _burnableZORRewards
+            );
+        } else if (this.receiveXChainDistributionRequest.selector == _funcSig) {
+            // Decode params from payload
+            (
+                ,
+                uint256 _remoteChainId, 
+                uint256 _amountUSDCBuyback, 
+                uint256 _amountUSDCRevShare
+            ) = abi.decode(
+                payload,
+                (bytes4, uint256, uint256, uint256)
+            );
+            // Forward request to distribution function
+            _receiveXChainDistributionRequest(
+                _remoteChainId, 
+                _amountUSDCBuyback, 
+                _amountUSDCRevShare
             );
         } else {
             revert("Unrecognized func");

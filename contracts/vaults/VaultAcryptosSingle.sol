@@ -18,6 +18,9 @@ import "./_VaultBase.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
+import "../libraries/PriceFeed.sol";
+
+
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {
     /* Libraries */
@@ -25,6 +28,7 @@ contract VaultAcryptosSingle is VaultBase {
     using SafeERC20 for IERC20;
     using SafeSwapBalancer for IBalancerVault;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
     /// @notice Constructor
@@ -149,7 +153,6 @@ contract VaultAcryptosSingle is VaultBase {
     /// @return uint256 Number of shares added
     function depositWantToken(
         address _account,
-        bytes memory _foreignAccount,
         uint256 _wantAmt
     )
         public
@@ -211,7 +214,7 @@ contract VaultAcryptosSingle is VaultBase {
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Swap USDC for tokens
 
@@ -299,12 +302,11 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account The address of the owner of vault investment
-    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
+    /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 The number of shares removed
     function withdrawWantToken(
         address _account,
-        bytes memory _foreignAccount,
-        bool _harvestOnly
+        uint256 _wantAmt
     )
         public
         virtual
@@ -314,14 +316,8 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        uint256 _wantAmt = 0;
-        if (!_harvestOnly) {
-            uint256 _userNumShares = userShares[_account];
-            _wantAmt = IERC20(wantAddress)
-                .balanceOf(address(this))
-                .mul(_userNumShares)
-                .div(sharesTotal);
-        }
+        // Preflight checks
+        require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -393,7 +389,7 @@ contract VaultAcryptosSingle is VaultBase {
         IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _amount);
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Swap Token0 for USDC
         // Get Token0 balance
@@ -439,10 +435,10 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
-        uint256 _earnTokenExchangeRate = getExchangeRate(earnTokenPriceFeed);
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
-        uint256 _ZORExchangeRate = getExchangeRate(ZORPriceFeed);
-        uint256 _lpPoolOtherTokenExchangeRate = getExchangeRate(ZORPriceFeed);
+        uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
+        uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
             earn: _earnTokenExchangeRate,

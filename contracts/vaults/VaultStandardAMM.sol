@@ -20,6 +20,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/SafeSwap.sol";
 
+import "../libraries/PriceFeed.sol";
+
+
 // TODO: Allow depositing/withdrawing using foreign addresses. Do this for all vault contracts
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
@@ -28,6 +31,7 @@ contract VaultStandardAMM is VaultBase {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
     /// @notice Constructor
@@ -97,7 +101,6 @@ contract VaultStandardAMM is VaultBase {
     /// @return Number of shares added
     function depositWantToken(
         address _account,
-        bytes memory _foreignAccount,
         uint256 _wantAmt
     )
         public
@@ -158,8 +161,8 @@ contract VaultStandardAMM is VaultBase {
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
-        uint256 _token1ExchangeRate = getExchangeRate(token1PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
         // For single token pools, simply swap to Want token right away
         if (isSingleAssetDeposit) {
@@ -262,13 +265,12 @@ contract VaultStandardAMM is VaultBase {
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _account address of user
-    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
-    /// @return The number of shares removed
+    /// @param _account Address of user
+    /// @param _wantAmt The amount of Want token to withdraw
+    /// @return uint256 The number of shares removed
     function withdrawWantToken(
         address _account,
-        bytes memory _foreignAccount,
-        bool _harvestOnly
+        uint256 _wantAmt
     )
         public
         override
@@ -277,14 +279,8 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        uint256 _wantAmt = 0;
-        if (!_harvestOnly) {
-            uint256 _userNumShares = userShares[_account];
-            _wantAmt = IERC20(wantAddress)
-                .balanceOf(address(this))
-                .mul(_userNumShares)
-                .div(sharesTotal);
-        }
+        // Preflight checks
+        require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -353,8 +349,8 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
-        uint256 _token1ExchangeRate = getExchangeRate(token1PriceFeed);
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
         // Check if vault is for single asset staking
         if (isSingleAssetDeposit) {
@@ -486,11 +482,11 @@ contract VaultStandardAMM is VaultBase {
         uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
-        uint256 _earnTokenExchangeRate = getExchangeRate(earnTokenPriceFeed);
-        uint256 _token0ExchangeRate = getExchangeRate(token0PriceFeed);
-        uint256 _token1ExchangeRate = getExchangeRate(token1PriceFeed);
-        uint256 _ZORExchangeRate = getExchangeRate(ZORPriceFeed);
-        uint256 _lpPoolOtherTokenExchangeRate = getExchangeRate(ZORPriceFeed);
+        uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
+        uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
+        uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
             earn: _earnTokenExchangeRate,

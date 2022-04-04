@@ -93,14 +93,14 @@ contract ZorroControllerXChainDeposit is ZorroControllerXChain {
 
     /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
     /// @dev Requires appropriate fee to be paid via msg.value (use checkXChainDepositFee() above)
-    /// @param _chainId The Zorro Chain ID (not the LayerZero one)
+    /// @param _zorroChainId The Zorro Chain ID (not the LayerZero one)
     /// @param _pid The pool ID on the remote chain
     /// @param _valueUSDC The amount of USDC to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _destWallet A valid address on the remote chain that can claim ownership
     function sendXChainDepositRequest(
-        uint256 _chainId,
+        uint256 _zorroChainId,
         uint256 _pid,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
@@ -137,13 +137,12 @@ contract ZorroControllerXChainDeposit is ZorroControllerXChain {
         );
 
         // Get the destination contract address on the remote chain
-        // TODO: Clarify _chainId: Is it L0 or Zorro? All func args should be explicit
-        bytes memory _dstContract = abi.encodePacked(endpointContracts[_chainId]);
+        bytes memory _dstContract = abi.encodePacked(endpointContracts[_zorroChainId]);
 
         // Call stargate to initiate bridge
         _callStargateSwap(
             StargateSwapPayload({
-                chainId: _chainId,
+                chainId: _zorroChainId,
                 qty: _balUSDC,
                 dstContract: _dstContract,
                 payload: _payload,

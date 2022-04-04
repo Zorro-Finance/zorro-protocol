@@ -19,15 +19,13 @@ interface IVault {
 
     function depositWantToken(
         address _account,
-        bytes memory _foreignAccount,
         uint256 _wantAmt
     ) external returns (uint256);
 
     // Withdrawals
     function withdrawWantToken(
         address _account,
-        bytes memory _foreignAccount,
-        bool _harvestOnly
+        uint256 _wantAmt
     ) external returns (uint256);
 
     function exchangeWantTokenForUSD(

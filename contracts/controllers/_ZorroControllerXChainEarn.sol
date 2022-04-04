@@ -4,256 +4,189 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChain.sol";
 
-
 contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
-    // TODO: Make this a LayerZero call
-    /// @notice Sends a request to the remote chain to unlock and burn temporarily withheld USDC. To be called after a successful withdrawal
-    /// @dev Internal function, only to be called by receiveXChainRepatriationRequest()
-    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
-    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
-    /// @param _chainId The Zorro destination chain ID so that the request can be routed to the appropriate chain
-    /// @param _destinationContract The address of the contract on the remote chain to send the unlock request to
-    function _sendXChainUnlockRequest(
-        address _account,
-        uint256 _amountUSDC,
-        uint256 _chainId,
-        bytes memory _destinationContract
-    ) internal {
-        // TODO: Replace entire call with a LayerZero request to the other chain. Q: How to deal with uncertain fee calculations?
-        // Get endpoint contract
-        address _endpointContract = endpointContracts[_chainId];
+    /* Events */
+    event XChainDistributeEarnings(
+        uint256 indexed _remoteChainId,
+        uint256 indexed _buybackAmountUSDC,
+        uint256 indexed _revShareAmountUSDC
+    );
 
-        // Prepare cross chain request
-        (bool success, bytes memory data) = _endpointContract.call(
-            abi.encodeWithSignature(
-                "encodeUnlockRequest(address _account,uint256 _amountUSDC)",
-                _account,
-                _amountUSDC
-            )
+    /* Fees */
+
+    /// @notice Checks to see how much a cross chain earnings distribution will cost
+    /// @param _amountUSDCBuyback Amount of USDC to buy back
+    /// @param _amountUSDCRevShare Amount of USDC to rev share with ZOR single staking vault
+    /// @return uint256 Quantity of native token as fees
+    function checkXChainDistributeEarningsFee(
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare
+    ) external view returns (uint256) {
+        // Init empty LZ object
+        IStargateRouter.lzTxObj memory _lzTxParams;
+
+        // Get payload
+        bytes memory _payload = _encodeXChainDistributeEarningsPayload(
+            chainId,
+            _amountUSDCBuyback,
+            _amountUSDCRevShare
         );
-        require(success, "Unsuccessful serialize unlock");
-        bytes memory _payload = abi.decode(data, (bytes));
+        bytes memory _dstContract = abi.encodePacked(endpointContracts[homeChainId]);
 
-        // Call contract layer
-        (bool success1, ) = _endpointContract.call(
-            abi.encodeWithSignature(
-                "sendXChainTransaction(bytes calldata _destinationContract,bytes calldata _payload)",
-                _destinationContract,
-                _payload
-            )
-        );
-        // Require successful call
-        require(success1, "Unsuccessful xchain unlock");
+        // Calculate native gas fee and ZRO token fee (Layer Zero token)
+        (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
+            .quoteLayerZeroFee(
+                stargateZorroChainMap[homeChainId],
+                1,
+                _dstContract,
+                _payload,
+                _lzTxParams
+            );
+        // TODO: Q: Is it the sum of these fees or just one?
+        return _nativeFee.add(_lzFee);
     }
 
-    // TODO This should be called from a LayerZero receiver
-    /// @notice Receives a request from home chain to unlock and burn temporarily withheld USDC.
-    /// @param _account The address of the wallet (cross chain identity) to unlock funds for
-    /// @param _amountUSDC The amount in USDC that should be unlocked and burned
-    function receiveXChainUnlockRequest(
-        address _account,
-        uint256 _amountUSDC,
-        bytes memory _xChainOrigin,
-        bytes memory _xChainSender
-    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // // Get controller
-        // TokenLockController lockController = TokenLockController(
-        //     lockUSDCController
-        // );
-        // // Unlock user funds & burn
-        // lockController.unlockFunds(_account, _amountUSDC, burnAddress);
+    /* Encoding (payloads) */
+
+    /// @notice Encodes payload for making cross chan earnings distribution request
+    /// @param _remoteChainId Zorro chain ID of the chain making the distribution request
+    /// @param _amountUSDCBuyback Amount in USDC to buy back
+    /// @param _amountUSDCRevShare Amount in USDC to rev share with ZOR staking vault
+    /// @return bytes ABI encoded payload
+    function _encodeXChainDistributeEarningsPayload(
+        uint256 _remoteChainId,
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare
+    ) internal pure returns (bytes memory) {
+        // Calculate method signature
+        bytes4 _sig = this.receiveXChainDistributionRequest.selector;
+        // Calculate abi encoded bytes for input args
+        bytes memory _inputs = abi.encode(
+            _remoteChainId,
+            _amountUSDCBuyback,
+            _amountUSDCRevShare
+        );
+        // Concatenate bytes of signature and inputs
+        return bytes.concat(_sig, _inputs);
     }
 
-    /* Earnings/Distribution */
-
-    /// @notice Prepares and sends an earnings distribution request cross-chain (back to the home chain)
-    /// @param _pid The pool ID associated with the vault which experienced earnings
-    /// @param _buybackAmountUSDC The amount of USDC to buyback
-    /// @param _revShareAmountUSDC The amount of USDC to share as revenue to the ZOR staking vault
-    function distributeEarningsXChain(
+    /* Sending */
+    
+    /// @notice Sends a request back to the home chain to distribute earnings
+    /// @param _pid Pool ID
+    /// @param _buybackAmountUSDC Amount in USDC to buy back
+    /// @param _revShareAmountUSDC Amount in USDC to revshare w/ ZOR single staking vault
+    /// @param _maxMarketMovement Acceptable slippage (950 = 5%, 990 = 1% etc.)
+    function sendXChainDistributeEarningsRequest(
         uint256 _pid,
         uint256 _buybackAmountUSDC,
-        uint256 _revShareAmountUSDC
-    ) public onlyRegisteredVault(_pid) {
-        /* 
-        TODO Convert this to a LayerZero call
+        uint256 _revShareAmountUSDC,
+        uint256 _maxMarketMovement
+    ) public payable nonReentrant onlyRegisteredVault(_pid) {
+        // Require funds to be submitted with this message
+        require(msg.value > 0, "No fees submitted");
 
-        // Check lock to see if anything is pending for this block and pool. If so, revert
-        require(
-            lockedEarningsStatus[block.number][_pid] == 0,
-            "Xchain earnings lock pending"
-        );
+        // Calculate total USDC to transfer
+        uint256 _totalUSDC = _buybackAmountUSDC.add(_revShareAmountUSDC);
 
-        // Lock USDC on a ledger for this block and pid, with status of pending
-        uint256 _amountUSDC = IERC20(defaultStablecoin).balanceOf(
-            address(this)
-        );
-        TokenLockController(lockUSDCController).lockFunds(
+        // Allow this contract to spend USDC
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
             address(this),
-            _amountUSDC
-        );
-        lockedEarningsStatus[block.number][_pid] = 1;
-
-        // Fetch xchain endpoint for home chain
-        XChainEndpoint xChainEndpoint = XChainEndpoint(
-            endpointContracts[homeChainId]
+            _totalUSDC
         );
 
-        // Construct payload
-        bytes memory _payload = abi.encodeWithSignature(
-            "receiveXChainDistributionRequest(uint256 _chainId,bytes _callbackContract,uint256 _amountUSDCBuyback,uint256 _amountUSDCRevShare,uint256 _failedAmountUSDCBuyback,uint256 _failedAmountUSDCRevShare)",
+        // Transfer USDC into this contract
+        IERC20(defaultStablecoin).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _totalUSDC
+        );
+
+        // Check balances
+        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+
+        // Generate payload
+        bytes memory _payload = _encodeXChainDistributeEarningsPayload(
             chainId,
-            abi.encode(address(this)),
             _buybackAmountUSDC,
-            _revShareAmountUSDC,
-            failedLockedBuybackUSDC,
-            failedLockedRevShareUSDC
+            _revShareAmountUSDC
         );
 
-        // Call?
+        // Get the destination contract address on the remote chain
+        bytes memory _dstContract = abi.encodePacked(
+            endpointContracts[chainId]
+        );
 
-        */
+        // Call stargate to initiate bridge
+        _callStargateSwap(
+            StargateSwapPayload({
+                chainId: homeChainId,
+                qty: _balUSDC,
+                dstContract: _dstContract,
+                payload: _payload,
+                maxMarketMovement: _maxMarketMovement
+            })
+        );
     }
 
-    /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
-    /// @param _chainId The ID of the chain that this request originated from
-    /// @param _callbackContract Address of destination contract in bytes for the callback
-    /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
-    /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
-    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
-    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
-    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
+    /* Receiving */
+
+    /// @notice Dummy func to allow .selector call above and guarantee typesafety for abi calls.
+    /// @dev Should never ever be actually called.
     function receiveXChainDistributionRequest(
-        uint256 _chainId,
-        bytes calldata _callbackContract,
+        uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
-        uint256 _failedAmountUSDCBuyback,
-        uint256 _failedAmountUSDCRevShare,
-        bytes memory _xChainOrigin,
-        bytes memory _xChainSender
-    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // Make Chainlink request to get ZOR price
-        // TODO: Don't do a Chainlink direct request. Use price feeds instead (i.e. no need for a callback func so merge its contents here)
-        // Chainlink.Request memory req = buildChainlinkRequest(
-        //     zorroControllerOraclePriceJobId,
-        //     address(this),
-        //     this.buybackAndRevShareCallback.selector
-        // );
-        // req.addBytes("chainId", abi.encodePacked(_chainId));
-        // req.addBytes("callbackContract", abi.encodePacked(_callbackContract));
-        // req.addBytes("amountUSDCBuyback", abi.encodePacked(_amountUSDCBuyback));
-        // req.addBytes(
-        //     "amountUSDCRevShare",
-        //     abi.encodePacked(_amountUSDCRevShare)
-        // );
-        // req.addBytes(
-        //     "failedAmountUSDCBuyback",
-        //     abi.encodePacked(_failedAmountUSDCBuyback)
-        // );
-        // req.addBytes(
-        //     "failedAmountUSDCRevShare",
-        //     abi.encodePacked(_failedAmountUSDCRevShare)
-        // );
-        // sendChainlinkRequestTo(
-        //     zorroControllerOracle,
-        //     req,
-        //     zorroControllerOracleFee
-        // );
-    }
+        uint256 _amountUSDCRevShare
+    ) public {
+        // Revert to make sure this function never gets called
+        revert("illegal dummy func call");
 
-    /// @notice Receives cross chain request for burning any temporarily locked funds for earnings
-    /// @param _amountUSDCBuyback The amount in USDC that was bought back
-    /// @param _amountUSDCRevShare The amount in USDC that was rev-shared
-    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that was successfully retried
-    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that was successfully retried
-    /// @param _xChainOrigin Address of the original sender (in bytes) on the remote chain (equiv to tx.origin). Injected by endpoint contract after verifying proof
-    function receiveBurnLockedEarningsRequest(
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
-        uint256 _failedAmountUSDCBuyback,
-        uint256 _failedAmountUSDCRevShare,
-        bytes memory _xChainOrigin,
-        bytes memory _xChainSender
-    ) external onlyXChainEndpoints onlyXChainZorroControllers(_xChainSender) {
-        // TODO: We can probably get rid of this entire function
-        // Calculate total amount to unlock and burn
-        uint256 _totalBurnableUSDC = _amountUSDCBuyback
-            .add(_amountUSDCRevShare)
-            .add(_failedAmountUSDCBuyback)
-            .add(_failedAmountUSDCRevShare);
-        // Unlock + burn
-        // TokenLockController(lockUSDCController).unlockFunds(
-        //     address(this),
-        //     _totalBurnableUSDC,
-        //     burnAddress
-        // );
-        // Decrement any failed amounts
-        failedLockedBuybackUSDC = failedLockedBuybackUSDC.sub(
-            _failedAmountUSDCBuyback
-        );
-        failedLockedRevShareUSDC = failedLockedRevShareUSDC.sub(
-            _failedAmountUSDCRevShare
+        // But still include the function call here anyway to satisfy type safety requirements in case there is a change
+        _receiveXChainDistributionRequest(
+            _remoteChainId,
+            _amountUSDCBuyback,
+            _amountUSDCRevShare
         );
     }
 
-    // TODO: Ledger system in case this fails?
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
-    /// @dev Can only be called by the Chainlink Oracle
-    /// @param _chainId The ID of the chain that this request originated from
-    /// @param _callbackContract Address of destination contract in bytes for the callback
+    /// @param _remoteChainId The Zorro chain ID of the chain that this request originated from
     /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
     /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
-    /// @param _failedAmountUSDCBuyback The previously failed buyback amount that is being retried
-    /// @param _failedAmountUSDCRevShare The previously failed revshare amount that is being retried
-    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
-    function buybackAndRevShareCallback(
-        uint256 _chainId,
-        bytes calldata _callbackContract,
+    function _receiveXChainDistributionRequest(
+        uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
-        uint256 _failedAmountUSDCBuyback,
-        uint256 _failedAmountUSDCRevShare,
-        uint256 _ZORROExchangeRate
-    ) external onlyAllowZorroControllerOracle {
+        uint256 _amountUSDCRevShare
+    ) internal {
         // Total USDC to perform operations
-        // TODO: How do failed amounts come into play here? Will we even have failures now?
-        uint256 _amountUSDC = _amountUSDCBuyback
-            .add(_amountUSDCRevShare)
-            .add(_failedAmountUSDCBuyback)
-            .add(_failedAmountUSDCRevShare);
+        uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
 
         // Determine new USDC balances
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
 
         /* Buyback */
-        uint256 _buybackAmount = _balUSDC
-            .mul(_amountUSDCBuyback.add(_failedAmountUSDCBuyback))
-            .div(_amountUSDC);
-        _buybackOnChain(_buybackAmount, _ZORROExchangeRate);
+        // (Account for slippage)
+        uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback).div(
+            _totalUSDC
+        );
+        _buybackOnChain(_buybackAmount);
 
         /* Rev share */
-        uint256 _revShareAmount = _balUSDC.sub(_buybackAmount);
-        _revShareOnChain(_revShareAmount, _ZORROExchangeRate);
-
-        // Send cross chain burn request back to the remote chain
-        /* 
-        TODO: Convert to LayerZero call
-
-        XChainEndpoint endpointContract = XChainEndpoint(
-            endpointContracts[_chainId]
+        // (Account for slippage)
+        uint256 _revShareAmount = _balUSDC.mul(_amountUSDCRevShare).div(
+            _totalUSDC
         );
-        bytes memory _payload = abi.encodeWithSignature(
-            "receiveBurnLockedEarningsRequest(uint256 _amountUSDCBuyback,uint256 _amountUSDCRevShare,uint256 _failedAmountUSDCBuyback,uint256 _failedAmountUSDCRevShare)",
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
-            _failedAmountUSDCBuyback,
-            _failedAmountUSDCRevShare
+        _revShareOnChain(_revShareAmount);
+
+        // Emit event
+        emit XChainDistributeEarnings(
+            _remoteChainId,
+            _buybackAmount,
+            _revShareAmount
         );
-        endpointContract.sendXChainTransaction(_callbackContract, _payload, "");
-        */
     }
 }

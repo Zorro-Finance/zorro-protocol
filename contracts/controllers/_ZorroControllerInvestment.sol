@@ -16,8 +16,8 @@ import "../tokens/ZorroToken.sol";
 
 import "../libraries/SafeSwap.sol";
 
-// TODO||: VERY IMPORTANT: Once code is done, convert all ABI encoded raw strings to .selector calls
-// TODO: VERY IMPORTANT: Make sure all .call()s are followed by a require(success). Otherwise danger.
+import "../libraries/PriceFeed.sol";
+
 // TODO: Do an overall audit of the code base to see where we should emit events.
 
 contract ZorroControllerInvestment is ZorroControllerBase {
@@ -26,6 +26,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     using SafeMath for uint256;
     using CustomMath for uint256;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Cash flow */
 
@@ -101,7 +102,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
             _localAccount,
-            _foreignAccount,
             _wantAmt
         );
         // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
@@ -331,28 +331,32 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _payPendingRewards(_pid, _tranche, _pendingRewards, _localAccount);
         }
 
-        // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-        // TODO: Issue: this withdraws everything in the vault for the account, and not everything in the tranche
-        IVault(poolInfo[_pid].vault).withdrawWantToken(
-            _localAccount,
-            _foreignAccount,
-            _harvestOnly
-        );
+        // If not just harvesting (withdrawing too), proceed with below
+        uint256 _wantBal;
+        if (!_harvestOnly) {
+            // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
+            // TODO: Issue: this withdraws everything in the vault for the account, and not everything in the tranche
+            IVault(poolInfo[_pid].vault).withdrawWantToken(
+                _localAccount,
+                _tranche.contribution
+            );
 
-        // Update shares safely
-        _pool.totalTrancheContributions = _pool.totalTrancheContributions.sub(
-            _tranche.contribution
-        );
+            // Update shares safely
+            _pool.totalTrancheContributions = _pool.totalTrancheContributions.sub(
+                _tranche.contribution
+            );
 
-        // Calculate Want token balance
-        uint256 _wantBal = IERC20(_pool.want).balanceOf(address(this));
+            // Calculate Want token balance
+            _wantBal = IERC20(_pool.want).balanceOf(address(this));
 
-        // All withdrawals are full withdrawals so delete the tranche
-        _deleteTranche(_pid, _trancheId, _localAccount, _foreignAccount);
+            // All withdrawals are full withdrawals so delete the tranche
+            _deleteTranche(_pid, _trancheId, _localAccount, _foreignAccount);
 
-        // Emit withdrawal event and return want balance
-        // TODO: Make this for foreign accounts too?
-        emit Withdraw(_localAccount, _pid, _trancheId, _wantBal);
+            // Emit withdrawal event and return want balance
+            // TODO: Make this for foreign accounts too?
+            emit Withdraw(_localAccount, _pid, _trancheId, _wantBal);
+        }
+
 
         return (_wantBal, _mintedZORRewards);
     }
@@ -578,7 +582,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             "",
             _fromPid,
             _fromTrancheId,
-            true,
+            false,
             _maxMarketMovement
         );
         // Redeposit
@@ -609,8 +613,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
     /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
-    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
-    function _revShareOnChain(uint256 _amountUSDC, uint256 _ZORROExchangeRate)
+    function _revShareOnChain(uint256 _amountUSDC)
         internal
     {
         // Authorize spending beforehand
@@ -618,6 +621,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             uniRouterAddress,
             _amountUSDC
         );
+
+        // Get Zorro exchange rate
+        uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
 
         // Swap to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -633,8 +639,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
     /// @param _amountUSDC Amount of USDC to add as liquidity
-    /// @param _ZORROExchangeRate ZOR per USD, times 1e12
-    function _buybackOnChain(uint256 _amountUSDC, uint256 _ZORROExchangeRate)
+    function _buybackOnChain(uint256 _amountUSDC)
         internal
     {
         // Authorize spending beforehand
@@ -643,38 +648,27 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _amountUSDC
         );
 
-        // Determine exchange rates using Oracle as necessary
-        uint256 _exchangeRateLPPoolToken0;
-        uint256 _exchangeRateLPPoolToken1;
-        // Assign ZOR exchange rate depending on which token it is in the pool (0, 1)
-        if (zorroLPPoolToken0 == ZORRO) {
-            _exchangeRateLPPoolToken0 = _ZORROExchangeRate;
-            (, int256 _amount1, , , ) = _priceFeedLPPoolToken1
-                .latestRoundData();
-            _exchangeRateLPPoolToken1 = uint256(_amount1);
-        } else if (zorroLPPoolToken1 == ZORRO) {
-            (, int256 _amount0, , , ) = _priceFeedLPPoolToken0
-                .latestRoundData();
-            _exchangeRateLPPoolToken0 = uint256(_amount0);
-            _exchangeRateLPPoolToken1 = _ZORROExchangeRate;
-        }
 
-        // Swap to Token 0
+        // Determine exchange rates using price feed oracle
+        uint256 _exchangeRateZOR = priceFeedZOR.getExchangeRate();
+        uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken.getExchangeRate();
+
+        // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             1e12,
-            _exchangeRateLPPoolToken0,
+            _exchangeRateZOR,
             defaultMaxMarketMovement,
             USDCToZorroLPPoolToken0Path,
             address(this),
             block.timestamp.add(600)
         );
 
-        // Swap to Token 1
+        // Swap to counterparty token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             1e12,
-            _exchangeRateLPPoolToken1,
+            _exchangeRateLPPoolOtherToken,
             defaultMaxMarketMovement,
             USDCToZorroLPPoolToken1Path,
             address(this),
@@ -682,23 +676,23 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
 
         // Enter LP pool
-        uint256 token0Amt = IERC20(zorroLPPoolToken0).balanceOf(address(this));
-        uint256 token1Amt = IERC20(zorroLPPoolToken1).balanceOf(address(this));
-        IERC20(zorroLPPoolToken0).safeIncreaseAllowance(
+        uint256 tokenZORAmt = IERC20(ZORRO).balanceOf(address(this));
+        uint256 tokenOtherAmt = IERC20(zorroLPPoolOtherToken).balanceOf(address(this));
+        IERC20(ZORRO).safeIncreaseAllowance(
             uniRouterAddress,
-            token0Amt
+            tokenZORAmt
         );
-        IERC20(zorroLPPoolToken1).safeIncreaseAllowance(
+        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
             uniRouterAddress,
-            token1Amt
+            tokenOtherAmt
         );
         IAMMRouter02(uniRouterAddress).addLiquidity(
-            zorroLPPoolToken0,
-            zorroLPPoolToken1,
-            token0Amt,
-            token1Amt,
-            token0Amt.mul(defaultMaxMarketMovement).div(1000),
-            token1Amt.mul(defaultMaxMarketMovement).div(1000),
+            ZORRO,
+            zorroLPPoolOtherToken,
+            tokenZORAmt,
+            tokenOtherAmt,
+            tokenZORAmt.mul(defaultMaxMarketMovement).div(1000),
+            tokenOtherAmt.mul(defaultMaxMarketMovement).div(1000),
             burnAddress,
             block.timestamp.add(600)
         );
