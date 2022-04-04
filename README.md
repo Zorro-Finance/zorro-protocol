@@ -70,3 +70,4 @@ Transparent Proxy based on OpenZeppelin standard
 yarn add @chainlink/contracts
 ```
 
+Zorro chain ID vs L0 chain IDs

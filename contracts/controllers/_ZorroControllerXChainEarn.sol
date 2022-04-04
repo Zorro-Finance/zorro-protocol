@@ -35,12 +35,12 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             _amountUSDCBuyback,
             _amountUSDCRevShare
         );
-        bytes memory _dstContract = abi.encodePacked(endpointContracts[homeChainId]);
+        bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
         (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
-                stargateZorroChainMap[homeChainId],
+                ZorroChainToLZMap[homeChainId],
                 1,
                 _dstContract,
                 _payload,
@@ -117,9 +117,7 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         );
 
         // Get the destination contract address on the remote chain
-        bytes memory _dstContract = abi.encodePacked(
-            endpointContracts[chainId]
-        );
+        bytes memory _dstContract = controllerContractsMap[chainId];
 
         // Call stargate to initiate bridge
         _callStargateSwap(

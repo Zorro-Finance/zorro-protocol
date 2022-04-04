@@ -34,7 +34,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         uint256 _maxMarketMovement
     ) external view returns (uint256) {
         // Get destination
-        uint16 _dstChainId = stargateZorroChainMap[_zorroChainId];
+        uint16 _dstChainId = ZorroChainToLZMap[_zorroChainId];
 
         // Prepare encoding
         bytes memory _payload = _encodeXChainWithdrawalPayload(
@@ -99,14 +99,12 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
             _originRecipient,
             _burnableZORRewards
         );
-        bytes memory _dstContract = abi.encodePacked(
-            endpointContracts[_originChainId]
-        );
+        bytes memory _dstContract = controllerContractsMap[_originChainId];
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
         (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
-                stargateZorroChainMap[_originChainId],
+                ZorroChainToLZMap[_originChainId],
                 1,
                 _dstContract,
                 _payload,
@@ -205,9 +203,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         );
 
         // Destination info
-        bytes memory _dstContract = abi.encodePacked(
-            endpointContracts[_destZorroChainId]
-        );
+        bytes memory _dstContract = controllerContractsMap[_destZorroChainId];
 
         // Send LayerZero request
         _callLZSend(
@@ -250,9 +246,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
             _burnableZORRewards
         );
         // Destination info
-        bytes memory _dstContract = abi.encodePacked(
-            endpointContracts[_originChainId]
-        );
+        bytes memory _dstContract = controllerContractsMap[_originChainId];
 
         // Send Stargate request
         _callStargateSwap(

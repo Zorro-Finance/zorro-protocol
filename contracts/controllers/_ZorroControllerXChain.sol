@@ -48,7 +48,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
     {
         IStargateRouter.lzTxObj memory _lzTxObj;
         IStargateRouter(stargateRouter).swap{value: msg.value}(
-            stargateZorroChainMap[_swapPayload.chainId],
+            ZorroChainToLZMap[_swapPayload.chainId],
             stargateSwapPoolId,
             stargateDestPoolIds[_swapPayload.chainId],
             payable(msg.sender),
@@ -64,7 +64,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
     /// @param _msgPayload Struct with key message details for the LayerZero cross chain transaction
     function _callLZSend(LZMessagePayload memory _msgPayload) internal {
         // Convert any key params
-        uint16 _dstChainId = stargateZorroChainMap[_msgPayload.zorroChainId];
+        uint16 _dstChainId = ZorroChainToLZMap[_msgPayload.zorroChainId];
 
         // Send transaction to layer
         ILayerZeroEndpoint(layerZeroEndpoint).send{value: msg.value}(

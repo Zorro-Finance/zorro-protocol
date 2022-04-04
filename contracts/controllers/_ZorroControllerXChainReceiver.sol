@@ -30,7 +30,7 @@ contract ZorroControllerXChainReceiver is
         bytes memory payload
     ) public override {
         // Map to Zorro chain ID
-        uint256 _zorroOriginChainId = zorroStargateChainMap[_chainId];
+        uint256 _zorroOriginChainId = LZChainToZorroMap[_chainId];
         // Checks / authorization
         // Amounts
         uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
@@ -122,7 +122,7 @@ contract ZorroControllerXChainReceiver is
         bytes calldata _payload
     ) external override {
         // Map to Zorro chain ID
-        uint256 _zorroOriginChainId = zorroStargateChainMap[_srcChainId];
+        uint256 _zorroOriginChainId = LZChainToZorroMap[_srcChainId];
         
         // Access
         // Src address is a valid controller

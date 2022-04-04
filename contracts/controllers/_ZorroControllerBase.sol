@@ -16,7 +16,6 @@ import "../tokens/ZorroToken.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors
-// TODO: Generally: Convert uint8s to enums
 
 /* Base Contract */
 
@@ -27,10 +26,10 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /* Modifiers */
-    /// @notice Only allows functions to be executed where the sender matches the authorizedOracle address
-    modifier onlyXChainEndpoints() {
+    /// @notice Only allows functions to be executed where the sender matches an authorized controller on another chain
+    modifier onlyXChainEndpoints(bytes calldata _xchainSender) {
         require(
-            registeredXChainEndpoints[_msgSender()] > 0,
+            registeredXChainControllers[_xchainSender],
             "only reg xchain endpoints"
         );
         _;
@@ -130,20 +129,18 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
 
     // Cross-chain
-    address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing.
+    address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing. "address" type because it's on the EVM
     uint256 public chainId; // The ID/index of the chain that this contract is on
-    uint8 public homeChainId = 0; // The chain ID of the home chain
-    // TODO: Rename this to "controllerContracts" and probably should be bytes NOT address
-    mapping(uint256 => address) public endpointContracts; // Mapping of chain ID to endpoint contract
-    mapping(address => uint8) public registeredXChainEndpoints; // The accepted list of cross chain endpoints that can call this contract. Mapping: address => 0 = non existent. 1 = allowed.
-    mapping(bytes => bool) public registeredXChainControllers; // Accepted list of cross chain Zorro controllers that can call this controller
+    uint256 public homeChainId = 0; // The chain ID of the home chain
+    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
+    mapping(bytes => bool) public registeredXChainControllers; // The accepted list of cross chain endpoints that can call this contract. Mapping: bytes(address) => false = non existent. true = allowed.
     address public lockUSDCController;
     uint256 public failedLockedBuybackUSDC; // Accumulated amount of locked earnings for buyback that were failed from previous cross chain attempts
     uint256 public failedLockedRevShareUSDC; // Accumulated amount of locked earnings for revshare that were failed from previous cross chain attempts
     address public xChainReceivingOracle; // Address of the oracle that is authorized to make calls to this contract (usually for reverts)
     // TODO: Setters/contructors needed
-    mapping(uint256 => uint16) public stargateZorroChainMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
-    mapping(uint16 => uint256) public zorroStargateChainMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
     address public stargateRouter; // Address to on-chain Stargate router
     uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
     mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
@@ -153,11 +150,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     // TODO: Need constructors/setters.
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
-    // TODO: Are these below even needed anymore? Perhaps we're only doing CL price feeds
     address public zorroControllerOracle;
-    uint256 public zorroControllerOracleFee;
-    bytes32 public zorroControllerOraclePriceJobId;
-    bytes32 public zorroControllerOracleEmissionsJobId;
+
 
     // Info of each pool
     PoolInfo[] public poolInfo;
@@ -216,11 +210,11 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         isTimeMultiplierActive = _isActive;
     }
 
-    function setEndpointContracts(uint256 _chainId, address _endpointContract)
+    function setEndpointContracts(uint256 _chainId, bytes calldata _endpointContract)
         external
         onlyOwner
     {
-        endpointContracts[_chainId] = _endpointContract;
+        controllerContractsMap[_chainId] = _endpointContract;
     }
 
     function setDefaultStablecoin(address _defaultStablecoin)
@@ -282,14 +276,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         chainId = _chainId;
     }
 
-    function registerXChainEndpoint(address _contract) external onlyOwner {
-        registeredXChainEndpoints[_contract] = 1;
-    }
-
-    function unRegisterXChainEndpoint(address _contract) external onlyOwner {
-        registeredXChainEndpoints[_contract] = 0;
-    }
-
     function registerXChainController(bytes memory _contract) external onlyOwner {
         registeredXChainControllers[_contract] = true;
     }
@@ -339,27 +325,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     function setZorroControllerOracle(address _zorroControllerOracle) external onlyOwner {
         zorroControllerOracle = _zorroControllerOracle;
-    }
-
-    function setZorroControllerOracleFee(uint256 _zorroControllerOracleFee)
-        external
-        onlyOwner
-    {
-        zorroControllerOracleFee = _zorroControllerOracleFee;
-    }
-
-    function setZorroControllerOraclePriceJobId(bytes32 _zorroControllerOraclePriceJobId)
-        external
-        onlyOwner
-    {
-        zorroControllerOraclePriceJobId = _zorroControllerOraclePriceJobId;
-    }
-
-    function setZorroControllerOracleEmissionsJobId(bytes32 _zorroControllerOracleEmissionsJobId)
-        external
-        onlyOwner
-    {
-        zorroControllerOracleEmissionsJobId = _zorroControllerOracleEmissionsJobId;
     }
 
     function setChainMultiplier(uint256 _chainMultiplier) external onlyOwner {

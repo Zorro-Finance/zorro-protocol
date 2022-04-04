@@ -335,7 +335,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _wantBal;
         if (!_harvestOnly) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            // TODO: Issue: this withdraws everything in the vault for the account, and not everything in the tranche
             IVault(poolInfo[_pid].vault).withdrawWantToken(
                 _localAccount,
                 _tranche.contribution
@@ -465,7 +464,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 _foreignAccount
             ].length;
             // Iterate through foreign tranche array
-            for (uint8 i = 0; i < _foreignTrancheLength; ++i) {
+            for (uint16 i = 0; i < _foreignTrancheLength; ++i) {
                 if (
                     foreignTrancheInfo[_pid][_foreignAccount][i].trancheIndex ==
                     _trancheId

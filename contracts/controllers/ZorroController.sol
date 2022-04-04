@@ -19,7 +19,6 @@ import "./_ZorroControllerXChainWithdraw.sol";
 import "./_ZorroControllerXChainEarn.sol";
 
 
-// TODO: Make sure constructors and setters have all parameters as expected
 // TODO: General: Complete audit of docstrings and make sure they make sense
 
 /* Main Contract */
@@ -41,7 +40,6 @@ contract ZorroController is
     /// @param _chainId The ID of the chain that this contract is being deployed on
     /// @param _priceFeeds Array of Chainlink price feeds: [priceFeedZOR, priceFeedLPPoolOtherToken]
     /// @param _zorroControllerOracle Address of Zorro Chainlink oracle for controller
-    /// @param _zorroControllerOracleJobIds Job ID array of Zorro Chainlink price oracle, Emissions oracle
     constructor(
         address _timelockOwner,
         address _publicPool,
@@ -51,8 +49,7 @@ contract ZorroController is
         address[] memory _zorroLPPoolAddresses,
         uint256 _chainId,
         address[] memory _priceFeeds,
-        address _zorroControllerOracle,
-        bytes32[] memory _zorroControllerOracleJobIds
+        address _zorroControllerOracle
     ) {
         // Assign owner as to timelock contract
         transferOwnership(_timelockOwner);
@@ -70,7 +67,5 @@ contract ZorroController is
         priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
         priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
         zorroControllerOracle = _zorroControllerOracle;
-        zorroControllerOraclePriceJobId = _zorroControllerOracleJobIds[0];
-        zorroControllerOracleEmissionsJobId = _zorroControllerOracleJobIds[1];
     }
 }
