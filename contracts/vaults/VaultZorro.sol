@@ -5,67 +5,65 @@ import "./_VaultBase.sol";
 
 
 /// @title VaultZorro. The Vault for staking the Zorro token
-/// @dev Only to be deployed on BSC (the home of the ZOR token)
+/// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    // TODO: token0address should be the Zorro token address
+    /// @notice Constructor
+    /// @dev NOTE: Only to be deployed on home chain!
+    /// @param _addresses : [gov, Zorro controller, Zorro token, Uni v2 router address]
+    /// @param _pid : The pool ID in the Zorro Controller
+    /// @param _fees : [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+    /// @param _token0ToUSDCPath Router path to swap from Zorro to USDC
+    /// @param _USDCToToken0Path Router path to swap from USDC to ZORRO
     constructor(
         address[] memory _addresses,
         uint256 _pid,
-        bool _isCOREStaking,
-        bool _isSameAssetDeposit,
-        bool _isZorroComp,
-        address[] memory _earnedToZORROPath,
-        address[] memory _earnedToToken0Path,
-        address[] memory _earnedToToken1Path,
-        address[] memory _token0ToEarnedPath,
-        address[] memory _token1ToEarnedPath,
-        uint256[] memory _fees // [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+        uint256[] memory _fees,
+        address[] memory _token0ToUSDCPath,
+        address[] memory _USDCToToken0Path
     ) {
-        wbnbAddress = _addresses[0];
-        govAddress = _addresses[1];
-        zorroControllerAddress = _addresses[2];
-        ZORROAddress = _addresses[3];
+        // Key addresses
+        govAddress = _addresses[0];
+        zorroControllerAddress = _addresses[1];
+        ZORROAddress = _addresses[2];
+        wantAddress = _addresses[2];
+        token0Address = _addresses[2];
+        rewardsAddress = _addresses[2];
+        uniRouterAddress = _addresses[3];
 
-        wantAddress = _addresses[4];
-        token0Address = _addresses[5];
-        token1Address = _addresses[6];
-        earnedAddress = _addresses[7];
-
-        farmContractAddress = _addresses[8];
+        // Vault characteristics
         pid = _pid;
-        isCOREStaking = _isCOREStaking;
-        isSameAssetDeposit = _isSameAssetDeposit;
-        isZorroComp = _isZorroComp;
+        isCOREStaking = false;
+        isSingleAssetDeposit = true;
+        isZorroComp = false;
+        isHomeChain = true;
 
-        uniRouterAddress = _addresses[9];
-        earnedToZORROPath = _earnedToZORROPath;
-        earnedToToken0Path = _earnedToToken0Path;
-        earnedToToken1Path = _earnedToToken1Path;
-        token0ToEarnedPath = _token0ToEarnedPath;
-        token1ToEarnedPath = _token1ToEarnedPath;
+        // Swap paths
+        token0ToUSDCPath = _token0ToUSDCPath;
+        USDCToToken0Path = _USDCToToken0Path;
 
+        // Fees
         controllerFee = _fees[0];
-        rewardsAddress = _addresses[10];
         buyBackRate = _fees[1];
-        burnAddress = _addresses[11];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
-
-        transferOwnership(zorroControllerAddress);
     }
 
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    /// @return uiint256 Number of shares added
+    function depositWantToken(
+        address _account,
+        uint256 _wantAmt
+    )
         public
         override
         onlyZorroController
@@ -73,10 +71,14 @@ contract VaultZorro is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Check to make sure Want token is already on this contract and held for this user
-        require(
-            _wantAmt <= wantTokensInHolding[_account],
-            "Exceeds Want tokens in holding for this user"
+        // Preflight checks
+        require(_wantAmt > 0, "Want token deposit must be > 0");
+
+        // Transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _wantAmt
         );
 
         // Set sharesAdded to the Want token amount specified
@@ -97,26 +99,44 @@ contract VaultZorro is VaultBase {
         // Update want locked total
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
 
-        // Clear holdings
-        wantTokensInHolding[_account] = 0;
-
         return sharesAdded;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _account The user account to transfer USDC from
-    /// @param _amount The USDC quantity to exchange
+    /// @param _amountUSDC The USDC quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return Amount of Want token obtained
+    /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        address _account,
-        uint256 _amount,
+        uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController returns (uint256) {
-        // Update temporary holdings for user
-        wantTokensInHolding[_account] = _amount;
+    ) public override onlyZorroController whenNotPaused returns (uint256) {
+        // Get balance of deposited USDC
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        // Check that USDC was actually deposited
+        require(_amountUSDC > 0, "USDC deposit must be > 0");
+        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
 
-        return _amount;
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+
+        // Swap USDC for token0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            1e12,
+            _token0ExchangeRate,
+            _maxMarketMovementAllowed,
+            USDCToToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Calculate resulting want token balance
+        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
+
+        // Transfer back to sender
+        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+
+        return _wantAmt;
     }
 
     /// @notice Public function for farming Want token.
@@ -124,9 +144,12 @@ contract VaultZorro is VaultBase {
 
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _account address of user
-    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal (Should ALWAYS be true for this contract)
-    /// @return the number of shares removed
-    function withdrawWantToken(address _account, bool _harvestOnly)
+    /// @param _wantAmt The amount of Want token to withdraw
+    /// @return uint256 the number of shares removed
+    function withdrawWantToken(
+        address _account,
+        uint256 _wantAmt
+    )
         public
         override
         onlyZorroController
@@ -134,8 +157,8 @@ contract VaultZorro is VaultBase {
         nonReentrant
         returns (uint256)
     {
-        uint256 _userNumShares = userShares[_account];
-        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this)).mul(_userNumShares).div(sharesTotal);
+        // Preflight checks
+        require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -154,9 +177,9 @@ contract VaultZorro is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
+        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
         }
         // Safety: cap _wantAmt at the total quantity of Want tokens locked
         if (wantLockedTotal < _wantAmt) {
@@ -169,40 +192,52 @@ contract VaultZorro is VaultBase {
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
-        // Update holdings
-        wantTokensInHolding[_account] = _wantAmt;
-
         return sharesRemoved;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _account The user account to transfer USDC from
     /// @param _amount The Want token quantity to exchange
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return Amount of USDC token obtained
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
+    /// @return uint256 Amount of USDC token obtained
     function exchangeWantTokenForUSD(
-        address _account,
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
-        // Require Want tokens to already be in holdings
-        require(_amount <= wantTokensInHolding[_account], "Requested more Want tokens than are in holding");
+        // Preflight checks
+        require(_amount > 0, "Want amt must be > 0");
 
-        // Clear out temporary holdings for user
-        wantTokensInHolding[_account] = 0;
+        // Safely transfer Want token from sender
+        IERC20(wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
 
-        return _amount;
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+
+        // Swap token0 for USDC
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amount,
+            _token0ExchangeRate,
+            1e12,
+            _maxMarketMovementAllowed,
+            token0ToUSDCPath,
+            msg.sender,
+            block.timestamp.add(600)
+        );
+
+        return IERC20(tokenUSDCAddress).balanceOf(address(this));
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
     function earn(uint256 _maxMarketMovementAllowed)
         public
         override
         nonReentrant
         whenNotPaused
     {
-        // TODO: Take in price oracle to perform safe swaps
         // Only to be run if this contract is configured for auto-comnpounding
         require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
@@ -210,32 +245,36 @@ contract VaultZorro is VaultBase {
             require(msg.sender == govAddress, "!gov");
         }
 
-        // Get the balance of the Earned token on this contract (USDC)
-        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
-
-        // No distribution of fees/buyback
-
-        // Approve the router contract
-        IERC20(earnedAddress).safeApprove(uniRouterAddress, 0);
-        // Allow the router contract to spen up to earnedAmt
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            earnedAmt
-        );
-
-        // Swap earned token (USDC) to token0 (ZORRO)
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            earnedAmt,
-            _maxMarketMovementAllowed,
-            earnedToToken0Path,
-            address(this),
-            block.timestamp.add(600)
-        );
+        // (No distribution of fees/buyback)
 
         // Update last earned block
         lastEarnBlock = block.number;
 
         // Update want locked total
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
+    }
+
+    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed, ExchangeRates memory _rates)
+        internal
+        override
+    {
+        // Dummy function to implement interface
+    }
+
+    function _revShareOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates
+    ) internal override {
+        // Dummy function to implement interface
+    }
+
+    function _swapEarnedToUSDC(
+        uint256 _earnedAmount,
+        address _destination,
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates
+    ) internal override {
+        // Dummy function to implement interface
     }
 }

@@ -14,6 +14,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+// TODO: Make sure this is inline with our latest vesting (e.g. Josh contract) 
+
 /// @title PoolTeam: Manages the team (employee/advisors) pool via a modified PaymentSplitter contract
 contract PoolTeam is ModifiedPaymentSplitter, Ownable {
     using SafeMath for uint256;

@@ -10,40 +10,62 @@ import "./_ZorroControllerInvestment.sol";
 
 import "./_ZorroControllerAnalytics.sol";
 
-// TODO: In general, shouldn't these all be timelock contracts? 
+import "./_ZorroControllerXChainReceiver.sol";
+
+import "./_ZorroControllerXChainDeposit.sol";
+
+import "./_ZorroControllerXChainWithdraw.sol";
+
+import "./_ZorroControllerXChainEarn.sol";
+
+
+// TODO: General: Complete audit of docstrings and make sure they make sense
 
 /* Main Contract */
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.
-contract ZorroController is ZorroControllerBase, ZorroControllerPoolMgmt, ZorroControllerInvestment, ZorroControllerAnalytics {
+contract ZorroController is
+    ZorroControllerBase,
+    ZorroControllerPoolMgmt,
+    ZorroControllerInvestment,
+    ZorroControllerAnalytics,
+    ZorroControllerXChainReceiver
+{
     /* Constructor */
 
     /// @notice Constructor
     /// @param _timelockOwner address of owner (should be a timelock)
-    /// @param _zorroToken address of Zorro token
-    /// @param _startBlock start block number. If current block is below this number, rewards won't be emitted. https://bscscan.com/block/countdown/13650292
-    /// @param _publicPool address of the public pool to draw rewards from
-    /// @param _BSCMarketTVLUSD total market TVL on the BSC chain in USD
-    /// @param _ZorroTotalVaultTVLUSD total TVL locked into the Zorro protocol across all vaults
-    /// @param _targetTVLCaptureBasisPoints how many basis points of the BSC total market TVL the protocol desires to capture (influences market aware emissions calcs)
+    /// @param _lockUSDCController The address of the lock for USDC
+    /// @param _homeChainZorroController The address of the home chain Zorro controller contract
+    /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, the counterparty token to the ZOR LP pool
+    /// @param _chainId The ID of the chain that this contract is being deployed on
+    /// @param _priceFeeds Array of Chainlink price feeds: [priceFeedZOR, priceFeedLPPoolOtherToken]
+    /// @param _zorroControllerOracle Address of Zorro Chainlink oracle for controller
     constructor(
         address _timelockOwner,
-        address _zorroToken,
-        uint256 _startBlock,
         address _publicPool,
-        uint256 _BSCMarketTVLUSD,
-        uint256 _ZorroTotalVaultTVLUSD,
-        uint256 _targetTVLCaptureBasisPoints,
-        address _defaultStablecoin
+        address[] memory _stableCoinAddresses,
+        address _lockUSDCController,
+        address _homeChainZorroController,
+        address[] memory _zorroLPPoolAddresses,
+        uint256 _chainId,
+        address[] memory _priceFeeds,
+        address _zorroControllerOracle
     ) {
         // Assign owner as to timelock contract
         transferOwnership(_timelockOwner);
         // Set main state variables to initial state
-        ZORRO = _zorroToken;
-        startBlock = _startBlock;
+        startBlock = block.timestamp;
         publicPool = _publicPool;
-        BSCMarketTVLUSD = _BSCMarketTVLUSD; 
-        ZorroTotalVaultTVLUSD = _ZorroTotalVaultTVLUSD; 
-        targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
-        defaultStablecoin = _defaultStablecoin;
+        defaultStablecoin = _stableCoinAddresses[0];
+        syntheticStablecoin = _stableCoinAddresses[1];
+        lockUSDCController = _lockUSDCController;
+        require(_homeChainZorroController != address(0), "cannot be 0 addr");
+        homeChainZorroController = _homeChainZorroController;
+        zorroLPPool = _zorroLPPoolAddresses[0];
+        zorroLPPoolOtherToken = _zorroLPPoolAddresses[1];
+        chainId = _chainId;
+        priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
+        zorroControllerOracle = _zorroControllerOracle;
     }
 }
