@@ -28,6 +28,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
+    /* Structs */
+    struct WithdrawalResult {
+        uint256 wantAmt; // Amount of Want token withdrawn
+        uint256 mintedZORRewards; // ZOR rewards minted (to be burned XChain)
+        uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
+        uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
+    }
+
     /* Cash flow */
 
     /// @notice Deposit Want tokens to associated Vault
@@ -258,7 +266,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bool _harvestOnly
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (uint256 _wantAmt, , , ) = _withdraw(
+        (WithdrawalResult memory _res) = _withdraw(
             _pid,
             msg.sender,
             "",
@@ -267,9 +275,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         );
 
         // Transfer to user and return Want amount
-        IERC20(poolInfo[_pid].want).safeTransfer(msg.sender, _wantAmt);
+        IERC20(poolInfo[_pid].want).safeTransfer(msg.sender, _res.wantAmt);
 
-        return _wantAmt;
+        return _res.wantAmt;
     }
 
     /// @notice Internal function for withdrawing Want tokens from underlying Vault.
@@ -279,10 +287,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @param _foreignAccount Address of the foreign chain account that this inviestment was made with
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
-    /// @return _wantAmt Amount of Want token withdrawn
-    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
-    /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
-    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
+    /// @return _res A WithdrawalResult struct containing relevant withdrawal result parameters
     function _withdraw(
         uint256 _pid,
         address _localAccount,
@@ -291,12 +296,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bool _harvestOnly
     )
         internal
-        returns (
-            uint256 _wantAmt,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
-        )
+        returns (WithdrawalResult memory _res)
     {
         // Can only specify one account (on-chain/foreign, but not both)
         require(
@@ -326,7 +326,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         require(_tranche.exitedVaultAt == 0, "Already exited vault");
 
         // Update the pool before anything to ensure rewards have been updated and transferred
-        _mintedZORRewards = updatePool(_pid);
+        _res.mintedZORRewards = updatePool(_pid);
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
@@ -359,8 +359,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                     burnAddress,
                     _rewardsDue.add(_slashedRewards)
                 );
-                _rewardsDueXChain = _rewardsDue;
-                _slashedRewardsXChain = _slashedRewards;
+                _res.rewardsDueXChain = _rewardsDue;
+                _res.slashedRewardsXChain = _slashedRewards;
             }
         }
 
@@ -378,7 +378,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 .sub(_tranche.contribution);
 
             // Calculate Want token balance
-            _wantAmt = IERC20(_pool.want).balanceOf(address(this));
+            _res.wantAmt = IERC20(_pool.want).balanceOf(address(this));
 
             // Mark tranche as exited
             trancheInfo[_pid][_localAccount][_trancheId].exitedVaultAt = block
@@ -390,7 +390,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
                 _foreignAccount,
                 _pid,
                 _trancheId,
-                _wantAmt
+                _res.wantAmt
             );
         }
     }
@@ -511,10 +511,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
         // Call core withdrawal function (returns actual amount withdrawn)
         (
-            uint256 _wantAmtWithdrawn,
-            uint256 __mintedZORRewards,
-            uint256 __rewardsDueXChain,
-            uint256 __slashedRewardsXChain
+            WithdrawalResult memory _res
         ) = _withdraw(
                 _pid,
                 _account,
@@ -526,18 +523,18 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         // Safe increase spending of Vault contract for Want token
         IERC20(poolInfo[_pid].want).safeIncreaseAllowance(
             _vaultAddr,
-            _wantAmtWithdrawn
+            _res.wantAmt
         );
 
         // Exchange Want for USD
         _amountUSDC = vault.exchangeWantTokenForUSD(
-            _wantAmtWithdrawn,
+            _res.wantAmt,
             _maxMarketMovement
         );
 
-        _mintedZORRewards = __mintedZORRewards;
-        _rewardsDueXChain = __rewardsDueXChain;
-        _slashedRewardsXChain = __slashedRewardsXChain;
+        _mintedZORRewards = _res.mintedZORRewards;
+        _rewardsDueXChain = _res.rewardsDueXChain;
+        _slashedRewardsXChain = _res.slashedRewardsXChain;
     }
 
     /// @notice Transfer all assets from a tranche in one vault to a new vault (works on-chain only)
