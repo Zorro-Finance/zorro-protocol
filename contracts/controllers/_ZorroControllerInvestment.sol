@@ -39,18 +39,16 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /* State */
 
     // Rewards
-    bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
+    bool public isTimeMultiplierActive; // If true, allows use of time multiplier
     // Zorro LP pool
     address public zorroLPPool; // Main pool for Zorro liquidity
     address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
     // Swaps
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
-    address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
-    address[] public USDCToZorroLPPoolToken1Path; // The router path from USDC to the primary Zorro LP pool, Token 1
     address[] public USDCToZorroPath; // The path to swap USDC to ZOR
+    address[] public USDCToZorroLPPoolOtherTokenPath; // The router path from USDC to the primary Zorro LP pool, Token 0
     uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
     // Oracles
-    // TODO: Constructors
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
 
@@ -72,18 +70,11 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uniRouterAddress = _uniV2Router;
     }
 
-    function setUSDCToZorroLPPoolToken0Path(address[] memory _path)
+    function setUSDCToZorroLPPoolOtherTokenPath(address[] memory _path)
         external
         onlyOwner
     {
-        USDCToZorroLPPoolToken0Path = _path;
-    }
-
-    function setUSDCToZorroLPPoolToken1Path(address[] memory _path)
-        external
-        onlyOwner
-    {
-        USDCToZorroLPPoolToken1Path = _path;
+        USDCToZorroLPPoolOtherTokenPath = _path;
     }
 
     function setDefaultMaxMarketMovement(uint256 _defaultMaxMarketMovement)
@@ -728,7 +719,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             1e12,
             _exchangeRateZOR,
             defaultMaxMarketMovement,
-            USDCToZorroLPPoolToken0Path,
+            USDCToZorroPath,
             address(this),
             block.timestamp.add(600)
         );
@@ -739,7 +730,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             1e12,
             _exchangeRateLPPoolOtherToken,
             defaultMaxMarketMovement,
-            USDCToZorroLPPoolToken1Path,
+            USDCToZorroLPPoolOtherTokenPath,
             address(this),
             block.timestamp.add(600)
         );

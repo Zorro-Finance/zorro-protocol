@@ -49,19 +49,44 @@ contract ZorroController is
         address[] memory _priceFeeds,
         address _zorroControllerOracle
     ) {
-        // Assign owner as to timelock contract
-        transferOwnership(_timelockOwner);
-        // Set main state variables to initial state
-        startBlock = block.timestamp;
+        // Base
+        // TODO: Implement real numbers these are just dummy values
+        ZORRO = address(0);
         publicPool = _publicPool;
+        blocksPerDay = 28800;
+        startBlock = block.number;
+        ZORROPerBlock = 1000;
+        targetTVLCaptureBasisPoints = 33;
+        ZORRODailyDistributionFactorBasisPointsMin = 1;
+        ZORRODailyDistributionFactorBasisPointsMax = 20;
+        chainMultiplier = 1;
+        baseRewardRateBasisPoints = 10;
+        totalAllocPoint = 0;
         defaultStablecoin = _stableCoinAddress;
+        zorroStakingVault = address(0);
+        chainId = _chainId;
+        homeChainId = 0;
         require(_homeChainZorroController != address(0), "cannot be 0 addr");
         homeChainZorroController = _homeChainZorroController;
+        zorroControllerOracle = _zorroControllerOracle;
+
+        // Investment
+        isTimeMultiplierActive = true;
         zorroLPPool = _zorroLPPoolAddresses[0];
         zorroLPPoolOtherToken = _zorroLPPoolAddresses[1];
-        chainId = _chainId;
+        uniRouterAddress = address(0);
+        // TODO
+        // USDCToZorroPath = [?];
+        // USDCToZorroLPPoolOtherTokenPath = [?];
         priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
         priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
-        zorroControllerOracle = _zorroControllerOracle;
+
+        // XChain
+        stargateRouter = address(0);
+        stargateSwapPoolId = 0;
+        layerZeroEndpoint = address(0);
+
+        // Assign owner as to timelock contract
+        transferOwnership(_timelockOwner);
     }
 }

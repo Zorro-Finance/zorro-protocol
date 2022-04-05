@@ -54,29 +54,32 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         address vault; // Address of the Vault
     }
 
+    /* Constants */
+
+    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD;
+
     /* State */
 
     // Key tokens/addresses
     address public ZORRO;
-    address public burnAddress = 0x000000000000000000000000000000000000dEaD;
     address public publicPool; // Only to be set on home chain
     // Rewards
     uint256 public startBlock;
-    uint256 public blocksPerDay = 28800; // Approximate, varies by chain
+    uint256 public blocksPerDay; // Approximate, varies by chain
     uint256 public ZORROPerBlock; // Calculated according to Tokenomics
     uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33% ONLY to be set on the home chain
-    uint256 public ZORRODailyDistributionFactorBasisPointsMin = 1; // 1 = 0.01% ONLY for home chain
-    uint256 public ZORRODailyDistributionFactorBasisPointsMax = 20; // 20 = 0.20% ONLY for home chain
-    uint256 public chainMultiplier = 1; // Proportional rewards to be sent to this chain
-    uint256 public baseRewardRateBasisPoints = 10;
-    uint256 public totalAllocPoint = 0; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
+    uint256 public ZORRODailyDistributionFactorBasisPointsMin; // 1 = 0.01% ONLY for home chain
+    uint256 public ZORRODailyDistributionFactorBasisPointsMax ; // 20 = 0.20% ONLY for home chain
+    uint256 public chainMultiplier; // Proportional rewards to be sent to this chain
+    uint256 public baseRewardRateBasisPoints;
+    uint256 public totalAllocPoint; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     // Stablecoins
     address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     // Zorro Single Staking vault
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
     // Cross-chain
     uint256 public chainId; // The ID/index of the chain that this contract is on
-    uint256 public homeChainId = 0; // The chain ID of the home chain
+    uint256 public homeChainId; // The chain ID of the home chain
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing. "address" type because it's on the EVM
     // Info of each pool
     PoolInfo[] public poolInfo;
