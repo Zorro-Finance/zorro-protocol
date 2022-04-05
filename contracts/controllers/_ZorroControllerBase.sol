@@ -17,6 +17,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: Do thorough analysis to ensure enough setters/constructors
 // TODO: Move all child state variables to their respective child contracts for better organization
+// TODO: General: For everywhere we call a swap, let's make sure to do safe approval beforehand
 
 /* Base Contract */
 
