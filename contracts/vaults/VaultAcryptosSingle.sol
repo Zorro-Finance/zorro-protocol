@@ -40,7 +40,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolOtherTokenPath, earnedToUSDCPath, USDCToZORROPath]
     /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
     /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
-    /// @param _balancerPools Addresses of Balancer pools for performing swaps. Array of [balancerPoolUSDCToWant, balancerPoolUSDCToToken0]
+    /// @param _balancerPools Addresses of Balancer pools for performing swaps. Array of [balancerPoolUSDCToWant, balancerPoolUSDCToToken0] TODO: Update these (Constructor)
     constructor(
         address[] memory _addresses,
         uint256 _pid,
@@ -85,23 +85,23 @@ contract VaultAcryptosSingle is VaultBase {
         buyBackRate = _fees[1];
         entranceFeeFactor = _fees[2];
         withdrawFeeFactor = _fees[3];
-
-        // Balancer pools
-        balancerPoolUSDCToWant = _balancerPools[0];
-        balancerPoolUSDCToToken0 = _balancerPools[1];
     }
 
     /* State */
 
     address public balancerVaultAddress =
         0xa82f327BBbF0667356D2935C6532d164b06cEced; // Address of Balancer/ACSI.finance Vault for swaps etc.
-    bytes32 public balancerPoolEarnedToTokens =
-        0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to underlying tokens.
+    bytes32 public balancerPool =
+        0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
     bytes32 public balancerLPPool;
     address public tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
-    address public tokenACSI = 0x5b17b4d5e4009B5C43e3e3d63A5229F794cBA389;
-    bytes32 public balancerPoolUSDCToWant;
-    bytes32 public balancerPoolUSDCToToken0;
+
+    // TODO Constructors/Setters
+    uint256 public balancerACSWeightBasisPoints;
+    uint256 public balancerBUSDWeightBasisPoints;
+    address public tokenBUSD;
+    address[] public BUSDToToken0Path;
+    address[] public BUSDToZORROPath;
 
     /* Config */
 
@@ -112,11 +112,11 @@ contract VaultAcryptosSingle is VaultBase {
         balancerVaultAddress = _balancerVaultAddress;
     }
 
-    function setBalancerPoolEarnedToTokens(bytes32 _balancerPoolEarnedToToken)
+    function setBalancerPool(bytes32 _pool)
         public
         onlyOwner
     {
-        balancerPoolEarnedToTokens = _balancerPoolEarnedToToken;
+        balancerPool = _pool;
     }
 
     function setBalancerLPPool(bytes32 _balancerLPPool) public onlyOwner {
@@ -125,24 +125,6 @@ contract VaultAcryptosSingle is VaultBase {
 
     function setTokenACS(address _tokenACS) public onlyOwner {
         tokenACS = _tokenACS;
-    }
-
-    function setTokenACSI(address _tokenACSI) public onlyOwner {
-        tokenACSI = _tokenACSI;
-    }
-
-    function setBalancerPoolUSDCToWant(bytes32 _balancerPoolUSDCToWant)
-        public
-        onlyOwner
-    {
-        balancerPoolUSDCToWant = _balancerPoolUSDCToWant;
-    }
-
-    function setBalancerPoolUSDCToToken0(bytes32 _balancerPoolUSDCToToken0)
-        public
-        onlyOwner
-    {
-        balancerPoolUSDCToToken0 = _balancerPoolUSDCToToken0;
     }
 
     /* Investment Actions */
@@ -252,10 +234,10 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @param _swapParams SafeSwapParams for swap
     function _safeSwap(SafeSwapParams memory _swapParams) internal {
-        if (_swapParams.token0 == tokenACS || _swapParams.token1 == tokenACSI) {
+        if (_swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS) {
             // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
             IBalancerVault(balancerVaultAddress).safeSwap(
-                balancerPoolUSDCToWant,
+                balancerPool,
                 _swapParams
             );
         } else {
@@ -456,16 +438,34 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Swap Earn token for single asset token
+
+        // Step 1: Earned to BUSD
         _safeSwap(SafeSwapParams({
             amountIn: earnedAmt,
             priceToken0: _earnTokenExchangeRate,
-            priceToken1: _token0ExchangeRate,
+            priceToken1: 1e12,
             token0: earnedAddress,
+            token1: tokenBUSD,
+            token0Weight: balancerACSWeightBasisPoints,
+            token1Weight: balancerBUSDWeightBasisPoints,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: earnedToToken0Path,
+            destination: address(this)
+        }));
+
+        // Step 2: BUSD to Token0
+        uint256 _balBUSD = IERC20(tokenBUSD).balanceOf(address(this));
+
+        _safeSwap(SafeSwapParams({
+            amountIn: _balBUSD,
+            priceToken0: 1e12,
+            priceToken1: _token0ExchangeRate,
+            token0: tokenBUSD,
             token1: token0Address,
             token0Weight: 0,
             token1Weight: 0,
             maxMarketMovementAllowed: _maxMarketMovementAllowed,
-            path: earnedToToken0Path,
+            path: BUSDToToken0Path,
             destination: address(this)
         }));
 
@@ -496,86 +496,50 @@ contract VaultAcryptosSingle is VaultBase {
         IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
 
         // Swap Earn to USDC
-        // First check if Earn is ACS(I). (Low liquidity for ACS(I) on Uni/PCS requires two steps)
-        if (earnedAddress == tokenACS || earnedAddress == tokenACSI) {
-            // Swap first from Earn to USDC on Balancer, then USDC to LPPool tokens
+        // First check if Earn is ACS(I). 
+        // Swap first from Earn to USDC on Balancer, then USDC to LPPool tokens
+        // (Low liquidity for ACS(I) on Uni/PCS requires two steps)
 
-            // Earn -> USDC on Balancer
-            _safeSwap(SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: 1e12,
-                token0: earnedAddress,
-                token1: tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToUSDCPath,
-                destination: address(this)
-            }));
+        // Earn -> USDC on Balancer
+        _swapEarnedToUSDC(
+            _amount, 
+            address(this),
+            _maxMarketMovementAllowed, 
+            _rates
+        );
 
-            // Get USDC bal
-            uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(
-                address(this)
-            );
+        // Get USDC bal
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(
+            address(this)
+        );
 
-            // USDC -> LP Pool ZOR token
-            _safeSwap(SafeSwapParams({
-                amountIn: _balUSDC.div(2),
-                priceToken0: 1e12,
-                priceToken1: _rates.ZOR,
-                token0: tokenUSDCAddress,
-                token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: USDCToZORROPath,
-                destination: address(this)
-            }));
+        // USDC -> LP Pool ZOR token
+        _safeSwap(SafeSwapParams({
+            amountIn: _balUSDC.div(2),
+            priceToken0: 1e12,
+            priceToken1: _rates.ZOR,
+            token0: tokenUSDCAddress,
+            token1: ZORROAddress,
+            token0Weight: 0,
+            token1Weight: 0,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: USDCToZORROPath,
+            destination: address(this)
+        }));
 
-            // USDC -> LP Pool Other token
-            _safeSwap(SafeSwapParams({
-                amountIn: _balUSDC.div(2),
-                priceToken0: 1e12,
-                priceToken1: _rates.lpPoolOtherToken,
-                token0: tokenUSDCAddress,
-                token1: zorroLPPoolOtherToken,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: USDCToZORLPPoolOtherTokenPath,
-                destination: address(this)
-            }));
-        } else {
-            // Swap directly to LPPool Tokens (ZOR + other token)
-
-            // Swap Earn to ZOR Token of LP pool
-            _safeSwap(SafeSwapParams({
-                amountIn: _amount.div(2),
-                priceToken0: _rates.earn,
-                priceToken1: _rates.ZOR,
-                token0: earnedAddress,
-                token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORROPath,
-                destination: address(this)
-            }));
-            // Swap Earn to other token of LP pool
-            _safeSwap(SafeSwapParams({
-                amountIn: _amount.div(2),
-                priceToken0: _rates.earn,
-                priceToken1: _rates.lpPoolOtherToken,
-                token0: earnedAddress,
-                token1: zorroLPPoolOtherToken,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORLPPoolOtherTokenPath,
-                destination: address(this)
-            }));
-        }
+        // USDC -> LP Pool Other token
+        _safeSwap(SafeSwapParams({
+            amountIn: _balUSDC.div(2),
+            priceToken0: 1e12,
+            priceToken1: _rates.lpPoolOtherToken,
+            token0: tokenUSDCAddress,
+            token1: zorroLPPoolOtherToken,
+            token0Weight: 0,
+            token1Weight: 0,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: USDCToZORLPPoolOtherTokenPath,
+            destination: address(this)
+        }));
 
         // Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20(ZORROAddress).balanceOf(address(this));
@@ -615,53 +579,37 @@ contract VaultAcryptosSingle is VaultBase {
         IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
 
         // Swap Earn to USDC
-        // First check if Earn is ACS(I).
-        if (earnedAddress == tokenACS || earnedAddress == tokenACSI) {
-            // Require two step swap (Balancer + Uni)
-            // 1. Balancer: Earn -> USDC
-            _safeSwap(SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: 1e12,
-                token0: earnedAddress,
-                token1: tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToUSDCPath,
-                destination: address(this)
-            }));
-            // 2. Uni: USDC -> ZOR
-            uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(
-                address(this)
-            );
-            _safeSwap(SafeSwapParams({
-                amountIn: _balUSDC,
-                priceToken0: 1e12,
-                priceToken1: _rates.ZOR,
-                token0: tokenUSDCAddress,
-                token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: USDCToZORROPath,
-                destination: zorroStakingVault
-            }));
-        } else {
-            // Direct swap (Uni)
-            _safeSwap(SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.ZOR,
-                token0: earnedAddress,
-                token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORROPath,
-                destination: zorroStakingVault
-            }));
-        }
+        // Require two step swap (Balancer + Uni)
+        // 1. Balancer: Earn -> BUSD
+        address[] memory _dummyPath;
+        _safeSwap(SafeSwapParams({
+            amountIn: _amount,
+            priceToken0: _rates.earn,
+            priceToken1: 1e12,
+            token0: earnedAddress,
+            token1: tokenBUSD,
+            token0Weight: balancerACSWeightBasisPoints,
+            token1Weight: balancerBUSDWeightBasisPoints,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: _dummyPath, // Unused
+            destination: address(this)
+        }));
+        // 2. Uni: BUSD -> ZOR
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(
+            address(this)
+        );
+        _safeSwap(SafeSwapParams({
+            amountIn: _balUSDC,
+            priceToken0: 1e12,
+            priceToken1: _rates.ZOR,
+            token0: tokenUSDCAddress,
+            token1: ZORROAddress,
+            token0Weight: 0,
+            token1Weight: 0,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: BUSDToZORROPath,
+            destination: zorroStakingVault
+        }));
     }
 
     /// @notice Swaps Earn token to USDC and sends to destination specified
@@ -675,21 +623,40 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
-        // Swap earned to USDC
+        // Swap ACS to BUSD (Balancer)
         _safeSwap(SafeSwapParams({
             amountIn: _earnedAmount,
             priceToken0: _rates.earn,
             priceToken1: 1e12,
             token0: earnedAddress,
+            token1: tokenBUSD,
+            token0Weight: balancerACSWeightBasisPoints,
+            token1Weight: balancerBUSDWeightBasisPoints,
+            maxMarketMovementAllowed: _maxMarketMovementAllowed,
+            path: earnedToUSDCPath, // Unused
+            destination: address(this)
+        }));
+
+        // BUSD balance
+        uint256 _balBUSD = IERC20(tokenBUSD).balanceOf(address(this));
+
+        // Swap path
+        address[] memory _path; 
+        _path[0] = tokenBUSD;
+        _path[1] = tokenUSDCAddress;
+
+        // Swap BUSD to USDC (PCS)
+        _safeSwap(SafeSwapParams({
+            amountIn: _balBUSD,
+            priceToken0: 1e12,
+            priceToken1: 1e12,
+            token0: tokenBUSD,
             token1: tokenUSDCAddress,
             token0Weight: 0,
             token1Weight: 0,
             maxMarketMovementAllowed: _maxMarketMovementAllowed,
-            path: earnedToUSDCPath,
+            path: _path,
             destination: _destination
         }));
     }
 }
-
-// TODO: All the SafeSwap structs have tokenWeight of zero. Let's make this 
-// more realistic where relevant. 

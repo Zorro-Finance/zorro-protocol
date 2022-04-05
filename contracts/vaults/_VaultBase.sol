@@ -24,6 +24,10 @@ import "../controllers/ZorroController.sol";
 
 import "../interfaces/IVault.sol";
 
+
+// TODO: Move all vault specific state vars to the child class
+
+
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
     using SafeERC20 for IERC20;
