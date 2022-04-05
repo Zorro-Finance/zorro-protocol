@@ -23,8 +23,6 @@ import "../libraries/SafeSwap.sol";
 import "../libraries/PriceFeed.sol";
 
 
-// TODO: Allow depositing/withdrawing using foreign addresses. Do this for all vault contracts
-
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */

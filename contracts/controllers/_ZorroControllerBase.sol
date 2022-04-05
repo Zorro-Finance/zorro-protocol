@@ -66,13 +66,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
         uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
         uint256 enteredVaultAt; // The block timestamp for which the user deposited into a Vault.
-        uint256 exitedVaultStartingAt; // The block timestamp for which the user attempted withdrawal (useful for tracking cross chain withdrawals)
-    }
-
-    // Info of foreign tranche
-    struct ForeignTrancheInfo {
-        uint256 trancheIndex; // Index of tranche in trancheInfo
-        address localAccount; // Use account on chain
+        uint256 exitedVaultAt; // The block timestamp for which the user finished withdrawal
     }
 
     // Info of each pool
@@ -145,6 +139,7 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
     mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
     address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
+    uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
 
     // Oracles
     // TODO: Need constructors/setters.
@@ -157,8 +152,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     PoolInfo[] public poolInfo;
     // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address on-chain => list of tranches
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo;
-    // List of active tranches for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => list of ForeignTrancheInfo
-    mapping(uint256 => mapping(bytes => ForeignTrancheInfo[])) public foreignTrancheInfo;
+    // Map of account address on chain for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => Mapping(tranche ID => local account address)
+    mapping(uint256 => mapping(bytes => mapping(uint256 => address))) public foreignTrancheInfo;
 
     // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
@@ -333,21 +328,26 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /* Events */
     event Deposit(
-        address indexed user,
+        address indexed account,
+        bytes indexed foreignAccount,
         uint256 indexed pid,
         uint256 wantAmount
     );
     event Withdraw(
-        address indexed user,
+        address indexed account,
+        bytes indexed foreignAccount,
         uint256 indexed pid,
         uint256 trancheId,
         uint256 wantAmount
     );
     event TransferInvestment(
-        address user,
+        address account,
         uint256 indexed fromPid,
         uint256 indexed fromTrancheId,
         uint256 indexed toPid
+    );
+    event RemovedSlashedRewards(
+        uint256 indexed _amountZOR
     );
 
     /* View functions */

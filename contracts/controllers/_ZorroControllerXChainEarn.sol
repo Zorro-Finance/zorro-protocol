@@ -21,10 +21,12 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @notice Checks to see how much a cross chain earnings distribution will cost
     /// @param _amountUSDCBuyback Amount of USDC to buy back
     /// @param _amountUSDCRevShare Amount of USDC to rev share with ZOR single staking vault
+    /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @return uint256 Quantity of native token as fees
     function checkXChainDistributeEarningsFee(
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare
+        uint256 _amountUSDCRevShare,
+        uint256 _accSlashedRewards
     ) external view returns (uint256) {
         // Init empty LZ object
         IStargateRouter.lzTxObj memory _lzTxParams;
@@ -33,7 +35,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         bytes memory _payload = _encodeXChainDistributeEarningsPayload(
             chainId,
             _amountUSDCBuyback,
-            _amountUSDCRevShare
+            _amountUSDCRevShare,
+            _accSlashedRewards
         );
         bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
 
@@ -56,11 +59,13 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @param _remoteChainId Zorro chain ID of the chain making the distribution request
     /// @param _amountUSDCBuyback Amount in USDC to buy back
     /// @param _amountUSDCRevShare Amount in USDC to rev share with ZOR staking vault
+    /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @return bytes ABI encoded payload
     function _encodeXChainDistributeEarningsPayload(
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare
+        uint256 _amountUSDCRevShare,
+        uint256 _accSlashedRewards
     ) internal pure returns (bytes memory) {
         // Calculate method signature
         bytes4 _sig = this.receiveXChainDistributionRequest.selector;
@@ -68,14 +73,15 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         bytes memory _inputs = abi.encode(
             _remoteChainId,
             _amountUSDCBuyback,
-            _amountUSDCRevShare
+            _amountUSDCRevShare,
+            _accSlashedRewards
         );
         // Concatenate bytes of signature and inputs
         return bytes.concat(_sig, _inputs);
     }
 
     /* Sending */
-    
+
     /// @notice Sends a request back to the home chain to distribute earnings
     /// @param _pid Pool ID
     /// @param _buybackAmountUSDC Amount in USDC to buy back
@@ -109,11 +115,15 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         // Check balances
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
 
+        // Get accumulated ZOR rewards and set value
+        uint256 _slashedRewards = _removeSlashedRewards();
+
         // Generate payload
         bytes memory _payload = _encodeXChainDistributeEarningsPayload(
             chainId,
             _buybackAmountUSDC,
-            _revShareAmountUSDC
+            _revShareAmountUSDC,
+            _slashedRewards
         );
 
         // Get the destination contract address on the remote chain
@@ -138,7 +148,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     function receiveXChainDistributionRequest(
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare
+        uint256 _amountUSDCRevShare,
+        uint256 _accSlashedRewards
     ) public {
         // Revert to make sure this function never gets called
         revert("illegal dummy func call");
@@ -147,7 +158,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         _receiveXChainDistributionRequest(
             _remoteChainId,
             _amountUSDCBuyback,
-            _amountUSDCRevShare
+            _amountUSDCRevShare,
+            _accSlashedRewards
         );
     }
 
@@ -155,10 +167,12 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @param _remoteChainId The Zorro chain ID of the chain that this request originated from
     /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
     /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
+    /// @param _accSlashedRewards Accumulated slashed rewards on chain
     function _receiveXChainDistributionRequest(
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare
+        uint256 _amountUSDCRevShare,
+        uint256 _accSlashedRewards
     ) internal {
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
@@ -186,5 +200,37 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             _buybackAmount,
             _revShareAmount
         );
+
+        // Award slashed rewards to ZOR stakers
+        if (_accSlashedRewards > 0) {
+            _awardSlashedRewardsToStakers(_accSlashedRewards);
+        }
+    }
+
+    /* Slashed rewards */
+
+    /// @notice Called by oracle to remove slashed ZOR rewards and reset
+    /// @return _slashedZORRewards The amount of accumulated slashed ZOR rewards
+    function _removeSlashedRewards()
+        internal
+        returns (uint256 _slashedZORRewards)
+    {
+        // Store current rewards amount
+        _slashedZORRewards = accumulatedSlashedRewards;
+
+        // Emit success event
+        emit RemovedSlashedRewards(_slashedZORRewards);
+
+        // Reset accumulated rewards
+        accumulatedSlashedRewards = 0;
+    }
+
+    /// @notice Awards the slashed ZOR rewards from other chains to this (home) chain's ZOR staking vault
+    /// @param _slashedZORRewards The amount of accumulated slashed ZOR rewards
+    function _awardSlashedRewardsToStakers(uint256 _slashedZORRewards)
+        internal
+    {
+        // Mint ZOR and send to ZOR staking vault.
+        Zorro(ZORRO).mint(zorroStakingVault, _slashedZORRewards);
     }
 }

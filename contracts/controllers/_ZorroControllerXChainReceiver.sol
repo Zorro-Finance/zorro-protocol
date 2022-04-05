@@ -80,10 +80,11 @@ contract ZorroControllerXChainReceiver is
                 uint256 _pid,
                 uint256 _trancheId,
                 bytes memory _originRecipient,
-                uint256 _burnableZORRewards
+                uint256 _burnableZORRewards,
+                uint256 _rewardsDue
             ) = abi.decode(
                     payload,
-                    (bytes4, uint256, uint256, uint256, bytes, uint256)
+                    (bytes4, uint256, uint256, uint256, bytes, uint256, uint256)
                 );
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
@@ -91,7 +92,8 @@ contract ZorroControllerXChainReceiver is
                 _pid,
                 _trancheId,
                 _originRecipient,
-                _burnableZORRewards
+                _burnableZORRewards,
+                _rewardsDue
             );
         } else if (this.receiveXChainDistributionRequest.selector == _funcSig) {
             // Decode params from payload
@@ -99,16 +101,18 @@ contract ZorroControllerXChainReceiver is
                 ,
                 uint256 _remoteChainId, 
                 uint256 _amountUSDCBuyback, 
-                uint256 _amountUSDCRevShare
+                uint256 _amountUSDCRevShare,
+                uint256 _accSlashedRewards
             ) = abi.decode(
                 payload,
-                (bytes4, uint256, uint256, uint256)
+                (bytes4, uint256, uint256, uint256, uint256)
             );
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
                 _remoteChainId, 
                 _amountUSDCBuyback, 
-                _amountUSDCRevShare
+                _amountUSDCRevShare,
+                _accSlashedRewards
             );
         } else {
             revert("Unrecognized func");
@@ -126,7 +130,7 @@ contract ZorroControllerXChainReceiver is
         
         // Access
         // Src address is a valid controller
-        // TODO: Might need to validate that the srcAddress is on the expected chain too
+        // TODO: Might need to validate that the srcAddress is on the expected chain too. Check for stargate above too
         require(
             registeredXChainControllers[_srcAddress],
             "unrecognized controller"
