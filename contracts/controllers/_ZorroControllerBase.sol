@@ -15,8 +15,6 @@ import "../tokens/ZorroToken.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-// TODO: Do thorough analysis to ensure enough setters/constructors
-// TODO: Move all child state variables to their respective child contracts for better organization
 // TODO: General: For everywhere we call a swap, let's make sure to do safe approval beforehand
 
 /* Base Contract */
@@ -87,7 +85,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     // Map of account address on chain for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => Mapping(tranche ID => local account address)
     mapping(uint256 => mapping(bytes => mapping(uint256 => address))) public foreignTrancheInfo;
     // Oracles
-    // TODO: Need constructors/setters.
     address public zorroControllerOracle;
 
     /* Setters */

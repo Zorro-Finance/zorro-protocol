@@ -105,7 +105,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address[] public USDCToZORLPPoolOtherTokenPath;
 
     // Price feeds
-    // TODO: Constructor, setters
     AggregatorV3Interface public token0PriceFeed; // Token0 price feed
     AggregatorV3Interface public token1PriceFeed; // Token1 price feed
     AggregatorV3Interface public earnTokenPriceFeed; // Price feed of Earn token

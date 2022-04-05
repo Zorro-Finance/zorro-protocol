@@ -94,8 +94,6 @@ contract VaultAcryptosSingle is VaultBase {
         0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
     bytes32 public balancerLPPool;
     address public tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
-
-    // TODO Constructors/Setters
     uint256 public balancerACSWeightBasisPoints;
     uint256 public balancerBUSDWeightBasisPoints;
     address public tokenBUSD;
