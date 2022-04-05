@@ -41,7 +41,7 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee, uint256 _lzFee) = IStargateRouter(stargateRouter)
+        (uint256 _nativeFee,) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
                 ZorroChainToLZMap[homeChainId],
                 1,
@@ -49,8 +49,7 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
                 _payload,
                 _lzTxParams
             );
-        // TODO: Q: Is it the sum of these fees or just one?
-        return _nativeFee.add(_lzFee);
+        return _nativeFee;
     }
 
     /* Encoding (payloads) */

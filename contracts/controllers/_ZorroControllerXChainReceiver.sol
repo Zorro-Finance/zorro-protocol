@@ -130,7 +130,6 @@ contract ZorroControllerXChainReceiver is
         
         // Access
         // Src address is a valid controller
-        // TODO: Might need to validate that the srcAddress is on the expected chain too. Check for stargate above too
         require(
             registeredXChainControllers[_srcAddress],
             "unrecognized controller"
