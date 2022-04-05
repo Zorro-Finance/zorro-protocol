@@ -25,9 +25,6 @@ import "../controllers/ZorroController.sol";
 import "../interfaces/IVault.sol";
 
 
-// TODO: Move all vault specific state vars to the child class
-
-
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
     using SafeERC20 for IERC20;
@@ -35,6 +32,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
 
     /* State */
+
     // Vault characteristics
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
@@ -52,7 +50,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address public zorroLPPool; // Main pool for Zorro liquidity
     address public zorroLPPoolOtherToken; // For the dominant LP pool, the token paired with the ZOR token
     // Other addresses
-    address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
+    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
@@ -101,20 +99,10 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address[] public earnedToZORROPath;
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
-    address[] public token0ToEarnedPath;
-    address[] public token1ToEarnedPath;
     address[] public earnedToZORLPPoolOtherTokenPath;
-    address[] public USDCToWantPath;
-    address[] public WantToUSDCPath;
     address[] public earnedToUSDCPath;
     address[] public USDCToZORROPath;
-    // TODO: Constructor/setter
     address[] public USDCToZORLPPoolOtherTokenPath;
-
-    // Cross chain
-    uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
-    uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
-    mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
 
     // Price feeds
     // TODO: Constructor, setters
@@ -306,7 +294,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         address[] memory _swapPaths,
         uint16[] memory _swapPathStartIndexes
     ) internal {
-        uint16 _currentIndex = _swapPathStartIndexes[0];
+        // TODO: Come back to this. Some of these paths may not be used anymore
         uint256 _ct = 0;
         for (uint16 i = 0; i < _swapPaths.length; ++i) {
             uint16 _nextIndex = 0;

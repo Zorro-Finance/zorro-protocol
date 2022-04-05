@@ -77,7 +77,6 @@ contract VaultAcryptosSingle is VaultBase {
         _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
 
         // Corresponding reverse paths
-        token0ToEarnedPath = _reversePath(earnedToToken0Path);
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
 
         // Fees
