@@ -9,12 +9,31 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    /* Modifiers */
+
+    /// @notice Only can be called from a registered vault
+    /// @param _pid The pool ID
+    modifier onlyRegisteredVault(uint256 _pid) {
+        require(_msgSender() == poolInfo[_pid].vault, "only reg vault");
+        _;
+    }
+
     /* Events */
     event XChainDistributeEarnings(
         uint256 indexed _remoteChainId,
         uint256 indexed _buybackAmountUSDC,
         uint256 indexed _revShareAmountUSDC
     );
+
+    event RemovedSlashedRewards(
+        uint256 indexed _amountZOR
+    );
+
+    /* State */
+    uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
+
+    /* Setters */
+    // TODO
 
     /* Fees */
 

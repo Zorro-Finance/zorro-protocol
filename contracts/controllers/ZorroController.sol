@@ -34,7 +34,6 @@ contract ZorroController is
 
     /// @notice Constructor
     /// @param _timelockOwner address of owner (should be a timelock)
-    /// @param _lockUSDCController The address of the lock for USDC
     /// @param _homeChainZorroController The address of the home chain Zorro controller contract
     /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, the counterparty token to the ZOR LP pool
     /// @param _chainId The ID of the chain that this contract is being deployed on
@@ -43,8 +42,7 @@ contract ZorroController is
     constructor(
         address _timelockOwner,
         address _publicPool,
-        address[] memory _stableCoinAddresses,
-        address _lockUSDCController,
+        address _stableCoinAddress,
         address _homeChainZorroController,
         address[] memory _zorroLPPoolAddresses,
         uint256 _chainId,
@@ -56,9 +54,7 @@ contract ZorroController is
         // Set main state variables to initial state
         startBlock = block.timestamp;
         publicPool = _publicPool;
-        defaultStablecoin = _stableCoinAddresses[0];
-        syntheticStablecoin = _stableCoinAddresses[1];
-        lockUSDCController = _lockUSDCController;
+        defaultStablecoin = _stableCoinAddress;
         require(_homeChainZorroController != address(0), "cannot be 0 addr");
         homeChainZorroController = _homeChainZorroController;
         zorroLPPool = _zorroLPPoolAddresses[0];

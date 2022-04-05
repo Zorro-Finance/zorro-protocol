@@ -36,6 +36,100 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     }
 
+    /* State */
+
+    // Rewards
+    bool public isTimeMultiplierActive = true; // If true, allows use of time multiplier
+    // Zorro LP pool
+    address public zorroLPPool; // Main pool for Zorro liquidity
+    address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
+    // Swaps
+    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
+    address[] public USDCToZorroLPPoolToken0Path; // The router path from USDC to the primary Zorro LP pool, Token 0
+    address[] public USDCToZorroLPPoolToken1Path; // The router path from USDC to the primary Zorro LP pool, Token 1
+    address[] public USDCToZorroPath; // The path to swap USDC to ZOR
+    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
+    // Oracles
+    // TODO: Constructors
+    AggregatorV3Interface public priceFeedZOR;
+    AggregatorV3Interface public priceFeedLPPoolOtherToken;
+
+    /* Setters */
+
+    function setIsTimeMultiplierActive(bool _isActive) external onlyOwner {
+        isTimeMultiplierActive = _isActive;
+    }
+
+    function setZorroLPPool(address _zorroLPPool) external onlyOwner {
+        zorroLPPool = _zorroLPPool;
+    }
+
+    function setZorroLPPoolOtherToken(address _token) external onlyOwner {
+        zorroLPPoolOtherToken = _token;
+    }
+
+    function setUniRouter(address _uniV2Router) external onlyOwner {
+        uniRouterAddress = _uniV2Router;
+    }
+
+    function setUSDCToZorroLPPoolToken0Path(address[] memory _path)
+        external
+        onlyOwner
+    {
+        USDCToZorroLPPoolToken0Path = _path;
+    }
+
+    function setUSDCToZorroLPPoolToken1Path(address[] memory _path)
+        external
+        onlyOwner
+    {
+        USDCToZorroLPPoolToken1Path = _path;
+    }
+
+    function setDefaultMaxMarketMovement(uint256 _defaultMaxMarketMovement)
+        external
+        onlyOwner
+    {
+        defaultMaxMarketMovement = _defaultMaxMarketMovement;
+    }
+
+    function setPriceFeedZOR(address _priceFeedZOR)
+        external
+        onlyOwner
+    {
+        priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
+    }
+
+    function setPriceFeedLPPoolOtherToken(address _priceFeedLPPoolOtherToken)
+        external
+        onlyOwner
+    {
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeedLPPoolOtherToken);
+    }
+
+    /* Events */
+
+    event Deposit(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 wantAmount
+    );
+    
+    event Withdraw(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 trancheId,
+        uint256 wantAmount
+    );
+    event TransferInvestment(
+        address account,
+        uint256 indexed fromPid,
+        uint256 indexed fromTrancheId,
+        uint256 indexed toPid
+    );
+
     /* Cash flow */
 
     /// @notice Deposit Want tokens to associated Vault

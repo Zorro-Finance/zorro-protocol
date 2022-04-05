@@ -14,6 +14,7 @@ import "../interfaces/ILayerZeroEndpoint.sol";
 
 import "../interfaces/IStargateRouter.sol";
 
+
 contract ZorroControllerXChain is ZorroControllerInvestment {
     /* Libraries */
     using SafeMath for uint256;
@@ -38,6 +39,19 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
         address _zroPaymentAddress;
         bytes adapterParams;
     }
+
+    /* State */
+    
+    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
+    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    address public stargateRouter; // Address to on-chain Stargate router
+    uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
+    mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
+    address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
+
+    /* Setters */
+    // TODO: Setters/contructors needed
+
 
     /* Router functions */
 

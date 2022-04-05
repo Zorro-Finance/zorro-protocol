@@ -19,6 +19,30 @@ contract ZorroControllerXChainReceiver is
     IStargateReceiver,
     ILayerZeroReceiver
 {
+    /* State */
+
+    mapping(bytes => bool) public registeredXChainControllers; // The accepted list of cross chain endpoints that can call this contract. Mapping: bytes(address) => false = non existent. true = allowed.
+    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+
+    /* Setters */
+
+    function registerXChainController(bytes memory _contract) external onlyOwner {
+        registeredXChainControllers[_contract] = true;
+    }
+
+    function unRegisterXChainController(bytes memory _contract) external onlyOwner {
+        registeredXChainControllers[_contract] = false;
+    }
+
+    function setControllerContracts(uint256 _chainId, bytes calldata _controllerContract)
+        external
+        onlyOwner
+    {
+        controllerContractsMap[_chainId] = _controllerContract;
+    }
+
+    /* Receivers */
+
     /// @notice Receives stargate cross-chain calls
     /// @dev Implements IStargateReceiver interface
     function sgReceive(
