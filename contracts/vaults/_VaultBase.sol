@@ -311,43 +311,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         );
     }
 
-    // TODO: Remove this func
-    /// @notice Takes an encoded (flattened) array of swap paths along with indexes, to set storage variables for swap paths
-    /// @dev ONLY to be called by constructor! NOTE: All paths must be specified (none can be skipped)
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
-    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
-    function _unpackSwapPaths(
-        address[] memory _swapPaths,
-        uint16[] memory _swapPathStartIndexes
-    ) internal {
-        uint256 _ct = 0;
-        for (uint16 i = 0; i < _swapPaths.length; ++i) {
-            uint16 _nextIndex = 0;
-            if (_ct < _swapPathStartIndexes.length) {
-                _nextIndex = _swapPathStartIndexes[_ct.add(1)];
-            }
-            if (i == 0 || i < _nextIndex) {
-                if (_ct == 0) {
-                    earnedToZORROPath[i] = _swapPaths[i];
-                } else if (_ct == 1) {
-                    earnedToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 2) {
-                    earnedToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 3) {
-                    USDCToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 4) {
-                    USDCToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 5) {
-                    earnedToZORLPPoolOtherTokenPath[i] = _swapPaths[i];
-                } else if (_ct == 6) {
-                    earnedToUSDCPath[i] = _swapPaths[i];
-                } else {
-                    revert("bad swap paths");
-                }
-            }
-        }
-    }
-
     /// @notice Gets the swap path in the opposite direction of a trade
     /// @param _path The swap path to be reversed
     /// @return An reversed path array
