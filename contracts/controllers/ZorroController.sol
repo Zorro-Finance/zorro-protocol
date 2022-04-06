@@ -22,7 +22,6 @@ import "./_ZorroControllerXChainEarn.sol";
 contract ZorroController is
     ZorroControllerBase,
     ZorroControllerPoolMgmt,
-    ZorroControllerInvestment,
     ZorroControllerAnalytics,
     ZorroControllerXChainReceiver
 {

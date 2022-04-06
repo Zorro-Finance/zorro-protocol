@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChain.sol";
 
-contract ZorroControllerXChainEarn is ZorroControllerXChain {
+import "../interfaces/IZorroController.sol";
+
+contract ZorroControllerXChainEarn is IZorroControllerXChainEarn, ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;

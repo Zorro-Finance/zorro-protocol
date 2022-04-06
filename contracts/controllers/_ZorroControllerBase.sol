@@ -15,10 +15,12 @@ import "../tokens/ZorroToken.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
+import "../interfaces/IZorroController.sol";
+
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
-contract ZorroControllerBase is Ownable, ReentrancyGuard {
+contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
     /* Libraries */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;

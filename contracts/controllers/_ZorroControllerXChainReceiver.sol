@@ -12,12 +12,13 @@ import "./_ZorroControllerXChainWithdraw.sol";
 
 import "./_ZorroControllerXChainEarn.sol";
 
+import "../interfaces/IZorroController.sol";
+
 contract ZorroControllerXChainReceiver is
+    IZorroControllerXChainReceiver,
     ZorroControllerXChainDeposit,
     ZorroControllerXChainWithdraw,
-    ZorroControllerXChainEarn,
-    IStargateReceiver,
-    ILayerZeroReceiver
+    ZorroControllerXChainEarn
 {
     /* Modifiers */
     /// @notice Ensures cross chain request is coming from a recognized controller

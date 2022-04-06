@@ -14,7 +14,9 @@ import "../interfaces/ILayerZeroEndpoint.sol";
 
 import "../interfaces/IStargateRouter.sol";
 
-contract ZorroControllerXChain is ZorroControllerInvestment {
+import "../interfaces/IZorroController.sol";
+
+contract ZorroControllerXChain is IZorroControllerXChain, ZorroControllerInvestment {
     /* Libraries */
     using SafeMath for uint256;
 

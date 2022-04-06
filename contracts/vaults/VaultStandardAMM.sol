@@ -33,7 +33,10 @@ contract VaultStandardAMM is VaultBase {
     /* Constructor */
     /// @notice Constructor
     /// @param _initValue A VaultStandardAMMInit struct with all constructor params
-    constructor(VaultStandardAMMInit memory _initValue) {
+    /// @param _timelockOwner The designated timelock controller address to act as owner
+    constructor(address _timelockOwner, VaultStandardAMMInit memory _initValue)
+        VaultBase(_timelockOwner)
+    {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;

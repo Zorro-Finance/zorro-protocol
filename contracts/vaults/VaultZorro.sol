@@ -16,7 +16,10 @@ contract VaultZorro is VaultBase {
     /// @notice Constructor
     /// @dev NOTE: Only to be deployed on home chain!
     /// @param _initValue A VaultZorroInit struct that contains all constructor args
-    constructor(VaultZorroInit memory _initValue) {
+    /// @param _timelockOwner The designated timelock controller address to act as owner
+    constructor(address _timelockOwner, VaultZorroInit memory _initValue)
+        VaultBase(_timelockOwner)
+    {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = false;

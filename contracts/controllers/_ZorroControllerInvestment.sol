@@ -18,7 +18,9 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-contract ZorroControllerInvestment is ZorroControllerBase {
+import "../interfaces/IZorroController.sol";
+
+contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControllerBase {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;

@@ -32,7 +32,11 @@ contract VaultAcryptosSingle is VaultBase {
     /* Constructor */
     /// @notice Constructor
     /// @param _initValue A VaultAcryptosSingleInit struct containing all init values
-    constructor(VaultAcryptosSingleInit memory _initValue) {
+    /// @param _timelockOwner The designated timelock controller address to act as owner
+    constructor(
+        address _timelockOwner,
+        VaultAcryptosSingleInit memory _initValue
+    ) VaultBase(_timelockOwner) {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
