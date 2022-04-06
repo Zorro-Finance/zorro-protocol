@@ -128,7 +128,23 @@ contract VaultAcryptosSingle is VaultBase {
     address[] public BUSDToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
 
     /* Setters */
-    // TODO
+    
+    function setBalancerWeights(uint256 _acsWeight, uint256 _busdWeight) external onlyOwner {
+        balancerACSWeightBasisPoints = _acsWeight;
+        balancerBUSDWeightBasisPoints = _busdWeight;
+    }
+
+    function setBUSDSwapPaths(uint8 _idx, address[] calldata _path) external onlyOwner {
+        if (_idx == 0) {
+            BUSDToToken0Path = _path;
+        } else if (_idx == 1) {
+            BUSDToZORROPath = _path;
+        } else if (_idx == 2) {
+            BUSDToLPPoolOtherTokenPath = _path;
+        } else {
+            revert("unsupported idx swap path");
+        }
+    }
 
     /* Investment Actions */
 

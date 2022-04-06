@@ -180,21 +180,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
 
     /* Setters */
 
-    function setIsCOREStaking(bool _isCOREStaking) public onlyOwner {
-        isCOREStaking = _isCOREStaking;
-    }
-
-    function setIsSingleAssetDeposit(bool _isSingleAssetDeposit)
-        public
-        onlyOwner
-    {
-        isSingleAssetDeposit = _isSingleAssetDeposit;
-    }
-
-    function setIsZorroComp(bool _isZorroComp) public onlyOwner {
-        isZorroComp = _isZorroComp;
-    }
-
     function setPid(uint256 _pid) public onlyOwner {
         pid = _pid;
     }
@@ -226,12 +211,24 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         rewardsAddress = _rewardsAddress;
     }
 
+    function setWantAddress(address _wantAddress) public onlyOwner {
+        wantAddress = _wantAddress;
+    }
+
     function setUniRouterAddress(address _uniRouterAddress) public onlyOwner {
         uniRouterAddress = _uniRouterAddress;
     }
 
     function setPoolAddress(address _poolAddress) public onlyOwner {
         poolAddress = _poolAddress;
+    }
+
+    function setZorroLPPoolAddress(address _poolAddress) public onlyOwner {
+        zorroLPPool = _poolAddress;
+    }
+
+    function setZorroLPPoolOtherToken(address _otherToken) public onlyOwner {
+        zorroLPPoolOtherToken = _otherToken;
     }
 
     function setZorroControllerAddress(address _zorroControllerAddress)
@@ -241,8 +238,52 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         zorroControllerAddress = _zorroControllerAddress;
     }
 
+    function setZorroStakingVault(address _stakingVault) public onlyOwner {
+        zorroStakingVault = _stakingVault;
+    }
+
     function setZORROAddress(address _ZORROAddress) public onlyOwner {
         ZORROAddress = _ZORROAddress;
+    }
+
+    function setPriceFeed(uint8 _idx, address _priceFeed) public onlyOwner {
+        if (_idx == 0) {
+            token0PriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 1) {
+            token1PriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 2) {
+            earnTokenPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 3) {
+            ZORPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 4) {
+            lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else {
+            revert("unsupported feed idx");
+        }
+    }
+
+    function setSwapPaths(uint8 _idx, address[] calldata _path) public onlyOwner {
+        if (_idx == 0) {
+            USDCToToken0Path = _path;
+        } else if (_idx == 1) {
+            USDCToToken1Path = _path;
+        } else if (_idx == 2) {
+            token0ToUSDCPath = _path;
+        } else if (_idx == 3) {
+            token1ToUSDCPath = _path;
+        } else if (_idx == 4) {
+            earnedToToken0Path = _path;
+        } else if (_idx == 5) {
+            earnedToToken1Path = _path;
+        } else if (_idx == 6) {
+            earnedToZORROPath = _path;
+        } else if (_idx == 7) {
+            earnedToZORLPPoolOtherTokenPath = _path;
+        } else if (_idx == 8) {
+            earnedToUSDCPath = _path;
+        } else {
+            revert("unsupported feed idx");
+        }
     }
 
     /// @notice Set governor address
@@ -264,13 +305,11 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
     /// @param _controllerFee Controller fee numerator
     /// @param _buyBackRate Buy back rate fee numerator
-    /// @param _slippageFactor Slippage factor fee numerator
     function setFeeSettings(
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _slippageFactor
+        uint256 _buyBackRate
     ) public virtual onlyAllowGov {
         // Entrance fee
         require(
