@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract ZorroControllerPoolMgmt is ZorroControllerBase {
     /* Libraries */
     using SafeMath for uint256;
-    
+
     /* Pool management */
 
     /// @notice Adds a new pool. Can only be called by the owner.
@@ -28,7 +28,9 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
             massUpdatePools();
         }
         // Last reward block set to current block, or the start block if the startBlock hasn't been provided
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number > startBlock
+            ? block.number
+            : startBlock;
         // Increment the total allocation points by the provided _allocPoint
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         // Push to the poolInfo array
@@ -58,7 +60,9 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
             massUpdatePools();
         }
         // Adjust the total allocation points by the provided _allocPoint
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
+            _allocPoint
+        );
         // Update the key params for this pool
         poolInfo[_pid].allocPoint = _allocPoint;
     }
@@ -70,7 +74,7 @@ contract ZorroControllerPoolMgmt is ZorroControllerBase {
         uint256 length = poolInfo.length;
         // Iterate through each pool and run updatePool()
         for (uint256 pid = 0; pid < length; ++pid) {
-           _mintedZOR = _mintedZOR.add(this.updatePool(pid));
+            _mintedZOR = _mintedZOR.add(this.updatePool(pid));
         }
     }
 }

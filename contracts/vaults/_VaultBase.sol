@@ -24,7 +24,6 @@ import "../controllers/ZorroController.sol";
 
 import "../interfaces/IVault.sol";
 
-
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
     using SafeERC20 for IERC20;
@@ -34,7 +33,8 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Constants */
 
     // Addresses
-    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
+    address public constant burnAddress =
+        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     // Fee min/max bounds
     uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
     uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
@@ -262,7 +262,10 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function setSwapPaths(uint8 _idx, address[] calldata _path) public onlyOwner {
+    function setSwapPaths(uint8 _idx, address[] calldata _path)
+        public
+        onlyOwner
+    {
         if (_idx == 0) {
             USDCToToken0Path = _path;
         } else if (_idx == 1) {
@@ -485,16 +488,16 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    ) public virtual returns (uint256);
+    function depositWantToken(address _account, uint256 _wantAmt)
+        public
+        virtual
+        returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    ) public virtual returns (uint256);
+    function withdrawWantToken(address _account, uint256 _wantAmt)
+        public
+        virtual
+        returns (uint256);
 
     function exchangeWantTokenForUSD(
         uint256 _amount,

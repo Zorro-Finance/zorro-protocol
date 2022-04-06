@@ -20,7 +20,6 @@ import "../interfaces/IBalancerVault.sol";
 
 import "../libraries/PriceFeed.sol";
 
-
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {
     /* Libraries */
@@ -33,9 +32,7 @@ contract VaultAcryptosSingle is VaultBase {
     /* Constructor */
     /// @notice Constructor
     /// @param _initValue A VaultAcryptosSingleInit struct containing all init values
-    constructor(
-        VaultAcryptosSingleInit memory _initValue 
-    ) {
+    constructor(VaultAcryptosSingleInit memory _initValue) {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
@@ -72,7 +69,8 @@ contract VaultAcryptosSingle is VaultBase {
         earnedToZORROPath = _initValue.earnedToZORROPath;
         earnedToToken0Path = _initValue.earnedToToken0Path;
         USDCToToken0Path = _initValue.USDCToToken0Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue.earnedToZORLPPoolOtherTokenPath;
+        earnedToZORLPPoolOtherTokenPath = _initValue
+            .earnedToZORLPPoolOtherTokenPath;
         earnedToUSDCPath = _initValue.earnedToUSDCPath;
         BUSDToToken0Path = _initValue.BUSDToToken0Path;
         BUSDToZORROPath = _initValue.BUSDToZORROPath;
@@ -81,10 +79,18 @@ contract VaultAcryptosSingle is VaultBase {
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token0PriceFeed);
-        earnTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.earnTokenPriceFeed);
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
-        ZORPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.ZORPriceFeed);
+        token0PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token0PriceFeed
+        );
+        earnTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.earnTokenPriceFeed
+        );
+        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
+        );
+        ZORPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.ZORPriceFeed
+        );
     }
 
     /* Structs */
@@ -127,13 +133,19 @@ contract VaultAcryptosSingle is VaultBase {
     address[] public BUSDToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
 
     /* Setters */
-    
-    function setBalancerWeights(uint256 _acsWeight, uint256 _busdWeight) external onlyOwner {
+
+    function setBalancerWeights(uint256 _acsWeight, uint256 _busdWeight)
+        external
+        onlyOwner
+    {
         balancerACSWeightBasisPoints = _acsWeight;
         balancerBUSDWeightBasisPoints = _busdWeight;
     }
 
-    function setBUSDSwapPaths(uint8 _idx, address[] calldata _path) external onlyOwner {
+    function setBUSDSwapPaths(uint8 _idx, address[] calldata _path)
+        external
+        onlyOwner
+    {
         if (_idx == 0) {
             BUSDToToken0Path = _path;
         } else if (_idx == 1) {
@@ -214,7 +226,11 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Swap USDC for tokens
-
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
         // Single asset. Swap from USDC directly to Token0
         _safeSwap(
             SafeSwapParams({
@@ -388,6 +404,11 @@ contract VaultAcryptosSingle is VaultBase {
         // Swap Token0 for USDC
         // Get Token0 balance
         uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
+        // Increase allowance
+        IERC20(token0Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            _token0Bal
+        );
         // Swap Token0 -> USDC
         _safeSwap(
             SafeSwapParams({
@@ -471,7 +492,8 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Step 2: BUSD to Token0
         uint256 _balBUSD = IERC20(tokenBUSD).balanceOf(address(this));
-
+        // Increase allowance
+        IERC20(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,
@@ -534,7 +556,6 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _balBUSD = IERC20(tokenBUSD).balanceOf(address(this));
         // Approve spending
         IERC20(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
-
 
         // 2. Swap 1/2 BUSD -> ZOR
         _safeSwap(
@@ -625,6 +646,11 @@ contract VaultAcryptosSingle is VaultBase {
         );
         // 2. Uni: BUSD -> ZOR
         uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _balUSDC
+        );
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balUSDC,
@@ -677,6 +703,9 @@ contract VaultAcryptosSingle is VaultBase {
         _path[1] = tokenUSDCAddress;
 
         // Swap BUSD to USDC (PCS)
+        // Increase allowance
+        IERC20(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
+        // Swap
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,

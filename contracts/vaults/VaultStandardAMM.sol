@@ -22,7 +22,6 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */
@@ -33,10 +32,8 @@ contract VaultStandardAMM is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
-    /// @param _initValue A VaultStandardAMMInit struct with all constructor params 
-    constructor(
-        VaultStandardAMMInit memory _initValue
-    ) {
+    /// @param _initValue A VaultStandardAMMInit struct with all constructor params
+    constructor(VaultStandardAMMInit memory _initValue) {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
@@ -74,18 +71,29 @@ contract VaultStandardAMM is VaultBase {
         earnedToToken1Path = _initValue.earnedToToken1Path;
         USDCToToken0Path = _initValue.USDCToToken0Path;
         USDCToToken1Path = _initValue.USDCToToken1Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue.earnedToZORLPPoolOtherTokenPath;
+        earnedToZORLPPoolOtherTokenPath = _initValue
+            .earnedToZORLPPoolOtherTokenPath;
         earnedToUSDCPath = _initValue.earnedToUSDCPath;
         // Corresponding reverse paths
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
         token1ToUSDCPath = _reversePath(USDCToToken1Path);
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token0PriceFeed);
-        token1PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token1PriceFeed);
-        earnTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.earnTokenPriceFeed);
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
-        ZORPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.ZORPriceFeed);
+        token0PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token0PriceFeed
+        );
+        token1PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token1PriceFeed
+        );
+        earnTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.earnTokenPriceFeed
+        );
+        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
+        );
+        ZORPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.ZORPriceFeed
+        );
     }
 
     /* Structs */
@@ -114,10 +122,7 @@ contract VaultStandardAMM is VaultBase {
     /// @param _account The address of the end user account making the deposit
     /// @param _wantAmt The amount of Want token to deposit (must already be transferred)
     /// @return Number of shares added
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -178,6 +183,12 @@ contract VaultStandardAMM is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
+
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
 
         // For single token pools, simply swap to Want token right away
         if (isSingleAssetDeposit) {
@@ -283,10 +294,7 @@ contract VaultStandardAMM is VaultBase {
     /// @param _account Address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 The number of shares removed
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -371,6 +379,12 @@ contract VaultStandardAMM is VaultBase {
         if (isSingleAssetDeposit) {
             // If so, immediately swap the Want token for USDC
 
+            // Increase allowance
+            IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                _amount
+            );
+            // Swap
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amount,
                 _token0ExchangeRate,
@@ -389,6 +403,17 @@ contract VaultStandardAMM is VaultBase {
             // Swap tokens back to USDC
             uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
             uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+
+            // Increase allowance
+            IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token0Amt
+            );
+            IERC20(token1Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token1Amt
+            );
+
             // Swap token0 for USDC
             IAMMRouter02(uniRouterAddress).safeSwap(
                 token0Amt,
@@ -400,18 +425,16 @@ contract VaultStandardAMM is VaultBase {
                 block.timestamp.add(600)
             );
 
-            // Swap token1 for USDC (if applicable)
-            if (token1Address != address(0)) {
-                IAMMRouter02(uniRouterAddress).safeSwap(
-                    token1Amt,
-                    _token1ExchangeRate,
-                    1e12,
-                    _maxMarketMovementAllowed,
-                    token1ToUSDCPath,
-                    msg.sender,
-                    block.timestamp.add(600)
-                );
-            }
+            // Swap token1 for USDC
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                token1Amt,
+                _token1ExchangeRate,
+                1e12,
+                _maxMarketMovementAllowed,
+                token1ToUSDCPath,
+                msg.sender,
+                block.timestamp.add(600)
+            );
         }
 
         // Calculate USDC balance
@@ -629,7 +652,9 @@ contract VaultStandardAMM is VaultBase {
 
         // Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(address(this));
+        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+            address(this)
+        );
         IERC20(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -682,6 +707,12 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
+        // Increase allowance
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _earnedAmount
+        );
+
         // Perform swap with Uni router
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,

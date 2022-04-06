@@ -18,7 +18,6 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-
 contract ZorroControllerInvestment is ZorroControllerBase {
     /* Libraries */
     using SafeERC20 for IERC20;
@@ -61,7 +60,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Setter: Zorro LP Pool params
     /// @param _zorroLPPool Address of the Zorro-X LP pool
     /// @param _zorroLPPoolOtherToken Address of the counterpart token to the ZOR token in the LP Pool
-    function setZorroLPPoolParams(address _zorroLPPool, address _zorroLPPoolOtherToken) external onlyOwner {
+    function setZorroLPPoolParams(
+        address _zorroLPPool,
+        address _zorroLPPoolOtherToken
+    ) external onlyOwner {
         zorroLPPool = _zorroLPPool;
         zorroLPPoolOtherToken = _zorroLPPoolOtherToken;
     }
@@ -74,10 +76,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Setter: Set path for token swap from USDC to ZOR
     /// @param _path Swap path
-    function setUSDCToZORPath(address[] memory _path)
-        external
-        onlyOwner
-    {
+    function setUSDCToZORPath(address[] memory _path) external onlyOwner {
         USDCToZorroPath = _path;
     }
 
@@ -98,7 +97,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         address _priceFeedLPPoolOtherToken
     ) external onlyOwner {
         priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeedLPPoolOtherToken);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(
+            _priceFeedLPPoolOtherToken
+        );
     }
 
     /* Events */
@@ -109,7 +110,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 indexed pid,
         uint256 wantAmount
     );
-    
+
     event Withdraw(
         address indexed account,
         bytes indexed foreignAccount,
@@ -354,7 +355,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bool _harvestOnly
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (WithdrawalResult memory _res) = _withdraw(
+        WithdrawalResult memory _res = _withdraw(
             _pid,
             msg.sender,
             "",
@@ -382,10 +383,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bytes memory _foreignAccount,
         uint256 _trancheId,
         bool _harvestOnly
-    )
-        internal
-        returns (WithdrawalResult memory _res)
-    {
+    ) internal returns (WithdrawalResult memory _res) {
         // Can only specify one account (on-chain/foreign, but not both)
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
@@ -598,15 +596,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         IVault vault = IVault(_vaultAddr);
 
         // Call core withdrawal function (returns actual amount withdrawn)
-        (
-            WithdrawalResult memory _res
-        ) = _withdraw(
-                _pid,
-                _account,
-                _foreignAccount,
-                _trancheId,
-                _harvestOnly
-            );
+        WithdrawalResult memory _res = _withdraw(
+            _pid,
+            _account,
+            _foreignAccount,
+            _trancheId,
+            _harvestOnly
+        );
 
         // Safe increase spending of Vault contract for Want token
         IERC20(poolInfo[_pid].want).safeIncreaseAllowance(
@@ -681,7 +677,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
     /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement) internal {
+    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -692,6 +690,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
 
         // Swap to ZOR
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
             1e12,
@@ -706,7 +707,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
     /// @param _amountUSDC Amount of USDC to add as liquidity
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement) internal {
+    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -718,6 +721,9 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken
             .getExchangeRate();
 
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+
         // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
@@ -728,7 +734,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             address(this),
             block.timestamp.add(600)
         );
-
         // Swap to counterparty token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),

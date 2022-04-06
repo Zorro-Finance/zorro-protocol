@@ -25,9 +25,7 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         uint256 indexed _revShareAmountUSDC
     );
 
-    event RemovedSlashedRewards(
-        uint256 indexed _amountZOR
-    );
+    event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
     /* State */
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
@@ -60,7 +58,7 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee,) = IStargateRouter(stargateRouter)
+        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
                 ZorroChainToLZMap[homeChainId],
                 1,

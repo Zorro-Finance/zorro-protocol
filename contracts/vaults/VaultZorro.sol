@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
-
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -17,9 +16,7 @@ contract VaultZorro is VaultBase {
     /// @notice Constructor
     /// @dev NOTE: Only to be deployed on home chain!
     /// @param _initValue A VaultZorroInit struct that contains all constructor args
-    constructor(
-        VaultZorroInit memory _initValue
-    ) {
+    constructor(VaultZorroInit memory _initValue) {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = false;
@@ -50,7 +47,9 @@ contract VaultZorro is VaultBase {
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token0PriceFeed);
+        token0PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token0PriceFeed
+        );
     }
 
     /* Structs */
@@ -68,10 +67,7 @@ contract VaultZorro is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return uiint256 Number of shares added
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -127,6 +123,12 @@ contract VaultZorro is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
@@ -154,10 +156,7 @@ contract VaultZorro is VaultBase {
     /// @param _account address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 the number of shares removed
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -224,6 +223,9 @@ contract VaultZorro is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
+        // Increase allowance
+        IERC20(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
+
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
@@ -262,10 +264,11 @@ contract VaultZorro is VaultBase {
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
     }
 
-    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed, ExchangeRates memory _rates)
-        internal
-        override
-    {
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates
+    ) internal override {
         // Dummy function to implement interface
     }
 

@@ -47,7 +47,7 @@ contract ZorroControllerXChainReceiver is
         address _token,
         uint256 amountLD,
         bytes memory payload
-    ) public override onlyRegXChainController(_chainId, _srcAddress)  {
+    ) public override onlyRegXChainController(_chainId, _srcAddress) {
         // Map to Zorro chain ID
         uint256 _zorroOriginChainId = LZChainToZorroMap[_chainId];
         // Checks / authorization

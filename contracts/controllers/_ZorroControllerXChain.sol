@@ -14,7 +14,6 @@ import "../interfaces/ILayerZeroEndpoint.sol";
 
 import "../interfaces/IStargateRouter.sol";
 
-
 contract ZorroControllerXChain is ZorroControllerInvestment {
     /* Libraries */
     using SafeMath for uint256;
@@ -41,7 +40,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
     }
 
     /* State */
-    
+
     mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
     mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
     mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
@@ -51,21 +50,24 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
     address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
 
     /* Setters */
-    
+
     /// @notice Setter: Controller contract for each chain
     /// @param _zorroChainId Zorro Chain ID
     /// @param _controller Bytes representation of smart contract address for cross chain contract
-    function setControllerContract(uint256 _zorroChainId, bytes calldata _controller) external onlyOwner {
+    function setControllerContract(
+        uint256 _zorroChainId,
+        bytes calldata _controller
+    ) external onlyOwner {
         controllerContractsMap[_zorroChainId] = _controller;
     }
 
     /// @notice Setter: LZ/Stargate params
     /// @param _zorroChainId Zorro chain ID
     /// @param _lzChainId LayerZero Chain ID
-    function setZorroChainToLZMap(
-        uint256 _zorroChainId, 
-        uint16 _lzChainId
-    ) external onlyOwner {
+    function setZorroChainToLZMap(uint256 _zorroChainId, uint16 _lzChainId)
+        external
+        onlyOwner
+    {
         ZorroChainToLZMap[_zorroChainId] = _lzChainId;
         LZChainToZorroMap[_lzChainId] = _zorroChainId;
     }
@@ -74,7 +76,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
     /// @param _zorroChainId Zorro chain ID
     /// @param _stargatePoolId Stargate pool ID
     function setStargateDestPoolIds(
-        uint256 _zorroChainId, 
+        uint256 _zorroChainId,
         uint16 _stargatePoolId
     ) external onlyOwner {
         stargateDestPoolIds[_zorroChainId] = _stargatePoolId;

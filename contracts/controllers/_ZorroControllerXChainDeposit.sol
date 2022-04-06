@@ -4,13 +4,12 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChain.sol";
 
-
 contract ZorroControllerXChainDeposit is ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    /* Fees */ 
+    /* Fees */
 
     /// @notice Checks to see how much a cross chain deposit will cost
     /// @param _chainId The Zorro Chain ID (not the LayerZero one)
@@ -44,7 +43,7 @@ contract ZorroControllerXChainDeposit is ZorroControllerXChain {
         );
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee,) = IStargateRouter(stargateRouter)
+        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
                 ZorroChainToLZMap[_chainId],
                 1,

@@ -15,8 +15,6 @@ import "../tokens/ZorroToken.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-// TODO: General: For everywhere we call a swap, let's make sure to do safe approval beforehand
-
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
@@ -62,7 +60,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /* Constants */
 
-    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD;
+    address public constant burnAddress =
+        0x000000000000000000000000000000000000dEaD;
 
     /* State */
 
@@ -71,13 +70,14 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     address public publicPool; // Only to be set on home chain
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
+    address public tokenUSDC; // USDC address on chain
     // Rewards
     uint256 public startBlock;
     uint256 public blocksPerDay; // Approximate, varies by chain
     uint256 public ZORROPerBlock; // Calculated according to Tokenomics
     uint256 public targetTVLCaptureBasisPoints; // 333 = 3.33% ONLY to be set on the home chain
     uint256 public ZORRODailyDistributionFactorBasisPointsMin; // 1 = 0.01% ONLY for home chain
-    uint256 public ZORRODailyDistributionFactorBasisPointsMax ; // 20 = 0.20% ONLY for home chain
+    uint256 public ZORRODailyDistributionFactorBasisPointsMax; // 20 = 0.20% ONLY for home chain
     uint256 public chainMultiplier; // Proportional rewards to be sent to this chain
     uint256 public baseRewardRateBasisPoints;
     uint256 public totalAllocPoint; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
@@ -90,7 +90,8 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address on-chain => list of tranches
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo;
     // Map of account address on chain for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => Mapping(tranche ID => local account address)
-    mapping(uint256 => mapping(bytes => mapping(uint256 => address))) public foreignTrancheInfo;
+    mapping(uint256 => mapping(bytes => mapping(uint256 => address)))
+        public foreignTrancheInfo;
     // Oracles
     address public zorroControllerOracle;
 
@@ -99,10 +100,10 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @notice Setter: Set key token addresses
     /// @param _ZORRO ZOR token address
     /// @param _defaultStablecoin Main stablecoin address (USDC)
-    function setKeyAddresses(
-        address _ZORRO,
-        address _defaultStablecoin
-    ) external onlyOwner {
+    function setKeyAddresses(address _ZORRO, address _defaultStablecoin)
+        external
+        onlyOwner
+    {
         ZORRO = _ZORRO;
         defaultStablecoin = _defaultStablecoin;
     }
@@ -110,9 +111,13 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     /// @notice Setter: Set key ZOR contract addresses
     /// @param _publicPool Public pool address (where ZOR minted)
     /// @param _zorroStakingVault Zorro single staking vault address
-    function setZorroContracts(address _publicPool, address _zorroStakingVault) external onlyOwner onlyHomeChain {
+    function setZorroContracts(address _publicPool, address _zorroStakingVault)
+        external
+        onlyOwner
+        onlyHomeChain
+    {
         publicPool = _publicPool;
-            zorroStakingVault = _zorroStakingVault;
+        zorroStakingVault = _zorroStakingVault;
     }
 
     /// @notice Setter: Start block for rewards
@@ -149,7 +154,9 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /// @notice Setter: TVL capture (See Tokenomics paper)
     /// @param _targetTVLCaptureBasisPoints Percent of market desired to be captured, in bp. 333 = 3.33%. ONLY to be set on the home chain
-    function setTargetTVLCaptureBasisPoints(uint256 _targetTVLCaptureBasisPoints) external onlyOwner onlyHomeChain {
+    function setTargetTVLCaptureBasisPoints(
+        uint256 _targetTVLCaptureBasisPoints
+    ) external onlyOwner onlyHomeChain {
         targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
     }
 
@@ -169,10 +176,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     /// @notice Setter: Set Zorro Controller Oracle
     /// @param _zorroControllerOracle Address of Chainlink oracle that can interact with this contract
-    function setZorroControllerOracle(address _zorroControllerOracle) external onlyOwner {
+    function setZorroControllerOracle(address _zorroControllerOracle)
+        external
+        onlyOwner
+    {
         zorroControllerOracle = _zorroControllerOracle;
     }
-    
 
     /* View functions */
 
@@ -229,10 +238,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         }
         // Multiply the factor above to determine the total Zorro tokens to distribute to this contract on a DAILY basis
         uint256 publicPoolDailyZORRODistribution = _publicPoolZORBalance
-                .mul(ZORRODailyDistributionFactorBasisPoints)
-                .div(10000);
+            .mul(ZORRODailyDistributionFactorBasisPoints)
+            .div(10000);
         // Determine the share of daily distribution for this chain
-        uint256 chainDailyDist = chainMultiplier.mul(publicPoolDailyZORRODistribution).div(_totalChainMultipliers);
+        uint256 chainDailyDist = chainMultiplier
+            .mul(publicPoolDailyZORRODistribution)
+            .div(_totalChainMultipliers);
         // Convert this to a BLOCK basis and assign to ZORROPerBlock
         ZORROPerBlock = chainDailyDist.div(blocksPerDay);
     }
