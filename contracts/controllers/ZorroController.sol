@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/* Dependencies */
 import "./_ZorroControllerBase.sol";
 
 import "./_ZorroControllerPoolMgmt.sol";
@@ -33,60 +32,98 @@ contract ZorroController is
     /* Constructor */
 
     /// @notice Constructor
-    /// @param _timelockOwner address of owner (should be a timelock)
-    /// @param _homeChainZorroController The address of the home chain Zorro controller contract
-    /// @param _zorroLPPoolAddresses An array of: The address of the Zorro LP pool, the counterparty token to the ZOR LP pool
-    /// @param _chainId The ID of the chain that this contract is being deployed on
-    /// @param _priceFeeds Array of Chainlink price feeds: [priceFeedZOR, priceFeedLPPoolOtherToken]
-    /// @param _zorroControllerOracle Address of Zorro Chainlink oracle for controller
+    /// @param _timelockOwner Address of owner (should be a timelock)
+    /// @param _initValue A ZorroControllerInit struct containing all constructor args
     constructor(
         address _timelockOwner,
-        address _publicPool,
-        address _stableCoinAddress,
-        address _homeChainZorroController,
-        address[] memory _zorroLPPoolAddresses,
-        uint256 _chainId,
-        address[] memory _priceFeeds,
-        address _zorroControllerOracle
+        ZorroControllerInit memory _initValue
     ) {
-        // Base
-        // TODO: Implement real numbers these are just dummy values
-        ZORRO = address(0);
-        publicPool = _publicPool;
-        blocksPerDay = 28800;
-        startBlock = block.number;
-        ZORROPerBlock = 1000;
-        targetTVLCaptureBasisPoints = 33;
+        // Tokens
+        ZORRO = _initValue.ZORRO;
+        defaultStablecoin = _initValue.defaultStablecoin;
+        zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
+
+        // Key contracts
+        publicPool = _initValue.publicPool;
+        zorroStakingVault = _initValue.zorroStakingVault;
+        zorroLPPool = _initValue.zorroLPPool;
+        uniRouterAddress = _initValue.uniRouterAddress;
+
+        // Rewards
         ZORRODailyDistributionFactorBasisPointsMin = 1;
         ZORRODailyDistributionFactorBasisPointsMax = 20;
-        chainMultiplier = 1;
-        baseRewardRateBasisPoints = 10;
-        totalAllocPoint = 0;
-        defaultStablecoin = _stableCoinAddress;
-        zorroStakingVault = address(0);
-        chainId = _chainId;
-        homeChainId = 0;
-        require(_homeChainZorroController != address(0), "cannot be 0 addr");
-        homeChainZorroController = _homeChainZorroController;
-        zorroControllerOracle = _zorroControllerOracle;
+        isTimeMultiplierActive = true;
+        blocksPerDay = _initValue.rewards.blocksPerDay;
+        startBlock = _initValue.rewards.startBlock;
+        ZORROPerBlock = _initValue.rewards.ZORROPerBlock;
+        targetTVLCaptureBasisPoints = _initValue.rewards.targetTVLCaptureBasisPoints;
+        chainMultiplier = _initValue.rewards.chainMultiplier;
+        baseRewardRateBasisPoints = _initValue.rewards.chainMultiplier;
+
+        // Cross chain
+        chainId = _initValue.xChain.chainId;
+        homeChainId = _initValue.xChain.homeChainId;
+        address _homeChainZorroController = _initValue.xChain.homeChainZorroController;
+        if (_homeChainZorroController == address(0)) {
+            homeChainZorroController = address(this);
+        } else {
+            homeChainZorroController = _homeChainZorroController;
+        }
+        stargateRouter = _initValue.xChain.stargateRouter;
+        stargateSwapPoolId = _initValue.xChain.stargateSwapPoolId;
+        layerZeroEndpoint = _initValue.xChain.layerZeroEndpoint;
+        zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
 
         // Investment
-        isTimeMultiplierActive = true;
-        zorroLPPool = _zorroLPPoolAddresses[0];
-        zorroLPPoolOtherToken = _zorroLPPoolAddresses[1];
-        uniRouterAddress = address(0);
-        // TODO
-        // USDCToZorroPath = [?];
-        // USDCToZorroLPPoolOtherTokenPath = [?];
-        priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
+        USDCToZorroPath = _initValue.USDCToZorroPath;
+        USDCToZorroLPPoolOtherTokenPath = _initValue.USDCToZorroLPPoolOtherTokenPath;
 
-        // XChain
-        stargateRouter = address(0);
-        stargateSwapPoolId = 0;
-        layerZeroEndpoint = address(0);
+        // Price feeds
+        priceFeedZOR = AggregatorV3Interface(_initValue.priceFeeds.priceFeedZOR);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_initValue.priceFeeds.priceFeedLPPoolOtherToken);
 
         // Assign owner as to timelock contract
         transferOwnership(_timelockOwner);
+    }
+
+    /* Structs */
+
+    struct ZorroControllerRewards {
+        uint256 blocksPerDay;
+        uint256 startBlock;
+        uint256 ZORROPerBlock;
+        uint256 targetTVLCaptureBasisPoints;
+        uint256 chainMultiplier;
+        uint256 baseRewardRateBasisPoints;
+    }
+
+    struct ZorroControllerXChainParams {
+        uint256 chainId;
+        uint256 homeChainId;
+        address homeChainZorroController;
+        address stargateRouter;
+        uint256 stargateSwapPoolId;
+        address layerZeroEndpoint;
+        address zorroControllerOracle;
+    }
+
+    struct ZorroControllerPriceFeeds {
+        address priceFeedZOR;
+        address priceFeedLPPoolOtherToken;
+    }
+
+    struct ZorroControllerInit {
+        address ZORRO;
+        address defaultStablecoin;
+        address zorroLPPoolOtherToken;
+        address publicPool;
+        address zorroStakingVault;
+        address zorroLPPool;
+        address uniRouterAddress;
+        address[] USDCToZorroPath;
+        address [] USDCToZorroLPPoolOtherTokenPath;
+        ZorroControllerRewards rewards;
+        ZorroControllerXChainParams xChain;
+        ZorroControllerPriceFeeds priceFeeds;
     }
 }

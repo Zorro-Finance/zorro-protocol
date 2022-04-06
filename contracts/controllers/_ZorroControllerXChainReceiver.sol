@@ -26,19 +26,16 @@ contract ZorroControllerXChainReceiver is
 
     /* Setters */
 
+    /// @notice Setter: Add regirested cross chain controller
+    /// @param _contract byte representation of contract to add
     function registerXChainController(bytes memory _contract) external onlyOwner {
         registeredXChainControllers[_contract] = true;
     }
 
+    /// @notice Setter: Remove regirested cross chain controller
+    /// @param _contract byte representation of contract to remove
     function unRegisterXChainController(bytes memory _contract) external onlyOwner {
         registeredXChainControllers[_contract] = false;
-    }
-
-    function setControllerContracts(uint256 _chainId, bytes calldata _controllerContract)
-        external
-        onlyOwner
-    {
-        controllerContractsMap[_chainId] = _controllerContract;
     }
 
     /* Receivers */

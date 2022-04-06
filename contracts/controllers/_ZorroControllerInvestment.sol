@@ -47,6 +47,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address[] public USDCToZorroPath; // The path to swap USDC to ZOR
     address[] public USDCToZorroLPPoolOtherTokenPath; // The router path from USDC to the primary Zorro LP pool, Token 0
+    // TODO: Get rid of defaultMaxMarketMovement. Should always use the provided slippage factor
     uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
     // Oracles
     AggregatorV3Interface public priceFeedZOR;
@@ -54,22 +55,37 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /* Setters */
 
+    /// @notice Setter: Set time multiplier
+    /// @param _isActive Whether it shall be active. If false, timemultiplier will be 1.
     function setIsTimeMultiplierActive(bool _isActive) external onlyOwner {
         isTimeMultiplierActive = _isActive;
     }
 
-    function setZorroLPPool(address _zorroLPPool) external onlyOwner {
+    /// @notice Setter: Zorro LP Pool params
+    /// @param _zorroLPPool Address of the Zorro-X LP pool
+    /// @param _zorroLPPoolOtherToken Address of the counterpart token to the ZOR token in the LP Pool
+    function setZorroLPPoolParams(address _zorroLPPool, address _zorroLPPoolOtherToken) external onlyOwner {
         zorroLPPool = _zorroLPPool;
+        zorroLPPoolOtherToken = _zorroLPPoolOtherToken;
     }
 
-    function setZorroLPPoolOtherToken(address _token) external onlyOwner {
-        zorroLPPoolOtherToken = _token;
-    }
-
+    /// @notice Setter: Uniswap-compatible router address
+    /// @param _uniV2Router Address of router
     function setUniRouter(address _uniV2Router) external onlyOwner {
         uniRouterAddress = _uniV2Router;
     }
 
+    /// @notice Setter: Set path for token swap from USDC to ZOR
+    /// @param _path Swap path
+    function setUSDCToZORPath(address[] memory _path)
+        external
+        onlyOwner
+    {
+        USDCToZorroPath = _path;
+    }
+
+    /// @notice Setter: Set path for token swap from USDC to counterparty token in ZOR LP pool
+    /// @param _path Swap path
     function setUSDCToZorroLPPoolOtherTokenPath(address[] memory _path)
         external
         onlyOwner
@@ -84,17 +100,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         defaultMaxMarketMovement = _defaultMaxMarketMovement;
     }
 
-    function setPriceFeedZOR(address _priceFeedZOR)
-        external
-        onlyOwner
-    {
+    /// @notice Setter: Chainlink price feeds
+    /// @param _priceFeedZOR The address of the price feed for ZOR
+    /// @param _priceFeedLPPoolOtherToken The address of the price feed for the counterparty token in the ZOR LP Pool
+    function setPriceFeeds(
+        address _priceFeedZOR,
+        address _priceFeedLPPoolOtherToken
+    ) external onlyOwner {
         priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
-    }
-
-    function setPriceFeedLPPoolOtherToken(address _priceFeedLPPoolOtherToken)
-        external
-        onlyOwner
-    {
         priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeedLPPoolOtherToken);
     }
 

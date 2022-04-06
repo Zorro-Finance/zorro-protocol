@@ -32,9 +32,6 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /* State */
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
 
-    /* Setters */
-    // TODO
-
     /* Fees */
 
     /// @notice Checks to see how much a cross chain earnings distribution will cost
