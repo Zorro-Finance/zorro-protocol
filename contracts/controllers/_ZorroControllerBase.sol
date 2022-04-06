@@ -32,6 +32,12 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
         _;
     }
 
+    /// @notice Only allows functions to be executed on contracts matching the home chain controller
+    modifier onlyHomeChain() {
+        require(address(this) == homeChainZorroController, "only home chain");
+        _;
+    }
+
     /* Structs */
 
     // Info of each tranche.
@@ -62,7 +68,9 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
 
     // Key tokens/addresses
     address public ZORRO;
+    address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     address public publicPool; // Only to be set on home chain
+    address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
     // Rewards
     uint256 public startBlock;
     uint256 public blocksPerDay; // Approximate, varies by chain
@@ -73,10 +81,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     uint256 public chainMultiplier; // Proportional rewards to be sent to this chain
     uint256 public baseRewardRateBasisPoints;
     uint256 public totalAllocPoint; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
-    // Stablecoins
-    address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
-    // Zorro Single Staking vault
-    address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
     // Cross-chain
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint256 public homeChainId; // The chain ID of the home chain
@@ -91,79 +95,85 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public zorroControllerOracle;
 
     /* Setters */
-    
-    function setStartBlock(uint256 _blockNumber) external onlyOwner {
-        startBlock = _blockNumber;
-    }
+    // TODO: Check constructor for inclusion
 
-    function setPublicPool(address _publicPoolAddress) external onlyOwner {
-        publicPool = _publicPoolAddress;
-    }
-
-    function setBaseRewardRateBasisPoints(uint256 _baseRewardRateBasisPoints)
-        external
-        onlyOwner
-    {
-        baseRewardRateBasisPoints = _baseRewardRateBasisPoints;
-    }
-
-    function setTargetTVLCaptureBasisPoints(
-        uint256 _targetTVLCaptureBasisPoints
+    /// @notice Setter: Set key token addresses
+    /// @param _ZORRO ZOR token address
+    /// @param _defaultStablecoin Main stablecoin address (USDC)
+    function setKeyAddresses(
+        address _ZORRO,
+        address _defaultStablecoin
     ) external onlyOwner {
-        targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
-    }
-
-    function setBlocksPerDay(uint256 _blocksPerDay) external onlyOwner {
-        blocksPerDay = _blocksPerDay;
-    }
-
-    function setZORRODailyDistributionFactorBasisPointsMin(uint256 _value)
-        external
-        onlyOwner
-    {
-        ZORRODailyDistributionFactorBasisPointsMin = _value;
-    }
-
-    function setZORRODailyDistributionFactorBasisPointsMax(uint256 _value)
-        external
-        onlyOwner
-    {
-        ZORRODailyDistributionFactorBasisPointsMax = _value;
-    }
-
-    function setDefaultStablecoin(address _defaultStablecoin)
-        external
-        onlyOwner
-    {
+        ZORRO = _ZORRO;
         defaultStablecoin = _defaultStablecoin;
     }
 
-    function setHomeChainZorroController(address _homeChainZorroController)
-        external
-        onlyOwner
-    {
-        require(_homeChainZorroController != address(0), "cannot be 0 addr");
+    /// @notice Setter: Set key ZOR contract addresses
+    /// @param _publicPool Public pool address (where ZOR minted)
+    /// @param _zorroStakingVault Zorro single staking vault address
+    function setZorroContracts(address _publicPool, address _zorroStakingVault) external onlyOwner onlyHomeChain {
+        publicPool = _publicPool;
+            zorroStakingVault = _zorroStakingVault;
+    }
+
+    /// @notice Setter: Start block for rewards
+    function setStartBlock(uint256 _startBlock) external onlyOwner {
+        // Set start block only if it hasn't been set previously
+        require(startBlock == 0, "blockParams immutable");
+        startBlock = _startBlock;
+    }
+
+    /// @notice Setter: Reward params (See Tokenomics paper for more details)
+    /// @dev NOTE: Must enter all parameters or existing ones will be overwritten!
+    /// @param _blockParams Array of [blocksPerDay, ZORROPerBlock]
+    /// @param _dailyDistFactors Array of [ZORRODailyDistributionFactorBasisPointsMin, ZORRODailyDistributionFactorBasisPointsMax]
+    /// @param _chainMultiplier Rewards multiplier factor to be applied to this chain
+    /// @param _baseRewardRateBasisPoints Base reward rate factor, in bp
+    function setRewardsParams(
+        uint256[] calldata _blockParams,
+        uint256[] calldata _dailyDistFactors,
+        uint256 _chainMultiplier,
+        uint256 _baseRewardRateBasisPoints
+    ) external onlyOwner {
+        // Set other block params
+        blocksPerDay = _blockParams[1];
+        ZORROPerBlock = _blockParams[2];
+
+        // Tokenomics
+        ZORRODailyDistributionFactorBasisPointsMin = _dailyDistFactors[0];
+        ZORRODailyDistributionFactorBasisPointsMax = _dailyDistFactors[1];
+        baseRewardRateBasisPoints = _baseRewardRateBasisPoints;
+
+        // Chain multiplier
+        chainMultiplier = _chainMultiplier;
+    }
+
+    /// @notice Setter: TVL capture (See Tokenomics paper)
+    /// @param _targetTVLCaptureBasisPoints Percent of market desired to be captured, in bp. 333 = 3.33%. ONLY to be set on the home chain
+    function setTargetTVLCaptureBasisPoints(uint256 _targetTVLCaptureBasisPoints) external onlyOwner onlyHomeChain {
+        targetTVLCaptureBasisPoints = _targetTVLCaptureBasisPoints;
+    }
+
+    /// @notice Setter: Cross chain params
+    /// @param _chainId The ind of the chain that this contract is on
+    /// @param _homeChainId The chain ID of the home chain
+    /// @param _homeChainZorroController The address of the home chain controller
+    function setXChainParams(
+        uint256 _chainId,
+        uint256 _homeChainId,
+        address _homeChainZorroController
+    ) external onlyOwner {
+        chainId = _chainId;
+        homeChainId = _homeChainId;
         homeChainZorroController = _homeChainZorroController;
     }
 
-    function setZorroStakingVault(address _zorroStakingVault)
-        external
-        onlyOwner
-    {
-        zorroStakingVault = _zorroStakingVault;
-    }
-
-    function setChainId(uint256 _chainId) external onlyOwner {
-        chainId = _chainId;
-    }
-
+    /// @notice Setter: Set Zorro Controller Oracle
+    /// @param _zorroControllerOracle Address of Chainlink oracle that can interact with this contract
     function setZorroControllerOracle(address _zorroControllerOracle) external onlyOwner {
         zorroControllerOracle = _zorroControllerOracle;
     }
-
-    function setChainMultiplier(uint256 _chainMultiplier) external onlyOwner {
-        chainMultiplier = _chainMultiplier;
-    }
+    
 
     /* View functions */
 
