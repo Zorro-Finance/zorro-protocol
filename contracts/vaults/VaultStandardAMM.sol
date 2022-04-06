@@ -522,7 +522,7 @@ contract VaultStandardAMM is VaultBase {
                 earnedAmt.div(2),
                 _earnTokenExchangeRate,
                 _token0ExchangeRate,
-                slippageFactor,
+                _maxMarketMovementAllowed,
                 earnedToToken0Path,
                 address(this),
                 block.timestamp.add(600)
@@ -536,7 +536,7 @@ contract VaultStandardAMM is VaultBase {
                 earnedAmt.div(2),
                 _earnTokenExchangeRate,
                 _token1ExchangeRate,
-                slippageFactor,
+                _maxMarketMovementAllowed,
                 earnedToToken1Path,
                 address(this),
                 block.timestamp.add(600)
