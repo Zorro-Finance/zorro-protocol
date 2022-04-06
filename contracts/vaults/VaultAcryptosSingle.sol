@@ -88,43 +88,12 @@ contract VaultAcryptosSingle is VaultBase {
 
     /* Structs */
 
-    struct VaultAcryptosSingleAddresses {
-        address govAddress;
-        address zorroControllerAddress;
-        address ZORROAddress;
-        address zorroStakingVault;
-        address wantAddress;
-        address token0Address;
-        address earnedAddress;
-        address farmContractAddress;
-        address rewardsAddress;
-        address poolAddress;
-        address uniRouterAddress;
-        address zorroLPPool;
-        address zorroLPPoolOtherToken;
-    }
-
-    struct VaultAcryptosSingleFees {
-        uint256 controllerFee;
-        uint256 buyBackRate;
-        uint256 revShareRate;
-        uint256 entranceFeeFactor;
-        uint256 withdrawFeeFactor;
-    }
-
-    struct VaultAcryptosSinglePriceFeeds {
-        address token0PriceFeed;
-        address earnTokenPriceFeed;
-        address lpPoolOtherTokenPriceFeed;
-        address ZORPriceFeed;
-    }
-
     struct VaultAcryptosSingleInit {
         uint256 pid;
         bool isCOREStaking;
         bool isZorroComp;
         bool isHomeChain;
-        VaultAcryptosSingleAddresses keyAddresses;
+        VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] USDCToToken0Path;
@@ -133,8 +102,8 @@ contract VaultAcryptosSingle is VaultBase {
         address[] BUSDToToken0Path;
         address[] BUSDToZORROPath;
         address[] BUSDToLPPoolOtherTokenPath;
-        VaultAcryptosSingleFees fees;
-        VaultAcryptosSinglePriceFeeds priceFeeds;
+        VaultFees fees;
+        VaultPriceFeeds priceFeeds;
     }
 
     /* Constants */

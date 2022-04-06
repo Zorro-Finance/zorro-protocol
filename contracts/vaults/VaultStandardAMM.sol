@@ -33,60 +33,78 @@ contract VaultStandardAMM is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
-    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, token1Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress, zorroLPPool, zorroLPPoolOtherToken]
-    /// @param _pid Pool ID this Vault is associated with
-    /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
-    /// @param _isSingleAssetDeposit Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
-    /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
-    /// @param _isHomeChain Whether this contract is deployed on the home chain
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolOtherTokenPath, earnedToUSDCPath]
-    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
-    /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
+    /// @param _initValue A VaultStandardAMMInit struct with all constructor params 
     constructor(
-        address[] memory _addresses,
-        uint256 _pid,
-        bool _isCOREStaking,
-        bool _isSingleAssetDeposit,
-        bool _isZorroComp,
-        bool _isHomeChain,
-        address[] memory _swapPaths,
-        uint16[] memory _swapPathStartIndexes,
-        uint256[] memory _fees
+        VaultStandardAMMInit memory _initValue
     ) {
-        // Key addresses
-        govAddress = _addresses[0];
-        zorroControllerAddress = _addresses[1];
-        ZORROAddress = _addresses[2];
-        wantAddress = _addresses[3];
-        token0Address = _addresses[4];
-        token1Address = _addresses[5];
-        earnedAddress = _addresses[6];
-        farmContractAddress = _addresses[7];
-        rewardsAddress = _addresses[8];
-        poolAddress = _addresses[9];
-        uniRouterAddress = _addresses[10];
-        zorroLPPool = _addresses[11];
-        zorroLPPoolOtherToken = _addresses[12];
+        // Vault config
+        pid = _initValue.pid;
+        isCOREStaking = _initValue.isCOREStaking;
+        isSingleAssetDeposit = _initValue.isSingleAssetDeposit;
+        isZorroComp = _initValue.isZorroComp;
+        isHomeChain = _initValue.isHomeChain;
 
-        // Vault characteristics
-        pid = _pid;
-        isCOREStaking = _isCOREStaking;
-        isSingleAssetDeposit = _isSingleAssetDeposit;
-        isZorroComp = _isZorroComp;
-        isHomeChain = _isHomeChain;
+        // Addresses
+        govAddress = _initValue.keyAddresses.govAddress;
+        onlyGov = true;
+        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
+        zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
+        wantAddress = _initValue.keyAddresses.wantAddress;
+        token0Address = _initValue.keyAddresses.token0Address;
+        earnedAddress = _initValue.keyAddresses.earnedAddress;
+        farmContractAddress = _initValue.keyAddresses.farmContractAddress;
+        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
+        poolAddress = _initValue.keyAddresses.poolAddress;
+        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
+        zorroLPPool = _initValue.keyAddresses.zorroLPPool;
+        zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
 
-        // Swap paths by unflattening _swapPaths
-        _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
+        // Fees
+        controllerFee = _initValue.fees.controllerFee;
+        buyBackRate = _initValue.fees.buyBackRate;
+        revShareRate = _initValue.fees.revShareRate;
+        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
+        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
+        // Swap paths
+        earnedToZORROPath = _initValue.earnedToZORROPath;
+        earnedToToken0Path = _initValue.earnedToToken0Path;
+        earnedToToken1Path = _initValue.earnedToToken1Path;
+        USDCToToken0Path = _initValue.USDCToToken0Path;
+        USDCToToken1Path = _initValue.USDCToToken1Path;
+        earnedToZORLPPoolOtherTokenPath = _initValue.earnedToZORLPPoolOtherTokenPath;
+        earnedToUSDCPath = _initValue.earnedToUSDCPath;
         // Corresponding reverse paths
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
         token1ToUSDCPath = _reversePath(USDCToToken1Path);
 
-        // Fees
-        controllerFee = _fees[0];
-        buyBackRate = _fees[1];
-        entranceFeeFactor = _fees[2];
-        withdrawFeeFactor = _fees[3];
+        // Price feeds
+        token0PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token0PriceFeed);
+        token1PriceFeed = AggregatorV3Interface(_initValue.priceFeeds.token1PriceFeed);
+        earnTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.earnTokenPriceFeed);
+        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        ZORPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.ZORPriceFeed);
+    }
+
+    /* Structs */
+
+    struct VaultStandardAMMInit {
+        uint256 pid;
+        bool isCOREStaking;
+        bool isZorroComp;
+        bool isHomeChain;
+        bool isSingleAssetDeposit;
+        VaultAddresses keyAddresses;
+        address[] earnedToZORROPath;
+        address[] earnedToToken0Path;
+        address[] earnedToToken1Path;
+        address[] USDCToToken0Path;
+        address[] USDCToToken1Path;
+        address[] earnedToZORLPPoolOtherTokenPath;
+        address[] earnedToUSDCPath;
+        VaultFees fees;
+        VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */

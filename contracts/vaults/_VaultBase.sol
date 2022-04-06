@@ -112,6 +112,40 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
 
     /* Structs */
+
+    struct VaultAddresses {
+        address govAddress;
+        address zorroControllerAddress;
+        address ZORROAddress;
+        address zorroStakingVault;
+        address wantAddress;
+        address token0Address;
+        address token1Address;
+        address earnedAddress;
+        address farmContractAddress;
+        address rewardsAddress;
+        address poolAddress;
+        address uniRouterAddress;
+        address zorroLPPool;
+        address zorroLPPoolOtherToken;
+    }
+
+    struct VaultFees {
+        uint256 controllerFee;
+        uint256 buyBackRate;
+        uint256 revShareRate;
+        uint256 entranceFeeFactor;
+        uint256 withdrawFeeFactor;
+    }
+
+    struct VaultPriceFeeds {
+        address token0PriceFeed;
+        address token1PriceFeed;
+        address earnTokenPriceFeed;
+        address ZORPriceFeed;
+        address lpPoolOtherTokenPriceFeed;
+    }
+
     struct ExchangeRates {
         uint256 earn; // Exchange rate of earn token, times 1e12
         uint256 ZOR; // Exchange rate of ZOR token, times 1e12
