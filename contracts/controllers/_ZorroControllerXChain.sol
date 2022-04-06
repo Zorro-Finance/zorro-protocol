@@ -42,9 +42,9 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
 
     /* State */
     
-    // TODO: These should be in constructor!
     mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
     mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
     address public stargateRouter; // Address to on-chain Stargate router
     uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
     mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
@@ -67,6 +67,7 @@ contract ZorroControllerXChain is ZorroControllerInvestment {
         uint16 _lzChainId
     ) external onlyOwner {
         ZorroChainToLZMap[_zorroChainId] = _lzChainId;
+        LZChainToZorroMap[_lzChainId] = _zorroChainId;
     }
 
     /// @notice Setter: Stargate dest pool IDs for USD asset

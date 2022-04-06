@@ -52,7 +52,6 @@ contract VaultAcryptosSingle is VaultBase {
         wantAddress = _initValue.keyAddresses.wantAddress;
         token0Address = _initValue.keyAddresses.token0Address;
         token1Address = _initValue.keyAddresses.token1Address;
-        // TODO: Aren't earned and farmContract always the same?
         earnedAddress = _initValue.keyAddresses.earnedAddress;
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;

@@ -18,7 +18,6 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-// TODO: Do an overall audit of the code base to see where we should emit events.
 
 contract ZorroControllerInvestment is ZorroControllerBase {
     /* Libraries */

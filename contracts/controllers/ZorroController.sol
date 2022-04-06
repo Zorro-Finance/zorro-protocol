@@ -18,8 +18,6 @@ import "./_ZorroControllerXChainWithdraw.sol";
 import "./_ZorroControllerXChainEarn.sol";
 
 
-// TODO: General: Complete audit of docstrings and make sure they make sense
-
 /* Main Contract */
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.
 contract ZorroController is
@@ -73,6 +71,14 @@ contract ZorroController is
         stargateSwapPoolId = _initValue.xChain.stargateSwapPoolId;
         layerZeroEndpoint = _initValue.xChain.layerZeroEndpoint;
         zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
+        for (uint16 i = 0; i < _initValue.xChain.ZorroChainIDs.length; ++i) {
+            uint256 _zChainId = _initValue.xChain.ZorroChainIDs[i];
+
+            controllerContractsMap[_zChainId] = _initValue.xChain.controllerContracts[i];
+            ZorroChainToLZMap[_zChainId] = _initValue.xChain.LZChainIDs[i];
+            LZChainToZorroMap[_initValue.xChain.LZChainIDs[i]] = _zChainId;
+            stargateDestPoolIds[_zChainId] = _initValue.xChain.stargateDestPoolIds[i];
+        }
 
         // Investment
         USDCToZorroPath = _initValue.USDCToZorroPath;
@@ -105,6 +111,10 @@ contract ZorroController is
         uint256 stargateSwapPoolId;
         address layerZeroEndpoint;
         address zorroControllerOracle;
+        uint256[] ZorroChainIDs;
+        bytes[] controllerContracts; // Must be same length as ZorroChainIDs
+        uint16[] LZChainIDs; // Must be same length as ZorroChainIDs
+        uint256[] stargateDestPoolIds; // Must be same length as ZorroChainIDs
     }
 
     struct ZorroControllerPriceFeeds {

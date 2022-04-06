@@ -95,7 +95,6 @@ contract ZorroControllerBase is Ownable, ReentrancyGuard {
     address public zorroControllerOracle;
 
     /* Setters */
-    // TODO: Check constructor for inclusion
 
     /// @notice Setter: Set key token addresses
     /// @param _ZORRO ZOR token address

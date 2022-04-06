@@ -19,23 +19,21 @@ contract ZorroControllerXChainReceiver is
     IStargateReceiver,
     ILayerZeroReceiver
 {
-    /* State */
-
-    mapping(bytes => bool) public registeredXChainControllers; // The accepted list of cross chain endpoints that can call this contract. Mapping: bytes(address) => false = non existent. true = allowed.
-    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
-
-    /* Setters */
-
-    /// @notice Setter: Add regirested cross chain controller
-    /// @param _contract byte representation of contract to add
-    function registerXChainController(bytes memory _contract) external onlyOwner {
-        registeredXChainControllers[_contract] = true;
-    }
-
-    /// @notice Setter: Remove regirested cross chain controller
-    /// @param _contract byte representation of contract to remove
-    function unRegisterXChainController(bytes memory _contract) external onlyOwner {
-        registeredXChainControllers[_contract] = false;
+    /* Modifiers */
+    /// @notice Ensures cross chain request is coming from a recognized controller
+    /// @param _lzChainId Layer Zero chain ID
+    /// @param _callingContract The cross chain sender (should be a Zorro controller)
+    modifier onlyRegXChainController(
+        uint16 _lzChainId,
+        bytes memory _callingContract
+    ) {
+        uint256 _zChainId = LZChainToZorroMap[_lzChainId];
+        require(
+            keccak256(controllerContractsMap[_zChainId]) ==
+                keccak256(_callingContract),
+            "Unrecog xchain controller"
+        );
+        _;
     }
 
     /* Receivers */
@@ -49,19 +47,13 @@ contract ZorroControllerXChainReceiver is
         address _token,
         uint256 amountLD,
         bytes memory payload
-    ) public override {
+    ) public override onlyRegXChainController(_chainId, _srcAddress)  {
         // Map to Zorro chain ID
         uint256 _zorroOriginChainId = LZChainToZorroMap[_chainId];
         // Checks / authorization
         // Amounts
         uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
         require(amountLD <= _tokenBal, "amountLD exceeds bal");
-        // Access
-        // Src address is a valid controller
-        require(
-            registeredXChainControllers[_srcAddress],
-            "unrecognized controller"
-        );
 
         // Determine function based on signature
         // Get func signature
@@ -120,18 +112,18 @@ contract ZorroControllerXChainReceiver is
             // Decode params from payload
             (
                 ,
-                uint256 _remoteChainId, 
-                uint256 _amountUSDCBuyback, 
+                uint256 _remoteChainId,
+                uint256 _amountUSDCBuyback,
                 uint256 _amountUSDCRevShare,
                 uint256 _accSlashedRewards
             ) = abi.decode(
-                payload,
-                (bytes4, uint256, uint256, uint256, uint256)
-            );
+                    payload,
+                    (bytes4, uint256, uint256, uint256, uint256)
+                );
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
-                _remoteChainId, 
-                _amountUSDCBuyback, 
+                _remoteChainId,
+                _amountUSDCBuyback,
                 _amountUSDCRevShare,
                 _accSlashedRewards
             );
@@ -145,16 +137,9 @@ contract ZorroControllerXChainReceiver is
         bytes calldata _srcAddress,
         uint64 _nonce,
         bytes calldata _payload
-    ) external override {
+    ) external override onlyRegXChainController(_srcChainId, _srcAddress) {
         // Map to Zorro chain ID
         uint256 _zorroOriginChainId = LZChainToZorroMap[_srcChainId];
-        
-        // Access
-        // Src address is a valid controller
-        require(
-            registeredXChainControllers[_srcAddress],
-            "unrecognized controller"
-        );
 
         // Determine function based on signature
         // Get func signature
