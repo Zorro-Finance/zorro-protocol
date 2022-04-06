@@ -115,17 +115,19 @@ contract ZorroControllerXChainReceiver is
                 uint256 _remoteChainId,
                 uint256 _amountUSDCBuyback,
                 uint256 _amountUSDCRevShare,
-                uint256 _accSlashedRewards
+                uint256 _accSlashedRewards,
+                uint256 _maxMarketMovement
             ) = abi.decode(
                     payload,
-                    (bytes4, uint256, uint256, uint256, uint256)
+                    (bytes4, uint256, uint256, uint256, uint256, uint256)
                 );
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
                 _remoteChainId,
                 _amountUSDCBuyback,
                 _amountUSDCRevShare,
-                _accSlashedRewards
+                _accSlashedRewards,
+                _maxMarketMovement
             );
         } else {
             revert("Unrecognized func");

@@ -46,8 +46,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     address[] public USDCToZorroPath; // The path to swap USDC to ZOR
     address[] public USDCToZorroLPPoolOtherTokenPath; // The router path from USDC to the primary Zorro LP pool, Token 0
-    // TODO: Get rid of defaultMaxMarketMovement. Should always use the provided slippage factor
-    uint256 public defaultMaxMarketMovement = 970; // Max default slippage, divided by 1000. E.g. 970 means 1 - 970/1000 = 3%.
     // Oracles
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
@@ -90,13 +88,6 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         onlyOwner
     {
         USDCToZorroLPPoolOtherTokenPath = _path;
-    }
-
-    function setDefaultMaxMarketMovement(uint256 _defaultMaxMarketMovement)
-        external
-        onlyOwner
-    {
-        defaultMaxMarketMovement = _defaultMaxMarketMovement;
     }
 
     /// @notice Setter: Chainlink price feeds
@@ -689,7 +680,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
     /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
-    function _revShareOnChain(uint256 _amountUSDC) internal {
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement) internal {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -704,7 +696,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _amountUSDC,
             1e12,
             _ZORROExchangeRate,
-            defaultMaxMarketMovement,
+            _maxMarketMovement,
             USDCToZorroPath,
             zorroStakingVault,
             block.timestamp.add(600)
@@ -713,7 +705,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
     /// @param _amountUSDC Amount of USDC to add as liquidity
-    function _buybackOnChain(uint256 _amountUSDC) internal {
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement) internal {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -730,7 +723,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _amountUSDC.div(2),
             1e12,
             _exchangeRateZOR,
-            defaultMaxMarketMovement,
+            _maxMarketMovement,
             USDCToZorroPath,
             address(this),
             block.timestamp.add(600)
@@ -741,7 +734,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             _amountUSDC.div(2),
             1e12,
             _exchangeRateLPPoolOtherToken,
-            defaultMaxMarketMovement,
+            _maxMarketMovement,
             USDCToZorroLPPoolOtherTokenPath,
             address(this),
             block.timestamp.add(600)
@@ -762,8 +755,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             zorroLPPoolOtherToken,
             tokenZORAmt,
             tokenOtherAmt,
-            tokenZORAmt.mul(defaultMaxMarketMovement).div(1000),
-            tokenOtherAmt.mul(defaultMaxMarketMovement).div(1000),
+            tokenZORAmt.mul(_maxMarketMovement).div(1000),
+            tokenOtherAmt.mul(_maxMarketMovement).div(1000),
             burnAddress,
             block.timestamp.add(600)
         );

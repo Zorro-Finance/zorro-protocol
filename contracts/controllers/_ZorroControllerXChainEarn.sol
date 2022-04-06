@@ -39,10 +39,12 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @param _amountUSDCRevShare Amount of USDC to rev share with ZOR single staking vault
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @return uint256 Quantity of native token as fees
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
     function checkXChainDistributeEarningsFee(
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards
+        uint256 _accSlashedRewards,
+        uint256 _maxMarketMovement
     ) external view returns (uint256) {
         // Init empty LZ object
         IStargateRouter.lzTxObj memory _lzTxParams;
@@ -52,7 +54,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             chainId,
             _amountUSDCBuyback,
             _amountUSDCRevShare,
-            _accSlashedRewards
+            _accSlashedRewards,
+            _maxMarketMovement
         );
         bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
 
@@ -75,12 +78,14 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @param _amountUSDCBuyback Amount in USDC to buy back
     /// @param _amountUSDCRevShare Amount in USDC to rev share with ZOR staking vault
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
     /// @return bytes ABI encoded payload
     function _encodeXChainDistributeEarningsPayload(
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards
+        uint256 _accSlashedRewards,
+        uint256 _maxMarketMovement
     ) internal pure returns (bytes memory) {
         // Calculate method signature
         bytes4 _sig = this.receiveXChainDistributionRequest.selector;
@@ -89,7 +94,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             _remoteChainId,
             _amountUSDCBuyback,
             _amountUSDCRevShare,
-            _accSlashedRewards
+            _accSlashedRewards,
+            _maxMarketMovement
         );
         // Concatenate bytes of signature and inputs
         return bytes.concat(_sig, _inputs);
@@ -138,7 +144,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             chainId,
             _buybackAmountUSDC,
             _revShareAmountUSDC,
-            _slashedRewards
+            _slashedRewards,
+            _maxMarketMovement
         );
 
         // Get the destination contract address on the remote chain
@@ -164,7 +171,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards
+        uint256 _accSlashedRewards,
+        uint256 _maxMarketMovement
     ) public {
         // Revert to make sure this function never gets called
         revert("illegal dummy func call");
@@ -174,7 +182,8 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
             _remoteChainId,
             _amountUSDCBuyback,
             _amountUSDCRevShare,
-            _accSlashedRewards
+            _accSlashedRewards,
+            _maxMarketMovement
         );
     }
 
@@ -183,11 +192,13 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
     /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
     /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
     function _receiveXChainDistributionRequest(
         uint256 _remoteChainId,
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards
+        uint256 _accSlashedRewards,
+        uint256 _maxMarketMovement
     ) internal {
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
@@ -200,14 +211,14 @@ contract ZorroControllerXChainEarn is ZorroControllerXChain {
         uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback).div(
             _totalUSDC
         );
-        _buybackOnChain(_buybackAmount);
+        _buybackOnChain(_buybackAmount, _maxMarketMovement);
 
         /* Rev share */
         // (Account for slippage)
         uint256 _revShareAmount = _balUSDC.mul(_amountUSDCRevShare).div(
             _totalUSDC
         );
-        _revShareOnChain(_revShareAmount);
+        _revShareOnChain(_revShareAmount, _maxMarketMovement);
 
         // Emit event
         emit XChainDistributeEarnings(
