@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
-
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -16,43 +15,54 @@ contract VaultZorro is VaultBase {
     /* Constructor */
     /// @notice Constructor
     /// @dev NOTE: Only to be deployed on home chain!
-    /// @param _addresses : [gov, Zorro controller, Zorro token, Uni v2 router address]
-    /// @param _pid : The pool ID in the Zorro Controller
-    /// @param _fees : [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
-    /// @param _token0ToUSDCPath Router path to swap from Zorro to USDC
-    /// @param _USDCToToken0Path Router path to swap from USDC to ZORRO
-    constructor(
-        address[] memory _addresses,
-        uint256 _pid,
-        uint256[] memory _fees,
-        address[] memory _token0ToUSDCPath,
-        address[] memory _USDCToToken0Path
-    ) {
-        // Key addresses
-        govAddress = _addresses[0];
-        zorroControllerAddress = _addresses[1];
-        ZORROAddress = _addresses[2];
-        wantAddress = _addresses[2];
-        token0Address = _addresses[2];
-        rewardsAddress = _addresses[2];
-        uniRouterAddress = _addresses[3];
-
-        // Vault characteristics
-        pid = _pid;
+    /// @param _initValue A VaultZorroInit struct that contains all constructor args
+    /// @param _timelockOwner The designated timelock controller address to act as owner
+    constructor(address _timelockOwner, VaultZorroInit memory _initValue)
+        VaultBase(_timelockOwner)
+    {
+        // Vault config
+        pid = _initValue.pid;
         isCOREStaking = false;
         isSingleAssetDeposit = true;
         isZorroComp = false;
         isHomeChain = true;
 
-        // Swap paths
-        token0ToUSDCPath = _token0ToUSDCPath;
-        USDCToToken0Path = _USDCToToken0Path;
+        // Addresses
+        govAddress = _initValue.keyAddresses.govAddress;
+        onlyGov = true;
+        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
+        wantAddress = _initValue.keyAddresses.wantAddress;
+        token0Address = _initValue.keyAddresses.token0Address;
+        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
+        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
+        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
 
         // Fees
-        controllerFee = _fees[0];
-        buyBackRate = _fees[1];
-        entranceFeeFactor = _fees[2];
-        withdrawFeeFactor = _fees[3];
+        controllerFee = _initValue.fees.controllerFee;
+        buyBackRate = _initValue.fees.buyBackRate;
+        revShareRate = _initValue.fees.revShareRate;
+        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
+        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
+
+        // Swap paths
+        USDCToToken0Path = _initValue.USDCToToken0Path;
+        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+
+        // Price feeds
+        token0PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token0PriceFeed
+        );
+    }
+
+    /* Structs */
+
+    struct VaultZorroInit {
+        uint256 pid;
+        VaultAddresses keyAddresses;
+        address[] USDCToToken0Path;
+        VaultFees fees;
+        VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -60,10 +70,7 @@ contract VaultZorro is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return uiint256 Number of shares added
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -119,6 +126,12 @@ contract VaultZorro is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
@@ -146,10 +159,7 @@ contract VaultZorro is VaultBase {
     /// @param _account address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 the number of shares removed
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -216,6 +226,9 @@ contract VaultZorro is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
+        // Increase allowance
+        IERC20(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
+
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
@@ -254,10 +267,11 @@ contract VaultZorro is VaultBase {
         wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
     }
 
-    function _buybackOnChain(uint256 _amount, uint256 _maxMarketMovementAllowed, ExchangeRates memory _rates)
-        internal
-        override
-    {
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates
+    ) internal override {
         // Dummy function to implement interface
     }
 

@@ -18,9 +18,9 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-// TODO: Do an overall audit of the code base to see where we should emit events.
+import "../interfaces/IZorroController.sol";
 
-contract ZorroControllerInvestment is ZorroControllerBase {
+contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControllerBase {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -35,6 +35,97 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
         uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     }
+
+    /* State */
+
+    // Rewards
+    bool public isTimeMultiplierActive; // If true, allows use of time multiplier
+    // Zorro LP pool
+    address public zorroLPPool; // Main pool for Zorro liquidity
+    address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
+    // Swaps
+    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
+    address[] public USDCToZorroPath; // The path to swap USDC to ZOR
+    address[] public USDCToZorroLPPoolOtherTokenPath; // The router path from USDC to the primary Zorro LP pool, Token 0
+    // Oracles
+    AggregatorV3Interface public priceFeedZOR;
+    AggregatorV3Interface public priceFeedLPPoolOtherToken;
+
+    /* Setters */
+
+    /// @notice Setter: Set time multiplier
+    /// @param _isActive Whether it shall be active. If false, timemultiplier will be 1.
+    function setIsTimeMultiplierActive(bool _isActive) external onlyOwner {
+        isTimeMultiplierActive = _isActive;
+    }
+
+    /// @notice Setter: Zorro LP Pool params
+    /// @param _zorroLPPool Address of the Zorro-X LP pool
+    /// @param _zorroLPPoolOtherToken Address of the counterpart token to the ZOR token in the LP Pool
+    function setZorroLPPoolParams(
+        address _zorroLPPool,
+        address _zorroLPPoolOtherToken
+    ) external onlyOwner {
+        zorroLPPool = _zorroLPPool;
+        zorroLPPoolOtherToken = _zorroLPPoolOtherToken;
+    }
+
+    /// @notice Setter: Uniswap-compatible router address
+    /// @param _uniV2Router Address of router
+    function setUniRouter(address _uniV2Router) external onlyOwner {
+        uniRouterAddress = _uniV2Router;
+    }
+
+    /// @notice Setter: Set path for token swap from USDC to ZOR
+    /// @param _path Swap path
+    function setUSDCToZORPath(address[] memory _path) external onlyOwner {
+        USDCToZorroPath = _path;
+    }
+
+    /// @notice Setter: Set path for token swap from USDC to counterparty token in ZOR LP pool
+    /// @param _path Swap path
+    function setUSDCToZorroLPPoolOtherTokenPath(address[] memory _path)
+        external
+        onlyOwner
+    {
+        USDCToZorroLPPoolOtherTokenPath = _path;
+    }
+
+    /// @notice Setter: Chainlink price feeds
+    /// @param _priceFeedZOR The address of the price feed for ZOR
+    /// @param _priceFeedLPPoolOtherToken The address of the price feed for the counterparty token in the ZOR LP Pool
+    function setPriceFeeds(
+        address _priceFeedZOR,
+        address _priceFeedLPPoolOtherToken
+    ) external onlyOwner {
+        priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(
+            _priceFeedLPPoolOtherToken
+        );
+    }
+
+    /* Events */
+
+    event Deposit(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 wantAmount
+    );
+
+    event Withdraw(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 trancheId,
+        uint256 wantAmount
+    );
+    event TransferInvestment(
+        address account,
+        uint256 indexed fromPid,
+        uint256 indexed fromTrancheId,
+        uint256 indexed toPid
+    );
 
     /* Cash flow */
 
@@ -266,7 +357,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bool _harvestOnly
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (WithdrawalResult memory _res) = _withdraw(
+        WithdrawalResult memory _res = _withdraw(
             _pid,
             msg.sender,
             "",
@@ -294,10 +385,7 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         bytes memory _foreignAccount,
         uint256 _trancheId,
         bool _harvestOnly
-    )
-        internal
-        returns (WithdrawalResult memory _res)
-    {
+    ) internal returns (WithdrawalResult memory _res) {
         // Can only specify one account (on-chain/foreign, but not both)
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
@@ -510,15 +598,13 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         IVault vault = IVault(_vaultAddr);
 
         // Call core withdrawal function (returns actual amount withdrawn)
-        (
-            WithdrawalResult memory _res
-        ) = _withdraw(
-                _pid,
-                _account,
-                _foreignAccount,
-                _trancheId,
-                _harvestOnly
-            );
+        WithdrawalResult memory _res = _withdraw(
+            _pid,
+            _account,
+            _foreignAccount,
+            _trancheId,
+            _harvestOnly
+        );
 
         // Safe increase spending of Vault contract for Want token
         IERC20(poolInfo[_pid].want).safeIncreaseAllowance(
@@ -592,7 +678,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
     /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
-    function _revShareOnChain(uint256 _amountUSDC) internal {
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -603,11 +692,14 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
 
         // Swap to ZOR
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
             1e12,
             _ZORROExchangeRate,
-            defaultMaxMarketMovement,
+            _maxMarketMovement,
             USDCToZorroPath,
             zorroStakingVault,
             block.timestamp.add(600)
@@ -616,7 +708,10 @@ contract ZorroControllerInvestment is ZorroControllerBase {
 
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
     /// @param _amountUSDC Amount of USDC to add as liquidity
-    function _buybackOnChain(uint256 _amountUSDC) internal {
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
         // Authorize spending beforehand
         IERC20(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
@@ -628,24 +723,26 @@ contract ZorroControllerInvestment is ZorroControllerBase {
         uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken
             .getExchangeRate();
 
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+
         // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             1e12,
             _exchangeRateZOR,
-            defaultMaxMarketMovement,
-            USDCToZorroLPPoolToken0Path,
+            _maxMarketMovement,
+            USDCToZorroPath,
             address(this),
             block.timestamp.add(600)
         );
-
         // Swap to counterparty token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
             1e12,
             _exchangeRateLPPoolOtherToken,
-            defaultMaxMarketMovement,
-            USDCToZorroLPPoolToken1Path,
+            _maxMarketMovement,
+            USDCToZorroLPPoolOtherTokenPath,
             address(this),
             block.timestamp.add(600)
         );
@@ -665,8 +762,8 @@ contract ZorroControllerInvestment is ZorroControllerBase {
             zorroLPPoolOtherToken,
             tokenZORAmt,
             tokenOtherAmt,
-            tokenZORAmt.mul(defaultMaxMarketMovement).div(1000),
-            tokenOtherAmt.mul(defaultMaxMarketMovement).div(1000),
+            tokenZORAmt.mul(_maxMarketMovement).div(1000),
+            tokenOtherAmt.mul(_maxMarketMovement).div(1000),
             burnAddress,
             block.timestamp.add(600)
         );

@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChain.sol";
 
-contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
+import "../interfaces/IZorroController.sol";
+
+contract ZorroControllerXChainWithdraw is IZorroControllerXChainWithdraw, ZorroControllerXChain {
     /* Libraries */
     using SafeMath for uint256;
 
@@ -48,7 +50,9 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         );
 
         // Encode adapter params to provide more gas for destination
-        bytes memory _adapterParams = _getLZAdapterParamsForWithdraw(_gasForDestinationLZReceive);
+        bytes memory _adapterParams = _getLZAdapterParamsForWithdraw(
+            _gasForDestinationLZReceive
+        );
 
         // Query LayerZero for quote
         (uint256 _nativeFee, ) = ILayerZeroEndpoint(layerZeroEndpoint)
@@ -109,7 +113,7 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         bytes memory _dstContract = controllerContractsMap[_originChainId];
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee,) = IStargateRouter(stargateRouter)
+        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
             .quoteLayerZeroFee(
                 ZorroChainToLZMap[_originChainId],
                 1,
@@ -224,7 +228,9 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
                 payload: _payload,
                 refundAddress: payable(msg.sender),
                 _zroPaymentAddress: address(0),
-                adapterParams: _getLZAdapterParamsForWithdraw(_gasForDestinationLZReceive)
+                adapterParams: _getLZAdapterParamsForWithdraw(
+                    _gasForDestinationLZReceive
+                )
             })
         );
     }
@@ -317,14 +323,19 @@ contract ZorroControllerXChainWithdraw is ZorroControllerXChain {
         address _account = foreignTrancheInfo[_pid][_originAccount][_trancheId];
 
         // Withdraw funds
-        (, uint256 _mintedZORRewards, uint256 _rewardsDue,) = _withdrawalFullService(
-            _account,
-            _originAccount,
-            _pid,
-            _trancheId,
-            false,
-            _maxMarketMovement
-        );
+        (
+            ,
+            uint256 _mintedZORRewards,
+            uint256 _rewardsDue,
+
+        ) = _withdrawalFullService(
+                _account,
+                _originAccount,
+                _pid,
+                _trancheId,
+                false,
+                _maxMarketMovement
+            );
 
         // Get USDC bal
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));

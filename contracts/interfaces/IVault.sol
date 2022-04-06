@@ -38,6 +38,13 @@ interface IVault {
         uint256 _maxMarketMovementAllowed
     ) external;
 
+    function farm() external;
+
+    // Access
+    function pause() external;
+
+    function unpause() external;
+
     // Transfer ERC20 tokens on the Vault back to the owner, if necessary
     function inCaseTokensGetStuck(
         address _token,

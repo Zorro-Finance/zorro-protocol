@@ -22,7 +22,6 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */
@@ -33,62 +32,91 @@ contract VaultStandardAMM is VaultBase {
 
     /* Constructor */
     /// @notice Constructor
-    /// @param _addresses Array of [govAddress, zorroControllerAddress, ZORROAddress, wantAddress, token0Address, token1Address, earnedAddress, farmContractAddress, rewardsAddress, poolAddress, uniRouterAddress, zorroLPPool, zorroLPPoolOtherToken]
-    /// @param _pid Pool ID this Vault is associated with
-    /// @param _isCOREStaking If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
-    /// @param _isSingleAssetDeposit Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
-    /// @param _isZorroComp This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
-    /// @param _isHomeChain Whether this contract is deployed on the home chain
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolOtherTokenPath, earnedToUSDCPath, USDCToZORROPath]
-    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
-    /// @param _fees Array of [_controllerFee, _buyBackRate, _entranceFeeFactor, _withdrawFeeFactor]
-    constructor(
-        address[] memory _addresses,
-        uint256 _pid,
-        bool _isCOREStaking,
-        bool _isSingleAssetDeposit,
-        bool _isZorroComp,
-        bool _isHomeChain,
-        address[] memory _swapPaths,
-        uint16[] memory _swapPathStartIndexes,
-        uint256[] memory _fees
-    ) {
-        // Key addresses
-        govAddress = _addresses[0];
-        zorroControllerAddress = _addresses[1];
-        ZORROAddress = _addresses[2];
-        wantAddress = _addresses[3];
-        token0Address = _addresses[4];
-        token1Address = _addresses[5];
-        earnedAddress = _addresses[6];
-        farmContractAddress = _addresses[7];
-        rewardsAddress = _addresses[8];
-        poolAddress = _addresses[9];
-        uniRouterAddress = _addresses[10];
-        zorroLPPool = _addresses[11];
-        zorroLPPoolOtherToken = _addresses[12];
+    /// @param _initValue A VaultStandardAMMInit struct with all constructor params
+    /// @param _timelockOwner The designated timelock controller address to act as owner
+    constructor(address _timelockOwner, VaultStandardAMMInit memory _initValue)
+        VaultBase(_timelockOwner)
+    {
+        // Vault config
+        pid = _initValue.pid;
+        isCOREStaking = _initValue.isCOREStaking;
+        isSingleAssetDeposit = _initValue.isSingleAssetDeposit;
+        isZorroComp = _initValue.isZorroComp;
+        isHomeChain = _initValue.isHomeChain;
 
-        // Vault characteristics
-        pid = _pid;
-        isCOREStaking = _isCOREStaking;
-        isSingleAssetDeposit = _isSingleAssetDeposit;
-        isZorroComp = _isZorroComp;
-        isHomeChain = _isHomeChain;
+        // Addresses
+        govAddress = _initValue.keyAddresses.govAddress;
+        onlyGov = true;
+        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
+        zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
+        wantAddress = _initValue.keyAddresses.wantAddress;
+        token0Address = _initValue.keyAddresses.token0Address;
+        earnedAddress = _initValue.keyAddresses.earnedAddress;
+        farmContractAddress = _initValue.keyAddresses.farmContractAddress;
+        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
+        poolAddress = _initValue.keyAddresses.poolAddress;
+        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
+        zorroLPPool = _initValue.keyAddresses.zorroLPPool;
+        zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
+        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
 
-        // Swap paths by unflattening _swapPaths
-        _unpackSwapPaths(_swapPaths, _swapPathStartIndexes);
+        // Fees
+        controllerFee = _initValue.fees.controllerFee;
+        buyBackRate = _initValue.fees.buyBackRate;
+        revShareRate = _initValue.fees.revShareRate;
+        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
+        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
+        // Swap paths
+        earnedToZORROPath = _initValue.earnedToZORROPath;
+        earnedToToken0Path = _initValue.earnedToToken0Path;
+        earnedToToken1Path = _initValue.earnedToToken1Path;
+        USDCToToken0Path = _initValue.USDCToToken0Path;
+        USDCToToken1Path = _initValue.USDCToToken1Path;
+        earnedToZORLPPoolOtherTokenPath = _initValue
+            .earnedToZORLPPoolOtherTokenPath;
+        earnedToUSDCPath = _initValue.earnedToUSDCPath;
         // Corresponding reverse paths
-        token0ToEarnedPath = _reversePath(earnedToToken0Path);
-        token1ToEarnedPath = _reversePath(earnedToToken1Path);
         token0ToUSDCPath = _reversePath(USDCToToken0Path);
         token1ToUSDCPath = _reversePath(USDCToToken1Path);
 
-        // Fees
-        controllerFee = _fees[0];
-        buyBackRate = _fees[1];
-        entranceFeeFactor = _fees[2];
-        withdrawFeeFactor = _fees[3];
+        // Price feeds
+        token0PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token0PriceFeed
+        );
+        token1PriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.token1PriceFeed
+        );
+        earnTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.earnTokenPriceFeed
+        );
+        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
+        );
+        ZORPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.ZORPriceFeed
+        );
+    }
+
+    /* Structs */
+
+    struct VaultStandardAMMInit {
+        uint256 pid;
+        bool isCOREStaking;
+        bool isZorroComp;
+        bool isHomeChain;
+        bool isSingleAssetDeposit;
+        VaultAddresses keyAddresses;
+        address[] earnedToZORROPath;
+        address[] earnedToToken0Path;
+        address[] earnedToToken1Path;
+        address[] USDCToToken0Path;
+        address[] USDCToToken1Path;
+        address[] earnedToZORLPPoolOtherTokenPath;
+        address[] earnedToUSDCPath;
+        VaultFees fees;
+        VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -97,10 +125,7 @@ contract VaultStandardAMM is VaultBase {
     /// @param _account The address of the end user account making the deposit
     /// @param _wantAmt The amount of Want token to deposit (must already be transferred)
     /// @return Number of shares added
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -162,15 +187,21 @@ contract VaultStandardAMM is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
+        // Increase allowance
+        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
         // For single token pools, simply swap to Want token right away
         if (isSingleAssetDeposit) {
-            // Swap USDC for Want token
+            // Swap USDC for Want token (e.g. Token0)
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountUSDC,
                 1e12,
                 _token0ExchangeRate,
                 _maxMarketMovementAllowed,
-                USDCToWantPath,
+                USDCToToken0Path,
                 msg.sender,
                 block.timestamp.add(600)
             );
@@ -266,10 +297,7 @@ contract VaultStandardAMM is VaultBase {
     /// @param _account Address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 The number of shares removed
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    )
+    function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -354,6 +382,12 @@ contract VaultStandardAMM is VaultBase {
         if (isSingleAssetDeposit) {
             // If so, immediately swap the Want token for USDC
 
+            // Increase allowance
+            IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                _amount
+            );
+            // Swap
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amount,
                 _token0ExchangeRate,
@@ -372,6 +406,17 @@ contract VaultStandardAMM is VaultBase {
             // Swap tokens back to USDC
             uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
             uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+
+            // Increase allowance
+            IERC20(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token0Amt
+            );
+            IERC20(token1Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                token1Amt
+            );
+
             // Swap token0 for USDC
             IAMMRouter02(uniRouterAddress).safeSwap(
                 token0Amt,
@@ -383,18 +428,16 @@ contract VaultStandardAMM is VaultBase {
                 block.timestamp.add(600)
             );
 
-            // Swap token1 for USDC (if applicable)
-            if (token1Address != address(0)) {
-                IAMMRouter02(uniRouterAddress).safeSwap(
-                    token1Amt,
-                    _token1ExchangeRate,
-                    1e12,
-                    _maxMarketMovementAllowed,
-                    token1ToUSDCPath,
-                    msg.sender,
-                    block.timestamp.add(600)
-                );
-            }
+            // Swap token1 for USDC
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                token1Amt,
+                _token1ExchangeRate,
+                1e12,
+                _maxMarketMovementAllowed,
+                token1ToUSDCPath,
+                msg.sender,
+                block.timestamp.add(600)
+            );
         }
 
         // Calculate USDC balance
@@ -524,7 +567,7 @@ contract VaultStandardAMM is VaultBase {
                 earnedAmt.div(2),
                 _earnTokenExchangeRate,
                 _token0ExchangeRate,
-                slippageFactor,
+                _maxMarketMovementAllowed,
                 earnedToToken0Path,
                 address(this),
                 block.timestamp.add(600)
@@ -538,7 +581,7 @@ contract VaultStandardAMM is VaultBase {
                 earnedAmt.div(2),
                 _earnTokenExchangeRate,
                 _token1ExchangeRate,
-                slippageFactor,
+                _maxMarketMovementAllowed,
                 earnedToToken1Path,
                 address(this),
                 block.timestamp.add(600)
@@ -612,7 +655,9 @@ contract VaultStandardAMM is VaultBase {
 
         // Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(address(this));
+        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+            address(this)
+        );
         IERC20(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -665,6 +710,12 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
+        // Increase allowance
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _earnedAmount
+        );
+
         // Perform swap with Uni router
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,

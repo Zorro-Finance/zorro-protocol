@@ -24,100 +24,92 @@ import "../controllers/ZorroController.sol";
 
 import "../interfaces/IVault.sol";
 
-
-// TODO: Move all vault specific state vars to the child class
-
-
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
 
+    /* Constructor */
+    constructor(address _timelockOwner) {
+        transferOwnership(_timelockOwner);
+    }
+
+    /* Constants */
+
+    // Addresses
+    address public constant burnAddress =
+        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
+    // Fee min/max bounds
+    uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
+    uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
+    uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
+    uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
+    uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
+    uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
+    uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
+    uint256 public constant entranceFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = "lowerlimit"
+    uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
+    uint256 public constant withdrawFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = lowerlimit
+
     /* State */
+
     // Vault characteristics
     bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
     bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
     bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     bool public isHomeChain; // Whether this is deployed on the home chain
-    // Pool/farm/token IDs/addresses
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
-    address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
-    address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
-    address public token0Address; // Address of first (or only) token
-    address public token1Address; // Address of second token in pair if applicable
-    address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
-    address public tokenUSDCAddress; // USDC token address
-    // Zorro LP pool
-    address public zorroLPPool; // Main pool for Zorro liquidity
-    address public zorroLPPoolOtherToken; // For the dominant LP pool, the token paired with the ZOR token
-    // Other addresses
-    address public burnAddress = 0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
-    address public rewardsAddress; // The TimelockController RewardsDistributor contract
-    // Routers/Pools
-    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
-    address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
+    // Governance
+    address public govAddress; // Timelock controller contract
+    bool public onlyGov; // Enforce gov only access on certain functions
     // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
     address public ZORROAddress; // Address of Zorro ERC20 token
     address public zorroStakingVault; // Address of ZOR single staking vault
-    // Governance
-    address public govAddress; // Timelock controller contract
-    bool public onlyGov = true; // Enforce gov only access on certain functions
-    // Accounting
-    uint256 public lastEarnBlock = 0; // Last recorded block for an earn() event
-    uint256 public wantLockedTotal = 0; // Total Want tokens locked/staked for this Vault
-    uint256 public sharesTotal = 0; // Total shares for this Vault
-    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
+    // Pool/farm/token IDs/addresses
+    address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
+    address public token0Address; // Address of first (or only) token
+    address public token1Address; // Address of second token in pair if applicable
+    address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
+    address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
+    address public tokenUSDCAddress; // USDC token address
+    // Other addresses
+    address public rewardsAddress; // The TimelockController RewardsDistributor contract
+    // Routers/Pools
+    address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
+    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
+    // Zorro LP pool
+    address public zorroLPPool; // Main pool for Zorro liquidity
+    address public zorroLPPoolOtherToken; // For the dominant LP pool, the token paired with the ZOR token
     // Fees
     // Controller fee - used to fund operations
-    uint256 public controllerFee = 0; // Numerator for controller fee rate (100 = 1%)
-    uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
-    uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
+    uint256 public controllerFee; // Numerator for controller fee rate (100 = 1%)
     // Buyback - used to elevate scarcity of Zorro token
-    uint256 public buyBackRate = 0; // Numerator for buyback ratio (100 = 1%)
-    uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
-    uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
+    uint256 public buyBackRate; // Numerator for buyback ratio (100 = 1%)
     // Revenue sharing - used to share rewards with ZOR stakers
-    uint256 public revShareRate = 0; // Numerator for revshare ratio (100 = 1%)
-    uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
-    uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
+    uint256 public revShareRate; // Numerator for revshare ratio (100 = 1%)
     // Entrance fee - goes to pool + prevents front-running
     uint256 public entranceFeeFactor = 9990; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
-    uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
-    uint256 public constant entranceFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = "lowerlimit"
     // Withdrawal fee - goes to pool
     uint256 public withdrawFeeFactor = 10000; // Numerator of withdrawal fee factor
-    uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
-    uint256 public constant withdrawFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = lowerlimit
-    // Slippage
-    uint256 public slippageFactor = 950; // 950 = 5% default slippage tolerance
-    uint256 public constant slippageFactorUL = 995;
+    // Accounting
+    uint256 public lastEarnBlock; // Last recorded block for an earn() event
+    uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
+    uint256 public sharesTotal; // Total shares for this Vault
+    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
     // Swap routes
     address[] public USDCToToken0Path;
     address[] public USDCToToken1Path;
     address[] public token0ToUSDCPath;
     address[] public token1ToUSDCPath;
-    address[] public earnedToZORROPath;
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
-    address[] public token0ToEarnedPath;
-    address[] public token1ToEarnedPath;
+    address[] public earnedToZORROPath;
     address[] public earnedToZORLPPoolOtherTokenPath;
-    address[] public USDCToWantPath;
-    address[] public WantToUSDCPath;
     address[] public earnedToUSDCPath;
-    address[] public USDCToZORROPath;
-    // TODO: Constructor/setter
-    address[] public USDCToZORLPPoolOtherTokenPath;
-
-    // Cross chain
-    uint256 public xChainEarningsLockStartBlock; // Lock for cross chain earnings operations (start block). 0 when there is no lock
-    uint256 public xChainEarningsLockEndBlock; // Lock for cross chain earnings operations (end block). 0 when there is no lock
-    mapping(uint256 => uint256) public lockedXChainEarningsUSDC; // Locked earnings in USDC scheduled for burning. Mapping: block number => amount locked
 
     // Price feeds
-    // TODO: Constructor, setters
     AggregatorV3Interface public token0PriceFeed; // Token0 price feed
     AggregatorV3Interface public token1PriceFeed; // Token1 price feed
     AggregatorV3Interface public earnTokenPriceFeed; // Price feed of Earn token
@@ -125,6 +117,41 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
 
     /* Structs */
+
+    struct VaultAddresses {
+        address govAddress;
+        address zorroControllerAddress;
+        address ZORROAddress;
+        address zorroStakingVault;
+        address wantAddress;
+        address token0Address;
+        address token1Address;
+        address earnedAddress;
+        address farmContractAddress;
+        address rewardsAddress;
+        address poolAddress;
+        address uniRouterAddress;
+        address zorroLPPool;
+        address zorroLPPoolOtherToken;
+        address tokenUSDCAddress;
+    }
+
+    struct VaultFees {
+        uint256 controllerFee;
+        uint256 buyBackRate;
+        uint256 revShareRate;
+        uint256 entranceFeeFactor;
+        uint256 withdrawFeeFactor;
+    }
+
+    struct VaultPriceFeeds {
+        address token0PriceFeed;
+        address token1PriceFeed;
+        address earnTokenPriceFeed;
+        address ZORPriceFeed;
+        address lpPoolOtherTokenPriceFeed;
+    }
+
     struct ExchangeRates {
         uint256 earn; // Exchange rate of earn token, times 1e12
         uint256 ZOR; // Exchange rate of ZOR token, times 1e12
@@ -137,8 +164,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _slippageFactor
+        uint256 _buyBackRate
     );
     event SetGov(address _govAddress);
     event SetOnlyGov(bool _onlyGov);
@@ -158,21 +184,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     }
 
     /* Setters */
-
-    function setIsCOREStaking(bool _isCOREStaking) public onlyOwner {
-        isCOREStaking = _isCOREStaking;
-    }
-
-    function setIsSingleAssetDeposit(bool _isSingleAssetDeposit)
-        public
-        onlyOwner
-    {
-        isSingleAssetDeposit = _isSingleAssetDeposit;
-    }
-
-    function setIsZorroComp(bool _isZorroComp) public onlyOwner {
-        isZorroComp = _isZorroComp;
-    }
 
     function setPid(uint256 _pid) public onlyOwner {
         pid = _pid;
@@ -205,12 +216,24 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         rewardsAddress = _rewardsAddress;
     }
 
+    function setWantAddress(address _wantAddress) public onlyOwner {
+        wantAddress = _wantAddress;
+    }
+
     function setUniRouterAddress(address _uniRouterAddress) public onlyOwner {
         uniRouterAddress = _uniRouterAddress;
     }
 
     function setPoolAddress(address _poolAddress) public onlyOwner {
         poolAddress = _poolAddress;
+    }
+
+    function setZorroLPPoolAddress(address _poolAddress) public onlyOwner {
+        zorroLPPool = _poolAddress;
+    }
+
+    function setZorroLPPoolOtherToken(address _otherToken) public onlyOwner {
+        zorroLPPoolOtherToken = _otherToken;
     }
 
     function setZorroControllerAddress(address _zorroControllerAddress)
@@ -220,8 +243,55 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         zorroControllerAddress = _zorroControllerAddress;
     }
 
+    function setZorroStakingVault(address _stakingVault) public onlyOwner {
+        zorroStakingVault = _stakingVault;
+    }
+
     function setZORROAddress(address _ZORROAddress) public onlyOwner {
         ZORROAddress = _ZORROAddress;
+    }
+
+    function setPriceFeed(uint8 _idx, address _priceFeed) public onlyOwner {
+        if (_idx == 0) {
+            token0PriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 1) {
+            token1PriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 2) {
+            earnTokenPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 3) {
+            ZORPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 4) {
+            lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else {
+            revert("unsupported feed idx");
+        }
+    }
+
+    function setSwapPaths(uint8 _idx, address[] calldata _path)
+        public
+        onlyOwner
+    {
+        if (_idx == 0) {
+            USDCToToken0Path = _path;
+        } else if (_idx == 1) {
+            USDCToToken1Path = _path;
+        } else if (_idx == 2) {
+            token0ToUSDCPath = _path;
+        } else if (_idx == 3) {
+            token1ToUSDCPath = _path;
+        } else if (_idx == 4) {
+            earnedToToken0Path = _path;
+        } else if (_idx == 5) {
+            earnedToToken1Path = _path;
+        } else if (_idx == 6) {
+            earnedToZORROPath = _path;
+        } else if (_idx == 7) {
+            earnedToZORLPPoolOtherTokenPath = _path;
+        } else if (_idx == 8) {
+            earnedToUSDCPath = _path;
+        } else {
+            revert("unsupported feed idx");
+        }
     }
 
     /// @notice Set governor address
@@ -243,13 +313,11 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
     /// @param _controllerFee Controller fee numerator
     /// @param _buyBackRate Buy back rate fee numerator
-    /// @param _slippageFactor Slippage factor fee numerator
     function setFeeSettings(
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _slippageFactor
+        uint256 _buyBackRate
     ) public virtual onlyAllowGov {
         // Entrance fee
         require(
@@ -281,60 +349,13 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         require(_buyBackRate <= buyBackRateUL, "_buyBackRate too high");
         buyBackRate = _buyBackRate;
 
-        // Slippage tolerance
-        require(
-            _slippageFactor <= slippageFactorUL,
-            "_slippageFactor too high"
-        );
-        slippageFactor = _slippageFactor;
-
         // Emit event with new settings
         emit SetSettings(
             _entranceFeeFactor,
             _withdrawFeeFactor,
             _controllerFee,
-            _buyBackRate,
-            _slippageFactor
+            _buyBackRate
         );
-    }
-
-    /// @notice Takes an encoded (flattened) array of swap paths along with indexes, to set storage variables for swap paths
-    /// @dev ONLY to be called by constructor! NOTE: All paths must be specified (none can be skipped)
-    /// @param _swapPaths A flattened array of swap paths for a Uniswap style router. Ordered as: [earnedToZORROPath, earnedToToken0Path, earnedToToken1Path, USDCToToken0Path, USDCToToken1Path, earnedToZORLPPoolToken0Path, earnedToZORLPPoolToken1Path]
-    /// @param _swapPathStartIndexes An array of start indexes within _swapPaths to represent the start of a new swap path
-    function _unpackSwapPaths(
-        address[] memory _swapPaths,
-        uint16[] memory _swapPathStartIndexes
-    ) internal {
-        uint16 _currentIndex = _swapPathStartIndexes[0];
-        uint256 _ct = 0;
-        for (uint16 i = 0; i < _swapPaths.length; ++i) {
-            uint16 _nextIndex = 0;
-            if (_ct < _swapPathStartIndexes.length) {
-                _nextIndex = _swapPathStartIndexes[_ct.add(1)];
-            }
-            if (i == 0 || i < _nextIndex) {
-                if (_ct == 0) {
-                    earnedToZORROPath[i] = _swapPaths[i];
-                } else if (_ct == 1) {
-                    earnedToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 2) {
-                    earnedToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 3) {
-                    USDCToToken0Path[i] = _swapPaths[i];
-                } else if (_ct == 4) {
-                    USDCToToken1Path[i] = _swapPaths[i];
-                } else if (_ct == 5) {
-                    earnedToZORLPPoolOtherTokenPath[i] = _swapPaths[i];
-                } else if (_ct == 6) {
-                    earnedToUSDCPath[i] = _swapPaths[i];
-                } else if (_ct == 7) {
-                    USDCToZORROPath[i] = _swapPaths[i];
-                } else {
-                    revert("bad swap paths");
-                }
-            }
-        }
     }
 
     /// @notice Gets the swap path in the opposite direction of a trade
@@ -472,16 +493,16 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
-    function depositWantToken(
-        address _account,
-        uint256 _wantAmt
-    ) public virtual returns (uint256);
+    function depositWantToken(address _account, uint256 _wantAmt)
+        public
+        virtual
+        returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(
-        address _account,
-        uint256 _wantAmt
-    ) public virtual returns (uint256);
+    function withdrawWantToken(address _account, uint256 _wantAmt)
+        public
+        virtual
+        returns (uint256);
 
     function exchangeWantTokenForUSD(
         uint256 _amount,
