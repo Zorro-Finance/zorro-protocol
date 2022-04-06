@@ -128,6 +128,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         address uniRouterAddress;
         address zorroLPPool;
         address zorroLPPoolOtherToken;
+        address tokenUSDCAddress;
     }
 
     struct VaultFees {

@@ -59,6 +59,7 @@ contract VaultStandardAMM is VaultBase {
         uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
+        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
