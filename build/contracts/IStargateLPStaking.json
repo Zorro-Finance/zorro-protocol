@@ -1,12 +1,12 @@
 {
-  "contractName": "IAcryptosFarm",
+  "contractName": "IStargateLPStaking",
   "abi": [
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "_lpToken",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "_pid",
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -22,9 +22,9 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "_lpToken",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "_pid",
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -38,7 +38,7 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_lpToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_lpToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/IAcryptosFarm.sol\":\"IAcryptosFarm\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":100},\"remappings\":[]},\"sources\":{\"project:/contracts/interfaces/IAcryptosFarm.sol\":{\"keccak256\":\"0x47419fd5665c625d577324f045af56f122a79924bda917774a781fd759e8038a\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7f11a565fbe4b7f2217c11d17433d299d6ce82b29593ecb5ddc844906c416e83\",\"dweb:/ipfs/QmdMy9xXQT755L49CGw7tJecs9Bq4qHVNCoCTDSFi7CeuF\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/IStargateLPStaking.sol\":\"IStargateLPStaking\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":100},\"remappings\":[]},\"sources\":{\"project:/contracts/interfaces/IStargateLPStaking.sol\":{\"keccak256\":\"0x1ef453fd539f3c520232e3ad7cfc57d0da3a2626a3ec61d9b16c3a770199bc05\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://a1d02a5727e4841731eb480f929080fd9d8263b0bafe4ed98d0f6eaba83c7a25\",\"dweb:/ipfs/Qmcwpxtf6kT9ujAyHLnDPsr3vx2aa4ZahZ39WupGpzq82s\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -46,98 +46,67 @@
   "deployedGeneratedSources": [],
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity >=0.6.12 <0.9.0;\n\ninterface IAcryptosFarm {\n    function deposit(address _lpToken, uint256 _amount) external;\n\n    function withdraw(address _lpToken, uint256 _amount) external;\n}\n",
-  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/IAcryptosFarm.sol",
+  "source": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity ^0.8.0;\n\ninterface IStargateLPStaking {\n    function deposit(uint256 _pid, uint256 _amount) external;\n\n    function withdraw(uint256 _pid, uint256 _amount) external;\n}\n",
+  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/IStargateLPStaking.sol",
   "ast": {
-    "absolutePath": "project:/contracts/interfaces/IAcryptosFarm.sol",
+    "absolutePath": "project:/contracts/interfaces/IStargateLPStaking.sol",
     "exportedSymbols": {
-      "IAcryptosFarm": [
-        8904
+      "IStargateLPStaking": [
+        9251
       ]
     },
-    "id": 8905,
+    "id": 9252,
     "license": "UNLICENSED",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8889,
+        "id": 9236,
         "literals": [
           "solidity",
-          ">=",
-          "0.6",
-          ".12",
-          "<",
-          "0.9",
+          "^",
+          "0.8",
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "40:32:35"
+        "src": "40:23:41"
       },
       {
         "abstract": false,
         "baseContracts": [],
-        "canonicalName": "IAcryptosFarm",
+        "canonicalName": "IStargateLPStaking",
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 8904,
+        "id": 9251,
         "linearizedBaseContracts": [
-          8904
+          9251
         ],
-        "name": "IAcryptosFarm",
-        "nameLocation": "84:13:35",
+        "name": "IStargateLPStaking",
+        "nameLocation": "75:18:41",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "functionSelector": "47e7ef24",
-            "id": 8896,
+            "functionSelector": "e2bbb158",
+            "id": 9243,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "deposit",
-            "nameLocation": "113:7:35",
+            "nameLocation": "109:7:41",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8894,
+              "id": 9241,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8891,
+                  "id": 9238,
                   "mutability": "mutable",
-                  "name": "_lpToken",
-                  "nameLocation": "129:8:35",
+                  "name": "_pid",
+                  "nameLocation": "125:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8896,
-                  "src": "121:16:35",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
-                  },
-                  "typeName": {
-                    "id": 8890,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "121:7:35",
-                    "stateMutability": "nonpayable",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8893,
-                  "mutability": "mutable",
-                  "name": "_amount",
-                  "nameLocation": "147:7:35",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8896,
-                  "src": "139:15:35",
+                  "scope": 9243,
+                  "src": "117:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -145,10 +114,37 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8892,
+                    "id": 9237,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "139:7:35",
+                    "src": "117:7:41",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9240,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "139:7:41",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9243,
+                  "src": "131:15:41",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9239,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "131:7:41",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -157,70 +153,42 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "120:35:35"
+              "src": "116:31:41"
             },
             "returnParameters": {
-              "id": 8895,
+              "id": 9242,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "164:0:35"
+              "src": "156:0:41"
             },
-            "scope": 8904,
-            "src": "104:61:35",
+            "scope": 9251,
+            "src": "100:57:41",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "functionSelector": "f3fef3a3",
-            "id": 8903,
+            "functionSelector": "441a3e70",
+            "id": 9250,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "withdraw",
-            "nameLocation": "180:8:35",
+            "nameLocation": "172:8:41",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8901,
+              "id": 9248,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8898,
+                  "id": 9245,
                   "mutability": "mutable",
-                  "name": "_lpToken",
-                  "nameLocation": "197:8:35",
+                  "name": "_pid",
+                  "nameLocation": "189:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8903,
-                  "src": "189:16:35",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
-                  },
-                  "typeName": {
-                    "id": 8897,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "189:7:35",
-                    "stateMutability": "nonpayable",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8900,
-                  "mutability": "mutable",
-                  "name": "_amount",
-                  "nameLocation": "215:7:35",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8903,
-                  "src": "207:15:35",
+                  "scope": 9250,
+                  "src": "181:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -228,10 +196,37 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8899,
+                    "id": 9244,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "207:7:35",
+                    "src": "181:7:41",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9247,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "203:7:41",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9250,
+                  "src": "195:15:41",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9246,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "195:7:41",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -240,118 +235,87 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "188:35:35"
+              "src": "180:31:41"
             },
             "returnParameters": {
-              "id": 8902,
+              "id": 9249,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "232:0:35"
+              "src": "220:0:41"
             },
-            "scope": 8904,
-            "src": "171:62:35",
+            "scope": 9251,
+            "src": "163:58:41",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 8905,
-        "src": "74:161:35",
+        "scope": 9252,
+        "src": "65:158:41",
         "usedErrors": []
       }
     ],
-    "src": "40:196:35"
+    "src": "40:184:41"
   },
   "legacyAST": {
-    "absolutePath": "project:/contracts/interfaces/IAcryptosFarm.sol",
+    "absolutePath": "project:/contracts/interfaces/IStargateLPStaking.sol",
     "exportedSymbols": {
-      "IAcryptosFarm": [
-        8904
+      "IStargateLPStaking": [
+        9251
       ]
     },
-    "id": 8905,
+    "id": 9252,
     "license": "UNLICENSED",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8889,
+        "id": 9236,
         "literals": [
           "solidity",
-          ">=",
-          "0.6",
-          ".12",
-          "<",
-          "0.9",
+          "^",
+          "0.8",
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "40:32:35"
+        "src": "40:23:41"
       },
       {
         "abstract": false,
         "baseContracts": [],
-        "canonicalName": "IAcryptosFarm",
+        "canonicalName": "IStargateLPStaking",
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 8904,
+        "id": 9251,
         "linearizedBaseContracts": [
-          8904
+          9251
         ],
-        "name": "IAcryptosFarm",
-        "nameLocation": "84:13:35",
+        "name": "IStargateLPStaking",
+        "nameLocation": "75:18:41",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "functionSelector": "47e7ef24",
-            "id": 8896,
+            "functionSelector": "e2bbb158",
+            "id": 9243,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "deposit",
-            "nameLocation": "113:7:35",
+            "nameLocation": "109:7:41",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8894,
+              "id": 9241,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8891,
+                  "id": 9238,
                   "mutability": "mutable",
-                  "name": "_lpToken",
-                  "nameLocation": "129:8:35",
+                  "name": "_pid",
+                  "nameLocation": "125:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8896,
-                  "src": "121:16:35",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
-                  },
-                  "typeName": {
-                    "id": 8890,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "121:7:35",
-                    "stateMutability": "nonpayable",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8893,
-                  "mutability": "mutable",
-                  "name": "_amount",
-                  "nameLocation": "147:7:35",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8896,
-                  "src": "139:15:35",
+                  "scope": 9243,
+                  "src": "117:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -359,10 +323,37 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8892,
+                    "id": 9237,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "139:7:35",
+                    "src": "117:7:41",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9240,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "139:7:41",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9243,
+                  "src": "131:15:41",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9239,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "131:7:41",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -371,70 +362,42 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "120:35:35"
+              "src": "116:31:41"
             },
             "returnParameters": {
-              "id": 8895,
+              "id": 9242,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "164:0:35"
+              "src": "156:0:41"
             },
-            "scope": 8904,
-            "src": "104:61:35",
+            "scope": 9251,
+            "src": "100:57:41",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "functionSelector": "f3fef3a3",
-            "id": 8903,
+            "functionSelector": "441a3e70",
+            "id": 9250,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "withdraw",
-            "nameLocation": "180:8:35",
+            "nameLocation": "172:8:41",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8901,
+              "id": 9248,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8898,
+                  "id": 9245,
                   "mutability": "mutable",
-                  "name": "_lpToken",
-                  "nameLocation": "197:8:35",
+                  "name": "_pid",
+                  "nameLocation": "189:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8903,
-                  "src": "189:16:35",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
-                  },
-                  "typeName": {
-                    "id": 8897,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "189:7:35",
-                    "stateMutability": "nonpayable",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8900,
-                  "mutability": "mutable",
-                  "name": "_amount",
-                  "nameLocation": "215:7:35",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8903,
-                  "src": "207:15:35",
+                  "scope": 9250,
+                  "src": "181:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -442,10 +405,37 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8899,
+                    "id": 9244,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "207:7:35",
+                    "src": "181:7:41",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9247,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "203:7:41",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9250,
+                  "src": "195:15:41",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9246,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "195:7:41",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -454,27 +444,27 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "188:35:35"
+              "src": "180:31:41"
             },
             "returnParameters": {
-              "id": 8902,
+              "id": 9249,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "232:0:35"
+              "src": "220:0:41"
             },
-            "scope": 8904,
-            "src": "171:62:35",
+            "scope": 9251,
+            "src": "163:58:41",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 8905,
-        "src": "74:161:35",
+        "scope": 9252,
+        "src": "65:158:41",
         "usedErrors": []
       }
     ],
-    "src": "40:196:35"
+    "src": "40:184:41"
   },
   "compiler": {
     "name": "solc",
@@ -482,7 +472,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-04-07T12:24:25.828Z",
+  "updatedAt": "2022-04-07T12:24:25.831Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
