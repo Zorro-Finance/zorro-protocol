@@ -9,7 +9,14 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ZorroControllerOwnable is Ownable {
+
+/// @title The Zorro token (cross chain)
+contract Zorro is ERC20("ZORRO", "ZOR"), Ownable {
+    /* Constructor */
+    constructor(address _zorroController) {
+        zorroControllerAddress = _zorroController;
+    }
+
     /* Modifiers */
     modifier onlyZorroController() {
         require(_msgSender() == zorroControllerAddress, "!zorroController");
@@ -18,15 +25,12 @@ contract ZorroControllerOwnable is Ownable {
 
     /* State */
     address public zorroControllerAddress;
-}
 
-/// @title The Zorro token (cross chain)
-contract Zorro is ERC20("ZORRO", "ZOR"), ZorroControllerOwnable {
-    /* Constructor */
-    constructor(address _zorroController) {
+    /* Setters */
+    function setZorroController(address _zorroController) external onlyOwner {
         zorroControllerAddress = _zorroController;
     }
-
+    
     /* Functions */
     /// @notice Allows authorized minting of the Zorro token to a specified address
     /// @param _to The address to mint to

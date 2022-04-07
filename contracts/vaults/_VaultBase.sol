@@ -30,11 +30,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
 
-    /* Constructor */
-    constructor(address _timelockOwner) {
-        transferOwnership(_timelockOwner);
-    }
-
     /* Constants */
 
     // Addresses
