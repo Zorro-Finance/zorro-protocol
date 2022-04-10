@@ -96,8 +96,8 @@ contract VaultAcryptosSingle is VaultBase {
             _initValue.priceFeeds.ZORPriceFeed
         );
 
-        // Timelock
-        transferOwnership(_timelockOwner);
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

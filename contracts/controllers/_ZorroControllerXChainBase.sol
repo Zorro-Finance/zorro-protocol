@@ -14,11 +14,50 @@ import "../interfaces/ILayerZeroEndpoint.sol";
 
 import "../interfaces/IStargateRouter.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/IZorroControllerXChain.sol";
 
-contract ZorroControllerXChain is IZorroControllerXChain, ZorroControllerInvestment {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract ZorroControllerXChainBase is
+    IZorroControllerXChainBase,
+    Ownable,
+    ReentrancyGuard
+{
     /* Libraries */
     using SafeMath for uint256;
+
+    /* State */
+
+    // Tokens
+    address public defaultStablecoin;
+    address public ZORRO;
+    // Contracts
+    address public homeChainZorroController;
+    address public currentChainController; // TODO: need constructor, setter
+    address public publicPool;
+    // Chain config
+    uint256 chainId;
+    uint256 homeChainId;
+
+    /* Setters */
+
+    function setTokens(address[] calldata _tokens) external onlyOwner {
+        defaultStablecoin = _tokens[0];
+        ZORRO = _tokens[1];
+    }
+
+    function setKeyContracts(address[] calldata _contracts) external onlyOwner {
+        homeChainZorroController = _contracts[0];
+        currentChainController = _contracts[1];
+        publicPool = _contracts[2];
+    }
+
+    function setChains(uint256[] calldata _chainIds) external onlyOwner {
+        chainId = _chainIds[0];
+        homeChainId = _chainIds[1];
+    }
 
     /* Structs */
 

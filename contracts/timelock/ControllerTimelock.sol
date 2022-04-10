@@ -55,38 +55,4 @@ contract ControllerTimelock is TimelockController {
     {
         return IZorroController(_controllerAddress).massUpdatePools();
     }
-
-    // XChain
-
-    function setControllerContract(
-        address _controllerAddress, 
-        uint256 _zorroChainId,
-        bytes calldata _controller
-    ) public onlyRole(EXECUTOR_ROLE) {
-        IZorroController(_controllerAddress).setControllerContract(_zorroChainId, _controller);
-    }
-
-    function setZorroChainToLZMap(address _controllerAddress, uint256 _zorroChainId, uint16 _lzChainId)
-        public
-        onlyRole(EXECUTOR_ROLE)
-    {
-        IZorroController(_controllerAddress).setZorroChainToLZMap(_zorroChainId, _lzChainId);
-    }
-
-    function setStargateDestPoolIds(
-        address _controllerAddress, 
-        uint256 _zorroChainId,
-        uint16 _stargatePoolId
-    ) public onlyRole(EXECUTOR_ROLE) {
-        IZorroController(_controllerAddress).setStargateDestPoolIds(_zorroChainId, _stargatePoolId);
-    }
-
-    function setLayerZeroParams(
-        address _controllerAddress, 
-        address _stargateRouter,
-        uint256 _stargateSwapPoolId,
-        address _layerZeroEndpoint
-    ) public onlyRole(EXECUTOR_ROLE) {
-        IZorroController(_controllerAddress).setLayerZeroParams(_stargateRouter, _stargateSwapPoolId, _layerZeroEndpoint);
-    }
 }

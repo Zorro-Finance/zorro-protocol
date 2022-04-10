@@ -210,7 +210,7 @@ truffle test
 # Upgradeability
 
 To allow for more features and fixes, we implement a _Transparent Proxy_ based on OpenZeppelin Upgradeability standard. 
-[Upgradeable Contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable)
+[Upgradeable Contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies)
 
 # Glossary
 

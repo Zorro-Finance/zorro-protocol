@@ -20,15 +20,22 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../libraries/SafeSwap.sol";
 
-import "../controllers/ZorroController.sol";
-
 import "../interfaces/IVault.sol";
+
+import "../interfaces/IZorroControllerXChain.sol";
+
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
+
+    /* Constructor */
+    function initialize(address _timelockOwner) public {
+        transferOwnership(_timelockOwner);
+    }
 
     /* Constants */
 
@@ -60,6 +67,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     bool public onlyGov; // Enforce gov only access on certain functions
     // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
+    address public zorroXChainController; // Address of ZorroControllerXChain contract TODO: Constructor/setter
     address public ZORROAddress; // Address of Zorro ERC20 token
     address public zorroStakingVault; // Address of ZOR single staking vault
     // Pool/farm/token IDs/addresses
@@ -429,10 +437,6 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
             _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _rates);
         } else {
             // Otherwise, contact controller, to make cross chain call
-            // Fetch the controller contract that is associated with this Vault
-            ZorroController zorroController = ZorroController(
-                zorroControllerAddress
-            );
 
             // Swap to Earn to USDC and send to zorro controller contract
             _swapEarnedToUSDC(
@@ -443,12 +447,13 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
             );
 
             // Call distributeEarningsXChain on controller contract
-            zorroController.sendXChainDistributeEarningsRequest(
-                pid,
-                _buyBackAmt,
-                _revShareAmt,
-                _maxMarketMovementAllowed
-            );
+            IZorroControllerXChainEarn(zorroXChainController)
+                .sendXChainDistributeEarningsRequest(
+                    pid,
+                    _buyBackAmt,
+                    _revShareAmt,
+                    _maxMarketMovementAllowed
+                );
         }
 
         // Return net earnings

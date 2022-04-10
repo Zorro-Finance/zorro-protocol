@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
+import "../libraries/PriceFeed.sol";
+
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -55,8 +57,8 @@ contract VaultZorro is VaultBase {
             _initValue.priceFeeds.token0PriceFeed
         );
 
-        // Timelock
-        transferOwnership(_timelockOwner);
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

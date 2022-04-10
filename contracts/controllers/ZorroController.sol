@@ -23,7 +23,7 @@ contract ZorroController is
     ZorroControllerBase,
     ZorroControllerPoolMgmt,
     ZorroControllerAnalytics,
-    ZorroControllerXChainReceiver
+    ZorroControllerInvestment
 {
     /* Constructor */
 
@@ -67,22 +67,7 @@ contract ZorroController is
         } else {
             homeChainZorroController = _homeChainZorroController;
         }
-        stargateRouter = _initValue.xChain.stargateRouter;
-        stargateSwapPoolId = _initValue.xChain.stargateSwapPoolId;
-        layerZeroEndpoint = _initValue.xChain.layerZeroEndpoint;
         zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
-        for (uint16 i = 0; i < _initValue.xChain.ZorroChainIDs.length; ++i) {
-            uint256 _zChainId = _initValue.xChain.ZorroChainIDs[i];
-
-            controllerContractsMap[_zChainId] = _initValue
-                .xChain
-                .controllerContracts[i];
-            ZorroChainToLZMap[_zChainId] = _initValue.xChain.LZChainIDs[i];
-            LZChainToZorroMap[_initValue.xChain.LZChainIDs[i]] = _zChainId;
-            stargateDestPoolIds[_zChainId] = _initValue
-                .xChain
-                .stargateDestPoolIds[i];
-        }
 
         // Investment
         USDCToZorroPath = _initValue.USDCToZorroPath;
@@ -116,14 +101,7 @@ contract ZorroController is
         uint256 chainId;
         uint256 homeChainId;
         address homeChainZorroController;
-        address stargateRouter;
-        uint256 stargateSwapPoolId;
-        address layerZeroEndpoint;
         address zorroControllerOracle;
-        uint256[] ZorroChainIDs;
-        bytes[] controllerContracts; // Must be same length as ZorroChainIDs
-        uint16[] LZChainIDs; // Must be same length as ZorroChainIDs
-        uint256[] stargateDestPoolIds; // Must be same length as ZorroChainIDs
     }
 
     struct ZorroControllerPriceFeeds {
