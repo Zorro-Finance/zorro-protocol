@@ -51,45 +51,35 @@ contract ZorroControllerXChain is
         ZorroControllerXChainInit memory _initValue
     ) public {
         // Base
-        // mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
-        // mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
-        // mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
-        // address public stargateRouter; // Address to on-chain Stargate router
-        // uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
-        // mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
-        // address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
+        stargateRouter = _initValue.bridge.stargateRouter;
+        stargateSwapPoolId = _initValue.bridge.stargateSwapPoolId;
+        layerZeroEndpoint = _initValue.bridge.layerZeroEndpoint;
 
-        // for (uint16 i = 0; i < _initValue.xChain.ZorroChainIDs.length; ++i) {
-        //     uint256 _zChainId = _initValue.xChain.ZorroChainIDs[i];
+        for (uint16 i = 0; i < _initValue.bridge.ZorroChainIDs.length; ++i) {
+            uint256 _zChainId = _initValue.bridge.ZorroChainIDs[i];
 
-        //     controllerContractsMap[_zChainId] = _initValue
-        //         .xChain
-        //         .controllerContracts[i];
-        //     ZorroChainToLZMap[_zChainId] = _initValue.xChain.LZChainIDs[i];
-        //     LZChainToZorroMap[_initValue.xChain.LZChainIDs[i]] = _zChainId;
-        //     stargateDestPoolIds[_zChainId] = _initValue
-        //         .xChain
-        //         .stargateDestPoolIds[i];
-        // }
+            controllerContractsMap[_zChainId] = _initValue.bridge.controllerContracts[
+                i
+            ];
+            ZorroChainToLZMap[_zChainId] = _initValue.bridge.LZChainIDs[i];
+            LZChainToZorroMap[_initValue.bridge.LZChainIDs[i]] = _zChainId;
+            stargateDestPoolIds[_zChainId] = _initValue.bridge.stargateDestPoolIds[i];
+        }
 
-        // Withdraw
-        
 
         // Earn
-        // uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
-        // // TODO: Constructor, setter
-        // // Tokens
-        // address public tokenUSDC;
-        // address public zorroLPPoolOtherToken;
-        // // Contracts
-        // address public zorroStakingVault;
-        // address public uniRouterAddress;
-        // // Paths
-        // address[] public USDCToZorroPath;
-        // address[] public USDCToZorroLPPoolOtherTokenPath;
-        // // Price feeds
-        // AggregatorV3Interface public priceFeedZOR;
-        // AggregatorV3Interface public priceFeedLPPoolOtherToken;
+        // Tokens
+        tokenUSDC = _initValue.tokenUSDC;
+        zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
+        // Contracts
+        zorroStakingVault = _initValue.zorroStakingVault;
+        uniRouterAddress = _initValue.uniRouterAddress;
+        // Swaps
+        USDCToZorroPath = _initValue.swaps.USDCToZorroPath;
+        USDCToZorroLPPoolOtherTokenPath = _initValue.swaps.USDCToZorroLPPoolOtherTokenPath;
+        // Price feed
+        priceFeedZOR = AggregatorV3Interface(_initValue.priceFeeds.priceFeedZOR);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_initValue.priceFeeds.priceFeedLPPoolOtherToken);
 
         // Timelock
         transferOwnership(_timelockOwner);
@@ -97,13 +87,45 @@ contract ZorroControllerXChain is
 
     /* Structs */
 
+    struct ZorroControllerXChainSwapParams {
+        address[] USDCToZorroPath;
+        address[] USDCToZorroLPPoolOtherTokenPath;
+    }
+
+    struct ZorroControllerXChainBridgeParams {
+        uint256 chainId;
+        uint256 homeChainId;
+        uint256[] ZorroChainIDs;
+        bytes[] controllerContracts; // Must be same length as ZorroChainIDs
+        uint16[] LZChainIDs; // Must be same length as ZorroChainIDs
+        uint256[] stargateDestPoolIds; // Must be same length as ZorroChainIDs
+        address stargateRouter;
+        address layerZeroEndpoint;
+        uint256 stargateSwapPoolId;
+    }
+
+    struct ZorroControllerXChainPriceFeedParams {
+        address priceFeedZOR;
+        address priceFeedLPPoolOtherToken;
+    }
+
     struct ZorroControllerXChainInit {
+        // Tokens
         address defaultStablecoin;
         address ZORRO;
+        address tokenUSDC;
+        address zorroLPPoolOtherToken;
+        // Contracts
+        address zorroStakingVault;
+        address uniRouterAddress;
         address homeChainZorroController;
         address currentChainController;
         address publicPool;
-        uint256 chainId;
-        uint256 homeChainId;
+        // Bridge
+        ZorroControllerXChainBridgeParams bridge;
+        // Swaps
+        ZorroControllerXChainSwapParams swaps;
+        // Price feed
+        ZorroControllerXChainPriceFeedParams priceFeeds;
     }
 }

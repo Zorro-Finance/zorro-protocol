@@ -59,15 +59,9 @@ contract ZorroController is
         // Cross chain
         chainId = _initValue.xChain.chainId;
         homeChainId = _initValue.xChain.homeChainId;
-        address _homeChainZorroController = _initValue
-            .xChain
-            .homeChainZorroController;
-        if (_homeChainZorroController == address(0)) {
-            homeChainZorroController = address(this);
-        } else {
-            homeChainZorroController = _homeChainZorroController;
-        }
+        homeChainZorroController = _initValue.xChain.homeChainZorroController;
         zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
+        zorroXChainEndpoint = _initValue.xChain.zorroXChainEndpoint;
 
         // Investment
         USDCToZorroPath = _initValue.USDCToZorroPath;
@@ -102,6 +96,7 @@ contract ZorroController is
         uint256 homeChainId;
         address homeChainZorroController;
         address zorroControllerOracle;
+        address zorroXChainEndpoint;
     }
 
     struct ZorroControllerPriceFeeds {

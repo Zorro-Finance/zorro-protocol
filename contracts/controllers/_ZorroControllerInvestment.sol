@@ -54,7 +54,7 @@ contract ZorroControllerInvestment is
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
     // Cross chain
-    address public zorroXChainEndpoint; // Cross chain controller contract TODO: constructor/setter
+    address public zorroXChainEndpoint; // Cross chain controller contract
 
     /* Modifiers */
 
@@ -115,6 +115,12 @@ contract ZorroControllerInvestment is
         priceFeedLPPoolOtherToken = AggregatorV3Interface(
             _priceFeedLPPoolOtherToken
         );
+    }
+
+    /// @notice Setter: Cross chain endpoint
+    /// @param _contract Contract address of endpoint
+    function setZorroXChainEndpoint(address _contract) external onlyOwner {
+        zorroXChainEndpoint = _contract;
     }
 
     /* Events */

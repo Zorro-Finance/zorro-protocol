@@ -12,7 +12,6 @@ import "../libraries/SafeSwap.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-
 contract ZorroControllerXChainEarn is
     IZorroControllerXChainEarn,
     ZorroControllerXChainBase
@@ -65,6 +64,37 @@ contract ZorroControllerXChainEarn is
     // Price feeds
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
+
+    /* Setters */
+
+    function setTokenUSDC(address _token) external onlyOwner {
+        tokenUSDC = _token;
+    }
+
+    function setZorroLPPoolOtherToken(address _token) external onlyOwner {
+        zorroLPPoolOtherToken = _token;
+    }
+
+    function setZorroStakingVault(address _contract) external onlyOwner {
+        zorroStakingVault = _contract;
+    }
+
+    function setUniRouterAddress(address _contract) external onlyOwner {
+        uniRouterAddress = _contract;
+    }
+
+    function setSwapPaths(
+        address[] calldata _USDCToZorroPath,
+        address[] calldata _USDCToZorroLPPoolOtherTokenPath
+    ) external onlyOwner {
+        USDCToZorroPath = _USDCToZorroPath;
+        USDCToZorroLPPoolOtherTokenPath = _USDCToZorroLPPoolOtherTokenPath;
+    }
+
+    function setPriceFeeds(address[] calldata _priceFeeds) external onlyOwner {
+        priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
+    }
 
     /* Fees */
 

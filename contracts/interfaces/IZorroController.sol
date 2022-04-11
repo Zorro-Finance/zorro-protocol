@@ -81,6 +81,8 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         address _priceFeedLPPoolOtherToken
     ) external;
 
+    function setZorroXChainEndpoint(address _contract) external;
+
     function deposit(
         uint256 _pid,
         uint256 _wantAmt,

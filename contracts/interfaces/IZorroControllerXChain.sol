@@ -63,6 +63,21 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainEarn
 interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
+    function setTokenUSDC(address _token) external;
+
+    function setZorroLPPoolOtherToken(address _token) external;
+
+    function setZorroStakingVault(address _contract) external;
+
+    function setUniRouterAddress(address _contract) external;
+
+    function setSwapPaths(
+        address[] calldata _USDCToZorroPath,
+        address[] calldata _USDCToZorroLPPoolOtherTokenPath
+    ) external;
+
+    function setPriceFeeds(address[] calldata _priceFeeds) external;
+
     function checkXChainDistributeEarningsFee(
         uint256 _amountUSDCBuyback,
         uint256 _amountUSDCRevShare,
