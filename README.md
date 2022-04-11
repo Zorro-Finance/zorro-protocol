@@ -106,15 +106,24 @@ below. This base contract also contains a lot of shared logic for distributing r
 `ZorrocontrollerInvestment` contains most of the core investment functions (deposits, withdrawals, etc.). This contract
 also performs a lot of rewards logic and distribution.
 
-#### ZorroControllerXChain
+### ZorroControllerPoolMgmt
+
+`ZorroControllerPoolMgmt` is used to add and set values for new and existing pools.
+
+## ZorroControllerXChain (and subcontracts)
+
+The `ZorroControllerXChain` contract is the counterpart contract to `ZorroController` and as the name implies, is the interface for
+all cross-chain activity. Its logic is composed of the follow contracts below, which it inherits from.
+
+### ZorroControllerXChainBase
+
+`ZorroControllerXChainBase` declares most common state variables, constants, and shared functions used by other partial contracts 
+below. This base contract also contains a lot of shared logic for distributing rewards. 
+
 * `ZorroControllerXChainDeposit` contains all functions for sending/receiving deposits across chains.
 * `ZorroControllerXChainEarn` contains all functions for cross chain autocompounding and distributing rewards (aka "earnings").
 * `ZorroControllerXChainWithdrawal` contains all functions for triggering and receiving withdrawals across chains.
 * `ZorroControllerXChainReceiver` implements receiving logic for LayerZero/Stargate fro cross chain bridging and messaging.
-
-### ZorroControllerPoolMgmt
-
-`ZorroControllerPoolMgmt` is used to add and set values for new and existing pools.
 
 ## Vaults
 
