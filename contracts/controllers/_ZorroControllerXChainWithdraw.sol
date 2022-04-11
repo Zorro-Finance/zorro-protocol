@@ -2,11 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "./_ZorroControllerXChain.sol";
+import "./_ZorroControllerXChainBase.sol";
 
 import "../interfaces/IZorroController.sol";
 
-contract ZorroControllerXChainWithdraw is IZorroControllerXChainWithdraw, ZorroControllerXChain {
+import "../interfaces/IZorroControllerXChain.sol";
+
+contract ZorroControllerXChainWithdraw is
+    IZorroControllerXChainWithdraw,
+    ZorroControllerXChainBase
+{
     /* Libraries */
     using SafeMath for uint256;
 
@@ -320,7 +325,8 @@ contract ZorroControllerXChainWithdraw is IZorroControllerXChainWithdraw, ZorroC
         uint256 _maxMarketMovement
     ) internal {
         // Get on-chain account using foreign account as guide
-        address _account = foreignTrancheInfo[_pid][_originAccount][_trancheId];
+        address _account = ZorroControllerInvestment(currentChainController)
+            .foreignTrancheInfo(_pid, _originAccount, _trancheId);
 
         // Withdraw funds
         (
@@ -328,14 +334,15 @@ contract ZorroControllerXChainWithdraw is IZorroControllerXChainWithdraw, ZorroC
             uint256 _mintedZORRewards,
             uint256 _rewardsDue,
 
-        ) = _withdrawalFullService(
-                _account,
-                _originAccount,
-                _pid,
-                _trancheId,
-                false,
-                _maxMarketMovement
-            );
+        ) = IZorroControllerInvestment(currentChainController)
+                .withdrawalFullServiceFromXChain(
+                    _account,
+                    _originAccount,
+                    _pid,
+                    _trancheId,
+                    false,
+                    _maxMarketMovement
+                );
 
         // Get USDC bal
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));

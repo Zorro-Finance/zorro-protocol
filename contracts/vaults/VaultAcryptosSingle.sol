@@ -30,13 +30,13 @@ contract VaultAcryptosSingle is VaultBase {
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    /// @notice Constructor
+    /// @notice Upgradeable constructor
     /// @param _initValue A VaultAcryptosSingleInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
-    constructor(
+    function initialize(
         address _timelockOwner,
         VaultAcryptosSingleInit memory _initValue
-    ) VaultBase(_timelockOwner) {
+    ) public {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
@@ -95,6 +95,9 @@ contract VaultAcryptosSingle is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

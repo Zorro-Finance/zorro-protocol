@@ -23,14 +23,14 @@ contract ZorroController is
     ZorroControllerBase,
     ZorroControllerPoolMgmt,
     ZorroControllerAnalytics,
-    ZorroControllerXChainReceiver
+    ZorroControllerInvestment
 {
     /* Constructor */
 
-    /// @notice Constructor
+    /// @notice Upgradeable constructor
     /// @param _timelockOwner Address of owner (should be a timelock)
     /// @param _initValue A ZorroControllerInit struct containing all constructor args
-    constructor(address _timelockOwner, ZorroControllerInit memory _initValue) {
+    function initialize(address _timelockOwner, ZorroControllerInit memory _initValue) public {
         // Tokens
         ZORRO = _initValue.ZORRO;
         defaultStablecoin = _initValue.defaultStablecoin;
@@ -59,30 +59,9 @@ contract ZorroController is
         // Cross chain
         chainId = _initValue.xChain.chainId;
         homeChainId = _initValue.xChain.homeChainId;
-        address _homeChainZorroController = _initValue
-            .xChain
-            .homeChainZorroController;
-        if (_homeChainZorroController == address(0)) {
-            homeChainZorroController = address(this);
-        } else {
-            homeChainZorroController = _homeChainZorroController;
-        }
-        stargateRouter = _initValue.xChain.stargateRouter;
-        stargateSwapPoolId = _initValue.xChain.stargateSwapPoolId;
-        layerZeroEndpoint = _initValue.xChain.layerZeroEndpoint;
+        homeChainZorroController = _initValue.xChain.homeChainZorroController;
         zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
-        for (uint16 i = 0; i < _initValue.xChain.ZorroChainIDs.length; ++i) {
-            uint256 _zChainId = _initValue.xChain.ZorroChainIDs[i];
-
-            controllerContractsMap[_zChainId] = _initValue
-                .xChain
-                .controllerContracts[i];
-            ZorroChainToLZMap[_zChainId] = _initValue.xChain.LZChainIDs[i];
-            LZChainToZorroMap[_initValue.xChain.LZChainIDs[i]] = _zChainId;
-            stargateDestPoolIds[_zChainId] = _initValue
-                .xChain
-                .stargateDestPoolIds[i];
-        }
+        zorroXChainEndpoint = _initValue.xChain.zorroXChainEndpoint;
 
         // Investment
         USDCToZorroPath = _initValue.USDCToZorroPath;
@@ -116,14 +95,8 @@ contract ZorroController is
         uint256 chainId;
         uint256 homeChainId;
         address homeChainZorroController;
-        address stargateRouter;
-        uint256 stargateSwapPoolId;
-        address layerZeroEndpoint;
         address zorroControllerOracle;
-        uint256[] ZorroChainIDs;
-        bytes[] controllerContracts; // Must be same length as ZorroChainIDs
-        uint16[] LZChainIDs; // Must be same length as ZorroChainIDs
-        uint256[] stargateDestPoolIds; // Must be same length as ZorroChainIDs
+        address zorroXChainEndpoint;
     }
 
     struct ZorroControllerPriceFeeds {

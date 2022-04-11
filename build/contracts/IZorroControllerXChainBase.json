@@ -1,446 +1,6 @@
 {
-  "contractName": "IZorroControllerXChain",
+  "contractName": "IZorroControllerXChainBase",
   "abi": [
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_chainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_dstContract",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_valueUSDC",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_weeksCommitted",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_destWallet",
-          "type": "bytes"
-        }
-      ],
-      "name": "checkXChainDepositFee",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_amountUSDCBuyback",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_amountUSDCRevShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_accSlashedRewards",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        }
-      ],
-      "name": "checkXChainDistributeEarningsFee",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_originChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_trancheId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_originRecipient",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_burnableZORRewards",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_rewardsDue",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_gasForDestinationLZReceive",
-          "type": "uint256"
-        }
-      ],
-      "name": "checkXChainRepatriationFee",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_zorroChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_trancheId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_gasForDestinationLZReceive",
-          "type": "uint256"
-        }
-      ],
-      "name": "checkXChainWithdrawalFee",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint16",
-          "name": "_srcChainId",
-          "type": "uint16"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_srcAddress",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint64",
-          "name": "_nonce",
-          "type": "uint64"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_payload",
-          "type": "bytes"
-        }
-      ],
-      "name": "lzReceive",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_valueUSDC",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_weeksCommitted",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_originAccount",
-          "type": "bytes"
-        },
-        {
-          "internalType": "address",
-          "name": "_destAccount",
-          "type": "address"
-        }
-      ],
-      "name": "receiveXChainDepositRequest",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_remoteChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_amountUSDCBuyback",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_amountUSDCRevShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_accSlashedRewards",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        }
-      ],
-      "name": "receiveXChainDistributionRequest",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_originChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_trancheId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_originRecipient",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_burnableZORRewards",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_rewardsDue",
-          "type": "uint256"
-        }
-      ],
-      "name": "receiveXChainRepatriationRequest",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_originChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_originAccount",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_trancheId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        }
-      ],
-      "name": "receiveXChainWithdrawalRequest",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_zorroChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_valueUSDC",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_weeksCommitted",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_destWallet",
-          "type": "bytes"
-        }
-      ],
-      "name": "sendXChainDepositRequest",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_buybackAmountUSDC",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_revShareAmountUSDC",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        }
-      ],
-      "name": "sendXChainDistributeEarningsRequest",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_destZorroChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_pid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_trancheId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_maxMarketMovement",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_gasForDestinationLZReceive",
-          "type": "uint256"
-        }
-      ],
-      "name": "sendXChainWithdrawalRequest",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
     {
       "inputs": [
         {
@@ -455,6 +15,42 @@
         }
       ],
       "name": "setControllerContract",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_zorroChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint16",
+          "name": "_lzChainId",
+          "type": "uint16"
+        }
+      ],
+      "name": "setZorroChainToLZMap",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_zorroChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint16",
+          "name": "_stargatePoolId",
+          "type": "uint16"
+        }
+      ],
+      "name": "setStargateDestPoolIds",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -481,166 +77,9 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address[]",
-          "name": "_priceFeeds",
-          "type": "address[]"
-        }
-      ],
-      "name": "setPriceFeeds",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_zorroChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint16",
-          "name": "_stargatePoolId",
-          "type": "uint16"
-        }
-      ],
-      "name": "setStargateDestPoolIds",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address[]",
-          "name": "_USDCToZorroPath",
-          "type": "address[]"
-        },
-        {
-          "internalType": "address[]",
-          "name": "_USDCToZorroLPPoolOtherTokenPath",
-          "type": "address[]"
-        }
-      ],
-      "name": "setSwapPaths",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_token",
-          "type": "address"
-        }
-      ],
-      "name": "setTokenUSDC",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_contract",
-          "type": "address"
-        }
-      ],
-      "name": "setUniRouterAddress",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_zorroChainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint16",
-          "name": "_lzChainId",
-          "type": "uint16"
-        }
-      ],
-      "name": "setZorroChainToLZMap",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_token",
-          "type": "address"
-        }
-      ],
-      "name": "setZorroLPPoolOtherToken",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_contract",
-          "type": "address"
-        }
-      ],
-      "name": "setZorroStakingVault",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint16",
-          "name": "_chainId",
-          "type": "uint16"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_srcAddress",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_nonce",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "_token",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amountLD",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "payload",
-          "type": "bytes"
-        }
-      ],
-      "name": "sgReceive",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_chainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_dstContract\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_valueUSDC\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_weeksCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_destWallet\",\"type\":\"bytes\"}],\"name\":\"checkXChainDepositFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSDCBuyback\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amountUSDCRevShare\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_accSlashedRewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"}],\"name\":\"checkXChainDistributeEarningsFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_originChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_trancheId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_originRecipient\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_burnableZORRewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_rewardsDue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasForDestinationLZReceive\",\"type\":\"uint256\"}],\"name\":\"checkXChainRepatriationFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_trancheId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasForDestinationLZReceive\",\"type\":\"uint256\"}],\"name\":\"checkXChainWithdrawalFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"_srcChainId\",\"type\":\"uint16\"},{\"internalType\":\"bytes\",\"name\":\"_srcAddress\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"_nonce\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"_payload\",\"type\":\"bytes\"}],\"name\":\"lzReceive\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_valueUSDC\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_weeksCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_originAccount\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"_destAccount\",\"type\":\"address\"}],\"name\":\"receiveXChainDepositRequest\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_remoteChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amountUSDCBuyback\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amountUSDCRevShare\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_accSlashedRewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"}],\"name\":\"receiveXChainDistributionRequest\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_originChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_trancheId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_originRecipient\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_burnableZORRewards\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_rewardsDue\",\"type\":\"uint256\"}],\"name\":\"receiveXChainRepatriationRequest\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_originChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_originAccount\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_trancheId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"}],\"name\":\"receiveXChainWithdrawalRequest\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_valueUSDC\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_weeksCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_destWallet\",\"type\":\"bytes\"}],\"name\":\"sendXChainDepositRequest\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_buybackAmountUSDC\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_revShareAmountUSDC\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"}],\"name\":\"sendXChainDistributeEarningsRequest\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_destZorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_trancheId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovement\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasForDestinationLZReceive\",\"type\":\"uint256\"}],\"name\":\"sendXChainWithdrawalRequest\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_controller\",\"type\":\"bytes\"}],\"name\":\"setControllerContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_stargateRouter\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stargateSwapPoolId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_layerZeroEndpoint\",\"type\":\"address\"}],\"name\":\"setLayerZeroParams\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_priceFeeds\",\"type\":\"address[]\"}],\"name\":\"setPriceFeeds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"_stargatePoolId\",\"type\":\"uint16\"}],\"name\":\"setStargateDestPoolIds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_USDCToZorroPath\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"_USDCToZorroLPPoolOtherTokenPath\",\"type\":\"address[]\"}],\"name\":\"setSwapPaths\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"}],\"name\":\"setTokenUSDC\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contract\",\"type\":\"address\"}],\"name\":\"setUniRouterAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"_lzChainId\",\"type\":\"uint16\"}],\"name\":\"setZorroChainToLZMap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"}],\"name\":\"setZorroLPPoolOtherToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contract\",\"type\":\"address\"}],\"name\":\"setZorroStakingVault\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"_chainId\",\"type\":\"uint16\"},{\"internalType\":\"bytes\",\"name\":\"_srcAddress\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_nonce\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amountLD\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"sgReceive\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"title\":\"IZorroControllerXChain\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/IZorroControllerXChain.sol\":\"IZorroControllerXChain\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0xbbc8ac883ac3c0078ce5ad3e288fbb3ffcc8a30c3a98c0fda0114d64fc44fca2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://87a7a5d2f6f63f84598af02b8c50ca2df2631cb8ba2453e8d95fcb17e4be9824\",\"dweb:/ipfs/QmR76hqtAcRqoFj33tmNjcWTLrgNsAaakYwnKZ8zoJtKei\"]},\"project:/contracts/interfaces/ILayerZeroReceiver.sol\":{\"keccak256\":\"0xbb12f15bdc0ec9cc0aaf509b0252afc0714207c56998dab83c62ffd4a63ae70e\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://8e1f2b57c72757daf5c15ab43f17d232b3323376872ef814d31cff34105438b1\",\"dweb:/ipfs/QmWh1ruhTbYGnaQ1RXWUe84uKXXhTJuRiN485ZRcA48XLz\"]},\"project:/contracts/interfaces/IStargateReceiver.sol\":{\"keccak256\":\"0x44c6f3e0eab72f4fa27f83ef133d9648ee4bf2a5a2057756d96196adeba0339e\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://d905d65bb9ce0164d2a536956fcc981ddabf3bd0a23cdfcd7c54799e86d82ac3\",\"dweb:/ipfs/QmfU8Jq48az6VeGgY3h6CYBXakvv6NGp7RsANmZcDjWZDg\"]},\"project:/contracts/interfaces/IZorroControllerXChain.sol\":{\"keccak256\":\"0xf383c9dbe34ffdffe798d9abe4c8d962b28294ed67b4ff9292b15f43cc6d0b65\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://936ac5d56936dba5fd4716df06f4cf277b9d6f2ba3662181e8896cf268a7ef75\",\"dweb:/ipfs/QmSdVUYSDqr62WxqMKcxGM1AdU6gF3WaHUMNNSqn52aofL\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_controller\",\"type\":\"bytes\"}],\"name\":\"setControllerContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_stargateRouter\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stargateSwapPoolId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_layerZeroEndpoint\",\"type\":\"address\"}],\"name\":\"setLayerZeroParams\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"_stargatePoolId\",\"type\":\"uint16\"}],\"name\":\"setStargateDestPoolIds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_zorroChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"_lzChainId\",\"type\":\"uint16\"}],\"name\":\"setZorroChainToLZMap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"title\":\"IZorroControllerXChain\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/IZorroControllerXChain.sol\":\"IZorroControllerXChainBase\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0xbbc8ac883ac3c0078ce5ad3e288fbb3ffcc8a30c3a98c0fda0114d64fc44fca2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://87a7a5d2f6f63f84598af02b8c50ca2df2631cb8ba2453e8d95fcb17e4be9824\",\"dweb:/ipfs/QmR76hqtAcRqoFj33tmNjcWTLrgNsAaakYwnKZ8zoJtKei\"]},\"project:/contracts/interfaces/ILayerZeroReceiver.sol\":{\"keccak256\":\"0xbb12f15bdc0ec9cc0aaf509b0252afc0714207c56998dab83c62ffd4a63ae70e\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://8e1f2b57c72757daf5c15ab43f17d232b3323376872ef814d31cff34105438b1\",\"dweb:/ipfs/QmWh1ruhTbYGnaQ1RXWUe84uKXXhTJuRiN485ZRcA48XLz\"]},\"project:/contracts/interfaces/IStargateReceiver.sol\":{\"keccak256\":\"0x44c6f3e0eab72f4fa27f83ef133d9648ee4bf2a5a2057756d96196adeba0339e\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://d905d65bb9ce0164d2a536956fcc981ddabf3bd0a23cdfcd7c54799e86d82ac3\",\"dweb:/ipfs/QmfU8Jq48az6VeGgY3h6CYBXakvv6NGp7RsANmZcDjWZDg\"]},\"project:/contracts/interfaces/IZorroControllerXChain.sol\":{\"keccak256\":\"0xf383c9dbe34ffdffe798d9abe4c8d962b28294ed67b4ff9292b15f43cc6d0b65\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://936ac5d56936dba5fd4716df06f4cf277b9d6f2ba3662181e8896cf268a7ef75\",\"dweb:/ipfs/QmSdVUYSDqr62WxqMKcxGM1AdU6gF3WaHUMNNSqn52aofL\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -7066,7 +6505,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-04-11T13:33:06.818Z",
+  "updatedAt": "2022-04-11T13:33:06.820Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

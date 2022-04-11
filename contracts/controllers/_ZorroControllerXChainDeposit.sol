@@ -2,11 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "./_ZorroControllerXChain.sol";
+import "./_ZorroControllerXChainBase.sol";
 
 import "../interfaces/IZorroController.sol";
 
-contract ZorroControllerXChainDeposit is IZorroControllerXChainDeposit, ZorroControllerXChain {
+import "../interfaces/IZorroControllerXChain.sol";
+
+contract ZorroControllerXChainDeposit is
+    IZorroControllerXChainDeposit,
+    ZorroControllerXChainBase
+{
     /* Libraries */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -196,14 +201,15 @@ contract ZorroControllerXChainDeposit is IZorroControllerXChainDeposit, ZorroCon
         address _destAccount
     ) internal {
         // Call deposit function
-        _depositFullService(
-            _pid,
-            _destAccount,
-            _originAccount,
-            _valueUSDC,
-            _weeksCommitted,
-            _vaultEnteredAt,
-            _maxMarketMovement
-        );
+        IZorroControllerInvestment(currentChainController)
+            .depositFullServiceFromXChain(
+                _pid,
+                _destAccount,
+                _originAccount,
+                _valueUSDC,
+                _weeksCommitted,
+                _vaultEnteredAt,
+                _maxMarketMovement
+            );
     }
 }

@@ -20,7 +20,10 @@ import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IZorroController.sol";
 
-contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControllerBase {
+contract ZorroControllerInvestment is
+    IZorroControllerInvestment,
+    ZorroControllerBase
+{
     /* Libraries */
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -50,6 +53,16 @@ contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControlle
     // Oracles
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
+    // Cross chain
+    address public zorroXChainEndpoint; // Cross chain controller contract
+
+    /* Modifiers */
+
+    /// @notice Only allow sender to be the cross chain controller contract
+    modifier onlyZorroXChain() {
+        require(_msgSender() == zorroXChainEndpoint, "xchain only");
+        _;
+    }
 
     /* Setters */
 
@@ -102,6 +115,12 @@ contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControlle
         priceFeedLPPoolOtherToken = AggregatorV3Interface(
             _priceFeedLPPoolOtherToken
         );
+    }
+
+    /// @notice Setter: Cross chain endpoint
+    /// @param _contract Contract address of endpoint
+    function setZorroXChainEndpoint(address _contract) external onlyOwner {
+        zorroXChainEndpoint = _contract;
     }
 
     /* Events */
@@ -299,6 +318,35 @@ contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControlle
             _valueUSDC,
             _weeksCommitted,
             block.timestamp,
+            _maxMarketMovement
+        );
+    }
+
+    /// @notice Full service deposit function to be called by ZorroControllerXChain only.
+    /// @param _pid index of pool to deposit into
+    /// @param _account address of user on-chain
+    /// @param _foreignAccount the cross chain wallet that initiated this call, if applicable.
+    /// @param _valueUSDC value in USDC (in ether units) to deposit
+    /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
+    /// @param _vaultEnteredAt date that the vault was entered at
+    /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
+    function depositFullServiceFromXChain(
+        uint256 _pid,
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _vaultEnteredAt,
+        uint256 _maxMarketMovement
+    ) public onlyZorroXChain {
+        // Make deposit full service call
+        _depositFullService(
+            _pid,
+            _account,
+            _foreignAccount,
+            _valueUSDC,
+            _weeksCommitted,
+            _vaultEnteredAt,
             _maxMarketMovement
         );
     }
@@ -566,6 +614,35 @@ contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControlle
         return _amountUSDC;
     }
 
+    /// @notice Full service withdrawal to be called from authorized cross chain endpoint
+    /// @param _account address of wallet on-chain
+    /// @param _foreignAccount address of wallet cross-chain (that originally made this deposit)
+    /// @param _pid index of pool to deposit into
+    /// @param _trancheId index of tranche
+    /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
+    /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
+    /// @return _amountUSDC Amount of USDC withdrawn
+    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
+    /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
+    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
+    function withdrawalFullServiceFromXChain(
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _pid,
+        uint256 _trancheId,
+        bool _harvestOnly,
+        uint256 _maxMarketMovement
+    )
+        public onlyZorroXChain
+        returns (
+            uint256 _amountUSDC,
+            uint256 _mintedZORRewards,
+            uint256 _rewardsDueXChain,
+            uint256 _slashedRewardsXChain
+        )
+    {
+    }
+
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
     /// @param _account address of wallet on-chain
     /// @param _foreignAccount address of wallet cross-chain (that originally made this deposit)
@@ -672,101 +749,6 @@ contract ZorroControllerInvestment is IZorroControllerInvestment, ZorroControlle
         for (uint256 tid = 0; tid < numTranches; ++tid) {
             withdraw(_pid, tid, false);
         }
-    }
-
-    /* Earnings */
-
-    /// @notice Pays the ZOR single staking pool the revenue share amount specified
-    /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
-        internal
-    {
-        // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSDC
-        );
-
-        // Get Zorro exchange rate
-        uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
-
-        // Swap to ZOR
-        // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
-        // Swap
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC,
-            1e12,
-            _ZORROExchangeRate,
-            _maxMarketMovement,
-            USDCToZorroPath,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
-    /// @param _amountUSDC Amount of USDC to add as liquidity
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
-        internal
-    {
-        // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSDC
-        );
-
-        // Determine exchange rates using price feed oracle
-        uint256 _exchangeRateZOR = priceFeedZOR.getExchangeRate();
-        uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken
-            .getExchangeRate();
-
-        // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
-
-        // Swap to ZOR token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            1e12,
-            _exchangeRateZOR,
-            _maxMarketMovement,
-            USDCToZorroPath,
-            address(this),
-            block.timestamp.add(600)
-        );
-        // Swap to counterparty token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            1e12,
-            _exchangeRateLPPoolOtherToken,
-            _maxMarketMovement,
-            USDCToZorroLPPoolOtherTokenPath,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Enter LP pool
-        uint256 tokenZORAmt = IERC20(ZORRO).balanceOf(address(this));
-        uint256 tokenOtherAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
-            address(this)
-        );
-        IERC20(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
-        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            tokenOtherAmt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORRO,
-            zorroLPPoolOtherToken,
-            tokenZORAmt,
-            tokenOtherAmt,
-            tokenZORAmt.mul(_maxMarketMovement).div(1000),
-            tokenOtherAmt.mul(_maxMarketMovement).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
-        );
     }
 
     /* Allocations */

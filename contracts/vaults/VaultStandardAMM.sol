@@ -31,12 +31,13 @@ contract VaultStandardAMM is VaultBase {
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    /// @notice Constructor
+    /// @notice Upgradeable constructor
     /// @param _initValue A VaultStandardAMMInit struct with all constructor params
     /// @param _timelockOwner The designated timelock controller address to act as owner
-    constructor(address _timelockOwner, VaultStandardAMMInit memory _initValue)
-        VaultBase(_timelockOwner)
-    {
+    function initialize(
+        address _timelockOwner,
+        VaultStandardAMMInit memory _initValue
+    ) public {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
@@ -97,6 +98,9 @@ contract VaultStandardAMM is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

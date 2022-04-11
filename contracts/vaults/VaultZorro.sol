@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "./_VaultBase.sol";
 
+import "../libraries/PriceFeed.sol";
+
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -13,13 +15,14 @@ contract VaultZorro is VaultBase {
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    /// @notice Constructor
+    /// @notice Upgradeable constructor
     /// @dev NOTE: Only to be deployed on home chain!
     /// @param _initValue A VaultZorroInit struct that contains all constructor args
     /// @param _timelockOwner The designated timelock controller address to act as owner
-    constructor(address _timelockOwner, VaultZorroInit memory _initValue)
-        VaultBase(_timelockOwner)
-    {
+    function initialize(
+        address _timelockOwner,
+        VaultZorroInit memory _initValue
+    ) public {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = false;
@@ -53,6 +56,9 @@ contract VaultZorro is VaultBase {
         token0PriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.token0PriceFeed
         );
+
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

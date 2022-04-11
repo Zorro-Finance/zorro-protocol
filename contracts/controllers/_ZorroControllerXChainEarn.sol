@@ -2,25 +2,40 @@
 
 pragma solidity ^0.8.0;
 
-import "./_ZorroControllerXChain.sol";
+import "./_ZorroControllerXChainBase.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/IZorroControllerXChain.sol";
 
-contract ZorroControllerXChainEarn is IZorroControllerXChainEarn, ZorroControllerXChain {
+import "../libraries/PriceFeed.sol";
+
+import "../libraries/SafeSwap.sol";
+
+import "../interfaces/IAMMRouter02.sol";
+
+contract ZorroControllerXChainEarn is
+    IZorroControllerXChainEarn,
+    ZorroControllerXChainBase
+{
     /* Libraries */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Modifiers */
 
     /// @notice Only can be called from a registered vault
     /// @param _pid The pool ID
     modifier onlyRegisteredVault(uint256 _pid) {
-        require(_msgSender() == poolInfo[_pid].vault, "only reg vault");
+        (, , , , , address _vault) = ZorroControllerInvestment(
+            currentChainController
+        ).poolInfo(_pid);
+        require(_msgSender() == _vault, "only reg vault");
         _;
     }
 
     /* Events */
+
     event XChainDistributeEarnings(
         uint256 indexed _remoteChainId,
         uint256 indexed _buybackAmountUSDC,
@@ -29,8 +44,57 @@ contract ZorroControllerXChainEarn is IZorroControllerXChainEarn, ZorroControlle
 
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
+    /* Constants */
+    address public constant burnAddress =
+        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
+
     /* State */
+
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
+    // TODO: Constructor, setter
+    // Tokens
+    address public tokenUSDC;
+    address public zorroLPPoolOtherToken;
+    // Contracts
+    address public zorroStakingVault;
+    address public uniRouterAddress;
+    // Paths
+    address[] public USDCToZorroPath;
+    address[] public USDCToZorroLPPoolOtherTokenPath;
+    // Price feeds
+    AggregatorV3Interface public priceFeedZOR;
+    AggregatorV3Interface public priceFeedLPPoolOtherToken;
+
+    /* Setters */
+
+    function setTokenUSDC(address _token) external onlyOwner {
+        tokenUSDC = _token;
+    }
+
+    function setZorroLPPoolOtherToken(address _token) external onlyOwner {
+        zorroLPPoolOtherToken = _token;
+    }
+
+    function setZorroStakingVault(address _contract) external onlyOwner {
+        zorroStakingVault = _contract;
+    }
+
+    function setUniRouterAddress(address _contract) external onlyOwner {
+        uniRouterAddress = _contract;
+    }
+
+    function setSwapPaths(
+        address[] calldata _USDCToZorroPath,
+        address[] calldata _USDCToZorroLPPoolOtherTokenPath
+    ) external onlyOwner {
+        USDCToZorroPath = _USDCToZorroPath;
+        USDCToZorroLPPoolOtherTokenPath = _USDCToZorroLPPoolOtherTokenPath;
+    }
+
+    function setPriceFeeds(address[] calldata _priceFeeds) external onlyOwner {
+        priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
+    }
 
     /* Fees */
 
@@ -231,6 +295,101 @@ contract ZorroControllerXChainEarn is IZorroControllerXChainEarn, ZorroControlle
         if (_accSlashedRewards > 0) {
             _awardSlashedRewardsToStakers(_accSlashedRewards);
         }
+    }
+
+    /* Fees */
+
+    /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
+    /// @param _amountUSDC Amount of USDC to add as liquidity
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
+        // Authorize spending beforehand
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
+        // Determine exchange rates using price feed oracle
+        uint256 _exchangeRateZOR = priceFeedZOR.getExchangeRate();
+        uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken
+            .getExchangeRate();
+
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+
+        // Swap to ZOR token
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            1e12,
+            _exchangeRateZOR,
+            _maxMarketMovement,
+            USDCToZorroPath,
+            address(this),
+            block.timestamp.add(600)
+        );
+        // Swap to counterparty token
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            1e12,
+            _exchangeRateLPPoolOtherToken,
+            _maxMarketMovement,
+            USDCToZorroLPPoolOtherTokenPath,
+            address(this),
+            block.timestamp.add(600)
+        );
+
+        // Enter LP pool
+        uint256 tokenZORAmt = IERC20(ZORRO).balanceOf(address(this));
+        uint256 tokenOtherAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+            address(this)
+        );
+        IERC20(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
+        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
+            uniRouterAddress,
+            tokenOtherAmt
+        );
+        IAMMRouter02(uniRouterAddress).addLiquidity(
+            ZORRO,
+            zorroLPPoolOtherToken,
+            tokenZORAmt,
+            tokenOtherAmt,
+            tokenZORAmt.mul(_maxMarketMovement).div(1000),
+            tokenOtherAmt.mul(_maxMarketMovement).div(1000),
+            burnAddress,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Pays the ZOR single staking pool the revenue share amount specified
+    /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
+    /// @param _maxMarketMovement factor to account for max market movement/slippage.
+    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+        internal
+    {
+        // Authorize spending beforehand
+        IERC20(defaultStablecoin).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountUSDC
+        );
+
+        // Get Zorro exchange rate
+        uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
+
+        // Swap to ZOR
+        // Increase allowance
+        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        // Swap
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC,
+            1e12,
+            _ZORROExchangeRate,
+            _maxMarketMovement,
+            USDCToZorroPath,
+            zorroStakingVault,
+            block.timestamp.add(600)
+        );
     }
 
     /* Slashed rewards */

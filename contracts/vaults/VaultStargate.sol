@@ -31,13 +31,13 @@ contract VaultStargate is VaultBase {
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    /// @notice Constructor
+    /// @notice Upgradeable constructor
     /// @param _initValue A VaultStargateInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
-    constructor(
+    function initialize(
         address _timelockOwner,
         VaultStargateInit memory _initValue
-    ) VaultBase(_timelockOwner) {
+    ) public {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;
@@ -96,6 +96,9 @@ contract VaultStargate is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+
+        // Super call
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

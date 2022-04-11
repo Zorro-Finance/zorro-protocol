@@ -4,19 +4,15 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./ILayerZeroReceiver.sol";
-
-import "./IStargateReceiver.sol";
-
 /// @title IZorroControllerBase
 interface IZorroControllerBase {
     function setKeyAddresses(address _ZORRO, address _defaultStablecoin)
         external;
 
     function setZorroContracts(address _publicPool, address _zorroStakingVault)
-        external; 
+        external;
 
-    function setStartBlock(uint256 _startBlock) external; 
+    function setStartBlock(uint256 _startBlock) external;
 
     function setRewardsParams(
         uint256[] calldata _blockParams,
@@ -35,8 +31,7 @@ interface IZorroControllerBase {
         address _homeChainZorroController
     ) external;
 
-    function setZorroControllerOracle(address _zorroControllerOracle)
-        external;
+    function setZorroControllerOracle(address _zorroControllerOracle) external;
 
     function poolLength() external view returns (uint256);
 
@@ -72,7 +67,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     function setZorroLPPoolParams(
         address _zorroLPPool,
         address _zorroLPPoolOtherToken
-    ) external; 
+    ) external;
 
     function setUniRouter(address _uniV2Router) external;
 
@@ -86,6 +81,8 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         address _priceFeedLPPoolOtherToken
     ) external;
 
+    function setZorroXChainEndpoint(address _contract) external;
+
     function deposit(
         uint256 _pid,
         uint256 _wantAmt,
@@ -96,6 +93,16 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         uint256 _pid,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
+        uint256 _maxMarketMovement
+    ) external;
+
+    function depositFullServiceFromXChain(
+        uint256 _pid,
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _valueUSDC,
+        uint256 _weeksCommitted,
+        uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
     ) external;
 
@@ -111,6 +118,22 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         bool _harvestOnly,
         uint256 _maxMarketMovement
     ) external returns (uint256);
+
+    function withdrawalFullServiceFromXChain(
+        address _account,
+        bytes memory _foreignAccount,
+        uint256 _pid,
+        uint256 _trancheId,
+        bool _harvestOnly,
+        uint256 _maxMarketMovement
+    )
+        external
+        returns (
+            uint256 _amountUSDC,
+            uint256 _mintedZORRewards,
+            uint256 _rewardsDueXChain,
+            uint256 _slashedRewardsXChain
+        );
 
     function transferInvestment(
         uint256 _fromPid,
@@ -150,148 +173,12 @@ interface IZorroControllerPoolMgmt is IZorroControllerBase {
     function massUpdatePools() external returns (uint256);
 }
 
-/// @title IZorroControllerXChain
-interface IZorroControllerXChain is IZorroControllerInvestment {
-    function setControllerContract(
-        uint256 _zorroChainId,
-        bytes calldata _controller
-    ) external;
-
-    function setZorroChainToLZMap(uint256 _zorroChainId, uint16 _lzChainId)
-        external;
-    
-    function setStargateDestPoolIds(
-        uint256 _zorroChainId,
-        uint16 _stargatePoolId
-    ) external;
-
-    function setLayerZeroParams(
-        address _stargateRouter,
-        uint256 _stargateSwapPoolId,
-        address _layerZeroEndpoint
-    ) external;
-}
-
-/// @title IZorroControllerXChainDeposit
-interface IZorroControllerXChainDeposit is IZorroControllerXChain {
-    function checkXChainDepositFee(
-        uint256 _chainId,
-        bytes memory _dstContract,
-        uint256 _pid,
-        uint256 _valueUSDC,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        bytes memory _destWallet
-    ) external view returns (uint256);
-
-    function sendXChainDepositRequest(
-        uint256 _zorroChainId,
-        uint256 _pid,
-        uint256 _valueUSDC,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        bytes memory _destWallet
-    ) external payable;
-
-    function receiveXChainDepositRequest(
-        uint256 _pid,
-        uint256 _valueUSDC,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        bytes memory _originAccount,
-        address _destAccount
-    ) external;
-}
-
-/// @title IZorroControllerXChainEarn
-interface IZorroControllerXChainEarn is IZorroControllerXChain {
-    function checkXChainDistributeEarningsFee(
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) external view returns (uint256);
-
-    function sendXChainDistributeEarningsRequest(
-        uint256 _pid,
-        uint256 _buybackAmountUSDC,
-        uint256 _revShareAmountUSDC,
-        uint256 _maxMarketMovement
-    ) external payable;
-
-    function receiveXChainDistributionRequest(
-        uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) external;
-}
-
-/// @title IZorroControllerXChainWithdraw
-interface IZorroControllerXChainWithdraw is IZorroControllerXChain {
-    function checkXChainWithdrawalFee(
-        uint256 _zorroChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement,
-        uint256 _gasForDestinationLZReceive
-    ) external view returns (uint256);
-
-    function checkXChainRepatriationFee(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
-        uint256 _rewardsDue,
-        uint256 _gasForDestinationLZReceive
-    ) external view returns (uint256);
-
-    function sendXChainWithdrawalRequest(
-        uint256 _destZorroChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement,
-        uint256 _gasForDestinationLZReceive
-    ) external payable;
-
-    function receiveXChainWithdrawalRequest(
-        uint256 _originChainId,
-        bytes memory _originAccount,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement
-    ) external;
-
-    function receiveXChainRepatriationRequest(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
-        uint256 _rewardsDue
-    ) external;
-}
-
-/// @title IZorroControllerXChainReceiver
-interface IZorroControllerXChainReceiver is
-    ILayerZeroReceiver,
-    IStargateReceiver,
-    IZorroControllerXChainDeposit,
-    IZorroControllerXChainEarn,
-    IZorroControllerXChainWithdraw
-{
-
-}
-
 /// @title IZorroController: Interface for Zorro Controller
 interface IZorroController is
     IZorroControllerBase,
     IZorroControllerPoolMgmt,
     IZorroControllerInvestment,
-    IZorroControllerAnalytics,
-    IZorroControllerXChainReceiver
+    IZorroControllerAnalytics
 {
 
 }

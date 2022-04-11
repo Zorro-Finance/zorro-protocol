@@ -12,7 +12,7 @@ import "./_ZorroControllerXChainWithdraw.sol";
 
 import "./_ZorroControllerXChainEarn.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/IZorroControllerXChain.sol";
 
 contract ZorroControllerXChainReceiver is
     IZorroControllerXChainReceiver,
