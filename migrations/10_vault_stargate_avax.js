@@ -1,14 +1,13 @@
 // Vaults
-const VaultAcryptosSingle = artifacts.require("VaultAcryptosSingle");
+const VaultStargate = artifacts.require("VaultStargate");
 // Libs
 const PriceFeed = artifacts.require("PriceFeed");
 const SafeSwapUni = artifacts.require("SafeSwapUni");
-const SafeSwapBalancer = artifacts.require("SafeSwapBalancer");
 
 
 module.exports = async function (deployer, network, accounts) {
   const deployableNetworks = [
-    'bsc',
+    'avalanche',
     'ganache',
     'default',
     'development',
@@ -17,14 +16,12 @@ module.exports = async function (deployer, network, accounts) {
     // Libs
     await deployer.deploy(PriceFeed);
     await deployer.deploy(SafeSwapUni);
-    await deployer.deploy(SafeSwapBalancer);
-
+    
     // Links
-    await deployer.link(PriceFeed, VaultAcryptosSingle);
-    await deployer.link(SafeSwapUni, VaultAcryptosSingle);
-    await deployer.link(SafeSwapBalancer, VaultAcryptosSingle);
-
+    await deployer.link(PriceFeed, VaultStargate);
+    await deployer.link(SafeSwapUni, VaultStargate);
+    
     // Deploy
-    await deployer.deploy(VaultAcryptosSingle);
+    await deployer.deploy(VaultStargate);
   }
 };

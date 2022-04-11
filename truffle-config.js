@@ -71,6 +71,20 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+    bsc: {
+      provider: () => new HDWalletProvider(mnemonic, ''),
+      network_id: 56,
+      gas: 8500000,
+      gasPrice: 20000000000,
+      skipDryRun: false
+    },
+    avalanche: {
+      provider: () => new HDWalletProvider(mnemonic, ''),
+      network_id: 43114,
+      gas: 8500000,
+      gasPrice: 20000000000,
+      skipDryRun: false
+    }
   },
 
   // Set default mocha options here, use special reporters etc.
@@ -115,6 +129,22 @@ module.exports = {
   // }
 
   plugins: [
-    'truffle-contract-size'
-  ]
+    'truffle-contract-size',
+    'truffle-plugin-verify'
+  ],
+
+  api_keys: {
+    etherscan: 'MY_API_KEY',
+    optimistic_etherscan: 'MY_API_KEY',
+    arbiscan: 'MY_API_KEY',
+    bscscan: 'MY_API_KEY',
+    snowtrace: 'MY_API_KEY',
+    polygonscan: 'MY_API_KEY',
+    ftmscan: 'MY_API_KEY',
+    hecoinfo: 'MY_API_KEY',
+    moonscan: 'MY_API_KEY',
+    bttcscan: 'MY_API_KEY',
+    aurorascan: 'MY_API_KEY',
+    cronoscan: 'MY_API_KEY'
+  }
 };
