@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "../interfaces/IAMMRouter01.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../libraries/SafeSwap.sol";
 
@@ -26,9 +26,9 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
+abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     /* Libraries */
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using SafeMath for uint256;
 
@@ -401,7 +401,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     ) public virtual onlyAllowGov {
         require(_token != earnedAddress, "!safe");
         require(_token != wantAddress, "!safe");
-        IERC20(_token).safeTransfer(_to, _amount);
+        IERC20Upgradeable(_token).safeTransfer(_to, _amount);
     }
 
     /* Performance fees & buyback */
@@ -476,7 +476,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
                     controllerFeeMax
                 );
                 // Transfer the fee to the rewards address
-                IERC20(earnedAddress).safeTransfer(rewardsAddress, fee);
+                IERC20Upgradeable(earnedAddress).safeTransfer(rewardsAddress, fee);
                 // Decrement the Earned token amount by the fee
                 _earnedAmt = _earnedAmt.sub(fee);
             }

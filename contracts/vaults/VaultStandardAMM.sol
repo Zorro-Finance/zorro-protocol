@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "../interfaces/IAMMFarm.sol";
 
@@ -12,11 +12,11 @@ import "../interfaces/IAMMRouter02.sol";
 
 import "./_VaultBase.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../libraries/SafeSwap.sol";
 
@@ -25,7 +25,7 @@ import "../libraries/PriceFeed.sol";
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeMath for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
@@ -141,7 +141,7 @@ contract VaultStandardAMM is VaultBase {
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
         // Transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
             address(this),
             _wantAmt
@@ -192,7 +192,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
         // Increase allowance
-        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
@@ -235,13 +235,13 @@ contract VaultStandardAMM is VaultBase {
             );
 
             // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
-            uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-            uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
-            IERC20(token0Address).safeIncreaseAllowance(
+            uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
+            uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token0Amt
             );
-            IERC20(token1Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token1Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token1Amt
             );
@@ -254,7 +254,7 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Calculate resulting want token balance
-        return IERC20(wantAddress).balanceOf(msg.sender);
+        return IERC20Upgradeable(wantAddress).balanceOf(msg.sender);
     }
 
     /// @notice Public function for farming Want token.
@@ -268,11 +268,11 @@ contract VaultStandardAMM is VaultBase {
         require(isZorroComp, "!isZorroComp");
 
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
+        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
         // Increment the total Want tokens locked into this contract
         wantLockedTotal = wantLockedTotal.add(wantAmt);
         // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
-        IERC20(wantAddress).safeIncreaseAllowance(farmContractAddress, wantAmt);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(farmContractAddress, wantAmt);
 
         if (isCOREStaking) {
             // If this contract is meant for staking a core asset of the underlying protocol (e.g. CAKE on Pancakeswap, BANANA on Apeswap),
@@ -335,7 +335,7 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
         if (_wantAmt > _wantBal) {
             _wantAmt = _wantBal;
         }
@@ -348,7 +348,7 @@ contract VaultStandardAMM is VaultBase {
         wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
         return sharesRemoved;
     }
@@ -372,7 +372,7 @@ contract VaultStandardAMM is VaultBase {
         require(_amount > 0, "Want amt must be > 0");
 
         // Safely transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
             address(this),
             _amount
@@ -387,7 +387,7 @@ contract VaultStandardAMM is VaultBase {
             // If so, immediately swap the Want token for USDC
 
             // Increase allowance
-            IERC20(token0Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 _amount
             );
@@ -408,15 +408,15 @@ contract VaultStandardAMM is VaultBase {
             _exitPool(_amount, _maxMarketMovementAllowed, address(this));
 
             // Swap tokens back to USDC
-            uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-            uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+            uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
+            uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
 
             // Increase allowance
-            IERC20(token0Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token0Amt
             );
-            IERC20(token1Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token1Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token1Amt
             );
@@ -481,11 +481,11 @@ contract VaultStandardAMM is VaultBase {
         address _recipient
     ) internal {
         // Get token balances in LP pool
-        uint256 _balance0 = IERC20(token0Address).balanceOf(poolAddress);
-        uint256 _balance1 = IERC20(token1Address).balanceOf(poolAddress);
+        uint256 _balance0 = IERC20Upgradeable(token0Address).balanceOf(poolAddress);
+        uint256 _balance1 = IERC20Upgradeable(token1Address).balanceOf(poolAddress);
 
         // Get total supply and calculate min amounts desired based on slippage
-        uint256 _totalSupply = IERC20(poolAddress).totalSupply();
+        uint256 _totalSupply = IERC20Upgradeable(poolAddress).totalSupply();
         uint256 _amount0Min = (_amountLP.mul(_balance0).div(_totalSupply))
             .mul(_maxMarketMovementAllowed)
             .div(1000);
@@ -524,7 +524,7 @@ contract VaultStandardAMM is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (CAKE, BANANA, etc.)
-        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
+        uint256 earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
         uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
@@ -557,9 +557,9 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Approve the router contract
-        IERC20(earnedAddress).safeApprove(uniRouterAddress, 0);
+        IERC20Upgradeable(earnedAddress).safeApprove(uniRouterAddress, 0);
         // Allow the router contract to spen up to earnedAmt
-        IERC20(earnedAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
             earnedAmt
         );
@@ -593,17 +593,17 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Get values of tokens 0 and 1
-        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
         // Provided that token0 and token1 are both > 0, add liquidity
         if (token0Amt > 0 && token1Amt > 0) {
             // Increase the allowance of the router to spend token0
-            IERC20(token0Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token0Amt
             );
             // Increase the allowance of the router to spend token1
-            IERC20(token1Address).safeIncreaseAllowance(
+            IERC20Upgradeable(token1Address).safeIncreaseAllowance(
                 uniRouterAddress,
                 token1Amt
             );
@@ -633,7 +633,7 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
 
         // Swap to ZOR Token
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -658,15 +658,15 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(address(this));
+        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
             address(this)
         );
-        IERC20(ZORROAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
         );
-        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
+        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
             uniRouterAddress,
             otherTokenAmt
         );
@@ -690,7 +690,7 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
 
         // Swap to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -715,7 +715,7 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Increase allowance
-        IERC20(earnedAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
             _earnedAmount
         );

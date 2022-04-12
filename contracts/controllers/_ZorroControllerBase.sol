@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../tokens/ZorroToken.sol";
+import "../interfaces/IZorro.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -20,10 +20,10 @@ import "../interfaces/IZorroController.sol";
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
-contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
+contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Modifiers */
     /// @notice Only allows functions to be executed where the sender matches the zorroPriceOracle address
@@ -282,7 +282,7 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             // On Home chain. NO cross chain pool updates required
 
             // Transfer Zorro rewards to this contract from the Public Pool
-            IERC20(ZORRO).safeTransferFrom(
+            IERC20Upgradeable(ZORRO).safeTransferFrom(
                 publicPool,
                 address(this),
                 ZORROReward
@@ -297,7 +297,7 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             // On remote chain. Cross chain pool updates required
 
             // Mint Zorro on this (remote) chain
-            Zorro(ZORRO).mint(address(this), ZORROReward);
+            IZorro(ZORRO).mint(address(this), ZORROReward);
             // Return ZOR minted
             return ZORROReward;
         }
@@ -314,7 +314,7 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
         if (_ZORROAmt > ZORROBal) {
             _xferAmt = ZORROBal;
         }
-        IERC20(ZORRO).safeTransfer(_to, _xferAmt);
+        IERC20Upgradeable(ZORRO).safeTransfer(_to, _xferAmt);
     }
 
     /// @notice For owner to recover ERC20 tokens on this contract if stuck
@@ -329,6 +329,6 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             _token != ZORRO,
             "!safe to use Zorro token in func inCaseTokensGetStuck"
         );
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+        IERC20Upgradeable(_token).safeTransfer(msg.sender, _amount);
     }
 }

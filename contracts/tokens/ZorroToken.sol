@@ -9,9 +9,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "../interfaces/IZorro.sol";
+
 
 /// @title The Zorro token (cross chain)
-contract Zorro is ERC20("ZORRO", "ZOR"), Ownable {
+contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
     /* Constructor */
     constructor(address _zorroController) {
         zorroControllerAddress = _zorroController;

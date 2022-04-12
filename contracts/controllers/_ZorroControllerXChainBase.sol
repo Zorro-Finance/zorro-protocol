@@ -16,14 +16,14 @@ import "../interfaces/IStargateRouter.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 contract ZorroControllerXChainBase is
     IZorroControllerXChainBase,
-    Ownable,
-    ReentrancyGuard
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     /* Libraries */
     using SafeMath for uint256;

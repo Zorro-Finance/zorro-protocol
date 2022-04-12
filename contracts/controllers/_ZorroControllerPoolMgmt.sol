@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerBase.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../interfaces/IZorroController.sol";
 
 contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBase {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Pool management */
 

@@ -8,10 +8,10 @@ import "../interfaces/IVault.sol";
 
 import "../interfaces/IZorroController.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerBase {
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /// @notice View function to see pending ZORRO on frontend.
     /// @param _pid Index of pool
