@@ -9,6 +9,7 @@ module.exports = async function (deployer, network, accounts) {
   const deployableNetworks = [
     'bsc',
     'ganache',
+    'ganachecli',
     'default',
     'development',
   ];
