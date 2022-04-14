@@ -22,7 +22,7 @@ contract VaultZorro is VaultBase {
     function initialize(
         address _timelockOwner,
         VaultZorroInit memory _initValue
-    ) public {
+    ) public initializer {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = false;

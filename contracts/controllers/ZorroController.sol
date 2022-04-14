@@ -30,7 +30,7 @@ contract ZorroController is
     /// @notice Upgradeable constructor
     /// @param _timelockOwner Address of owner (should be a timelock)
     /// @param _initValue A ZorroControllerInit struct containing all constructor args
-    function initialize(address _timelockOwner, ZorroControllerInit memory _initValue) public {
+    function initialize(address _timelockOwner, ZorroControllerInit memory _initValue) public initializer {
         // Tokens
         ZORRO = _initValue.ZORRO;
         defaultStablecoin = _initValue.defaultStablecoin;

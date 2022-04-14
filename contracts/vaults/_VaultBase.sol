@@ -33,7 +33,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     using SafeMath for uint256;
 
     /* Constructor */
-    function initialize(address _timelockOwner) public {
+    function initialize(address _timelockOwner) public initializer {
         transferOwnership(_timelockOwner);
     }
 

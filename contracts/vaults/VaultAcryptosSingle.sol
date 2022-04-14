@@ -36,7 +36,7 @@ contract VaultAcryptosSingle is VaultBase {
     function initialize(
         address _timelockOwner,
         VaultAcryptosSingleInit memory _initValue
-    ) public {
+    ) public initializer {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;

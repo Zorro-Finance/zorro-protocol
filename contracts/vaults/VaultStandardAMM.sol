@@ -37,7 +37,7 @@ contract VaultStandardAMM is VaultBase {
     function initialize(
         address _timelockOwner,
         VaultStandardAMMInit memory _initValue
-    ) public {
+    ) public initializer {
         // Vault config
         pid = _initValue.pid;
         isCOREStaking = _initValue.isCOREStaking;

@@ -72,14 +72,14 @@ module.exports = {
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
     bsc: {
-      provider: () => new HDWalletProvider(mnemonic, ''),
+      provider: () => new HDWalletProvider('mnemonic', ''),
       network_id: 56,
       gas: 8500000,
       gasPrice: 20000000000,
       skipDryRun: false
     },
     avalanche: {
-      provider: () => new HDWalletProvider(mnemonic, ''),
+      provider: () => new HDWalletProvider('mnemonic', ''),
       network_id: 43114,
       gas: 8500000,
       gasPrice: 20000000000,

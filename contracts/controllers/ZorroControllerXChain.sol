@@ -49,7 +49,7 @@ contract ZorroControllerXChain is
     function initialize(
         address _timelockOwner,
         ZorroControllerXChainInit memory _initValue
-    ) public {
+    ) public initializer {
         // Base
         stargateRouter = _initValue.bridge.stargateRouter;
         stargateSwapPoolId = _initValue.bridge.stargateSwapPoolId;
