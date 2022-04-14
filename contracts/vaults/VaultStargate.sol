@@ -20,6 +20,43 @@ import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IStargateLPStaking.sol";
 
+import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+
+/// @title Vault factory for VaultStargate
+contract VaultFactoryStargate is Initializable, OwnableUpgradeable {
+    /* State */
+
+    VaultStargate[] public deployedVaults; // All deployed vaults
+    address public masterVault; // Address of the upgradeable proxy that delegates to the master vault contract
+
+    /* Constructor */
+
+    function initialize(address _masterVault) public initializer {
+        // Set master vault address
+        masterVault = _masterVault;
+    }
+
+    /* Factory functions */
+
+    function createVault(
+        address _timelockOwner,
+        VaultStargate.VaultStargateInit memory _initValue
+    ) external onlyOwner {
+        // Create clone
+        VaultStargate _vault = VaultStargate(
+            ClonesUpgradeable.clone(masterVault)
+        );
+        // Initialize cloned contract
+        _vault.initialize(_timelockOwner, _initValue);
+        // Add to array of deployed vaults
+        deployedVaults.push(_vault);
+    }
+
+    function numVaults() external view returns (uint256) {
+        return deployedVaults.length;
+    }
+}
+
 
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
 contract VaultStargate is VaultBase {

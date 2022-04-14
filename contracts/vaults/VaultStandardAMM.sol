@@ -22,6 +22,43 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+
+/// @title Vault factory for VaultStandardAMM
+contract VaultFactoryStandardAMM is Initializable, OwnableUpgradeable {
+    /* State */
+
+    VaultStandardAMM[] public deployedVaults; // All deployed vaults
+    address public masterVault; // Address of the upgradeable proxy that delegates to the master vault contract
+
+    /* Constructor */
+
+    function initialize(address _masterVault) public initializer {
+        // Set master vault address
+        masterVault = _masterVault;
+    }
+
+    /* Factory functions */
+
+    function createVault(
+        address _timelockOwner,
+        VaultStandardAMM.VaultStandardAMMInit memory _initValue
+    ) external onlyOwner {
+        // Create clone
+        VaultStandardAMM _vault = VaultStandardAMM(
+            ClonesUpgradeable.clone(masterVault)
+        );
+        // Initialize cloned contract
+        _vault.initialize(_timelockOwner, _initValue);
+        // Add to array of deployed vaults
+        deployedVaults.push(_vault);
+    }
+
+    function numVaults() external view returns (uint256) {
+        return deployedVaults.length;
+    }
+}
+
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */

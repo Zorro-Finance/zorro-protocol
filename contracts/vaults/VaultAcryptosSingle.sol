@@ -20,6 +20,43 @@ import "../interfaces/IBalancerVault.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+
+/// @title Vault factory for VaultAcryptosSingle
+contract VaultFactoryAcryptosSingle is Initializable, OwnableUpgradeable {
+    /* State */
+
+    VaultAcryptosSingle[] public deployedVaults; // All deployed vaults
+    address public masterVault; // Address of the upgradeable proxy that delegates to the master vault contract
+
+    /* Constructor */
+
+    function initialize(address _masterVault) public initializer {
+        // Set master vault address
+        masterVault = _masterVault;
+    }
+
+    /* Factory functions */
+
+    function createVault(
+        address _timelockOwner,
+        VaultAcryptosSingle.VaultAcryptosSingleInit memory _initValue
+    ) external onlyOwner {
+        // Create clone
+        VaultAcryptosSingle _vault = VaultAcryptosSingle(
+            ClonesUpgradeable.clone(masterVault)
+        );
+        // Initialize cloned contract
+        _vault.initialize(_timelockOwner, _initValue);
+        // Add to array of deployed vaults
+        deployedVaults.push(_vault);
+    }
+
+    function numVaults() external view returns (uint256) {
+        return deployedVaults.length;
+    }
+}
+
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {
     /* Libraries */
@@ -255,16 +292,23 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
 
         // Deposit token to get Want token
         IAcryptosVault(poolAddress).deposit(_token0Bal);
 
         // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
 
         // Transfer back to sender
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
 
         return _wantAmt;
     }
@@ -303,11 +347,16 @@ contract VaultAcryptosSingle is VaultBase {
         require(isZorroComp, "!isZorroComp");
 
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         // Increment the total Want tokens locked into this contract
         wantLockedTotal = wantLockedTotal.add(wantAmt);
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(farmContractAddress, wantAmt);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            farmContractAddress,
+            wantAmt
+        );
 
         // Deposit the Want tokens in the Farm contract
         IAcryptosFarm(farmContractAddress).deposit(wantAddress, wantAmt);
@@ -359,7 +408,9 @@ contract VaultAcryptosSingle is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         if (_wantAmt > wantAmt) {
             _wantAmt = wantAmt;
         }
@@ -372,7 +423,10 @@ contract VaultAcryptosSingle is VaultBase {
         wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
 
         return sharesRemoved;
     }
@@ -410,7 +464,9 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Swap Token0 for USDC
         // Get Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
         // Increase allowance
         IERC20Upgradeable(token0Address).safeIncreaseAllowance(
             uniRouterAddress,
@@ -498,9 +554,14 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Step 2: BUSD to Token0
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(address(this));
+        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
+            address(this)
+        );
         // Increase allowance
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
+        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
+            uniRouterAddress,
+            _balBUSD
+        );
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,
@@ -540,7 +601,10 @@ contract VaultAcryptosSingle is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // 1. Swap Earned -> BUSD
         address[] memory _dummyEarnedToBUSDPath;
@@ -560,9 +624,14 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Get BUSD bal
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(address(this));
+        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
+            address(this)
+        );
         // Approve spending
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
+        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
+            uniRouterAddress,
+            _balBUSD
+        );
 
         // 2. Swap 1/2 BUSD -> ZOR
         _safeSwap(
@@ -597,10 +666,11 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
+        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
             address(this)
         );
+        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
+            .balanceOf(address(this));
         IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -631,7 +701,10 @@ contract VaultAcryptosSingle is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // Swap Earn to USDC
         // Require two step swap (Balancer + Uni)
@@ -652,7 +725,9 @@ contract VaultAcryptosSingle is VaultBase {
             })
         );
         // 2. Uni: BUSD -> ZOR
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
+            address(this)
+        );
         // Increase allowance
         IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -702,7 +777,9 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // BUSD balance
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(address(this));
+        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
+            address(this)
+        );
 
         // Swap path
         address[] memory _path;
@@ -711,7 +788,10 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Swap BUSD to USDC (PCS)
         // Increase allowance
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(uniRouterAddress, _balBUSD);
+        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
+            uniRouterAddress,
+            _balBUSD
+        );
         // Swap
         _safeSwap(
             SafeSwapParams({
