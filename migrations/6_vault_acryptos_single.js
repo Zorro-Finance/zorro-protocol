@@ -27,5 +27,8 @@ module.exports = async function (deployer, network, accounts) {
 
     // Deploy
     await deployer.deploy(VaultAcryptosSingle);
+
+    // TODO: Change to deploy proxy
+    // TODO: Deploy proxy the factory, initialize with the master contract
   }
 };

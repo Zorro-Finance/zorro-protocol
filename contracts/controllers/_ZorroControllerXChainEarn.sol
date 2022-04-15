@@ -12,13 +12,15 @@ import "../libraries/SafeSwap.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
+import "../interfaces/IZorro.sol";
+
 contract ZorroControllerXChainEarn is
     IZorroControllerXChainEarn,
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
@@ -185,20 +187,20 @@ contract ZorroControllerXChainEarn is
         uint256 _totalUSDC = _buybackAmountUSDC.add(_revShareAmountUSDC);
 
         // Allow this contract to spend USDC
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             address(this),
             _totalUSDC
         );
 
         // Transfer USDC into this contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
             _totalUSDC
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
 
         // Get accumulated ZOR rewards and set value
         uint256 _slashedRewards = _removeSlashedRewards();
@@ -306,7 +308,7 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
@@ -317,7 +319,7 @@ contract ZorroControllerXChainEarn is
             .getExchangeRate();
 
         // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        IERC20Upgradeable(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
 
         // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -341,12 +343,12 @@ contract ZorroControllerXChainEarn is
         );
 
         // Enter LP pool
-        uint256 tokenZORAmt = IERC20(ZORRO).balanceOf(address(this));
-        uint256 tokenOtherAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+        uint256 tokenZORAmt = IERC20Upgradeable(ZORRO).balanceOf(address(this));
+        uint256 tokenOtherAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
             address(this)
         );
-        IERC20(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
-        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
+        IERC20Upgradeable(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
+        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
             uniRouterAddress,
             tokenOtherAmt
         );
@@ -369,7 +371,7 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
@@ -379,7 +381,7 @@ contract ZorroControllerXChainEarn is
 
         // Swap to ZOR
         // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        IERC20Upgradeable(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
@@ -416,6 +418,6 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Mint ZOR and send to ZOR staking vault.
-        Zorro(ZORRO).mint(zorroStakingVault, _slashedZORRewards);
+        IZorro(ZORRO).mint(zorroStakingVault, _slashedZORRewards);
     }
 }

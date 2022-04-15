@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 /// @title IZorroControllerBase
 interface IZorroControllerBase {
@@ -159,7 +159,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
 interface IZorroControllerPoolMgmt is IZorroControllerBase {
     function add(
         uint256 _allocPoint,
-        IERC20 _want,
+        IERC20Upgradeable _want,
         bool _withUpdate,
         address _vault
     ) external;

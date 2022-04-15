@@ -13,8 +13,8 @@ contract ZorroControllerXChainDeposit is
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Fees */
 
@@ -116,20 +116,20 @@ contract ZorroControllerXChainDeposit is
         require(msg.value > 0, "No fees submitted");
 
         // Allow this contract to spend USDC
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             address(this),
             _valueUSDC
         );
 
         // Transfer USDC into this contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
             _valueUSDC
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
 
         // Generate payload
         bytes memory _payload = _encodeXChainDepositPayload(

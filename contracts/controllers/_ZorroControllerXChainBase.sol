@@ -26,7 +26,7 @@ contract ZorroControllerXChainBase is
     ReentrancyGuardUpgradeable
 {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* State */
 

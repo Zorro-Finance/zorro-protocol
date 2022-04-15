@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
@@ -12,7 +12,7 @@ import "../interfaces/IBalancerVault.sol";
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Functions */
     /// @notice Safely swap tokens
@@ -33,7 +33,7 @@ library SafeSwapUni {
         address[] memory _path,
         address _to,
         uint256 _deadline
-    ) public {
+    ) internal {
         // Calculate min amount out (account for slippage)
         uint256 _amountOut;
         if (_priceTokenIn == 0 || _priceTokenOut == 0) {
@@ -66,7 +66,7 @@ library SafeSwapUni {
 /// @title SafeSwapBalancer: Library for safe swapping of ERC20 tokens for Balancer style protocols (e.g. Acryptos)
 library SafeSwapBalancer {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Functions */
     /// @notice Safely swaps one asset for another using a provided Balancer pool
@@ -77,7 +77,7 @@ library SafeSwapBalancer {
         IBalancerVault _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
-    ) public {
+    ) internal {
         // Calculate min amount out
         uint256 _amountOut;
         if (_swapParams.priceToken0 == 0 || _swapParams.priceToken1 == 0) {

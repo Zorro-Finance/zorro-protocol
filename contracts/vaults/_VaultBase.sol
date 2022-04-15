@@ -30,7 +30,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Constructor */
     function initialize(address _timelockOwner) public initializer {

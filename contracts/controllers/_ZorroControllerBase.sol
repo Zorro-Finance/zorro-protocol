@@ -52,7 +52,7 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
 
     // Info of each pool
     struct PoolInfo {
-        IERC20 want; // Want token contract.
+        IERC20Upgradeable want; // Want token contract.
         uint256 allocPoint; // How many allocation points assigned to this pool.
         uint256 lastRewardBlock; // Last block number that ZORRO distribution occurs.
         uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
@@ -72,7 +72,6 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
     address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     address public publicPool; // Only to be set on home chain
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
-    address public tokenUSDC; // USDC address on chain
     // Rewards
     uint256 public startBlock;
     uint256 public blocksPerDay; // Approximate, varies by chain
@@ -310,7 +309,7 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
     /// @param _ZORROAmt quantity of Zorro tokens to send
     function _safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
         uint256 _xferAmt = _ZORROAmt;
-        uint256 ZORROBal = IERC20(ZORRO).balanceOf(address(this));
+        uint256 ZORROBal = IERC20Upgradeable(ZORRO).balanceOf(address(this));
         if (_ZORROAmt > ZORROBal) {
             _xferAmt = ZORROBal;
         }

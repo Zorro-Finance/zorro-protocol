@@ -12,8 +12,6 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../libraries/Math.sol";
 
-import "../tokens/ZorroToken.sol";
-
 import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
@@ -25,8 +23,8 @@ contract ZorroControllerInvestment is
     ZorroControllerBase
 {
     /* Libraries */
-    using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeMathUpgradeable for uint256;
     using CustomMath for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
@@ -164,7 +162,7 @@ contract ZorroControllerInvestment is
         pool.want.safeIncreaseAllowance(address(this), _wantAmt);
 
         // Transfer the Want token from the user to the Vault contract
-        IERC20(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
+        IERC20Upgradeable(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
 
         // Call core deposit function
         _deposit(
@@ -299,12 +297,12 @@ contract ZorroControllerInvestment is
         address vaultAddr = poolInfo[_pid].vault;
 
         // Approve spending of USDC (from user to this contract)
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             address(this),
             _valueUSDC
         );
         // Safe transfer to Vault contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             vaultAddr,
             _valueUSDC
@@ -380,7 +378,7 @@ contract ZorroControllerInvestment is
         );
 
         // Safe increase allowance and xfer Want to vault contract
-        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(vaultAddr, _wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(vaultAddr, _wantAmt);
 
         // Make deposit
         // Call core deposit function
@@ -414,7 +412,7 @@ contract ZorroControllerInvestment is
         );
 
         // Transfer to user and return Want amount
-        IERC20(poolInfo[_pid].want).safeTransfer(msg.sender, _res.wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(msg.sender, _res.wantAmt);
 
         return _res.wantAmt;
     }
@@ -514,7 +512,7 @@ contract ZorroControllerInvestment is
                 .sub(_tranche.contribution);
 
             // Calculate Want token balance
-            _res.wantAmt = IERC20(_pool.want).balanceOf(address(this));
+            _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(address(this));
 
             // Mark tranche as exited
             trancheInfo[_pid][_localAccount][_trancheId].exitedVaultAt = block
@@ -609,7 +607,7 @@ contract ZorroControllerInvestment is
         );
 
         // Send USDC funds back to sender
-        IERC20(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
 
         return _amountUSDC;
     }
@@ -684,7 +682,7 @@ contract ZorroControllerInvestment is
         );
 
         // Safe increase spending of Vault contract for Want token
-        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(
+        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(
             _vaultAddr,
             _res.wantAmt
         );

@@ -17,20 +17,16 @@ contract PoolPublic is Initializable, OwnableUpgradeable {
     /// @notice Constructor
     /// @param _zorroTokenAddress The Zorro token address
     /// @param _controller The address of the ZorroController
-    /// @param _timelockOwner The address of the TimelockController that should own this contract
     function initialize(
         address _zorroTokenAddress,
-        address _controller,
-        address _timelockOwner
+        address _controller
     ) public initializer {
         // Set Zorro token address
         ZORRO = _zorroTokenAddress;
         // Set controller address
         controller = _controller;
         // Allow controller to spend tokens on this contract
-        allowControllerToSpend();
-        // Set owner of this contract to Timelock controller address
-        transferOwnership(_timelockOwner);
+        _allowControllerToSpend();
     }
 
     /* State */
@@ -43,7 +39,7 @@ contract PoolPublic is Initializable, OwnableUpgradeable {
 
     /* Functions */
     /// @notice Increases spending allowance to max amount for Zorro Controller
-    function allowControllerToSpend() internal {
+    function _allowControllerToSpend() internal {
         IERC20Upgradeable(ZORRO).safeIncreaseAllowance(controller, type(uint256).max);
     }
 
@@ -52,7 +48,7 @@ contract PoolPublic is Initializable, OwnableUpgradeable {
         // Update controller
         controller = _controller;
         // Reset spending allowance for new controller
-        allowControllerToSpend();
+        _allowControllerToSpend();
         // Emit event
         emit SetController(_controller);
     }

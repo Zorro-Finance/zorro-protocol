@@ -1,8 +1,9 @@
-// Controller
-const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
+// Vaults
+const VaultStargate = artifacts.require("VaultStargate");
 // Libs
 const PriceFeed = artifacts.require("PriceFeed");
 const SafeSwapUni = artifacts.require("SafeSwapUni");
+
 
 module.exports = async function (deployer, network, accounts) {
   // Libs
@@ -10,9 +11,9 @@ module.exports = async function (deployer, network, accounts) {
   await deployer.deploy(SafeSwapUni);
   
   // Links
-  await deployer.link(PriceFeed, ZorroControllerXChain);
-  await deployer.link(SafeSwapUni, ZorroControllerXChain);
+  await deployer.link(PriceFeed, VaultStargate);
+  await deployer.link(SafeSwapUni, VaultStargate);
   
   // Deploy
-  await deployer.deploy(ZorroControllerXChain);
+  await deployer.deploy(VaultStargate);
 };

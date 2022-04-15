@@ -39,15 +39,13 @@ contract ZorroControllerXChain is
     ZorroControllerXChainReceiver
 {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Constructor */
 
     /// @notice Upgradeable constructor
-    /// @param _timelockOwner The timelock contract that shall own this contract
     /// @param _initValue a ZorroControllerXChainInit struct for initializing this contract
     function initialize(
-        address _timelockOwner,
         ZorroControllerXChainInit memory _initValue
     ) public initializer {
         // Base
@@ -80,9 +78,6 @@ contract ZorroControllerXChain is
         // Price feed
         priceFeedZOR = AggregatorV3Interface(_initValue.priceFeeds.priceFeedZOR);
         priceFeedLPPoolOtherToken = AggregatorV3Interface(_initValue.priceFeeds.priceFeedLPPoolOtherToken);
-
-        // Timelock
-        transferOwnership(_timelockOwner);
     }
 
     /* Structs */

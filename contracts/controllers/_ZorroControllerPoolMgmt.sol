@@ -21,7 +21,7 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
     /// @param _vault The contract address of the underlying vault
     function add(
         uint256 _allocPoint,
-        IERC20 _want,
+        IERC20Upgradeable _want,
         bool _withUpdate,
         address _vault
     ) public onlyOwner {

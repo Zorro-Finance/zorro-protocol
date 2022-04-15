@@ -8,12 +8,14 @@ import "../interfaces/IZorroController.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
+import "../interfaces/IZorro.sol";
+
 contract ZorroControllerXChainWithdraw is
     IZorroControllerXChainWithdraw,
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Events */
     event XChainRepatriation(
@@ -414,11 +416,11 @@ contract ZorroControllerXChainWithdraw is
         );
 
         // Mint ZOR and send to user
-        Zorro(ZORRO).mint(abi.decode(_originRecipient, (address)), _rewardsDue);
+        IZorro(ZORRO).mint(abi.decode(_originRecipient, (address)), _rewardsDue);
 
         // Burn ZOR rewards as applicable (since rewards were minted on the other chain)
         if (_burnableZORRewards > 0) {
-            Zorro(ZORRO).burn(publicPool, _burnableZORRewards);
+            IZorro(ZORRO).burn(publicPool, _burnableZORRewards);
         }
     }
 }

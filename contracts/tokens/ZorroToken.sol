@@ -14,11 +14,6 @@ import "../interfaces/IZorro.sol";
 
 /// @title The Zorro token (cross chain)
 contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
-    /* Constructor */
-    constructor(address _zorroController) {
-        zorroControllerAddress = _zorroController;
-    }
-
     /* Modifiers */
     modifier onlyZorroController() {
         require(_msgSender() == zorroControllerAddress, "!zorroController");

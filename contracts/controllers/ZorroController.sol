@@ -28,14 +28,12 @@ contract ZorroController is
     /* Constructor */
 
     /// @notice Upgradeable constructor
-    /// @param _timelockOwner Address of owner (should be a timelock)
     /// @param _initValue A ZorroControllerInit struct containing all constructor args
-    function initialize(address _timelockOwner, ZorroControllerInit memory _initValue) public initializer {
+    function initialize(ZorroControllerInit memory _initValue) public initializer {
         // Tokens
         ZORRO = _initValue.ZORRO;
         defaultStablecoin = _initValue.defaultStablecoin;
         zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
-        tokenUSDC = _initValue.tokenUSDC;
 
         // Key contracts
         publicPool = _initValue.publicPool;
@@ -75,9 +73,6 @@ contract ZorroController is
         priceFeedLPPoolOtherToken = AggregatorV3Interface(
             _initValue.priceFeeds.priceFeedLPPoolOtherToken
         );
-
-        // Assign owner as to timelock contract
-        transferOwnership(_timelockOwner);
     }
 
     /* Structs */
@@ -108,7 +103,6 @@ contract ZorroController is
         address ZORRO;
         address defaultStablecoin;
         address zorroLPPoolOtherToken;
-        address tokenUSDC;
         address publicPool;
         address zorroStakingVault;
         address zorroLPPool;

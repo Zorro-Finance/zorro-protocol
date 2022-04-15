@@ -63,7 +63,7 @@ contract VaultFactoryStandardAMM is Initializable, OwnableUpgradeable {
 contract VaultStandardAMM is VaultBase {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 

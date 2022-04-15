@@ -36,7 +36,7 @@ contract ControllerTimelock is TimelockController {
     function add(
         address _controllerAddress, 
         uint256 _allocPoint,
-        IERC20 _want,
+        IERC20Upgradeable _want,
         bool _withUpdate,
         address _vault
     ) public onlyRole(EXECUTOR_ROLE) {
