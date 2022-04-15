@@ -11,11 +11,12 @@ const Zorro = artifacts.require("Zorro");
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks
   const allowedNetworks = [
-    'avalanche',
+    'avax',
     'ganache',
     'ganachecli',
     'default',
     'development',
+    'test',
   ];
   if (allowedNetworks.includes(network)) {
     // Get existing contracts

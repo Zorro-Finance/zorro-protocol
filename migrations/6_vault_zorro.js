@@ -6,7 +6,7 @@ const VaultZorro = artifacts.require("VaultZorro");
 
 module.exports = async function (deployer, network, accounts) {
   const deployableNetworks = [
-    'avalanche',
+    'avax',
     'ganache',
     'ganachecli',
     'default',

@@ -12,7 +12,7 @@ module.exports = async function (deployer, network, accounts) {
     pid: 0,
     isCOREStaking: false,
     isZorroComp: true,
-    isHomeChain: network === 'avalanche',
+    isHomeChain: network === 'avax',
     isSingleAssetDeposit: false,
     keyAddresses: {
       govAddress: '0x0000000000000000000000000000000000000000',
