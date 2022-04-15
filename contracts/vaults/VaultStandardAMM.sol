@@ -137,7 +137,8 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Super call
-        VaultBase.initialize(_timelockOwner);
+        // TODO: Put back in
+        // VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

@@ -2,50 +2,47 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Controller
 const ZorroController = artifacts.require("ZorroController");
-const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
-// Libs
-// const CustomMath = artifacts.require("CustomMath");
-// const PriceFeed = artifacts.require("PriceFeed");
-// const SafeSwapUni = artifacts.require("SafeSwapUni");
+// Token
+const Zorro = artifacts.require('Zorro');
 
 module.exports = async function (deployer, network, accounts) {
-  // Libs
-  // await deployer.deploy(CustomMath);
-  // await deployer.deploy(PriceFeed);
-  // await deployer.deploy(SafeSwapUni);
-  
-  // Links
-  // await deployer.link(CustomMath, ZorroController);
-  // await deployer.link(PriceFeed, ZorroController);
-  // await deployer.link(SafeSwapUni, ZorroController);
-
   // Existing contracts
-  const publicPool = await deployer.deployed
+  const ZorroToken = await Zorro.deployed();
   
-  // Deploy
-  const zcInitVal = {
-    ZORRO: '0x0000000000000000000000000000000000000000',
-    defaultStablecoin: '',
-    zorroLPPoolOtherToken: '',
-    publicPool: '',
-    zorroStakingVault: '',
-    zorroLPPool: '',
-    uniRouterAddress: '',
-    USDCToZorroPath: [
-
-    ],
+  // Prep init values
+  let zcInitVal = {
+    ZORRO: ZorroToken.address,
+    defaultStablecoin: '0x0000000000000000000000000000000000000000',
+    zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+    publicPool: '0x0000000000000000000000000000000000000000',
+    zorroStakingVault: '0x0000000000000000000000000000000000000000',
+    zorroLPPool: '0x0000000000000000000000000000000000000000',
+    uniRouterAddress: '0x0000000000000000000000000000000000000000',
+    USDCToZorroPath: [],
     USDCToZorroLPPoolOtherTokenPath: [],
     rewards: {
-
+      blocksPerDay: 0,
+      startBlock: 0,
+      ZORROPerBlock: 0,
+      targetTVLCaptureBasisPoints: 0,
+      chainMultiplier: 0,
+      baseRewardRateBasisPoints: 0,
     },
     xChain: {
-
+      chainId: 0,
+      homeChainId: 0,
+      homeChainZorroController: '0x0000000000000000000000000000000000000000',
+      zorroControllerOracle: '0x0000000000000000000000000000000000000000',
+      zorroXChainEndpoint: '0x0000000000000000000000000000000000000000',
     },
     priceFeeds: {
-
+      priceFeedZOR: '0x0000000000000000000000000000000000000000',
+      priceFeedLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
     },
   };
+  if (network === 'avax') {
+    // TODO: Other chains
+  }
+  // Deploy
   await deployProxy(ZorroController, [zcInitVal], {deployer});
 };
-
-// TODO: Deploy also XChain

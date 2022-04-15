@@ -93,9 +93,9 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     // Revenue sharing - used to share rewards with ZOR stakers
     uint256 public revShareRate; // Numerator for revshare ratio (100 = 1%)
     // Entrance fee - goes to pool + prevents front-running
-    uint256 public entranceFeeFactor = 9990; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
+    uint256 public entranceFeeFactor; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
     // Withdrawal fee - goes to pool
-    uint256 public withdrawFeeFactor = 10000; // Numerator of withdrawal fee factor
+    uint256 public withdrawFeeFactor; // Numerator of withdrawal fee factor
     // Accounting
     uint256 public lastEarnBlock; // Last recorded block for an earn() event
     uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault

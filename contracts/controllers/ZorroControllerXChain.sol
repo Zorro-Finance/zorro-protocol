@@ -67,7 +67,6 @@ contract ZorroControllerXChain is
 
         // Earn
         // Tokens
-        tokenUSDC = _initValue.tokenUSDC;
         zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
         // Contracts
         zorroStakingVault = _initValue.zorroStakingVault;
@@ -108,7 +107,6 @@ contract ZorroControllerXChain is
         // Tokens
         address defaultStablecoin;
         address ZORRO;
-        address tokenUSDC;
         address zorroLPPoolOtherToken;
         // Contracts
         address zorroStakingVault;

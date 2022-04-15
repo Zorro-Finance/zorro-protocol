@@ -135,7 +135,8 @@ contract VaultStargate is VaultBase {
         );
 
         // Super call
-        VaultBase.initialize(_timelockOwner);
+        // TODO put back in
+        // VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */
