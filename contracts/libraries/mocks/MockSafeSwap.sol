@@ -9,7 +9,7 @@ contract MockSafeSwapUni {
     using SafeSwapUni for IAMMRouter02;
 
     function safeSwap(
-        IAMMRouter02 _uniRouter,
+        address _uniRouter,
         uint256 _amountIn,
         uint256 _priceTokenIn,
         uint256 _priceTokenOut,
@@ -18,7 +18,7 @@ contract MockSafeSwapUni {
         address _to,
         uint256 _deadline
     ) public {
-        _uniRouter.safeSwap(
+        IAMMRouter02(_uniRouter).safeSwap(
             _amountIn,
             _priceTokenIn,
             _priceTokenOut,
@@ -32,6 +32,11 @@ contract MockSafeSwapUni {
 
 /// @title MockIAMMRouter02: Mock contract for the IAMMRouter02 library
 contract MockIAMMRouter02 is IAMMRouter02 {
+    event SwappedToken(
+        uint256 indexed _amountIn,
+        uint256 indexed _amountOutMin
+    );
+
     function factory() external pure returns (address) {
         return address(0);
     }
@@ -55,9 +60,10 @@ contract MockIAMMRouter02 is IAMMRouter02 {
             uint256 amountA,
             uint256 amountB,
             uint256 liquidity
-        ) {
-            // TODO
-        }
+        )
+    {
+        // TODO
+    }
 
     function addLiquidityETH(
         address token,
@@ -73,9 +79,10 @@ contract MockIAMMRouter02 is IAMMRouter02 {
             uint256 amountToken,
             uint256 amountETH,
             uint256 liquidity
-        ) {
-            // TODO
-        }
+        )
+    {
+        // TODO
+    }
 
     function removeLiquidity(
         address tokenA,
@@ -202,7 +209,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         uint256 reserveIn,
         uint256 reserveOut
     ) external pure returns (uint256 amountOut) {
-        // TODO
+        return amountIn;
     }
 
     function getAmountIn(
@@ -216,16 +223,20 @@ contract MockIAMMRouter02 is IAMMRouter02 {
     function getAmountsOut(uint256 amountIn, address[] calldata path)
         external
         view
-        returns (uint256[] memory amounts) {
-            // TODO
-        }
+        returns (uint256[] memory amounts)
+    {
+        uint256[] memory _amounts = new uint256[](1);
+        _amounts[0] = amountIn;
+        return _amounts;
+    }
 
     function getAmountsIn(uint256 amountOut, address[] calldata path)
         external
         view
-        returns (uint256[] memory amounts) {
-            // TODO
-        }
+        returns (uint256[] memory amounts)
+    {
+        // TODO
+    }
 
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
@@ -234,9 +245,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountETH) {
-
-    }
+    ) external returns (uint256 amountETH) {}
 
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
         address token,
@@ -249,9 +258,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 amountETH) {
-
-    }
+    ) external returns (uint256 amountETH) {}
 
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
         uint256 amountIn,
@@ -260,7 +267,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         address to,
         uint256 deadline
     ) external {
-
+        emit SwappedToken(amountIn, amountOutMin);
     }
 
     function swapExactETHForTokensSupportingFeeOnTransferTokens(
@@ -268,9 +275,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable {
-
-    }
+    ) external payable {}
 
     function swapExactTokensForETHSupportingFeeOnTransferTokens(
         uint256 amountIn,
@@ -278,9 +283,7 @@ contract MockIAMMRouter02 is IAMMRouter02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external {
-
-    }
+    ) external {}
 }
 
 /// @title MockSafeSwapBalancer: Mock contract for testing the SafeSwapBalancer library
@@ -288,23 +291,25 @@ contract MockSafeSwapBalancer {
     using SafeSwapBalancer for IBalancerVault;
 
     function safeSwap(
-        IBalancerVault _balancerVault,
+        address _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
     ) public {
-        _balancerVault.safeSwap(_poolId, _swapParams);
+        IBalancerVault(_balancerVault).safeSwap(_poolId, _swapParams);
     }
 }
 
 /// @title MockIBalancerVault: Mock contract for the IBalancerVault library
 contract MockIBalancerVault is IBalancerVault {
+    event SwappedToken(uint256 indexed amountIn, uint256 indexed minAmountOut);
+
     function swap(
         SingleSwap memory singleSwap,
         FundManagement memory funds,
         uint256 limit,
         uint256 deadline
     ) external payable returns (uint256 amountCalculated) {
-
+        emit SwappedToken(singleSwap.amount, limit);
     }
 
     function getPoolTokenInfo(bytes32 poolId, IERC20 token)
@@ -314,9 +319,8 @@ contract MockIBalancerVault is IBalancerVault {
             uint256 managed,
             uint256 blockNumber,
             address assetManager
-        ) {
-
-        }
+        )
+    {}
 
     function getPoolTokens(bytes32 poolId)
         external
@@ -325,25 +329,20 @@ contract MockIBalancerVault is IBalancerVault {
             IERC20[] memory tokens,
             uint256[] memory balances,
             uint256 lastChangeBlock
-        ) {
-
-        }
+        )
+    {}
 
     function joinPool(
         bytes32 poolId,
         address sender,
         address recipient,
         JoinPoolRequest memory request
-    ) external {
-
-    }
+    ) external {}
 
     function exitPool(
         bytes32 poolId,
         address sender,
         address payable recipient,
         ExitPoolRequest memory request
-    ) external {
-
-    }
+    ) external {}
 }

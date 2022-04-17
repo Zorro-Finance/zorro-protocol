@@ -8,12 +8,12 @@ import "../PriceFeed.sol";
 contract MockPriceFeed {
     using PriceFeed for AggregatorV3Interface;
 
-    function getExchangeRate(AggregatorV3Interface _priceFeed)
+    function getExchangeRate(address _priceFeed)
         public
         view
         returns (uint256)
     {
-        return _priceFeed.getExchangeRate();
+        return AggregatorV3Interface(_priceFeed).getExchangeRate();
     }
 }
 

@@ -760,10 +760,11 @@ contract ZorroControllerInvestment is
         returns (uint256)
     {
         if (isTimeMultiplierActive) {
+            // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
             return
                 (
                     uint256(1).add(
-                        (uint256(2).div(10)).mul(durationInWeeks.sqrt())
+                        (uint256(2).div(10)).mul((durationInWeeks.mul(1e4)).sqrt()).div(100)
                     )
                 ).mul(1e12);
         } else {

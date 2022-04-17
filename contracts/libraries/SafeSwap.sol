@@ -8,7 +8,6 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../interfaces/IBalancerVault.sol";
 
-
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {
     /* Libraries */
@@ -89,9 +88,11 @@ library SafeSwapBalancer {
             ).mul(_swapParams.maxMarketMovementAllowed).div(1000);
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = (_swapParams.amountIn.mul(_swapParams.priceToken0).div(_swapParams.priceToken1))
-                .mul(_swapParams.maxMarketMovementAllowed)
-                .div(1000);
+            _amountOut = (
+                _swapParams.amountIn.mul(_swapParams.priceToken0).div(
+                    _swapParams.priceToken1
+                )
+            ).mul(_swapParams.maxMarketMovementAllowed).div(1000);
         }
 
         // Swap Earned token to token0
