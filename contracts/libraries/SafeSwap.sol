@@ -81,11 +81,18 @@ library SafeSwapBalancer {
         uint256 _amountOut;
         if (_swapParams.priceToken0 == 0 || _swapParams.priceToken1 == 0) {
             // If no exchange rates provided, use on-chain functions provided by router (not ideal)
-            _amountOut = _getBalancerExchangeRate(
-                _balancerVault,
-                _poolId,
-                _swapParams
-            ).mul(_swapParams.maxMarketMovementAllowed).div(1000);
+            _amountOut = _swapParams
+                .amountIn
+                .mul(
+                    _getBalancerExchangeRate(
+                        _balancerVault,
+                        _poolId,
+                        _swapParams
+                    )
+                )
+                .div(1e12)
+                .mul(_swapParams.maxMarketMovementAllowed)
+                .div(1000);
         } else {
             // Calculate amountOut based on provided exchange rates
             _amountOut = (
@@ -116,26 +123,27 @@ library SafeSwapBalancer {
         );
     }
 
-    /// @notice Calculates exchange rate of token B per token A. Note: Ignores swap fees!
+    /// @notice Calculates exchange rate of token1 per token0, times 1e12. Note: Ignores swap fees!
     /// @param _swapParams SafeSwapParams for swap
     function _getBalancerExchangeRate(
         IBalancerVault _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
     ) internal returns (uint256) {
-        // Calculate current balances of each token (Earned, and token0)
-        (uint256 cashB, , , ) = _balancerVault.getPoolTokenInfo(
+        // Calculate current balances of each token
+        (uint256 cash1, , , ) = _balancerVault.getPoolTokenInfo(
             _poolId,
             IERC20(_swapParams.token1)
         );
-        (uint256 cashA, , , ) = _balancerVault.getPoolTokenInfo(
+        (uint256 cash0, , , ) = _balancerVault.getPoolTokenInfo(
             _poolId,
             IERC20(_swapParams.token0)
         );
-        // Return exchange rate, accounting for weightings
+
+        // Return exchange rate, accounting for weightings, mul by 1e12 for float accuracy
         return
-            (cashA.div(_swapParams.token0Weight)).div(
-                cashB.div(_swapParams.token0Weight)
+            cash1.mul(_swapParams.token0Weight).mul(1e12).div(
+                cash0.mul(_swapParams.token1Weight)
             );
     }
 }

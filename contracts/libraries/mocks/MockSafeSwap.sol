@@ -303,6 +303,12 @@ contract MockSafeSwapBalancer {
 contract MockIBalancerVault is IBalancerVault {
     event SwappedToken(uint256 indexed amountIn, uint256 indexed minAmountOut);
 
+    mapping(address => uint256) internal _cash;
+
+    function setCash(address _token, uint256 _amount) public {
+        _cash[_token] = _amount;
+    }
+
     function swap(
         SingleSwap memory singleSwap,
         FundManagement memory funds,
@@ -320,7 +326,9 @@ contract MockIBalancerVault is IBalancerVault {
             uint256 blockNumber,
             address assetManager
         )
-    {}
+    {
+        cash = _cash[address(token)];
+    }
 
     function getPoolTokens(bytes32 poolId)
         external

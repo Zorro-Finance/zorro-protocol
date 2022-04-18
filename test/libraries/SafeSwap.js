@@ -137,28 +137,34 @@ contract('SafeSwapBalancer', async accounts => {
     });
 
     it('calculates correct amount out when exchange rates ommitted', async () => {
-        // TODO: Needs to be adapted for the case where exchange rates are ommitted
-        // This is just a copy paste from above!!
-
-
-        // Prep test conditions
+        // Prep test conditions for swapping ACS to BUSD
         const amountIn = 200e18; // 200 tokens
         const priceTokenIn = 0; // Price in USD of TokenIN (times 1e12)
         const priceTokenOut = 0; // Price in USD of TokenOUT (times 1e12)
         const slippageFactor = 990; // 990 = 1%
+        const token0 = '0x0000000000000000000000000000000000000000'; // ACS
+        const token1 = '0x0000000000000000000000000000000000000001'; // BUSD
+        const balTokenIn = 41385; // ACS
+        const balTokenOut = 47794; // BUSD
+        const token0Weight = 3000; // ACS weight (30%)
+        const token1Weight = 1000; // BUSD weight (10%)
+
+        // Prep Balancer vault 
+        await vault.setCash(token0, web3.utils.toHex(balTokenIn));
+        await vault.setCash(token1, web3.utils.toHex(balTokenOut));
 
         // Run safeSwap()
         const tx = await lib.safeSwap(
             vault.address,
             '0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001',
             {
-                amountIn: web3.utils.toHex(200e18),
+                amountIn: web3.utils.toHex(amountIn),
                 priceToken0: priceTokenIn,
                 priceToken1: priceTokenOut,
-                token0: '0x0000000000000000000000000000000000000000',
-                token1: '0x0000000000000000000000000000000000000000',
-                token0Weight: 5000,
-                token1Weight: 5000,
+                token0,
+                token1,
+                token0Weight, // Weight for ACS
+                token1Weight, // Weight for BUSD
                 maxMarketMovementAllowed: slippageFactor,
                 path: [],
                 destination: lib.address
@@ -168,17 +174,17 @@ contract('SafeSwapBalancer', async accounts => {
         // Get emitted log results 
         const {rawLogs} = tx.receipt;
         const {topics} = rawLogs[0];
-        console.log('topicsz: ', topics);
         
         const emittedAmtIn = web3.utils.toBN(topics[1]);
-        const emittedMinAmtOut = web3.utils.toBN(topics[2]);
+        const emittedMinAmtOut = web3.utils.toBN(topics[2]).div(web3.utils.toBN(1e12));
 
         // Check that the amount IN never changed
         assert.equal(emittedAmtIn, amountIn);
         // Check that the amount out was calculated correctly
+        const expectedMinOutAmt = web3.utils.toBN((amountIn * (balTokenOut / token1Weight) * (slippageFactor/1000)) / (balTokenIn / token0Weight)).div(web3.utils.toBN(1e12));
         assert.equal(
-            emittedMinAmtOut, 
-            ((amountIn*priceTokenIn) / priceTokenOut) * (slippageFactor/1000) 
+            emittedMinAmtOut.toNumber(), 
+            expectedMinOutAmt.toNumber(),
         );
     });
 });
