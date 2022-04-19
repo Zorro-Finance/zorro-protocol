@@ -134,8 +134,7 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Super call
-        // TODO: put back in
-        // VaultBase.initialize(_timelockOwner);
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

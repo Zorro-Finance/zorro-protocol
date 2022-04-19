@@ -53,7 +53,7 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy
     // TODO: For this and all ownable contracts, make sure to set an account that we can always have access to. 
     // https://ethereum.stackexchange.com/questions/17441/how-to-choose-an-account-to-deploy-a-contract-in-truffle 
-    const instance = await deployProxy(VaultZorro, ['0x62D255A418a7a25e3b2e08c30F12AC80718CB67F', initVal], {deployer});
+    const instance = await deployProxy(VaultZorro, [accounts[0], initVal], {deployer});
     const owner = await instance.owner.call();
     console.log('owner: ', owner);
     // console.log('current owner: ', instance.owner.call());

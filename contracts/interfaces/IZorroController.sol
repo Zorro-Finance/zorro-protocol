@@ -15,7 +15,7 @@ interface IZorroControllerBase {
     function setStartBlock(uint256 _startBlock) external;
 
     function setRewardsParams(
-        uint256[] calldata _blockParams,
+        uint256 _blocksPerDay,
         uint256[] calldata _dailyDistFactors,
         uint256 _chainMultiplier,
         uint256 _baseRewardRateBasisPoints

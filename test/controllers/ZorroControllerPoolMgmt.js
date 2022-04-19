@@ -1,15 +1,15 @@
 const ZorroController = artifacts.require('ZorroController');
 
 contract('ZorroController', async accounts => {
-    it('adds a pool', async () => {
+    xit('adds a pool', async () => {
        // Only by owner
     });
     
-    it('updates settings for a pool', async () => {
+    xit('updates settings for a pool', async () => {
         // Only by owner
     });
 
-    it('mass updates all pools', async () => {
+    xit('mass updates all pools', async () => {
         
     });
 })

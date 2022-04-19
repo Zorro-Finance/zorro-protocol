@@ -1,63 +1,63 @@
 const ZorroController = artifacts.require('ZorroController');
 
 contract('ZorroController', async accounts => {
-    it('sets time multiplier', async () => {
+    xit('sets time multiplier', async () => {
        // Only by owner
     });
     
-    it('sets Zorro LP Pool params', async () => {
+    xit('sets Zorro LP Pool params', async () => {
         // Only by owner
     });
 
-    it('sets uni router', async () => {
+    xit('sets uni router', async () => {
         // Only by owner
     });
 
-    it('sets USDC to ZOR path', async () => {
+    xit('sets USDC to ZOR path', async () => {
         // Only by owner
     });
 
-    it('sets USDC to ZOR LP pool token other path', async () => {
+    xit('sets USDC to ZOR LP pool token other path', async () => {
         // Only by owner
     });
 
-    it('sets price feeds', async () => {
+    xit('sets price feeds', async () => {
         // Only by owner
     });
 
-    it('sets Zorro X chain endpoint', async () => {
+    xit('sets Zorro X chain endpoint', async () => {
         // Only by owner
     });
 
-    it('deposits Want token', async () => {
+    xit('deposits Want token', async () => {
 
     });
 
-    it('deposits USDC into Vault', async () => {
+    xit('deposits USDC into Vault', async () => {
 
     });
 
-    it('withdraws Want token', async () => {
+    xit('withdraws Want token', async () => {
 
     });
 
-    it('withdraws from Vault into USDC', async () => {
+    xit('withdraws from Vault into USDC', async () => {
 
     });
 
-    it('gets pending rewards by tranche', async () => {
+    xit('gets pending rewards by tranche', async () => {
 
     });
 
-    it('transfers investment', async () => {
+    xit('transfers investment', async () => {
 
     });
 
-    it('withdraws all tranches owned by a user in a pool', async () => {
+    xit('withdraws all tranches owned by a user in a pool', async () => {
 
     });
 
-    it('gets the correct time multiplier value', async () => {
+    xit('gets the correct time multiplier value', async () => {
 
     });
 })

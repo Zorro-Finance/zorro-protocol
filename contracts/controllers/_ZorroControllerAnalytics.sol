@@ -31,7 +31,6 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
         // IF we are on a block that is greater than the previous block this function was executed in
         if (block.number > pool.lastRewardBlock) {
             uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
-            uint256 ZORROPerBlock = ZORROPerBlock;
             uint256 ZORROReward = elapsedBlocks
                 .mul(ZORROPerBlock)
                 .mul(pool.allocPoint)
@@ -72,7 +71,7 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
                 uint256(_trancheId)
             ];
             // Ensure tranche is not yet exited
-            if (_tranche.exitedVaultAt > 0) {
+            if (_tranche.exitedVaultAt == 0) {
                 // Return the tranche's share of the Zorro rewards for this pool, net of the reward debt
                 uint256 _trancheShare = _tranche.contribution.mul(1e6).div(
                     pool.totalTrancheContributions

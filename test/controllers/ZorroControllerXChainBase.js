@@ -1,31 +1,31 @@
 const ZorroController = artifacts.require('ZorroController');
 
 contract('ZorroController', async accounts => {
-    it('sets key tokens', async () => {
+    xit('sets key tokens', async () => {
        // Only by owner
     });
     
-    it('sets key contracts', async () => {
+    xit('sets key contracts', async () => {
         // Only by owner
     });
 
-    it('sets chains', async () => {
+    xit('sets chains', async () => {
         // Only by owner
     });
 
-    it('sets controller contract', async () => {
+    xit('sets controller contract', async () => {
         // Only by owner
     });
 
-    it('sets LZ chain mapping', async () => {
+    xit('sets LZ chain mapping', async () => {
         // Only by owner
     });
 
-    it('sets Stargate dest pool IDs', async () => {
+    xit('sets Stargate dest pool IDs', async () => {
         // Only by owner
     });
 
-    it('sets LZ params', async () => {
+    xit('sets LZ params', async () => {
         // Only by owner
     });
 })

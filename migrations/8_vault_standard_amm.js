@@ -54,7 +54,7 @@ module.exports = async function (deployer, network, accounts) {
     },
   };
   // Deploy master contract
-  const instance = await deployProxy(VaultStandardAMM, ['0x62D255A418a7a25e3b2e08c30F12AC80718CB67F', initVal], {deployer});
+  const instance = await deployProxy(VaultStandardAMM, [accounts[0], initVal], {deployer});
 
   // Deploy factory contract
   deployProxy(VaultFactoryStandardAMM, [instance.address], {deployer});

@@ -130,19 +130,18 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
 
     /// @notice Setter: Reward params (See Tokenomics paper for more details)
     /// @dev NOTE: Must enter all parameters or existing ones will be overwritten!
-    /// @param _blockParams Array of [blocksPerDay, ZORROPerBlock]
+    /// @param _blocksPerDay # of blocks per day for this chain
     /// @param _dailyDistFactors Array of [ZORRODailyDistributionFactorBasisPointsMin, ZORRODailyDistributionFactorBasisPointsMax]
     /// @param _chainMultiplier Rewards multiplier factor to be applied to this chain
     /// @param _baseRewardRateBasisPoints Base reward rate factor, in bp
     function setRewardsParams(
-        uint256[] calldata _blockParams,
+        uint256 _blocksPerDay,
         uint256[] calldata _dailyDistFactors,
         uint256 _chainMultiplier,
         uint256 _baseRewardRateBasisPoints
     ) external onlyOwner {
-        // Set other block params
-        blocksPerDay = _blockParams[1];
-        ZORROPerBlock = _blockParams[2];
+        // Set block production rate for this chain
+        blocksPerDay = _blocksPerDay;
 
         // Tokenomics
         ZORRODailyDistributionFactorBasisPointsMin = _dailyDistFactors[0];

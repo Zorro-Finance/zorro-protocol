@@ -1,75 +1,75 @@
 const GeneralVault = artifacts.require('VaultZorro');
 
 contract('VaultZorro', async accounts => {
-    it('sets pool ID', async () => {
+    xit('sets pool ID', async () => {
         // only owner
     });
     
-    it('sets the farm contract address', async () => {
+    xit('sets the farm contract address', async () => {
         // only owner
     });
 
-    it('sets key token addresses', async () => {
+    xit('sets key token addresses', async () => {
         // only owner
     });
 
-    it('sets earned address', async () => {
+    xit('sets earned address', async () => {
         // only owner
     });
 
-    it('set token USDC address', async () => {
+    xit('set token USDC address', async () => {
         // Check auth
     });
 
-    it('sets rewards address', async () => {
+    xit('sets rewards address', async () => {
         // Check auth
     });
 
-    it('sets want address', async () => {
+    xit('sets want address', async () => {
         // Check auth
     });
 
-    it('sets Uni router address', async () => {
+    xit('sets Uni router address', async () => {
         // Check auth
     });
 
-    it('sets pool address', async () => {
+    xit('sets pool address', async () => {
         // Check auth
     });
 
-    it('sets Zorro LP pool address', async () => {
+    xit('sets Zorro LP pool address', async () => {
         // Check auth
     });
 
-    it('sets Zorro controller address', async () => {
+    xit('sets Zorro controller address', async () => {
         // Check auth
     });
 
-    it('sets Zorro single staking vault', async () => {
+    xit('sets Zorro single staking vault', async () => {
         // Check auth
     });
 
-    it('sets Zorro token address', async () => {
+    xit('sets Zorro token address', async () => {
         // Check auth
     });
 
-    it('sets price feeds', async () => {
+    xit('sets price feeds', async () => {
         // Check auth
     });
 
-    it('sets swap paths', async () => {
+    xit('sets swap paths', async () => {
         // Check auth
     });
 
-    it('sets governor props', async () => {
+    xit('sets governor props', async () => {
         // Check auth
     });
 
-    it('sets fees', async () => {
+    xit('sets fees', async () => {
         // Check auth
     });
 
-    it('reverses swap paths', async () => {
+    xit('reverses swap paths', async () => {
 
     });
 })

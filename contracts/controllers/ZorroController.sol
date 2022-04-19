@@ -73,6 +73,9 @@ contract ZorroController is
         priceFeedLPPoolOtherToken = AggregatorV3Interface(
             _initValue.priceFeeds.priceFeedLPPoolOtherToken
         );
+
+        // Ownable
+        __Ownable_init();
     }
 
     /* Structs */

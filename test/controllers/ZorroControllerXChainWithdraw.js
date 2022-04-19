@@ -1,35 +1,35 @@
 const ZorroController = artifacts.require('ZorroController');
 
 contract('ZorroController', async accounts => {
-    it('checks X chain withdrawal fee', async () => {
+    xit('checks X chain withdrawal fee', async () => {
 
     });
     
-    it('gets LZ adapter params', async () => {
+    xit('gets LZ adapter params', async () => {
         
     });
 
-    it('checks X chain Repatriation fee', async () => {
+    xit('checks X chain Repatriation fee', async () => {
         
     });
 
-    it('encodes X chain withdrawal payload', async () => {
+    xit('encodes X chain withdrawal payload', async () => {
         
     });
 
-    it('sends X chain withdrawal request', async () => {
+    xit('sends X chain withdrawal request', async () => {
         // Check auth
     });
 
-    it('sends X chain repatriation request', async () => {
+    xit('sends X chain repatriation request', async () => {
         // Check auth
     });
 
-    it('receives X chain withdrawal request', async () => {
+    xit('receives X chain withdrawal request', async () => {
         // Check auth
     });
 
-    it('receives X chain repatriation request', async () => {
+    xit('receives X chain repatriation request', async () => {
         // Check auth
     });
 })

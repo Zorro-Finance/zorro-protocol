@@ -58,8 +58,7 @@ contract VaultZorro is VaultBase {
         );
 
         // Super call
-        // TODO: Add this back in
-        // VaultBase.initialize(_timelockOwner);
+        VaultBase.initialize(_timelockOwner);
     }
 
     /* Structs */

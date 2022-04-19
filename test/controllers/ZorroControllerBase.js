@@ -1,39 +1,40 @@
 const ZorroController = artifacts.require('ZorroController');
 
 contract('ZorroController', async accounts => {
-    it('sets key addresses', async () => {
+    xit('sets key addresses', async () => {
        // Only by owner
     });
     
-    it('sets key contracts', async () => {
+    xit('sets key contracts', async () => {
         // Only by owner
     });
 
-    it('sets start block', async () => {
+    xit('sets start block', async () => {
         // Only by owner
     });
 
-    it('sets rewards params', async () => {
+    xit('sets rewards params', async () => {
         // Only by owner
     });
 
-    it('sets targate TVL capture', async () => {
+    xit('sets targate TVL capture', async () => {
         // Only by owner
     });
 
-    it('sets cross chain params', async () => {
+    xit('sets cross chain params', async () => {
         // Only by owner
     });
 
-    it('sets Zorro per block', async () => {
+    xit('sets Zorro per block', async () => {
         // Only by Zorro Controller oracle
+        // Calculates the correct value
     });
 
-    it('updates pool rewards', async () => {
+    xit('updates pool rewards', async () => {
         
     });
 
-    it('transfers stuck tokens', async () => {
+    xit('transfers stuck tokens', async () => {
         // Only by owner
     });
 })

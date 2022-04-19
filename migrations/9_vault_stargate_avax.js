@@ -55,7 +55,7 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy master contract
-  const instance = await deployProxy(VaultStargate, ['0x62D255A418a7a25e3b2e08c30F12AC80718CB67F', initVal], {deployer});
+  const instance = await deployProxy(VaultStargate, [accounts[0], initVal], {deployer});
   
   // Deploy factory
   deployProxy(VaultFactoryStargate, [instance.address], {deployer});

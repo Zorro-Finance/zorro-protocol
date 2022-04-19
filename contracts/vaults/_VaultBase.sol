@@ -34,6 +34,9 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     /* Constructor */
     function initialize(address _timelockOwner) public initializer {
+        // Ownable
+        __Ownable_init();
+        // Transfer ownership
         transferOwnership(_timelockOwner);
     }
 
