@@ -264,10 +264,6 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
 
         // Determine how many blocks have elapsed since the last updatePool() operation for this pool
         uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
-        // If no elapsed blocks have occured, exit
-        if (elapsedBlocks <= 0) {
-            return 0;
-        }
 
         // Finally, multiply rewards/block by the number of elapsed blocks and the pool weighting
         uint256 ZORROReward = elapsedBlocks

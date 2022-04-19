@@ -775,7 +775,7 @@ contract ZorroControllerInvestment is
     /// @notice The contribution of the user, meant to be used in rewards allocations
     /// @param _liquidityCommitted How many tokens staked (e.g. LP tokens)
     /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
-    /// @return The relative contribution of the user (unitless)
+    /// @return uint256 The relative contribution of the user (unitless)
     function getUserContribution(
         uint256 _liquidityCommitted,
         uint256 _timeMultiplier

@@ -73,12 +73,12 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
             // Ensure tranche is not yet exited
             if (_tranche.exitedVaultAt == 0) {
                 // Return the tranche's share of the Zorro rewards for this pool, net of the reward debt
-                uint256 _trancheShare = _tranche.contribution.mul(1e6).div(
+                uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
                     pool.totalTrancheContributions
                 );
                 _pendingRewards = _trancheShare
                     .mul(accZORRORewards)
-                    .div(1e6)
+                    .div(1e12)
                     .sub(_tranche.rewardDebt);
             } else {
                 _pendingRewards = 0;
