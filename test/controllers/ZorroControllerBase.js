@@ -5,6 +5,8 @@ contract('ZorroController', async accounts => {
 
     before(async () => {
         instance = await MockZorroController.deployed();
+        // Set home chain controller address
+        instance.setXChainParams(0, 0, await instance.address);
     });
 
     it('sets key addresses', async () => {
@@ -79,7 +81,7 @@ contract('ZorroController', async accounts => {
         const baseRewardRate = 10;
         const chainMultiplier = 27;
 
-        await instance.setRewardParams(
+        await instance.setRewardsParams(
             blocksPerDay,
             [distFactorMin, distFactorMax],
             baseRewardRate,
@@ -94,7 +96,7 @@ contract('ZorroController', async accounts => {
 
         // Only by owner
         try {
-            await instance.setRewardParams(
+            await instance.setRewardsParams(
                 0,
                 [],
                 0,
@@ -106,56 +108,11 @@ contract('ZorroController', async accounts => {
         }
     });
 
-    it('sets target TVL capture', async () => {
-        // Normal 
-        const tvlCapture = 200;
-
-        await instance.setTargetTVLCaptureBAsisPoints(tvlCapture);
-
-        assert.equal(await instance.targetTVLCaptureBasisPoints.call(), tvlCapture);
-
-        // Only by owner
-        try {
-            await instance.setTargetTVLCaptureBAsisPoints(tvlCapture);
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-
-        // Only home chain
-        await instance.setXChainParams(2, 0, web3.utils.randomHex(20));
-        try {
-            await instance.setTargetTVLCaptureBAsisPoints(tvlCapture + 1, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'only home chain');
-        }
-        // Reset
-        // TODO: For all these reset sections, just wrap into a new contract() function so you get a new deployment
-        await instance.setXChainParams(0, 0, web3.utils.randomHex(20));
-    });
-
-    it('sets cross chain params', async () => {
-        // Normal 
-        const homeChainController = web3.utils.randomHex(20);
-        const chainId = 1;
-        const homeChainId = 2;
-        await instance.setXChainParams(chainId, homeChainId, homeChainController);
-
-        // Reset 
-        await instance.setXChainParams(0, 0, homeChainController);
-
-        // Only by owner
-        try {
-            await instance.setXChainParams(0, 0, homeChainController, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-
     it('sets Zorro controller Oracle', async () => {
         // Normal
         const oracle = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         await instance.setZorroControllerOracle(oracle);
-        assert.equal(web3.utils.toChecksumAddress(await instance.zorroControllerOracle).call(), oracle);
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroControllerOracle.call()), oracle);
 
         // Only by owner
         try {
@@ -169,11 +126,11 @@ contract('ZorroController', async accounts => {
         // Only by Zorro Controller oracle
         try {
             await instance.setZorroPerBlock(
-                totalChainMultips,
-                totalMarketTVL,
-                targetTVLCapture,
-                totalZORTVL,
-                publicPoolBal
+                0,
+                0,
+                0,
+                0,
+                0
             );
         } catch (err) {
             assert.include(err.message, 'only Zorro oracle');
@@ -181,6 +138,8 @@ contract('ZorroController', async accounts => {
 
         // Normal 
         await instance.setZorroControllerOracle(accounts[0]);
+        // Set home chain controller address
+        instance.setXChainParams(0, 0, await instance.address);
         const chainMultiplier = 1;
         const totalChainMultips = 1000;
         const totalMarketTVL = 100e9;
@@ -191,7 +150,7 @@ contract('ZorroController', async accounts => {
         const distFactorMin = 1;
         const distFactorMax = 20;
         const blocksPerDay = 28800;
-        await instance.setRewardParams(
+        await instance.setRewardsParams(
             blocksPerDay,
             [distFactorMin, distFactorMax],
             chainMultiplier,
@@ -260,4 +219,68 @@ contract('ZorroController', async accounts => {
 
         // Only for NON Zorro tokens
     });
-})
+});
+
+contract('ZorroController', async () => {
+    let instance;
+
+    before(async () => {
+        instance = await MockZorroController.deployed();
+        // Set home chain controller address
+        instance.setXChainParams(0, 0, await instance.address);
+    });
+
+    it('sets target TVL capture', async () => {
+        // Normal 
+        const tvlCapture = 200;
+
+        await instance.setTargetTVLCaptureBasisPoints(tvlCapture);
+
+        assert.equal(await instance.targetTVLCaptureBasisPoints.call(), tvlCapture);
+
+        // Only by owner
+        try {
+            await instance.setTargetTVLCaptureBasisPoints(tvlCapture);
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+
+        // Only home chain
+        await instance.setXChainParams(2, 0, web3.utils.randomHex(20));
+        try {
+            await instance.setTargetTVLCaptureBasisPoints(tvlCapture + 1, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'only home chain');
+        }
+    });
+});
+
+contract('ZorroController', async () => {
+    let instance;
+
+    before(async () => {
+        instance = await MockZorroController.deployed();
+    });
+
+    it('sets cross chain params', async () => {
+        // Normal 
+        const homeChainController = web3.utils.randomHex(20);
+        const chainId = 1;
+        const homeChainId = 2;
+        await instance.setXChainParams(chainId, homeChainId, homeChainController);
+        assert.equal(await instance.chainId.call(), chainId);
+        assert.equal(await instance.homeChainId.call(), homeChainId);
+        assert.equal(await instance.homeChainController.call(), homeChainController);
+
+        // Only by owner
+        try {
+            await instance.setXChainParams(0, 0, homeChainController, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+    });
+});
+
+// contract('ZorroController', async () => {
+
+// });
