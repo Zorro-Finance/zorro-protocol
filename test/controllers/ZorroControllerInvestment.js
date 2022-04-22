@@ -60,4 +60,4 @@ contract('ZorroController', async accounts => {
     xit('gets the correct time multiplier value', async () => {
 
     });
-})
+});

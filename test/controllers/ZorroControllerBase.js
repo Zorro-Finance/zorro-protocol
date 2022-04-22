@@ -1,4 +1,5 @@
 const MockZorroController = artifacts.require('MockZorroController');
+const MockZorroToken = artifacts.require('MockZorroToken');
 
 contract('ZorroController', async accounts => {
     let instance;
@@ -84,8 +85,8 @@ contract('ZorroController', async accounts => {
         await instance.setRewardsParams(
             blocksPerDay,
             [distFactorMin, distFactorMax],
-            baseRewardRate,
-            chainMultiplier
+            chainMultiplier,
+            baseRewardRate
         );
 
         assert.equal(await instance.blocksPerDay.call(), blocksPerDay);
@@ -169,9 +170,9 @@ contract('ZorroController', async accounts => {
         );
 
         dailyDistBP = baseRewardRate * totalMarketTVL * targetTVLCapture / (10000 * totalZORTVL);
-        expZORROPerBlock = (dailyDistBP * publicPoolBal / 10000) * (chainMultiplier / totalChainMultips) * (1 / blocksPerDay);
+        expZORROPerBlock = (dailyDistBP * publicPoolBal * chainMultiplier) / (10000 * totalChainMultips * blocksPerDay);
 
-        assert.equal(await instance.ZORROPerBlock.call(), expZORROPerBlock);
+        assert.closeTo((await instance.ZORROPerBlock.call()).toNumber(), expZORROPerBlock, 1);
 
         // Variation: low rail (Rm < 0.01 %)
         await instance.setZorroPerBlock(
@@ -183,9 +184,9 @@ contract('ZorroController', async accounts => {
         );
 
         dailyDistBP = distFactorMin;
-        expZORROPerBlock = (dailyDistBP * publicPoolBal / 10000) * (chainMultiplier / totalChainMultips) * (1 / blocksPerDay);
+        expZORROPerBlock = (dailyDistBP * publicPoolBal * chainMultiplier) / (10000 * totalChainMultips * blocksPerDay);
 
-        assert.equal(await instance.ZORROPerBlock.call(), expZORROPerBlock);
+        assert.closeTo((await instance.ZORROPerBlock.call()).toNumber(), expZORROPerBlock, 1);
 
         // Variation: high rail (Rm > 0.2 %)
         await instance.setZorroPerBlock(
@@ -197,50 +198,33 @@ contract('ZorroController', async accounts => {
         );
 
         dailyDistBP = distFactorMax;
-        expZORROPerBlock = (dailyDistBP * publicPoolBal / 10000) * (chainMultiplier / totalChainMultips) * (1 / blocksPerDay);
+        expZORROPerBlock = (dailyDistBP * publicPoolBal * chainMultiplier) / (10000 * totalChainMultips * blocksPerDay);
 
-        assert.equal(await instance.ZORROPerBlock.call(), expZORROPerBlock);
-    });
-
-    xit('updates pool rewards', async () => {
-
-    });
-
-    xit('does not update pool if no elapsed blocks', async () => {
-
-    });
-
-    xit('updates pool rewards for xchain', async () => {
-
-    });
-
-    xit('transfers stuck tokens', async () => {
-        // Only by owner
-
-        // Only for NON Zorro tokens
+        assert.closeTo((await instance.ZORROPerBlock.call()).toNumber(), expZORROPerBlock, 1);
     });
 });
 
-contract('ZorroController', async () => {
+contract('ZorroController', async accounts => {
     let instance;
 
     before(async () => {
         instance = await MockZorroController.deployed();
-        // Set home chain controller address
-        instance.setXChainParams(0, 0, await instance.address);
     });
-
+    
     it('sets target TVL capture', async () => {
         // Normal 
         const tvlCapture = 200;
-
+        
+        // Set home chain controller address
+        await instance.setXChainParams(0, 0, instance.address);
+        // Set capture amount
         await instance.setTargetTVLCaptureBasisPoints(tvlCapture);
 
         assert.equal(await instance.targetTVLCaptureBasisPoints.call(), tvlCapture);
 
         // Only by owner
         try {
-            await instance.setTargetTVLCaptureBasisPoints(tvlCapture);
+            await instance.setTargetTVLCaptureBasisPoints(tvlCapture, {from: accounts[1]});
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }
@@ -248,14 +232,14 @@ contract('ZorroController', async () => {
         // Only home chain
         await instance.setXChainParams(2, 0, web3.utils.randomHex(20));
         try {
-            await instance.setTargetTVLCaptureBasisPoints(tvlCapture + 1, { from: accounts[1] });
+            await instance.setTargetTVLCaptureBasisPoints(tvlCapture + 1);
         } catch (err) {
             assert.include(err.message, 'only home chain');
         }
     });
 });
 
-contract('ZorroController', async () => {
+contract('ZorroController', async accounts => {
     let instance;
 
     before(async () => {
@@ -264,23 +248,189 @@ contract('ZorroController', async () => {
 
     it('sets cross chain params', async () => {
         // Normal 
-        const homeChainController = web3.utils.randomHex(20);
+        const homeChainZorroController = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         const chainId = 1;
         const homeChainId = 2;
-        await instance.setXChainParams(chainId, homeChainId, homeChainController);
+        await instance.setXChainParams(chainId, homeChainId, homeChainZorroController);
         assert.equal(await instance.chainId.call(), chainId);
         assert.equal(await instance.homeChainId.call(), homeChainId);
-        assert.equal(await instance.homeChainController.call(), homeChainController);
+        assert.equal(await instance.homeChainZorroController.call(), web3.utils.toChecksumAddress(homeChainZorroController));
 
         // Only by owner
         try {
-            await instance.setXChainParams(0, 0, homeChainController, { from: accounts[1] });
+            await instance.setXChainParams(0, 0, homeChainZorroController, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }
     });
 });
 
-// contract('ZorroController', async () => {
+contract('ZorroController', async accounts => {
+    let instance;
 
-// });
+    before(async () => {
+        instance = await MockZorroController.deployed();
+    });
+
+    it('does not update pool if no elapsed blocks', async () => {
+        // Add pool
+        await instance.add(
+            1,
+            web3.utils.randomHex(20),
+            true,
+            web3.utils.randomHex(20)
+        );
+
+        // Simulate no elapsed blocks
+        const currBlock = await web3.eth.getBlockNumber();
+        await instance.setLastRewardBlock(0, currBlock + 100);
+
+        // Call update pool
+        const tx = await instance.updatePoolMod(0); 
+
+        // Assert 0 ZOR minted
+        const {logs} = tx;
+        const {args} = logs[0];
+        assert.equal(args._amount, 0);
+    });
+});
+
+contract('ZorroController', async accounts => {
+    let instance;
+
+    const blocksPerDay = 30000;
+    const distFactorMin = 1;
+    const distFactorMax = 20; 
+    const multiplierVal = 1;
+    const totalMultips = 1;
+    const USDCAddress = web3.utils.randomHex(20);
+
+    before(async () => {
+        const mockZorroToken = await MockZorroToken.deployed();
+        instance = await MockZorroController.deployed();
+
+        // Set Oracle address
+        await instance.setZorroControllerOracle(accounts[0]);
+
+        // Set rewards params
+        await instance.setRewardsParams(
+            blocksPerDay,
+            [distFactorMin, distFactorMax],
+            1,
+            10
+        );
+        // Set ZOR per block
+        await instance.setZorroPerBlock(
+            1,
+            100e9,
+            100,
+            1e9,
+            web3.utils.toWei('800000', 'ether')
+        );
+        // Add pool
+        await instance.add(
+            multiplierVal,
+            web3.utils.randomHex(20),
+            true,
+            web3.utils.randomHex(20)
+        );
+        // Set ZOR token address
+        await instance.setKeyAddresses(
+            mockZorroToken.address,
+            USDCAddress
+        );
+    });
+
+    it('updates pool rewards for xchain', async () => {
+        // Expect correct amount of tokens to have been minted
+        const ZORPerBlock = await instance.ZORROPerBlock.call();
+        const poolBeforeUpdate = await instance.poolInfo.call(0);
+        
+        const tx = await instance.updatePoolMod(0);
+        const currBlock = await web3.eth.getBlockNumber();
+        const zorRewards =  (currBlock - poolBeforeUpdate.lastRewardBlock.toNumber()) * ZORPerBlock * multiplierVal / totalMultips; 
+        const {logs} = tx;
+        const {args} = logs[0];
+        const mintedRewards = args._amount;
+        assert.equal(mintedRewards, zorRewards);
+        
+
+        // Assert pool rewards correct
+        const pool = await instance.poolInfo.call(0);
+        const {accZORRORewards, lastRewardBlock} = pool;
+        assert.equal(zorRewards, accZORRORewards);
+        assert.equal(currBlock, lastRewardBlock);
+    });
+});
+
+contract('ZorroController', async accounts => {
+    let instance;
+
+    const blocksPerDay = 30000;
+    const distFactorMin = 1;
+    const distFactorMax = 20; 
+    const multiplierVal = 1;
+    const totalMultips = 1;
+    const USDCAddress = web3.utils.randomHex(20);
+    
+    before(async () => {
+        const mockZorroToken = await MockZorroToken.deployed();
+        instance = await MockZorroController.deployed();
+        // Set home chain
+        await instance.setXChainParams(
+            0,
+            0,
+            instance.address
+        );
+        // Set Oracle address
+        await instance.setZorroControllerOracle(accounts[0]);
+
+        // Set rewards params
+        await instance.setRewardsParams(
+            blocksPerDay,
+            [distFactorMin, distFactorMax],
+            1,
+            10
+        );
+        // Set ZOR per block
+        await instance.setZorroPerBlock(
+            1,
+            100e9,
+            100,
+            1e9,
+            web3.utils.toWei('800000', 'ether')
+        );
+        // Add pool
+        await instance.add(
+            multiplierVal,
+            web3.utils.randomHex(20),
+            true,
+            web3.utils.randomHex(20)
+        );
+        // Set ZOR token address
+        await instance.setKeyAddresses(
+            mockZorroToken.address,
+            USDCAddress
+        );
+    });
+
+    it('updates pool rewards on chain', async () => {
+        // Expect correct amount of tokens to have been minted
+        const ZORPerBlock = await instance.ZORROPerBlock.call();
+        const poolBeforeUpdate = await instance.poolInfo.call(0);
+        
+        const tx = await instance.updatePoolMod(0);
+        const currBlock = await web3.eth.getBlockNumber();
+        const zorRewards =  (currBlock - poolBeforeUpdate.lastRewardBlock.toNumber()) * ZORPerBlock * multiplierVal / totalMultips;
+        const {logs} = tx;
+        const {args} = logs[0];
+        const mintedRewards = args._amount;
+        assert.equal(mintedRewards, 0);
+
+        // Assert pool rewards correct
+        const pool = await instance.poolInfo.call(0);
+        const {accZORRORewards, lastRewardBlock} = pool;
+        assert.equal(zorRewards, accZORRORewards);
+        assert.equal(currBlock, lastRewardBlock);
+    });
+});

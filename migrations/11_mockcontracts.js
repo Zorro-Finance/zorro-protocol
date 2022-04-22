@@ -1,7 +1,9 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+const { deploy } = require('@openzeppelin/truffle-upgrades/dist/utils');
 // Contract (only for testing)
 const MockZorroController = artifacts.require("MockZorroController");
+const MockZorroToken = artifacts.require("MockZorroToken");
 // Other contracts
 const Zorro = artifacts.require("Zorro");
 
@@ -48,6 +50,8 @@ module.exports = async function (deployer, network, accounts) {
     };
     // Deploy
     await deployProxy(MockZorroController, [zcInitVal], {deployer});
+
+    await deployer.deploy(MockZorroToken);
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }

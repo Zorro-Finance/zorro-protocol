@@ -20,7 +20,11 @@ import "../interfaces/IZorroController.sol";
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
-contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract ZorroControllerBase is
+    IZorroControllerBase,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     /* Libraries */
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -222,8 +226,9 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
         // Use the Rm formula to determine the percentage of the remaining public pool Zorro tokens to transfer to this contract as rewards
         uint256 ZORRODailyDistributionFactorBasisPoints = baseRewardRateBasisPoints
                 .mul(_totalMarketTVLUSD)
-                .mul(_targetTVLCaptureBasisPoints.div(10000))
-                .div(_ZorroTotalVaultTVLUSD);
+                .mul(_targetTVLCaptureBasisPoints)
+                .div(_ZorroTotalVaultTVLUSD.mul(10000));
+
         // Rail distribution to min and max values
         if (
             ZORRODailyDistributionFactorBasisPoints >
@@ -236,24 +241,22 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
         ) {
             ZORRODailyDistributionFactorBasisPoints = ZORRODailyDistributionFactorBasisPointsMin;
         }
+
         // Multiply the factor above to determine the total Zorro tokens to distribute to this contract on a DAILY basis
-        uint256 publicPoolDailyZORRODistribution = _publicPoolZORBalance
+        // And then multiply by the share of daily distribution for this chain
+        // Finally: Convert this to a BLOCK basis and assign to ZORROPerBlock
+        ZORROPerBlock = _publicPoolZORBalance
             .mul(ZORRODailyDistributionFactorBasisPoints)
-            .div(10000);
-        // Determine the share of daily distribution for this chain
-        uint256 chainDailyDist = chainMultiplier
-            .mul(publicPoolDailyZORRODistribution)
-            .div(_totalChainMultipliers);
-        // Convert this to a BLOCK basis and assign to ZORROPerBlock
-        ZORROPerBlock = chainDailyDist.div(blocksPerDay);
+            .mul(chainMultiplier)
+            .div(_totalChainMultipliers.mul(10000).mul(blocksPerDay));
     }
 
     /* Pool Management */
 
     /// @notice Update reward variables of the given pool to be up-to-date.
     /// @param _pid index of pool
-    /// @return uint256 Amount of ZOR rewards minted (useful for cross chain)
-    function updatePool(uint256 _pid) public returns (uint256) {
+    /// @return mintedZOR Amount of ZOR rewards minted (useful for cross chain)
+    function updatePool(uint256 _pid) public returns (uint256 mintedZOR) {
         // Get the pool matching the given index
         PoolInfo storage pool = poolInfo[_pid];
 
@@ -276,25 +279,34 @@ contract ZorroControllerBase is IZorroControllerBase, OwnableUpgradeable, Reentr
             // On Home chain. NO cross chain pool updates required
 
             // Transfer Zorro rewards to this contract from the Public Pool
-            IERC20Upgradeable(ZORRO).safeTransferFrom(
-                publicPool,
-                address(this),
-                ZORROReward
-            );
-            // Increment this pool's accumulated Zorro per share value by the reward amount
-            pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
-            // Update the pool's last reward block to the current block
-            pool.lastRewardBlock = block.number;
+            _fetchFundsFromPublicPool(ZORROReward);
+
             // Return 0, no ZOR minted because we're on chain
-            return 0;
+            mintedZOR = 0;
         } else {
             // On remote chain. Cross chain pool updates required
 
             // Mint Zorro on this (remote) chain
             IZorro(ZORRO).mint(address(this), ZORROReward);
+            
             // Return ZOR minted
-            return ZORROReward;
+            mintedZOR = ZORROReward;
         }
+
+        // Increment this pool's accumulated Zorro per share value by the reward amount
+        pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
+        // Update the pool's last reward block to the current block
+        pool.lastRewardBlock = block.number;
+    }
+
+    /// @notice Gets the specified amount of ZOR tokens from the public pool and transfers to this contract
+    /// @param _amount The amount to fetch from the public pool
+    function _fetchFundsFromPublicPool(uint256 _amount) internal virtual {
+        IERC20Upgradeable(ZORRO).safeTransferFrom(
+            publicPool,
+            address(this),
+            _amount
+        );
     }
 
     /* Safety functions */
