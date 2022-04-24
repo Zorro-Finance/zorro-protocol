@@ -7,7 +7,7 @@ contract('ZorroController', async accounts => {
     before(async () => {
         instance = await MockZorroController.deployed();
         // Set home chain controller address
-        instance.setXChainParams(0, 0, await instance.address);
+        await instance.setXChainParams(0, 0, await instance.address);
     });
 
     it('sets key addresses', async () => {

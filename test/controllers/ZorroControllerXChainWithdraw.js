@@ -1,6 +1,12 @@
-const ZorroController = artifacts.require('ZorroController');
+const MockZorroController = artifacts.require('MockZorroController');
 
 contract('ZorroController', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockZorroController.deployed();
+    });
+
     xit('checks X chain withdrawal fee', async () => {
 
     });

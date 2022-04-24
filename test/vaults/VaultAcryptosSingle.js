@@ -1,8 +1,20 @@
-const VaultAcryptosSingle = artifacts.require('VaultAcryptosSingle');
-const VaultFactoryAcryptosSingle = artifacts.require('VaultFactoryAcryptosSingle');
+const MockVaultAcryptosSingle = artifacts.require('MockVaultAcryptosSingle');
+const MockVaultFactoryAcryptosSingle = artifacts.require('MockVaultFactoryAcryptosSingle');
 
 contract('VaultFactoryAcryptosSingle', async accounts => {
-    xit('creates a vault', async () => {
+    let factory;
+    let instance;
+
+    before(async () => {
+        factory = await MockVaultFactoryAcryptosSingle.deployed();
+        instance = await MockVaultAcryptosSingle.deployed();
+    });
+
+    it('has a master vault', async () => {
+        assert.equal(await factory.masterVault.call(), instance.address);
+    });
+
+    it('creates a vault', async () => {
         // only owner
     });
 });

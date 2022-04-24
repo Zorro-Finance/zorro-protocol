@@ -162,7 +162,11 @@ contract ZorroControllerInvestment is
         pool.want.safeIncreaseAllowance(address(this), _wantAmt);
 
         // Transfer the Want token from the user to the Vault contract
-        IERC20Upgradeable(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
+        IERC20Upgradeable(pool.want).safeTransferFrom(
+            msg.sender,
+            pool.vault,
+            _wantAmt
+        );
 
         // Call core deposit function
         _deposit(
@@ -378,7 +382,10 @@ contract ZorroControllerInvestment is
         );
 
         // Safe increase allowance and xfer Want to vault contract
-        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(vaultAddr, _wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(
+            vaultAddr,
+            _wantAmt
+        );
 
         // Make deposit
         // Call core deposit function
@@ -412,7 +419,10 @@ contract ZorroControllerInvestment is
         );
 
         // Transfer to user and return Want amount
-        IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(msg.sender, _res.wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(
+            msg.sender,
+            _res.wantAmt
+        );
 
         return _res.wantAmt;
     }
@@ -512,7 +522,9 @@ contract ZorroControllerInvestment is
                 .sub(_tranche.contribution);
 
             // Calculate Want token balance
-            _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(address(this));
+            _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(
+                address(this)
+            );
 
             // Mark tranche as exited
             trancheInfo[_pid][_localAccount][_trancheId].exitedVaultAt = block
@@ -607,7 +619,10 @@ contract ZorroControllerInvestment is
         );
 
         // Send USDC funds back to sender
-        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(
+            msg.sender,
+            _amountUSDC
+        );
 
         return _amountUSDC;
     }
@@ -631,15 +646,15 @@ contract ZorroControllerInvestment is
         bool _harvestOnly,
         uint256 _maxMarketMovement
     )
-        public onlyZorroXChain
+        public
+        onlyZorroXChain
         returns (
             uint256 _amountUSDC,
             uint256 _mintedZORRewards,
             uint256 _rewardsDueXChain,
             uint256 _slashedRewardsXChain
         )
-    {
-    }
+    {}
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
     /// @param _account address of wallet on-chain
@@ -762,11 +777,11 @@ contract ZorroControllerInvestment is
         if (isTimeMultiplierActive) {
             // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
             return
-                (
-                    uint256(1).add(
-                        (uint256(2).div(10)).mul((durationInWeeks.mul(1e4)).sqrt()).div(100)
-                    )
-                ).mul(1e12);
+                ((durationInWeeks.mul(1e4)).sqrt())
+                    .mul(1e12)
+                    .mul(2)
+                    .div(1000)
+                    .add(1e12);
         } else {
             return 1e12;
         }

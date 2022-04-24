@@ -45,9 +45,10 @@ contract ZorroControllerXChain is
 
     /// @notice Upgradeable constructor
     /// @param _initValue a ZorroControllerXChainInit struct for initializing this contract
-    function initialize(
-        ZorroControllerXChainInit memory _initValue
-    ) public initializer {
+    function initialize(ZorroControllerXChainInit memory _initValue)
+        public
+        initializer
+    {
         // Base
         stargateRouter = _initValue.bridge.stargateRouter;
         stargateSwapPoolId = _initValue.bridge.stargateSwapPoolId;
@@ -56,14 +57,15 @@ contract ZorroControllerXChain is
         for (uint16 i = 0; i < _initValue.bridge.ZorroChainIDs.length; ++i) {
             uint256 _zChainId = _initValue.bridge.ZorroChainIDs[i];
 
-            controllerContractsMap[_zChainId] = _initValue.bridge.controllerContracts[
-                i
-            ];
+            controllerContractsMap[_zChainId] = _initValue
+                .bridge
+                .controllerContracts[i];
             ZorroChainToLZMap[_zChainId] = _initValue.bridge.LZChainIDs[i];
             LZChainToZorroMap[_initValue.bridge.LZChainIDs[i]] = _zChainId;
-            stargateDestPoolIds[_zChainId] = _initValue.bridge.stargateDestPoolIds[i];
+            stargateDestPoolIds[_zChainId] = _initValue
+                .bridge
+                .stargateDestPoolIds[i];
         }
-
 
         // Earn
         // Tokens
@@ -73,10 +75,19 @@ contract ZorroControllerXChain is
         uniRouterAddress = _initValue.uniRouterAddress;
         // Swaps
         USDCToZorroPath = _initValue.swaps.USDCToZorroPath;
-        USDCToZorroLPPoolOtherTokenPath = _initValue.swaps.USDCToZorroLPPoolOtherTokenPath;
+        USDCToZorroLPPoolOtherTokenPath = _initValue
+            .swaps
+            .USDCToZorroLPPoolOtherTokenPath;
         // Price feed
-        priceFeedZOR = AggregatorV3Interface(_initValue.priceFeeds.priceFeedZOR);
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(_initValue.priceFeeds.priceFeedLPPoolOtherToken);
+        priceFeedZOR = AggregatorV3Interface(
+            _initValue.priceFeeds.priceFeedZOR
+        );
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(
+            _initValue.priceFeeds.priceFeedLPPoolOtherToken
+        );
+
+        // Ownable
+        __Ownable_init();
     }
 
     /* Structs */

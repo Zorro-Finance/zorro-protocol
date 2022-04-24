@@ -1,11 +1,19 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const { deploy } = require('@openzeppelin/truffle-upgrades/dist/utils');
-// Contract (only for testing)
+// Controllers (only for testing)
 const MockZorroController = artifacts.require("MockZorroController");
+const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain");
+// Token (only for testing)
 const MockZorroToken = artifacts.require("MockZorroToken");
-// Other contracts
-const Zorro = artifacts.require("Zorro");
+// Vaults (only for testing)
+const MockVaultAcryptosSingle = artifacts.require("MockVaultAcryptosSingle");
+const MockVaultFactoryAcryptosSingle = artifacts.require("MockVaultFactoryAcryptosSingle");
+const MockVaultStandardAMM = artifacts.require("MockVaultStandardAMM");
+const MockVaultFactoryStandardAMM = artifacts.require("MockVaultFactoryStandardAMM");
+const MockVaultStargate = artifacts.require("MockVaultStargate");
+const MockVaultFactoryStargate = artifacts.require("MockVaultFactoryStargate");
+const MockVaultZorro = artifacts.require("MockVaultZorro");
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks: Test/dev only
@@ -17,9 +25,12 @@ module.exports = async function (deployer, network, accounts) {
     'test',
   ];
   if (allowedNetworks.includes(network)) {
-    // Prep init values
+    // Zorro Token
+    await deployer.deploy(MockZorroToken);
+
+    // Zorro Controller
     const zcInitVal = {
-      ZORRO: (await Zorro.deployed()).address,
+      ZORRO: MockZorroToken.address,
       defaultStablecoin: '0x0000000000000000000000000000000000000000',
       zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
       publicPool: '0x0000000000000000000000000000000000000000',
@@ -48,10 +59,225 @@ module.exports = async function (deployer, network, accounts) {
         priceFeedLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
       },
     };
-    // Deploy
-    await deployProxy(MockZorroController, [zcInitVal], {deployer});
+    await deployProxy(MockZorroController, [zcInitVal], { deployer });
 
-    await deployer.deploy(MockZorroToken);
+    // Zorro Controller X Chain
+    const zcxInitVal = {
+      defaultStablecoin: '0x0000000000000000000000000000000000000000',
+      ZORRO: MockZorroToken.address,
+      zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+      zorroStakingVault: '0x0000000000000000000000000000000000000000',
+      uniRouterAddress: '0x0000000000000000000000000000000000000000',
+      homeChainZorroController: '0x0000000000000000000000000000000000000000',
+      currentChainController: '0x0000000000000000000000000000000000000000',
+      publicPool: '0x0000000000000000000000000000000000000000',
+      bridge: {
+        chainId: 0,
+        homeChainId: 0,
+        ZorroChainIDs: [],
+        controllerContracts: [],
+        LZChainIDs: [],
+        stargateDestPoolIds: [],
+        stargateRouter: '0x0000000000000000000000000000000000000000',
+        layerZeroEndpoint: '0x0000000000000000000000000000000000000000',
+        stargateSwapPoolId: '0x0000000000000000000000000000000000000000',
+      },
+      swaps: {
+        USDCToZorroPath: [],
+        USDCToZorroLPPoolOtherTokenPath: [],
+      },
+      priceFeeds: {
+        priceFeedZOR: '0x0000000000000000000000000000000000000000',
+        priceFeedLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+      },
+    };
+    await deployProxy(MockZorroControllerXChain, [zcxInitVal], { deployer });
+
+    // Vaults
+    // VaultZorro
+    const initVal0 = {
+      pid: 0,
+      keyAddresses: {
+        govAddress: '0x0000000000000000000000000000000000000000',
+        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        ZORROAddress: '0x0000000000000000000000000000000000000000',
+        zorroStakingVault: '0x0000000000000000000000000000000000000000',
+        wantAddress: '0x0000000000000000000000000000000000000000',
+        token0Address: '0x0000000000000000000000000000000000000000',
+        token1Address: '0x0000000000000000000000000000000000000000',
+        earnedAddress: '0x0000000000000000000000000000000000000000',
+        farmContractAddress: '0x0000000000000000000000000000000000000000',
+        rewardsAddress: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x0000000000000000000000000000000000000000',
+        uniRouterAddress: '0x0000000000000000000000000000000000000000',
+        zorroLPPool: '0x0000000000000000000000000000000000000000',
+        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+      },
+      USDCToToken0Path: [],
+      fees: {
+        controllerFee: 0,
+        buyBackRate: 0,
+        revShareRate: 0,
+        entranceFeeFactor: 0,
+        withdrawFeeFactor: 0,
+      },
+      priceFeeds: {
+        token0PriceFeed: '0x0000000000000000000000000000000000000000',
+        token1PriceFeed: '0x0000000000000000000000000000000000000000',
+        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
+        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+      },
+    };
+    await deployProxy(MockVaultZorro, [accounts[0], initVal0], {deployer});
+    
+    // VaultAcryptosSingle
+    const initVal1 = {
+      pid: 0,
+      isCOREStaking: false,
+      isZorroComp: true,
+      isHomeChain: network === 'avax',
+      keyAddresses: {
+        govAddress: '0x0000000000000000000000000000000000000000',
+        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        ZORROAddress: '0x0000000000000000000000000000000000000000',
+        zorroStakingVault: '0x0000000000000000000000000000000000000000',
+        wantAddress: '0x0000000000000000000000000000000000000000',
+        token0Address: '0x0000000000000000000000000000000000000000',
+        token1Address: '0x0000000000000000000000000000000000000000',
+        earnedAddress: '0x0000000000000000000000000000000000000000',
+        farmContractAddress: '0x0000000000000000000000000000000000000000',
+        rewardsAddress: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x0000000000000000000000000000000000000000',
+        uniRouterAddress: '0x0000000000000000000000000000000000000000',
+        zorroLPPool: '0x0000000000000000000000000000000000000000',
+        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+      },
+      earnedToZORROPath: [],
+      earnedToToken0Path: [],
+      USDCToToken0Path: [],
+      earnedToZORLPPoolOtherTokenPath: [],
+      earnedToUSDCPath: [],
+      BUSDToToken0Path: [],
+      BUSDToZORROPath: [],
+      BUSDToLPPoolOtherTokenPath: [],
+      fees: {
+        controllerFee: 0,
+        buyBackRate: 0,
+        revShareRate: 0,
+        entranceFeeFactor: 0,
+        withdrawFeeFactor: 0,
+      },
+      priceFeeds: {
+        token0PriceFeed: '0x0000000000000000000000000000000000000000',
+        token1PriceFeed: '0x0000000000000000000000000000000000000000',
+        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
+        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+      },
+    };
+    await deployProxy(MockVaultAcryptosSingle, [accounts[0], initVal1], {deployer});
+    await deployProxy(MockVaultFactoryAcryptosSingle, [(await MockVaultAcryptosSingle.deployed()).address], {deployer});
+
+    // VaultStandardAMM
+    const initVal2 = {
+      pid: 0,
+      isCOREStaking: false,
+      isZorroComp: true,
+      isHomeChain: network === 'avax',
+      isSingleAssetDeposit: false,
+      keyAddresses: {
+        govAddress: '0x0000000000000000000000000000000000000000',
+        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        ZORROAddress: '0x0000000000000000000000000000000000000000',
+        zorroStakingVault: '0x0000000000000000000000000000000000000000',
+        wantAddress: '0x0000000000000000000000000000000000000000',
+        token0Address: '0x0000000000000000000000000000000000000000',
+        token1Address: '0x0000000000000000000000000000000000000000',
+        earnedAddress: '0x0000000000000000000000000000000000000000',
+        farmContractAddress: '0x0000000000000000000000000000000000000000',
+        rewardsAddress: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x0000000000000000000000000000000000000000',
+        uniRouterAddress: '0x0000000000000000000000000000000000000000',
+        zorroLPPool: '0x0000000000000000000000000000000000000000',
+        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+      },
+      earnedToZORROPath: [],
+      earnedToToken0Path: [],
+      earnedToToken1Path: [],
+      USDCToToken0Path: [],
+      USDCToToken1Path: [],
+      earnedToZORLPPoolOtherTokenPath: [],
+      earnedToUSDCPath: [],
+      fees: {
+        controllerFee: 0,
+        buyBackRate: 0,
+        revShareRate: 0,
+        entranceFeeFactor: 0,
+        withdrawFeeFactor: 0,
+      },
+      priceFeeds: {
+        token0PriceFeed: '0x0000000000000000000000000000000000000000',
+        token1PriceFeed: '0x0000000000000000000000000000000000000000',
+        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
+        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+      },
+    };
+    await deployProxy(MockVaultStandardAMM, [accounts[0], initVal2], {deployer});
+    await deployProxy(MockVaultFactoryStandardAMM, [(await MockVaultStandardAMM.deployed()).address], {deployer});
+
+    // VaultStargate
+    const initVal3 = {
+      pid: 0,
+      isCOREStaking: false,
+      isZorroComp: true,
+      isHomeChain: network === 'avax',
+      keyAddresses: {
+        govAddress: '0x0000000000000000000000000000000000000000',
+        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        ZORROAddress: '0x0000000000000000000000000000000000000000',
+        zorroStakingVault: '0x0000000000000000000000000000000000000000',
+        wantAddress: '0x0000000000000000000000000000000000000000',
+        token0Address: '0x0000000000000000000000000000000000000000',
+        token1Address: '0x0000000000000000000000000000000000000000',
+        earnedAddress: '0x0000000000000000000000000000000000000000',
+        farmContractAddress: '0x0000000000000000000000000000000000000000',
+        rewardsAddress: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x0000000000000000000000000000000000000000',
+        uniRouterAddress: '0x0000000000000000000000000000000000000000',
+        zorroLPPool: '0x0000000000000000000000000000000000000000',
+        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+      },
+      earnedToZORROPath: [],
+      earnedToToken0Path: [],
+      USDCToToken0Path: [],
+      earnedToZORLPPoolOtherTokenPath: [],
+      earnedToUSDCPath: [],
+      fees: {
+        controllerFee: 0,
+        buyBackRate: 0,
+        revShareRate: 0,
+        entranceFeeFactor: 0,
+        withdrawFeeFactor: 0,
+      },
+      priceFeeds: {
+        token0PriceFeed: '0x0000000000000000000000000000000000000000',
+        token1PriceFeed: '0x0000000000000000000000000000000000000000',
+        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
+        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+      },
+      tokenSTG: '0x0000000000000000000000000000000000000000',
+      stargatePoolId: 0
+    };
+  
+    await deployProxy(MockVaultStargate, [accounts[0], initVal3], {deployer});
+    await deployProxy(MockVaultFactoryStargate, [(await MockVaultStargate.deployed()).address], {deployer});
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }

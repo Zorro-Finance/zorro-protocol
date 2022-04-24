@@ -38,8 +38,8 @@ contract ZorroControllerXChainBase is
     address public currentChainController; // TODO: need constructor, setter
     address public publicPool;
     // Chain config
-    uint256 chainId;
-    uint256 homeChainId;
+    uint256 public chainId;
+    uint256 public homeChainId;
 
     /* Setters */
 
