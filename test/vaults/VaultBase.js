@@ -319,6 +319,115 @@ contract('MockVaultStandardAMM', async accounts => {
         }
     });
 
+    it('sets fees', async () => {
+        const entranceFeeFactor = 9950;
+        const withdrawFeeFactor = 9970;
+        const controllerFee = 200;
+        const buybackRate = 400;
+
+        // Test for green light
+        await instance.setFeeSettings(
+            entranceFeeFactor,
+            withdrawFeeFactor,
+            controllerFee,
+            buybackRate
+        );
+        assert.equal(await instance.entranceFeeFactor.call(), entranceFeeFactor);
+        assert.equal(await instance.withdrawFeeFactor.call(), withdrawFeeFactor);
+        assert.equal(await instance.controllerFee.call(), controllerFee);
+        assert.equal(await instance.buyBackRate.call(), buybackRate);
+
+        // Test for when exceeding bounds
+        try {
+            await instance.setFeeSettings(
+                8000,
+                withdrawFeeFactor,
+                controllerFee,
+                buybackRate
+            );
+        } catch (err) {
+            assert.include(err.message, '_entranceFeeFactor too low');
+        }
+        try {
+            await instance.setFeeSettings(
+                11000,
+                withdrawFeeFactor,
+                controllerFee,
+                buybackRate
+            );
+        } catch (err) {
+            assert.include(err.message, '_entranceFeeFactor too high');
+        }
+
+        try {
+            await instance.setFeeSettings(
+                entranceFeeFactor,
+                880,
+                controllerFee,
+                buybackRate
+            );
+        } catch (err) {
+            assert.include(err.message, '_withdrawFeeFactor too low');
+        }
+
+        try {
+            await instance.setFeeSettings(
+                entranceFeeFactor,
+                12000,
+                controllerFee,
+                buybackRate
+            );
+        } catch (err) {
+            assert.include(err.message, '_withdrawFeeFactor too high');
+        }
+
+        try {
+            await instance.setFeeSettings(
+                entranceFeeFactor,
+                withdrawFeeFactor,
+                2000,
+                buybackRate
+            );
+        } catch (err) {
+            assert.include(err.message, '_controllerFee too high');
+        }
+
+        try {
+            await instance.setFeeSettings(
+                entranceFeeFactor,
+                withdrawFeeFactor,
+                controllerFee,
+                3000
+            );
+        } catch (err) {
+            assert.include(err.message, '_buyBackRate too high');
+        }
+
+        // Test for only owner
+        try {
+            await instance.setFeeSettings(0,0,0,0, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, '!gov');
+        }
+    });
+
+    it('reverses swap paths', async () => {
+        const addr0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const addr1 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+
+        const res = await instance.reversePath.call([addr0, addr1]);
+        assert.equal(web3.utils.toChecksumAddress(res[0]), addr1);
+        assert.equal(web3.utils.toChecksumAddress(res[1]), addr0);
+    });
+});
+
+contract('MockVaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+    });
+
     it('sets governor props', async () => {
         // Turn on/off gov
         await instance.setOnlyGov(false);
@@ -339,20 +448,4 @@ contract('MockVaultStandardAMM', async accounts => {
             assert.include(err.message, '!gov');
         }
     });
-
-    xit('sets fees', async () => {
-        // Test for green light
-        // Test for when exceeding bounds
-        // Test for only owner
-    });
-
-    it('reverses swap paths', async () => {
-        // TODO: This is not passing for some reason
-        const addr0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        const addr1 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-
-        const res = await instance.reversePath.call([addr0, addr1]);
-        assert.equal(web3.utils.toChecksumAddress(res[0]), addr1);
-        assert.equal(web3.utils.toChecksumAddress(res[1]), addr0);
-    });
-})
+});

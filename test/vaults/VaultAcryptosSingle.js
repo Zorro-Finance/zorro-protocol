@@ -104,7 +104,7 @@ contract('VaultAcryptosSingle', async accounts => {
         // Check auth
     });
 
-    xit('exhcnages Want token for USD', async () => {
+    xit('exchanges Want token for USD', async () => {
         // Check auth
     });
 

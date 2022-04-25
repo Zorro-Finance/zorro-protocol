@@ -1,6 +1,52 @@
 const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
 const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardAMM');
 
+const initVal = {
+    pid: 0,
+    isCOREStaking: false,
+    isZorroComp: true,
+    isHomeChain: true,
+    isSingleAssetDeposit: false,
+    keyAddresses: {
+      govAddress: accounts[0],
+      zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+      ZORROAddress: '0x0000000000000000000000000000000000000000',
+      zorroStakingVault: '0x0000000000000000000000000000000000000000',
+      wantAddress: '0x0000000000000000000000000000000000000000',
+      token0Address: '0x0000000000000000000000000000000000000000',
+      token1Address: '0x0000000000000000000000000000000000000000',
+      earnedAddress: '0x0000000000000000000000000000000000000000',
+      farmContractAddress: '0x0000000000000000000000000000000000000000',
+      rewardsAddress: '0x0000000000000000000000000000000000000000',
+      poolAddress: '0x0000000000000000000000000000000000000000',
+      uniRouterAddress: '0x0000000000000000000000000000000000000000',
+      zorroLPPool: '0x0000000000000000000000000000000000000000',
+      zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+      tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+    },
+    earnedToZORROPath: [],
+    earnedToToken0Path: [],
+    earnedToToken1Path: [],
+    USDCToToken0Path: [],
+    USDCToToken1Path: [],
+    earnedToZORLPPoolOtherTokenPath: [],
+    earnedToUSDCPath: [],
+    fees: {
+      controllerFee: 0,
+      buyBackRate: 0,
+      revShareRate: 0,
+      entranceFeeFactor: 0,
+      withdrawFeeFactor: 0,
+    },
+    priceFeeds: {
+      token0PriceFeed: '0x0000000000000000000000000000000000000000',
+      token1PriceFeed: '0x0000000000000000000000000000000000000000',
+      earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+      ZORPriceFeed: '0x0000000000000000000000000000000000000000',
+      lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+    },
+  };
+
 contract('VaultFactoryStandardAMM', async accounts => {
     let factory;
     let instance;
@@ -14,8 +60,21 @@ contract('VaultFactoryStandardAMM', async accounts => {
         assert.equal(await factory.masterVault.call(), instance.address);
     });
 
-    xit('creates a vault', async () => {
-        // only owner
+    it('creates a vault', async () => {
+        // Create vault
+        await factory.createVault(accounts[0], initVal);
+
+        // Check creation
+        assert.equal(await factory.numVaults.call(), 1);
+        console.log('depl vault: ', await factory.deployedVaults.call(0));
+        assert.isNotNull(await factory.deployedVaults.call(0));
+
+        // Only owner
+        try {
+            await factory.createVault(accounts[0], initVal, {from: accounts[1]});
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 });
 
@@ -27,7 +86,25 @@ contract('VaultStandardAMM', async accounts => {
     });
 
     xit('deposits Want token', async () => {
-        // check auth
+        // Prep
+        const account = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const wantAmt = web3.utils.toWei('0.547', 'ether');
+
+        // Make pre-deposit
+
+        // Deposit (0)
+
+        // Deposit (> 0)
+
+        // Assert: returns correct shares added
+
+        // Assert: farms token 
+
+        // Assert: does not farm token? 
+
+        // Assert: increments shares (total shares and user shares)
+
+        // Only owner
     });
 
     xit('exchanges USD for Want token', async () => {
@@ -51,7 +128,7 @@ contract('VaultStandardAMM', async accounts => {
         // Check auth
     });
 
-    xit('exhcnages Want token for USD', async () => {
+    xit('exchanges Want token for USD', async () => {
         // Check auth
     });
 
@@ -69,9 +146,5 @@ contract('VaultStandardAMM', async accounts => {
 
     xit('swaps Earn token to USD', async () => {
         // Check auth
-    });
-
-    xit('reverses swap paths', async () => {
-
     });
 });

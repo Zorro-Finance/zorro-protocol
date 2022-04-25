@@ -165,14 +165,14 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _account The address of the end user account making the deposit
     /// @param _wantAmt The amount of Want token to deposit (must already be transferred)
-    /// @return Number of shares added
+    /// @return sharesAdded Number of shares added
     function depositWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesAdded)
     {
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
@@ -185,7 +185,7 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Set sharesAdded to the Want token amount specified
-        uint256 sharesAdded = _wantAmt;
+        sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
@@ -206,8 +206,6 @@ contract VaultStandardAMM is VaultBase {
             // Otherwise, simply increment the quantity of total Want tokens locked
             wantLockedTotal = wantLockedTotal.add(_wantAmt);
         }
-
-        return sharesAdded;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender

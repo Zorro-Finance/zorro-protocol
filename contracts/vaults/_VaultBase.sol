@@ -47,15 +47,15 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     // Fee min/max bounds
     uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
-    uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
+    uint256 public constant controllerFeeUL = 1000; // Upper limit on controller fee rate (10%)
     uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
-    uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
+    uint256 public constant buyBackRateUL = 1000; // Upper limit on buyback rate (10%)
     uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
-    uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
+    uint256 public constant revShareRateUL = 1000; // Upper limit on rev share rate (10%)
     uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
-    uint256 public constant entranceFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = "lowerlimit"
+    uint256 public constant entranceFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = "lowerlimit"
     uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
-    uint256 public constant withdrawFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = lowerlimit
+    uint256 public constant withdrawFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = lowerlimit
 
     /* State */
 
