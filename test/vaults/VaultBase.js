@@ -1,75 +1,358 @@
-const GeneralVault = artifacts.require('VaultZorro');
+const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
 
-contract('VaultZorro', async accounts => {
-    xit('sets pool ID', async () => {
-        // only owner
+contract('MockVaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+    });
+
+    it('sets pool ID', async () => {
+        // Normal
+        const pid = 54;
+        await instance.setPid(pid);
+
+        assert.equal(await instance.pid.call(), pid);
+
+        // Only by owner
+        try {
+            await instance.setPid(0, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
     
-    xit('sets the farm contract address', async () => {
-        // only owner
+    it('sets the farm contract address', async () => {
+        // Normal
+        const farm = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setFarmContractAddress(farm);
+
+        assert.equal(await instance.farmContractAddress.call(), farm);
+
+        // Only by owner
+        try {
+            await instance.setFarmContractAddress(farm, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets key token addresses', async () => {
-        // only owner
+    it('sets key token addresses', async () => {
+        // Normal
+        const token0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const token1 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setToken0Address(token0);
+        await instance.setToken1Address(token1);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.token0Address.call()), token0);
+        assert.equal(web3.utils.toChecksumAddress(await instance.token1Address.call()), token1);
+
+        // Only by owner
+        try {
+            await instance.setToken0Address(token0, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets earned address', async () => {
-        // only owner
+    it('sets earned address', async () => {
+        // Normal
+        const earned = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setEarnedAddress(earned);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.earnedAddress.call()), earned);
+
+        // Only by owner
+        try {
+            await instance.setEarnedAddress(earned, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('set token USDC address', async () => {
-        // Check auth
+    it('set token USDC address', async () => {
+        // Normal
+        const USDC = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setTokenUSDCAddress(USDC);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.tokenUSDCAddress.call()), USDC);
+
+        // Only by owner
+        try {
+            await instance.setTokenUSDCAddress(USDC, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets rewards address', async () => {
-        // Check auth
+    it('sets rewards address', async () => {
+        // Normal
+        const rewards = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setRewardsAddress(rewards);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.rewardsAddress.call()), rewards);
+
+        // Only by owner
+        try {
+            await instance.setRewardsAddress(rewards, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets want address', async () => {
-        // Check auth
+    it('sets want address', async () => {
+        // Normal
+        const want = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setWantAddress(want);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.wantAddress.call()), want);
+
+        // Only by owner
+        try {
+            await instance.setWantAddress(want, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets Uni router address', async () => {
-        // Check auth
+    it('sets Uni router address', async () => {
+        // Normal
+        const uniRouter = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setUniRouterAddress(uniRouter);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.uniRouterAddress.call()), uniRouter);
+
+        // Only by owner
+        try {
+            await instance.setUniRouterAddress(uniRouter, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets pool address', async () => {
-        // Check auth
+    it('sets pool address', async () => {
+        // Normal
+        const pool = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setPoolAddress(pool);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.poolAddress.call()), pool);
+
+        // Only by owner
+        try {
+            await instance.setPoolAddress(pool, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets Zorro LP pool address', async () => {
-        // Check auth
+    it('sets Zorro LP pool address', async () => {
+        // Normal
+        const zorroLPPool = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const otherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setZorroLPPoolAddress(zorroLPPool);
+        await instance.setZorroLPPoolOtherToken(otherToken);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroLPPool.call()), zorroLPPool);
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroLPPoolOtherToken.call()), otherToken);
+
+        // Only by owner
+        try {
+            await instance.setZorroLPPoolAddress(zorroLPPool, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets Zorro controller address', async () => {
-        // Check auth
+    it('sets Zorro controller address', async () => {
+        // Normal
+        const zc = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setZorroControllerAddress(zc);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroControllerAddress.call()), zc);
+
+        // Only by owner
+        try {
+            await instance.setZorroControllerAddress(zc, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets Zorro single staking vault', async () => {
-        // Check auth
+    it('sets Zorro single staking vault', async () => {
+        // Normal
+        const stakingVault = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setZorroStakingVault(stakingVault);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroStakingVault.call()), stakingVault);
+
+        // Only by owner
+        try {
+            await instance.setZorroStakingVault(stakingVault, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets Zorro token address', async () => {
-        // Check auth
+    it('sets Zorro token address', async () => {
+        // Normal
+        const ZORRO = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setZORROAddress(ZORRO);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.ZORROAddress.call()), ZORRO);
+
+        // Only by owner
+        try {
+            await instance.setZORROAddress(ZORRO, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets price feeds', async () => {
-        // Check auth
+    it('sets price feeds', async () => {
+        // Normal
+        const token0PriceFeed = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const token1PriceFeed = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const earnTokenPriceFeed = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const ZORPriceFeed = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const lpPoolOtherTokenPriceFeed = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+
+        await instance.setPriceFeed(0, token0PriceFeed);
+        await instance.setPriceFeed(1, token1PriceFeed);
+        await instance.setPriceFeed(2, earnTokenPriceFeed);
+        await instance.setPriceFeed(3, ZORPriceFeed);
+        await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.token0PriceFeed.call()), token0PriceFeed);
+        assert.equal(web3.utils.toChecksumAddress(await instance.token1PriceFeed.call()), token1PriceFeed);
+        assert.equal(web3.utils.toChecksumAddress(await instance.earnTokenPriceFeed.call()), earnTokenPriceFeed);
+        assert.equal(web3.utils.toChecksumAddress(await instance.ZORPriceFeed.call()), ZORPriceFeed);
+        assert.equal(web3.utils.toChecksumAddress(await instance.lpPoolOtherTokenPriceFeed.call()), lpPoolOtherTokenPriceFeed);
+
+        // Only by owner
+        try {
+            await instance.setPriceFeed(0, token0PriceFeed, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets swap paths', async () => {
-        // Check auth
+    it('sets swap paths', async () => {
+        // Normal
+        const USDC = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const AVAX = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const token0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const token1 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const earned = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const ZOR = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const otherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+
+        let path;
+
+        // USDCToToken0Path
+        path = [USDC, AVAX, token0];
+        await instance.setSwapPaths(0, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.USDCToToken0Path.call(i)), path[i]);
+        }
+
+        // USDCToToken1Path
+        path = [USDC, AVAX, token1];
+        await instance.setSwapPaths(1, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.USDCToToken1Path.call(i)), path[i]);
+        }
+
+        // token0ToUSDCPath
+        path = [token0, AVAX, USDC];
+        await instance.setSwapPaths(2, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.token0ToUSDCPath.call(i)), path[i]);
+        }
+
+        // token1ToUSDCPath
+        path = [token0, AVAX, USDC];
+        await instance.setSwapPaths(3, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.token1ToUSDCPath.call(i)), path[i]);
+        }
+
+        // earnedToToken0Path
+        path = [earned, token0];
+        await instance.setSwapPaths(4, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToToken0Path.call(i)), path[i]);
+        }
+
+        // earnedToToken1Path
+        path = [earned, token1];
+        await instance.setSwapPaths(5, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToToken1Path.call(i)), path[i]);
+        }
+
+        // earnedToZORROPath
+        path = [earned, ZOR];
+        await instance.setSwapPaths(6, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToZORROPath.call(i)), path[i]);
+        }
+
+        // earnedToZORLPPoolOtherTokenPath
+        path = [earned, ZOR, otherToken];
+        await instance.setSwapPaths(7, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToZORLPPoolOtherTokenPath.call(i)), path[i]);
+        }
+
+        // earnedToUSDCPath
+        path = [earned, USDC];
+        await instance.setSwapPaths(8, path);
+        for (let i=0; i < path.length; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToUSDCPath.call(i)), path[i]);
+        }
+
+        // Only by owner
+        try {
+            await instance.setSwapPaths(0, [], { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
-    xit('sets governor props', async () => {
-        // Check auth
+    it('sets governor props', async () => {
+        // Turn on/off gov
+        await instance.setOnlyGov(false);
+        assert.isFalse(await instance.onlyGov.call());
+        await instance.setOnlyGov(true);
+        assert.isTrue(await instance.onlyGov.call());
+
+        // Normal
+        const gov = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setGov(gov);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.govAddress.call()), gov);
+
+        // Only by owner
+        try {
+            await instance.setGov(gov, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, '!gov');
+        }
     });
 
     xit('sets fees', async () => {
-        // Check auth
+        // Test for green light
+        // Test for when exceeding bounds
+        // Test for only owner
     });
 
-    xit('reverses swap paths', async () => {
+    it('reverses swap paths', async () => {
+        // TODO: This is not passing for some reason
+        const addr0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const addr1 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
 
+        const res = await instance.reversePath.call([addr0, addr1]);
+        assert.equal(web3.utils.toChecksumAddress(res[0]), addr1);
+        assert.equal(web3.utils.toChecksumAddress(res[1]), addr0);
     });
 })

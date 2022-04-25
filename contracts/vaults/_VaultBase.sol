@@ -366,17 +366,17 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     /// @notice Gets the swap path in the opposite direction of a trade
     /// @param _path The swap path to be reversed
-    /// @return An reversed path array
+    /// @return _newPath An reversed path array
     function _reversePath(address[] memory _path)
         internal
         pure
-        returns (address[] memory)
+        returns (address[] memory _newPath)
     {
-        address[] memory _newPath;
-        for (uint16 i = 0; i < _path.length; ++i) {
+        uint256 _pathLength = _path.length;
+        _newPath = new address[](_pathLength);
+        for (uint16 i = 0; i < _pathLength; ++i) {
             _newPath[i] = _path[_path.length.sub(1).sub(i)];
         }
-        return _newPath;
     }
 
     /* Maintenance Functions */

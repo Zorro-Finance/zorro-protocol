@@ -14,18 +14,69 @@ contract('VaultFactoryAcryptosSingle', async accounts => {
         assert.equal(await factory.masterVault.call(), instance.address);
     });
 
-    it('creates a vault', async () => {
+    xit('creates a vault', async () => {
         // only owner
     });
 });
 
 contract('VaultAcryptosSingle', async accounts => {
-    xit('sets Balancer pool weights', async () => {
-        // only owner
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultAcryptosSingle.deployed();
     });
 
-    xit('sets BUSD swap paths', async () => {
-        // only owner
+    it('sets Balancer pool weights', async () => {
+        // Normal
+        const acsWeight = 7000;
+        const busdWeight = 7000;
+        await instance.setBalancerWeights(acsWeight, busdWeight);
+
+        assert.equal(await instance.balancerACSWeightBasisPoints.call(), acsWeight);
+        assert.equal(await instance.balancerBUSDWeightBasisPoints.call(), busdWeight);
+
+        // Only by owner
+        try {
+            await instance.setBalancerWeights(0, 0, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+    });
+
+    it('sets BUSD swap paths', async () => {
+        // Normal
+        const BUSD = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const AVAX = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const token0 = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const otherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        const ZOR = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        let path;
+        // Set BUSDToToken0Path
+        path = [BUSD, AVAX, token0];
+        await instance.setBUSDSwapPaths(0, path);
+        for (let i=0; i < 3; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToToken0Path.call(i)), path[i]);
+        }
+        // Set BUSDToZORROPath
+        path = [BUSD, token0, ZOR];
+        await instance.setBUSDSwapPaths(1, path);
+        for (let i=0; i < 3; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToZORROPath.call(i)), path[i]);
+        }
+        // Set BUSDToLPPoolOtherTokenPath
+        path = [BUSD, token0, otherToken];
+        await instance.setBUSDSwapPaths(2, path);
+        for (let i=0; i < 3; i++) {
+            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToLPPoolOtherTokenPath.call(i)), path[i]);
+        }
+
+
+        // Only by owner
+        try {
+            await instance.setBUSDSwapPaths(0, [], { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
     });
 
     xit('deposits Want token', async () => {
@@ -53,10 +104,6 @@ contract('VaultAcryptosSingle', async accounts => {
         // Check auth
     });
 
-    xit('sets Zorro LP pool address', async () => {
-        // Check auth
-    });
-
     xit('exhcnages Want token for USD', async () => {
         // Check auth
     });
@@ -75,17 +122,5 @@ contract('VaultAcryptosSingle', async accounts => {
 
     xit('swaps Earn token to USD', async () => {
         // Check auth
-    });
-
-    xit('sets governor props', async () => {
-        // Check auth
-    });
-
-    xit('sets fees', async () => {
-        // Check auth
-    });
-
-    xit('reverses swap paths', async () => {
-
     });
 });

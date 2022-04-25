@@ -1,13 +1,31 @@
-const VaultStandardAMM = artifacts.require('VaultStandardAMM');
-const VaultFactoryStandardAMM = artifacts.require('VaultFactoryStandardAMM');
+const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
+const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardAMM');
 
 contract('VaultFactoryStandardAMM', async accounts => {
+    let factory;
+    let instance;
+
+    before(async () => {
+        factory = await MockVaultFactoryStandardAMM.deployed();
+        instance = await MockVaultStandardAMM.deployed();
+    });
+
+    it('has a master vault', async () => {
+        assert.equal(await factory.masterVault.call(), instance.address);
+    });
+
     xit('creates a vault', async () => {
         // only owner
     });
 });
 
 contract('VaultStandardAMM', async accounts => {
+    let instance; 
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+    });
+
     xit('deposits Want token', async () => {
         // check auth
     });
@@ -33,10 +51,6 @@ contract('VaultStandardAMM', async accounts => {
         // Check auth
     });
 
-    xit('sets Zorro LP pool address', async () => {
-        // Check auth
-    });
-
     xit('exhcnages Want token for USD', async () => {
         // Check auth
     });
@@ -54,14 +68,6 @@ contract('VaultStandardAMM', async accounts => {
     });
 
     xit('swaps Earn token to USD', async () => {
-        // Check auth
-    });
-
-    xit('sets governor props', async () => {
-        // Check auth
-    });
-
-    xit('sets fees', async () => {
         // Check auth
     });
 

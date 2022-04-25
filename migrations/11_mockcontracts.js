@@ -98,7 +98,7 @@ module.exports = async function (deployer, network, accounts) {
     const initVal0 = {
       pid: 0,
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
@@ -139,7 +139,7 @@ module.exports = async function (deployer, network, accounts) {
       isZorroComp: true,
       isHomeChain: network === 'avax',
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
@@ -189,7 +189,7 @@ module.exports = async function (deployer, network, accounts) {
       isHomeChain: network === 'avax',
       isSingleAssetDeposit: false,
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
@@ -237,7 +237,7 @@ module.exports = async function (deployer, network, accounts) {
       isZorroComp: true,
       isHomeChain: network === 'avax',
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
