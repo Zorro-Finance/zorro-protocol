@@ -60,9 +60,6 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     /* State */
 
     // Vault characteristics
-    bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
-    bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
-    bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     bool public isHomeChain; // Whether this is deployed on the home chain
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
     // Governance

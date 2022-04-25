@@ -77,9 +77,6 @@ contract VaultStargate is VaultBase {
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
-        isCOREStaking = _initValue.isCOREStaking;
-        isSingleAssetDeposit = true;
-        isZorroComp = _initValue.isZorroComp;
         isHomeChain = _initValue.isHomeChain;
 
         // Addresses
@@ -142,8 +139,6 @@ contract VaultStargate is VaultBase {
 
     struct VaultStargateInit {
         uint256 pid;
-        bool isCOREStaking;
-        bool isZorroComp;
         bool isHomeChain;
         VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
@@ -211,13 +206,8 @@ contract VaultStargate is VaultBase {
         sharesTotal = sharesTotal.add(sharesAdded);
         userShares[_account] = userShares[_account].add(sharesAdded);
 
-        if (isZorroComp) {
-            // If this contract is meant for Autocompounding, start to farm the staked token
-            _farm();
-        } else {
-            // Otherwise, simply increment the quantity of total Want tokens locked
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
-        }
+        // Farm Want token
+        _farm();
 
         return sharesAdded;
     }
@@ -287,9 +277,6 @@ contract VaultStargate is VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal virtual {
-        // Farming should only occur if this contract is set for autocompounding
-        require(isZorroComp, "!isZorroComp");
-
         // Get the Want token stored on this contract
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
         // Increment the total Want tokens locked into this contract
@@ -341,10 +328,8 @@ contract VaultStargate is VaultBase {
             );
         }
 
-        // If this contract is designated for auto compounding, unfarm the Want tokens
-        if (isZorroComp) {
-            _unfarm(_wantAmt);
-        }
+        // Unfarm Want token
+        _unfarm(_wantAmt);
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
@@ -437,8 +422,6 @@ contract VaultStargate is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        // Only to be run if this contract is configured for auto-comnpounding
-        require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

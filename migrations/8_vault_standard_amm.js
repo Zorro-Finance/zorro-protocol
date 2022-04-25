@@ -10,10 +10,7 @@ module.exports = async function (deployer, network, accounts) {
   // TODO: Create init value for each chain
   const initVal = {
     pid: 0,
-    isCOREStaking: false,
-    isZorroComp: true,
     isHomeChain: network === 'avax',
-    isSingleAssetDeposit: false,
     keyAddresses: {
       govAddress: '0x0000000000000000000000000000000000000000',
       zorroControllerAddress: '0x0000000000000000000000000000000000000000',

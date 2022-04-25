@@ -76,9 +76,6 @@ contract VaultAcryptosSingle is VaultBase {
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
-        isCOREStaking = _initValue.isCOREStaking;
-        isSingleAssetDeposit = true;
-        isZorroComp = _initValue.isZorroComp;
         isHomeChain = _initValue.isHomeChain;
 
         // Addresses
@@ -141,8 +138,6 @@ contract VaultAcryptosSingle is VaultBase {
 
     struct VaultAcryptosSingleInit {
         uint256 pid;
-        bool isCOREStaking;
-        bool isZorroComp;
         bool isHomeChain;
         VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
@@ -206,7 +201,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Receives new deposits from user
     /// @param _account address of user that this deposit is intended for
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return uint256 Number of shares added
+    /// @return sharesAdded uint256 Number of shares added
     function depositWantToken(address _account, uint256 _wantAmt)
         public
         virtual
@@ -214,7 +209,7 @@ contract VaultAcryptosSingle is VaultBase {
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesAdded)
     {
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
@@ -227,7 +222,7 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Set sharesAdded to the Want token amount specified
-        uint256 sharesAdded = _wantAmt;
+        sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
@@ -241,15 +236,8 @@ contract VaultAcryptosSingle is VaultBase {
         sharesTotal = sharesTotal.add(sharesAdded);
         userShares[_account] = userShares[_account].add(sharesAdded);
 
-        if (isZorroComp) {
-            // If this contract is meant for Autocompounding, start to farm the staked token
-            _farm();
-        } else {
-            // Otherwise, simply increment the quantity of total Want tokens locked
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
-        }
-
-        return sharesAdded;
+        // Farm the want token
+        _farm();
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
@@ -343,9 +331,6 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal virtual {
-        // Farming should only occur if this contract is set for autocompounding
-        require(isZorroComp, "!isZorroComp");
-
         // Get the Want token stored on this contract
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
@@ -402,10 +387,8 @@ contract VaultAcryptosSingle is VaultBase {
             );
         }
 
-        // If this contract is designated for auto compounding, unfarm the Want tokens
-        if (isZorroComp) {
-            _unfarm(_wantAmt);
-        }
+        // Unfarm Want token
+        _unfarm(_wantAmt);
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
@@ -501,8 +484,6 @@ contract VaultAcryptosSingle is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        // Only to be run if this contract is configured for auto-comnpounding
-        require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

@@ -11,8 +11,6 @@ module.exports = async function (deployer, network, accounts) {
   // TODO: Create for each chain
   const initVal = {
     pid: 0,
-    isCOREStaking: false,
-    isZorroComp: true,
     isHomeChain: network === 'avax',
     keyAddresses: {
       govAddress: '0x0000000000000000000000000000000000000000',

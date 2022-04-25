@@ -25,9 +25,6 @@ contract VaultZorro is VaultBase {
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
-        isCOREStaking = false;
-        isSingleAssetDeposit = true;
-        isZorroComp = false;
         isHomeChain = true;
 
         // Addresses
@@ -257,8 +254,6 @@ contract VaultZorro is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        // Only to be run if this contract is configured for auto-comnpounding
-        require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

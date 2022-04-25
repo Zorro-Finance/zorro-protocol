@@ -77,9 +77,6 @@ contract VaultStandardAMM is VaultBase {
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
-        isCOREStaking = _initValue.isCOREStaking;
-        isSingleAssetDeposit = _initValue.isSingleAssetDeposit;
-        isZorroComp = _initValue.isZorroComp;
         isHomeChain = _initValue.isHomeChain;
 
         // Addresses
@@ -144,10 +141,7 @@ contract VaultStandardAMM is VaultBase {
 
     struct VaultStandardAMMInit {
         uint256 pid;
-        bool isCOREStaking;
-        bool isZorroComp;
         bool isHomeChain;
-        bool isSingleAssetDeposit;
         VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
@@ -199,13 +193,8 @@ contract VaultStandardAMM is VaultBase {
         sharesTotal = sharesTotal.add(sharesAdded);
         userShares[_account] = userShares[_account].add(sharesAdded);
 
-        if (isZorroComp) {
-            // If this contract is meant for Autocompounding, start to farm the staked token
-            _farm();
-        } else {
-            // Otherwise, simply increment the quantity of total Want tokens locked
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
-        }
+        // Farm Want token
+        _farm();
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender
@@ -232,61 +221,44 @@ contract VaultStandardAMM is VaultBase {
             _amountUSDC
         );
 
-        // For single token pools, simply swap to Want token right away
-        if (isSingleAssetDeposit) {
-            // Swap USDC for Want token (e.g. Token0)
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSDC,
-                1e12,
-                _token0ExchangeRate,
-                _maxMarketMovementAllowed,
-                USDCToToken0Path,
-                msg.sender,
-                block.timestamp.add(600)
-            );
-        } else {
-            // For multi token pools (i.e. LP pools)
+        // Swap USDC for token0
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            1e12,
+            _token0ExchangeRate,
+            _maxMarketMovementAllowed,
+            USDCToToken0Path,
+            address(this),
+            block.timestamp.add(600)
+        );
 
-            // Swap USDC for token0
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
-                1e12,
-                _token0ExchangeRate,
-                _maxMarketMovementAllowed,
-                USDCToToken0Path,
-                address(this),
-                block.timestamp.add(600)
-            );
+        // Swap USDC for token1 (if applicable)
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            _amountUSDC.div(2),
+            1e12,
+            _token1ExchangeRate,
+            _maxMarketMovementAllowed,
+            USDCToToken1Path,
+            address(this),
+            block.timestamp.add(600)
+        );
 
-            // Swap USDC for token1 (if applicable)
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
-                1e12,
-                _token1ExchangeRate,
-                _maxMarketMovementAllowed,
-                USDCToToken1Path,
-                address(this),
-                block.timestamp.add(600)
-            );
-
-            // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
-            uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
-            uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
-            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token0Amt
-            );
-            IERC20Upgradeable(token1Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token1Amt
-            );
-            _joinPool(
-                token0Amt,
-                token1Amt,
-                _maxMarketMovementAllowed,
-                msg.sender
-            );
-        }
+        // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
+        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
+            address(this)
+        );
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token0Amt
+        );
+        IERC20Upgradeable(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
+        _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, msg.sender);
 
         // Calculate resulting want token balance
         return IERC20Upgradeable(wantAddress).balanceOf(msg.sender);
@@ -299,37 +271,27 @@ contract VaultStandardAMM is VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal {
-        // Farming should only occur if this contract is set for autocompounding
-        require(isZorroComp, "!isZorroComp");
-
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         // Increment the total Want tokens locked into this contract
         wantLockedTotal = wantLockedTotal.add(wantAmt);
         // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(farmContractAddress, wantAmt);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            farmContractAddress,
+            wantAmt
+        );
 
-        if (isCOREStaking) {
-            // If this contract is meant for staking a core asset of the underlying protocol (e.g. CAKE on Pancakeswap, BANANA on Apeswap),
-            // Stake that token in a single-token-staking vault on the Farm contract
-            IAMMFarm(farmContractAddress).enterStaking(wantAmt);
-        } else {
-            // Otherwise deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
-            IAMMFarm(farmContractAddress).deposit(pid, wantAmt);
-        }
+        // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
+        IAMMFarm(farmContractAddress).deposit(pid, wantAmt);
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal {
-        if (isCOREStaking) {
-            // If this is contract is meant for staking a core assets of the underlying protocol,
-            // simply un-stake the asset from the single-token-staking vault on the Farm contract
-            IAMMFarm(farmContractAddress).leaveStaking(_wantAmt); // Just for CAKE staking, we dont use withdraw()
-        } else {
-            // Otherwise simply withdraw the Want tokens from the Farm contract pool
-            IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
-        }
+        // Withdraw the Want tokens from the Farm contract pool
+        IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -364,13 +326,13 @@ contract VaultStandardAMM is VaultBase {
             );
         }
 
-        // If this contract is designated for auto compounding, unfarm the Want tokens
-        if (isZorroComp) {
-            _unfarm(_wantAmt);
-        }
+        // Unfarm Want token
+        _unfarm(_wantAmt);
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         if (_wantAmt > _wantBal) {
             _wantAmt = _wantBal;
         }
@@ -383,7 +345,10 @@ contract VaultStandardAMM is VaultBase {
         wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
 
         return sharesRemoved;
     }
@@ -417,67 +382,48 @@ contract VaultStandardAMM is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
-        // Check if vault is for single asset staking
-        if (isSingleAssetDeposit) {
-            // If so, immediately swap the Want token for USDC
+        // Exit LP pool
+        _exitPool(_amount, _maxMarketMovementAllowed, address(this));
 
-            // Increase allowance
-            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                _amount
-            );
-            // Swap
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amount,
-                _token0ExchangeRate,
-                1e12,
-                _maxMarketMovementAllowed,
-                token0ToUSDCPath,
-                msg.sender,
-                block.timestamp.add(600)
-            );
-        } else {
-            // If not, exit the LP pool and swap assets to USDC
+        // Swap tokens back to USDC
+        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
+            address(this)
+        );
 
-            // Exit LP pool
-            _exitPool(_amount, _maxMarketMovementAllowed, address(this));
+        // Increase allowance
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token0Amt
+        );
+        IERC20Upgradeable(token1Address).safeIncreaseAllowance(
+            uniRouterAddress,
+            token1Amt
+        );
 
-            // Swap tokens back to USDC
-            uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
-            uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
+        // Swap token0 for USDC
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            token0Amt,
+            _token0ExchangeRate,
+            1e12,
+            _maxMarketMovementAllowed,
+            token0ToUSDCPath,
+            msg.sender,
+            block.timestamp.add(600)
+        );
 
-            // Increase allowance
-            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token0Amt
-            );
-            IERC20Upgradeable(token1Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                token1Amt
-            );
-
-            // Swap token0 for USDC
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                token0Amt,
-                _token0ExchangeRate,
-                1e12,
-                _maxMarketMovementAllowed,
-                token0ToUSDCPath,
-                msg.sender,
-                block.timestamp.add(600)
-            );
-
-            // Swap token1 for USDC
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                token1Amt,
-                _token1ExchangeRate,
-                1e12,
-                _maxMarketMovementAllowed,
-                token1ToUSDCPath,
-                msg.sender,
-                block.timestamp.add(600)
-            );
-        }
+        // Swap token1 for USDC
+        IAMMRouter02(uniRouterAddress).safeSwap(
+            token1Amt,
+            _token1ExchangeRate,
+            1e12,
+            _maxMarketMovementAllowed,
+            token1ToUSDCPath,
+            msg.sender,
+            block.timestamp.add(600)
+        );
 
         // Calculate USDC balance
         return IERC20(tokenUSDCAddress).balanceOf(msg.sender);
@@ -516,8 +462,12 @@ contract VaultStandardAMM is VaultBase {
         address _recipient
     ) internal {
         // Get token balances in LP pool
-        uint256 _balance0 = IERC20Upgradeable(token0Address).balanceOf(poolAddress);
-        uint256 _balance1 = IERC20Upgradeable(token1Address).balanceOf(poolAddress);
+        uint256 _balance0 = IERC20Upgradeable(token0Address).balanceOf(
+            poolAddress
+        );
+        uint256 _balance1 = IERC20Upgradeable(token1Address).balanceOf(
+            poolAddress
+        );
 
         // Get total supply and calculate min amounts desired based on slippage
         uint256 _totalSupply = IERC20Upgradeable(poolAddress).totalSupply();
@@ -548,8 +498,6 @@ contract VaultStandardAMM is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        // Only to be run if this contract is configured for auto-comnpounding
-        require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
@@ -559,7 +507,9 @@ contract VaultStandardAMM is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (CAKE, BANANA, etc.)
-        uint256 earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
+        uint256 earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
+            address(this)
+        );
 
         // Get exchange rate from price feed
         uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
@@ -582,14 +532,6 @@ contract VaultStandardAMM is VaultBase {
             _maxMarketMovementAllowed,
             _rates
         );
-
-        // If staking a single token (CAKE, BANANA), farm that token and exit
-        if (isCOREStaking || isSingleAssetDeposit) {
-            // Update the last earn block
-            lastEarnBlock = block.number;
-            _farm();
-            return;
-        }
 
         // Approve the router contract
         IERC20Upgradeable(earnedAddress).safeApprove(uniRouterAddress, 0);
@@ -628,8 +570,12 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Get values of tokens 0 and 1
-        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(address(this));
-        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(address(this));
+        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
+            address(this)
+        );
         // Provided that token0 and token1 are both > 0, add liquidity
         if (token0Amt > 0 && token1Amt > 0) {
             // Increase the allowance of the router to spend token0
@@ -668,7 +614,10 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // Swap to ZOR Token
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -693,10 +642,11 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
+        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
             address(this)
         );
+        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
+            .balanceOf(address(this));
         IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -725,7 +675,10 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // Swap to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
