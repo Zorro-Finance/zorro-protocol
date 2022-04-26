@@ -34,6 +34,9 @@ contract VaultFactoryStargate is Initializable, OwnableUpgradeable {
     function initialize(address _masterVault) public initializer {
         // Set master vault address
         masterVault = _masterVault;
+
+        // Ownable
+        __Ownable_init();
     }
 
     /* Factory functions */
