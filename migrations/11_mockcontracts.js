@@ -6,6 +6,7 @@ const MockZorroController = artifacts.require("MockZorroController");
 const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain");
 // Token (only for testing)
 const MockZorroToken = artifacts.require("MockZorroToken");
+const MockAMMWantToken = artifacts.require("MockAMMWantToken");
 // Vaults (only for testing)
 const MockVaultAcryptosSingle = artifacts.require("MockVaultAcryptosSingle");
 const MockVaultFactoryAcryptosSingle = artifacts.require("MockVaultFactoryAcryptosSingle");
@@ -14,6 +15,8 @@ const MockVaultFactoryStandardAMM = artifacts.require("MockVaultFactoryStandardA
 const MockVaultStargate = artifacts.require("MockVaultStargate");
 const MockVaultFactoryStargate = artifacts.require("MockVaultFactoryStargate");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
+// Other contracts
+const MockAMMFarm = artifacts.require('MockAMMFarm');
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks: Test/dev only
@@ -92,6 +95,12 @@ module.exports = async function (deployer, network, accounts) {
       },
     };
     await deployProxy(MockZorroControllerXChain, [zcxInitVal], { deployer });
+
+    // Tokens
+    await deployer.deploy(MockAMMWantToken);
+
+    // Other contracts
+    await deployer.deploy(MockAMMFarm);
 
     // Vaults
     // VaultZorro

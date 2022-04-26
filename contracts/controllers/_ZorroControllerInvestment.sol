@@ -219,6 +219,9 @@ contract ZorroControllerInvestment is
             _localAccount = address(bytes20(_foreignAccount));
         }
 
+        // Allowance
+        IERC20Upgradeable(pool.want).safeIncreaseAllowance(pool.vault, _wantAmt);
+
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
             _localAccount,

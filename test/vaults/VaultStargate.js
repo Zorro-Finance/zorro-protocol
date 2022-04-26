@@ -26,7 +26,6 @@ contract('VaultStargate', async accounts => {
         instance = await MockVaultStargate.deployed();
     });
 
-    // TODO: Check all of these
     xit('deposits Want token', async () => {
         // check auth
     });
@@ -44,6 +43,26 @@ contract('VaultStargate', async accounts => {
     });
 
     xit('auto compounds and earns', async () => {
+        // Check auth
+    });
+
+    xit('buys back Earn token, adds liquidity, and burns LP', async () => {
+        // Check auth
+    });
+
+    xit('shares revenue with ZOR stakers', async () => {
+        // Check auth
+    });
+
+    xit('swaps Earn token to USD', async () => {
+        // Check auth
+    });
+
+    xit('farms Want token', async () => {
+        // Check auth
+    });
+
+    xit('unfarms Want token', async () => {
         // Check auth
     });
 });

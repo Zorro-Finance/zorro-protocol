@@ -36,6 +36,9 @@ contract VaultFactoryStandardAMM is Initializable, OwnableUpgradeable {
     function initialize(address _masterVault) public initializer {
         // Set master vault address
         masterVault = _masterVault;
+
+        // Ownable
+        __Ownable_init();
     }
 
     /* Factory functions */
@@ -169,7 +172,7 @@ contract VaultStandardAMM is VaultBase {
         returns (uint256 sharesAdded)
     {
         // Preflight checks
-        require(_wantAmt > 0, "Want token deposit must be > 0");
+        require(_wantAmt > 0, "Want dep < 0");
 
         // Transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -272,45 +275,64 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal {
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+        uint256 wantBal = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
         );
         // Increment the total Want tokens locked into this contract
-        wantLockedTotal = wantLockedTotal.add(wantAmt);
+        wantLockedTotal = wantLockedTotal.add(wantBal);
         // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             farmContractAddress,
-            wantAmt
+            wantBal
         );
 
         // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
-        IAMMFarm(farmContractAddress).deposit(pid, wantAmt);
+        IAMMFarm(farmContractAddress).deposit(pid, wantBal);
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal {
+    /// @return wantUnfarmed The net amount of Want tokens unfarmed
+    function _unfarm(uint256 _wantAmt) internal returns (uint256 wantUnfarmed) {
         // Withdraw the Want tokens from the Farm contract pool
         IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
+
+        // Init
+        wantUnfarmed = _wantAmt;
+
+        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        if (wantUnfarmed > _wantBal) {
+            wantUnfarmed = _wantBal;
+        }
+        // Safety: cap _wantAmt at the total quantity of Want tokens locked
+        if (wantLockedTotal < _wantAmt) {
+            wantUnfarmed = wantLockedTotal;
+        }
+
+        // Decrement the total Want locked tokens by the _wantAmt
+        wantLockedTotal = wantLockedTotal.sub(wantUnfarmed);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account Address of user
     /// @param _wantAmt The amount of Want token to withdraw
-    /// @return uint256 The number of shares removed
+    /// @return sharesRemoved uint256 The number of shares removed
     function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesRemoved)
     {
         // Preflight checks
         require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
@@ -327,30 +349,13 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Unfarm Want token
-        _unfarm(_wantAmt);
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
-        }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        uint256 _wantUnfarmed = _unfarm(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
-            _wantAmt
+            _wantUnfarmed
         );
-
-        return sharesRemoved;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
