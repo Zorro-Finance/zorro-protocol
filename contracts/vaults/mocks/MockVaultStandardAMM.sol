@@ -6,6 +6,8 @@ import "../VaultStandardAMM.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
+import "../../tokens/mocks/MockToken.sol";
+
 contract MockVaultFactoryStandardAMM is VaultFactoryStandardAMM {}
 
 contract MockVaultStandardAMM is VaultStandardAMM {
@@ -22,7 +24,7 @@ contract MockVaultStandardAMM is VaultStandardAMM {
     }
 }
 
-contract MockAMMFarm is IAMMFarm {
+contract MockAMMFarm is IAMMFarm, MockERC20Upgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public burnAddress;
@@ -66,7 +68,7 @@ contract MockAMMFarm is IAMMFarm {
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) external {
-        MockAMMWantToken(wantToken).mint(msg.sender, _amount);
+        IMockERC20Upgradeable(wantToken).mint(msg.sender, _amount);
         emit Withdrew(_pid, _amount);
     }
 
@@ -80,8 +82,6 @@ contract MockAMMFarm is IAMMFarm {
     function emergencyWithdraw(uint256 _pid) external {}
 }
 
-contract MockAMMWantToken is ERC20Upgradeable {
-    function mint(address _account, uint256 _amount) public {
-        _mint(_account, _amount);
-    }
-}
+contract MockAMMToken0 is MockERC20Upgradeable {}
+contract MockAMMToken1 is MockERC20Upgradeable {}
+contract MockAMMOtherLPToken is MockERC20Upgradeable {}

@@ -1,6 +1,5 @@
 const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
 const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardAMM');
-const MockAMMWantToken = artifacts.require('MockAMMWantToken');
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const MockAMMRouter02 = artifacts.require('MockAMMRouter02')
@@ -84,14 +83,14 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(wantToken.address);
+        await farmContract.setWantAddress(router.address);
         await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -107,9 +106,9 @@ contract('VaultStandardAMM', async accounts => {
         }
 
         // Mint some tokens
-        await wantToken.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await router.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await wantToken.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await router.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
 
         /* First deposit */
         // Deposit
@@ -167,6 +166,8 @@ contract('VaultStandardAMM', async accounts => {
             assert.include(err.message, '!zorroController');
         }
     });
+
+    // TODO: test for distributeFees()
 
     it('withdraws Want token', async () => {
         // Prep
@@ -253,20 +254,32 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
-    xit('exchanges USD for Want token', async () => {
+    it('exchanges USD for Want token', async () => {
         /* Prep */
-        
+        const amountUSD = web3.utils.toWei('100', 'ether');
+
         /* Exchange (0) */
-        
+        try {
+            await instance.exchangeUSDForWantToken(0, 990);
+        } catch (err) {
+            assert.include('USDC deposit must be > 0');
+        }
+
+        /* Exchange (> balance) */
+        try {
+            await instance.exchangeUSDForWantToken(amountUSD, 990);
+        } catch (err) {
+            assert.include('USDC desired exceeded bal');
+        }
 
         /* Exchange (> 0) */
         // Transfer USDC
@@ -279,6 +292,11 @@ contract('VaultStandardAMM', async accounts => {
         // Assert: Want token obtained
 
         /* Only Zorro Controller */
+        try {
+            await instance.exchangeUSDForWantToken(amountUSD, 990);
+        } catch (err) {
+            assert.include('!zorroController');
+        }
     });
 });
 
@@ -287,12 +305,12 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -322,12 +340,12 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -355,12 +373,12 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -383,12 +401,12 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -408,12 +426,12 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -432,21 +450,21 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(wantToken.address);
+        await farmContract.setWantAddress(router.address);
         await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
     it('farms Want token', async () => {
         // Mint tokens
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.628', 'ether'));
-        await wantToken.mint(instance.address, wantAmt);
+        await router.mint(instance.address, wantAmt);
         // Farm
         const tx = await instance.farm();
         const { rawLogs } = tx.receipt;
@@ -481,14 +499,14 @@ contract('VaultStandardAMM', async accounts => {
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
+        router = await MockAMMRouter02.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
-        wantToken = await MockAMMWantToken.deployed();
         farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(wantToken.address);
+        await farmContract.setWantAddress(router.address);
         await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(wantToken.address);
+        await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
     });
 
@@ -497,9 +515,9 @@ contract('VaultStandardAMM', async accounts => {
         const wantAmt = web3.utils.toBN(1e17)
         
         // Mint some tokens
-        await wantToken.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await router.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await wantToken.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await router.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
         // Simulate deposit
         await instance.depositWantToken(account, wantAmt);
         const wantLockedTotal = await instance.wantLockedTotal.call();

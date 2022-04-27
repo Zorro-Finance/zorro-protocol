@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 
 import "../SafeSwap.sol";
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import "../../tokens/mocks/MockToken.sol";
+
 /// @title MockSafeSwapUni: Mock contract for testing the SafeSwapUni library
 contract MockSafeSwapUni {
     using SafeSwapUni for IAMMRouter02;
@@ -31,10 +35,30 @@ contract MockSafeSwapUni {
 }
 
 /// @title MockAMMRouter02: Mock contract for the IAMMRouter02 library
-contract MockAMMRouter02 is IAMMRouter02 {
+contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    address public wantAddress;
+    address public burnAddress;
+
+    function setBurnAddress(address _burnAddress) public {
+        burnAddress = _burnAddress;
+    }
+
     event SwappedToken(
         uint256 indexed _amountIn,
         uint256 indexed _amountOutMin
+    );
+
+    event AddedLiquidity(
+        uint256 _amountA,
+        uint256 _amountB,
+        uint256 _liquidity
+    );
+
+    event RemovedLiquidity(
+        uint256 _amountA,
+        uint256 _amountB
     );
 
     function factory() external pure returns (address) {
@@ -62,16 +86,19 @@ contract MockAMMRouter02 is IAMMRouter02 {
             uint256 liquidity
         )
     {
+        // Vars
+        amountA = amountADesired;
+        amountB = amountBDesired;
         // Safe transfer from
+        IERC20Upgradeable(tokenA).safeTransferFrom(msg.sender, address(this), amountA);
+        IERC20Upgradeable(tokenB).safeTransferFrom(msg.sender, address(this), amountB);
 
-        // Revert if slippage too much
-
-        // Mint amountADesired, minus slippage
-
-        // Mint amountBMin, minus slippage
+        // Mint LP token (just 1 token for simplicity)
+        liquidity = 1 ether;
+        IMockERC20Upgradeable(address(this)).mint(to, liquidity);
 
         // Emit event
-
+        emit AddedLiquidity(amountA, amountB, liquidity);
     }
 
     function addLiquidityETH(
@@ -102,7 +129,19 @@ contract MockAMMRouter02 is IAMMRouter02 {
         address to,
         uint256 deadline
     ) external returns (uint256 amountA, uint256 amountB) {
-        // TODO
+        // Vars
+        amountA = amountAMin;
+        amountB = amountBMin;
+
+        // Safe transfer liquidity & burn
+        IERC20Upgradeable(address(this)).safeTransferFrom(msg.sender, burnAddress, liquidity);
+
+        // Mint tokens 0, 1
+        IMockERC20Upgradeable(tokenA).mint(to, amountA);
+        IMockERC20Upgradeable(tokenB).mint(to, amountB);
+
+        // Emit event
+        emit RemovedLiquidity(amountA, amountB);
     }
 
     function removeLiquidityETH(
@@ -154,7 +193,21 @@ contract MockAMMRouter02 is IAMMRouter02 {
         address to,
         uint256 deadline
     ) external returns (uint256[] memory amounts) {
-        // TODO
+        // Vars
+        address _tokenIn = path[0];
+        address _tokenOut = path[path.length - 1];
+
+        // Burn token IN
+        IERC20Upgradeable(_tokenIn).safeTransfer(burnAddress, amountIn);
+
+        // Mint token OUT -> to
+        IMockERC20Upgradeable(_tokenOut).mint(to, amountOutMin);
+
+        // Return
+        uint256[] memory _amounts = new uint256[](2);
+        _amounts[0] = amountIn;
+        _amounts[1] = amountOutMin;
+        amounts = _amounts;
     }
 
     function swapTokensForExactTokens(
