@@ -3,7 +3,7 @@ const MockCustomMath = artifacts.require("MockCustomMath");
 const MockPriceFeed = artifacts.require("MockPriceFeed");
 const MockAggregatorV3 = artifacts.require("MockAggregatorV3");
 const MockSafeSwapUni = artifacts.require("MockSafeSwapUni");
-const MockIAMMRouter02 = artifacts.require("MockIAMMRouter02");
+const MockAMMRouter02 = artifacts.require("MockAMMRouter02");
 const MockSafeSwapBalancer = artifacts.require("MockSafeSwapBalancer");
 const MockIBalancerVault = artifacts.require("MockIBalancerVault");
 
@@ -22,7 +22,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockPriceFeed);
     await deployer.deploy(MockAggregatorV3);
     await deployer.deploy(MockSafeSwapUni);
-    await deployer.deploy(MockIAMMRouter02);
+    await deployer.deploy(MockAMMRouter02);
     await deployer.deploy(MockSafeSwapBalancer);
     await deployer.deploy(MockIBalancerVault);
   } else {

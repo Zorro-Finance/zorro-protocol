@@ -1,5 +1,5 @@
 const MockSafeSwapUni = artifacts.require('MockSafeSwapUni');
-const MockIAMMRouter02 = artifacts.require("MockIAMMRouter02");
+const MockAMMRouter02 = artifacts.require("MockAMMRouter02");
 const MockSafeSwapBalancer = artifacts.require('MockSafeSwapBalancer');
 const MockIBalancerVault = artifacts.require("MockIBalancerVault");
 
@@ -9,7 +9,7 @@ contract('SafeSwapUni', async accounts => {
 
     before(async () => {
         // Create a mock router
-        router = await MockIAMMRouter02.deployed();
+        router = await MockAMMRouter02.deployed();
 
         // Get contract that wraps lib
         lib = await MockSafeSwapUni.deployed();
@@ -76,7 +76,7 @@ contract('SafeSwapUni', async accounts => {
         // Check that the amount IN never changed
         assert.equal(emittedAmtIn, amountIn);
         // Check that the amount out was calculated correctly
-        // NOTE: MockIAMMRouter02.getAmountsOut() should just assume amountIN for the sake of testing
+        // NOTE: MockAMMRouter02.getAmountsOut() should just assume amountIN for the sake of testing
         assert.equal(
             emittedMinAmtOut, 
             amountIn * (slippageFactor/1000) 

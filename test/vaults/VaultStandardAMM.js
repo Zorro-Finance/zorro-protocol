@@ -3,6 +3,7 @@ const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardA
 const MockAMMWantToken = artifacts.require('MockAMMWantToken');
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
+const MockAMMRouter02 = artifacts.require('MockAMMRouter02')
 
 
 contract('VaultFactoryStandardAMM', async accounts => {
@@ -230,7 +231,6 @@ contract('VaultStandardAMM', async accounts => {
         // Get logs
         const { rawLogs } = tx.receipt;
         const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
-        const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(uint256,uint256)');
         let transferred;
         for (let rl of rawLogs) {
             const { topics } = rl;
@@ -263,27 +263,167 @@ contract('VaultStandardAMM', async accounts => {
     });
 
     xit('exchanges USD for Want token', async () => {
-        // Check auth
+        /* Prep */
+        
+        /* Exchange (0) */
+        
+
+        /* Exchange (> 0) */
+        // Transfer USDC
+        // Exchange
+        // Simulate tokens 0, 1 bal by minting some tokens
+
+        // Assert: Swap event for tokens 0 and 1
+        // Assert: Approvals called for tokens 0 and 1
+        // Assert: Liquidity added
+        // Assert: Want token obtained
+
+        /* Only Zorro Controller */
+    });
+});
+
+contract('VaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+        // Set controller
+        await instance.setZorroControllerAddress(accounts[0]);
+        // Set other tokens/contracts
+        wantToken = await MockAMMWantToken.deployed();
+        farmContract = await MockAMMFarm.deployed();
+        await instance.setWantAddress(wantToken.address);
+        await instance.setFarmContractAddress(farmContract.address);
     });
 
     xit('exchanges Want token for USD', async () => {
-        // Check auth
+        /* Prep */
+        
+        /* Exchange (0) */
+        
+
+        /* Exchange (> 0) */
+        // Transfer Want token
+        // Exchange
+        // Simulate tokens 0, 1 bal by minting some tokens
+
+        // Assert: Liquidity removed
+        // Assert: Tokens 0, 1 obtained
+        // Assert: Approvals called for tokens 0 and 1
+        // Assert: Swap event for tokens 0 and 1
+        // Assert: USDC obtained
+
+        /* Only Zorro Controller */
+    });
+});
+
+contract('VaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+        // Set controller
+        await instance.setZorroControllerAddress(accounts[0]);
+        // Set other tokens/contracts
+        wantToken = await MockAMMWantToken.deployed();
+        farmContract = await MockAMMFarm.deployed();
+        await instance.setWantAddress(wantToken.address);
+        await instance.setFarmContractAddress(farmContract.address);
     });
 
     xit('auto compounds and earns', async () => {
-        // Check auth
+        /* Prep */
+
+        /* Earn */
+        // Earn
+        // Assert: Harvests Earn token
+        // Simulate: harvested earn tokens (mint some Earn tokens)
+        // Assert: Distributes fees
+        // Assert: Buys back
+        // Assert: Revshares
+        // Assert: Approves router for earned token
+        // Assert: swaps tokens 0, 1
+        // Assert: Adds liquidity
+        // Assert: Updates last earn block
+        // Assert: Re-Farms want token
+    });
+    // TODO: Do this for the case where one of tokens 0,1 is the Earn token
+});
+
+contract('VaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+        // Set controller
+        await instance.setZorroControllerAddress(accounts[0]);
+        // Set other tokens/contracts
+        wantToken = await MockAMMWantToken.deployed();
+        farmContract = await MockAMMFarm.deployed();
+        await instance.setWantAddress(wantToken.address);
+        await instance.setFarmContractAddress(farmContract.address);
     });
 
     xit('buys back Earn token, adds liquidity, and burns LP', async () => {
-        // Check auth
+        /* Prep */
+        // Mint some Earned token to instance
+
+        /* Buyback */
+        // Buyback
+        // Assert: Approval for earned token to router
+        // Assert: Swapped in to ZOR, other token
+        // Simulate: bal of ZOR, other token by minting
+        // Assert: Added liquidity
+    });
+
+});
+
+contract('VaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+        // Set controller
+        await instance.setZorroControllerAddress(accounts[0]);
+        // Set other tokens/contracts
+        wantToken = await MockAMMWantToken.deployed();
+        farmContract = await MockAMMFarm.deployed();
+        await instance.setWantAddress(wantToken.address);
+        await instance.setFarmContractAddress(farmContract.address);
     });
 
     xit('shares revenue with ZOR stakers', async () => {
-        // Check auth
+        /* Prep */
+
+        /* RevShare */
+        // RevShare
+        // Assert: Approval
+        // Assert: Swapped to ZOR
+    });
+
+});
+
+contract('VaultStandardAMM', async accounts => {
+    let instance;
+
+    before(async () => {
+        instance = await MockVaultStandardAMM.deployed();
+        // Set controller
+        await instance.setZorroControllerAddress(accounts[0]);
+        // Set other tokens/contracts
+        wantToken = await MockAMMWantToken.deployed();
+        farmContract = await MockAMMFarm.deployed();
+        await instance.setWantAddress(wantToken.address);
+        await instance.setFarmContractAddress(farmContract.address);
     });
 
     xit('swaps Earn token to USD', async () => {
-        // Check auth
+        /* Prep */
+
+        /* SwapEarnedToUSDC */
+        // Swap
+        // Assert: Approval
+        // Assert: Swap
     });
 });
 

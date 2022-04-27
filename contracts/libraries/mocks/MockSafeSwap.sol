@@ -30,8 +30,8 @@ contract MockSafeSwapUni {
     }
 }
 
-/// @title MockIAMMRouter02: Mock contract for the IAMMRouter02 library
-contract MockIAMMRouter02 is IAMMRouter02 {
+/// @title MockAMMRouter02: Mock contract for the IAMMRouter02 library
+contract MockAMMRouter02 is IAMMRouter02 {
     event SwappedToken(
         uint256 indexed _amountIn,
         uint256 indexed _amountOutMin
@@ -62,7 +62,16 @@ contract MockIAMMRouter02 is IAMMRouter02 {
             uint256 liquidity
         )
     {
-        // TODO
+        // Safe transfer from
+
+        // Revert if slippage too much
+
+        // Mint amountADesired, minus slippage
+
+        // Mint amountBMin, minus slippage
+
+        // Emit event
+
     }
 
     function addLiquidityETH(
