@@ -209,7 +209,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(msg.sender);
+        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
@@ -261,6 +261,7 @@ contract VaultStandardAMM is VaultBase {
             uniRouterAddress,
             token1Amt
         );
+
         _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, msg.sender);
 
         // Calculate resulting want token balance

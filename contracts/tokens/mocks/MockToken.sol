@@ -15,3 +15,5 @@ contract MockERC20Upgradeable is IMockERC20Upgradeable, ERC20Upgradeable {
         _mint(_account, _amount);
     }
 }
+
+contract MockUSDC is MockERC20Upgradeable {}

@@ -2,8 +2,15 @@ const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
 const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardAMM');
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
-const MockAMMRouter02 = artifacts.require('MockAMMRouter02')
-
+const MockAMMRouter02 = artifacts.require('MockAMMRouter02');
+const MockUSDC = artifacts.require('MockUSDC');
+const MockAMMToken0 = artifacts.require('MockAMMToken0');
+const MockAMMToken1 = artifacts.require('MockAMMToken1');
+const MockPriceAggToken0 = artifacts.require('MockPriceAggToken0');
+const MockPriceAggToken1 = artifacts.require('MockPriceAggToken1');
+const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
+const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
+const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 
 contract('VaultFactoryStandardAMM', async accounts => {
     let factory;
@@ -250,52 +257,121 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance;
+    let instance, router, usdc, farmContract;
+    let token0, token1;
+    let token0PriceFeed, token1PriceFeed, earnTokenPriceFeed, ZORPriceFeed, lpPoolOtherTokenPriceFeed;
 
     before(async () => {
         instance = await MockVaultStandardAMM.deployed();
         router = await MockAMMRouter02.deployed();
+        usdc = await MockUSDC.deployed();
+        token0 = await MockAMMToken0.deployed();
+        token1 = await MockAMMToken1.deployed();
+        token0PriceFeed = await MockPriceAggToken0.deployed();
+        token1PriceFeed = await MockPriceAggToken1.deployed();
+        earnTokenPriceFeed = await MockPriceAggEarnToken.deployed();
+        ZORPriceFeed = await MockPriceAggZOR.deployed();
+        lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
         // Set controller
         await instance.setZorroControllerAddress(accounts[0]);
         // Set other tokens/contracts
         farmContract = await MockAMMFarm.deployed();
+        await farmContract.setWantAddress(router.address);
+        await farmContract.setBurnAddress(accounts[4]);
         await instance.setWantAddress(router.address);
         await instance.setFarmContractAddress(farmContract.address);
+        await instance.setUniRouterAddress(router.address);
+        await instance.setToken0Address(token0.address);
+        await instance.setToken1Address(token1.address);
+        await instance.setTokenUSDCAddress(usdc.address);
+        // Price feeds
+        await instance.setPriceFeed(0, token0PriceFeed.address);
+        await instance.setPriceFeed(1, token1PriceFeed.address);
+        await instance.setPriceFeed(2, earnTokenPriceFeed.address);
+        await instance.setPriceFeed(3, ZORPriceFeed.address);
+        await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
+        // Swap paths
+        await instance.setSwapPaths(0, [usdc.address, token0.address]);
+        await instance.setSwapPaths(1, [usdc.address, token1.address]);
+        // Router
+        await router.setBurnAddress(accounts[4]);
     });
 
     it('exchanges USD for Want token', async () => {
         /* Prep */
-        const amountUSD = web3.utils.toWei('100', 'ether');
+        const amountUSD = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+
+        // TODO: Probably need exchange rates to be set
 
         /* Exchange (0) */
         try {
             await instance.exchangeUSDForWantToken(0, 990);
         } catch (err) {
-            assert.include('USDC deposit must be > 0');
+            assert.include(err.message, 'USDC deposit must be > 0');
         }
 
         /* Exchange (> balance) */
         try {
             await instance.exchangeUSDForWantToken(amountUSD, 990);
         } catch (err) {
-            assert.include('USDC desired exceeded bal');
+            assert.include(err.message, 'USDC desired exceeded bal');
         }
 
         /* Exchange (> 0) */
+        // Record Want bal pre exchange
+        const preExchangeWantBal = await router.balanceOf.call(accounts[0]);
         // Transfer USDC
+        await usdc.mint(accounts[0], amountUSD);
+        await usdc.transfer(instance.address, amountUSD);
         // Exchange
-        // Simulate tokens 0, 1 bal by minting some tokens
+        const tx = await instance.exchangeUSDForWantToken(amountUSD, 990);
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+
+        const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
+        const addedLiqEventSig = web3.eth.abi.encodeEventSignature('AddedLiquidity(uint256,uint256,uint256)');
+
+        console.log('curr account: ', accounts[0]);
+        console.log('vault addr: ', instance.address);
+        console.log('router addr: ', router.address);
+
+        let swappedTokens = [];
+        let addedLiq;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === swappedEventSig) {
+                console.log('Swapped event: ', rl);
+                if (web3.utils.toBN(topics[2]).eq(amountUSD.div(web3.utils.toBN(2)))) {
+                    console.log('adding swap!');
+                    swappedTokens.push(rl);
+                }
+            } else if (topics[0] === addedLiqEventSig) {
+                console.log('AddLiq event: ', rl);
+                addedLiq = rl;
+            }
+        }
 
         // Assert: Swap event for tokens 0 and 1
-        // Assert: Approvals called for tokens 0 and 1
+        assert.equal(swappedTokens.length, 2);
+        
         // Assert: Liquidity added
+        assert.isNotNull(addedLiq);
+
+
         // Assert: Want token obtained
+        const postExchangeWantBal = await router.balanceOf.call(accounts[0]);
+        const expLiquidity = web3.utils.toBN(web3.utils.toWei('1', 'ether'));
+        console.log('pre: ', preExchangeWantBal.toString(), 'post: ', postExchangeWantBal.toString());
+        assert.isTrue(postExchangeWantBal.sub(preExchangeWantBal).eq(expLiquidity))
 
         /* Only Zorro Controller */
         try {
+            await usdc.mint(accounts[0], amountUSD);
+            await usdc.transfer(instance.address, amountUSD);
             await instance.exchangeUSDForWantToken(amountUSD, 990);
         } catch (err) {
-            assert.include('!zorroController');
+            assert.include(err.message, '!zorroController');
         }
     });
 });

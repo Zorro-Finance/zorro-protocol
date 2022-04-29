@@ -18,6 +18,11 @@ contract MockPriceFeed {
 }
 
 contract MockAggregatorV3 is AggregatorV3Interface {
+    constructor() {
+        decimals = 18;
+        _answer = 1e18;
+    }
+
     uint8 public decimals;
     string public description;
     uint256 public version;
@@ -78,3 +83,9 @@ contract MockAggregatorV3 is AggregatorV3Interface {
         );
     }
 }
+
+contract MockPriceAggToken0 is MockAggregatorV3 {}
+contract MockPriceAggToken1 is MockAggregatorV3 {}
+contract MockPriceAggEarnToken is MockAggregatorV3 {}
+contract MockPriceAggZOR is MockAggregatorV3 {}
+contract MockPriceAggLPOtherToken is MockAggregatorV3 {}

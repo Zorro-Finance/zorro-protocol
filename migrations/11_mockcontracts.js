@@ -6,6 +6,7 @@ const MockZorroController = artifacts.require("MockZorroController");
 const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain");
 // Token (only for testing)
 const MockZorroToken = artifacts.require("MockZorroToken");
+const MockUSDC = artifacts.require("MockUSDC");
 const MockAMMToken0 = artifacts.require("MockAMMToken0");
 const MockAMMToken1 = artifacts.require("MockAMMToken1");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
@@ -17,6 +18,12 @@ const MockVaultFactoryStandardAMM = artifacts.require("MockVaultFactoryStandardA
 const MockVaultStargate = artifacts.require("MockVaultStargate");
 const MockVaultFactoryStargate = artifacts.require("MockVaultFactoryStargate");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
+// Price feeds
+const MockPriceAggToken0 = artifacts.require('MockPriceAggToken0');
+const MockPriceAggToken1 = artifacts.require('MockPriceAggToken1');
+const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
+const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
+const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 // Other contracts
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 
@@ -99,6 +106,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployProxy(MockZorroControllerXChain, [zcxInitVal], { deployer });
 
     // Tokens
+    await deployer.deploy(MockUSDC);
     await deployer.deploy(MockAMMToken0);
     await deployer.deploy(MockAMMToken1);
     await deployer.deploy(MockAMMOtherLPToken);
@@ -284,6 +292,12 @@ module.exports = async function (deployer, network, accounts) {
   
     await deployProxy(MockVaultStargate, [accounts[0], initVal3], {deployer});
     await deployProxy(MockVaultFactoryStargate, [(await MockVaultStargate.deployed()).address], {deployer});
+
+    await deployer.deploy(MockPriceAggToken0);
+    await deployer.deploy(MockPriceAggToken1);
+    await deployer.deploy(MockPriceAggEarnToken);
+    await deployer.deploy(MockPriceAggZOR);
+    await deployer.deploy(MockPriceAggLPOtherToken);
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }
