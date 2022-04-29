@@ -12,6 +12,54 @@ const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 
+const setupContracts = async (accounts) => {
+    // Router
+    const router = await MockAMMRouter02.deployed();
+    await router.setBurnAddress(accounts[4]);
+    // USDC
+    const usdc = await MockUSDC.deployed();
+    // Tokens
+    const token0 = await MockAMMToken0.deployed();
+    const token1 = await MockAMMToken1.deployed();
+    // Farm contract
+    const farmContract = await MockAMMFarm.deployed();
+    await farmContract.setWantAddress(router.address);
+    await farmContract.setBurnAddress(accounts[4]);
+    // Vault
+    const instance = await MockVaultStandardAMM.deployed();
+    await instance.setWantAddress(router.address);
+    await instance.setFarmContractAddress(farmContract.address);
+    await instance.setUniRouterAddress(router.address);
+    await instance.setToken0Address(token0.address);
+    await instance.setToken1Address(token1.address);
+    await instance.setTokenUSDCAddress(usdc.address);
+    // Set controller
+    await instance.setZorroControllerAddress(accounts[0]);
+    // Price feeds
+    const token0PriceFeed = await MockPriceAggToken0.deployed();
+    const token1PriceFeed = await MockPriceAggToken1.deployed();
+    const earnTokenPriceFeed = await MockPriceAggEarnToken.deployed();
+    const ZORPriceFeed = await MockPriceAggZOR.deployed();
+    const lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
+    await instance.setPriceFeed(0, token0PriceFeed.address);
+    await instance.setPriceFeed(1, token1PriceFeed.address);
+    await instance.setPriceFeed(2, earnTokenPriceFeed.address);
+    await instance.setPriceFeed(3, ZORPriceFeed.address);
+    await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
+    // Swap paths
+    await instance.setSwapPaths(0, [usdc.address, token0.address]);
+    await instance.setSwapPaths(1, [usdc.address, token1.address]);
+
+    return {
+        instance,
+        router,
+        farmContract,
+        usdc,
+        token0,
+        token1,
+    };
+}
+
 contract('VaultFactoryStandardAMM', async accounts => {
     let factory;
     let instance;
@@ -85,20 +133,13 @@ contract('VaultFactoryStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance;
+    let instance, router;
     const account = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(router.address);
-        await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        router = setupObj.router;
     });
 
     it('deposits Want token', async () => {
@@ -257,44 +298,13 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance, router, usdc, farmContract;
-    let token0, token1;
-    let token0PriceFeed, token1PriceFeed, earnTokenPriceFeed, ZORPriceFeed, lpPoolOtherTokenPriceFeed;
+    let instance, router, usdc;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        usdc = await MockUSDC.deployed();
-        token0 = await MockAMMToken0.deployed();
-        token1 = await MockAMMToken1.deployed();
-        token0PriceFeed = await MockPriceAggToken0.deployed();
-        token1PriceFeed = await MockPriceAggToken1.deployed();
-        earnTokenPriceFeed = await MockPriceAggEarnToken.deployed();
-        ZORPriceFeed = await MockPriceAggZOR.deployed();
-        lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(router.address);
-        await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
-        await instance.setUniRouterAddress(router.address);
-        await instance.setToken0Address(token0.address);
-        await instance.setToken1Address(token1.address);
-        await instance.setTokenUSDCAddress(usdc.address);
-        // Price feeds
-        await instance.setPriceFeed(0, token0PriceFeed.address);
-        await instance.setPriceFeed(1, token1PriceFeed.address);
-        await instance.setPriceFeed(2, earnTokenPriceFeed.address);
-        await instance.setPriceFeed(3, ZORPriceFeed.address);
-        await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
-        // Swap paths
-        await instance.setSwapPaths(0, [usdc.address, token0.address]);
-        await instance.setSwapPaths(1, [usdc.address, token1.address]);
-        // Router
-        await router.setBurnAddress(accounts[4]);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        router = setupObj.router;
+        usdc = setupObj.usdc;
     });
 
     it('exchanges USD for Want token', async () => {
@@ -380,14 +390,8 @@ contract('VaultStandardAMM', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
     });
 
     xit('exchanges Want token for USD', async () => {
@@ -415,14 +419,8 @@ contract('VaultStandardAMM', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
     });
 
     xit('auto compounds and earns', async () => {
@@ -448,14 +446,8 @@ contract('VaultStandardAMM', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
     });
 
     xit('buys back Earn token, adds liquidity, and burns LP', async () => {
@@ -476,14 +468,8 @@ contract('VaultStandardAMM', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
     });
 
     xit('shares revenue with ZOR stakers', async () => {
@@ -501,14 +487,8 @@ contract('VaultStandardAMM', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
     });
 
     xit('swaps Earn token to USD', async () => {
@@ -522,19 +502,12 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance;
+    let instance, router;
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(router.address);
-        await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        router = setupObj.router;
     });
 
     it('farms Want token', async () => {
@@ -570,20 +543,13 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance;
+    let instance, router;
     const account = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
 
     before(async () => {
-        instance = await MockVaultStandardAMM.deployed();
-        router = await MockAMMRouter02.deployed();
-        // Set controller
-        await instance.setZorroControllerAddress(accounts[0]);
-        // Set other tokens/contracts
-        farmContract = await MockAMMFarm.deployed();
-        await farmContract.setWantAddress(router.address);
-        await farmContract.setBurnAddress(accounts[4]);
-        await instance.setWantAddress(router.address);
-        await instance.setFarmContractAddress(farmContract.address);
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        router = setupObj.router;
     });
 
     it('unfarms Want token', async () => {
