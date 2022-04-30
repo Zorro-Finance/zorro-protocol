@@ -11,6 +11,7 @@ import "../../tokens/mocks/MockToken.sol";
 /// @title MockSafeSwapUni: Mock contract for testing the SafeSwapUni library
 contract MockSafeSwapUni {
     using SafeSwapUni for IAMMRouter02;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function safeSwap(
         address _uniRouter,
@@ -22,6 +23,9 @@ contract MockSafeSwapUni {
         address _to,
         uint256 _deadline
     ) public {
+        // Give permission
+        IERC20Upgradeable(_path[0]).safeIncreaseAllowance(_uniRouter, _amountIn);
+        // Swap
         IAMMRouter02(_uniRouter).safeSwap(
             _amountIn,
             _priceTokenIn,

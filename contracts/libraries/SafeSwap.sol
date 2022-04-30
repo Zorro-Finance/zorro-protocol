@@ -46,9 +46,10 @@ library SafeSwapUni {
                 .div(1000);
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = (_amountIn.mul(_priceTokenIn).div(_priceTokenOut))
+            _amountOut = _amountIn
+                .mul(_priceTokenIn)
                 .mul(_slippageFactor)
-                .div(1000);
+                .div(_priceTokenOut.mul(1000));
         }
 
         // Swap

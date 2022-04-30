@@ -342,22 +342,15 @@ contract('VaultStandardAMM', async accounts => {
         const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
         const addedLiqEventSig = web3.eth.abi.encodeEventSignature('AddedLiquidity(uint256,uint256,uint256)');
 
-        console.log('curr account: ', accounts[0]);
-        console.log('vault addr: ', instance.address);
-        console.log('router addr: ', router.address);
-
         let swappedTokens = [];
         let addedLiq;
         for (let rl of rawLogs) {
             const { topics } = rl;
             if (topics[0] === swappedEventSig) {
-                console.log('Swapped event: ', rl);
                 if (web3.utils.toBN(topics[2]).eq(amountUSD.div(web3.utils.toBN(2)))) {
-                    console.log('adding swap!');
                     swappedTokens.push(rl);
                 }
             } else if (topics[0] === addedLiqEventSig) {
-                console.log('AddLiq event: ', rl);
                 addedLiq = rl;
             }
         }
@@ -372,7 +365,6 @@ contract('VaultStandardAMM', async accounts => {
         // Assert: Want token obtained
         const postExchangeWantBal = await router.balanceOf.call(accounts[0]);
         const expLiquidity = web3.utils.toBN(web3.utils.toWei('1', 'ether'));
-        console.log('pre: ', preExchangeWantBal.toString(), 'post: ', postExchangeWantBal.toString());
         assert.isTrue(postExchangeWantBal.sub(preExchangeWantBal).eq(expLiquidity))
 
         /* Only Zorro Controller */

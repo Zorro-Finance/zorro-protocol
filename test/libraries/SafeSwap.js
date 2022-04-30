@@ -2,14 +2,20 @@ const MockSafeSwapUni = artifacts.require('MockSafeSwapUni');
 const MockAMMRouter02 = artifacts.require("MockAMMRouter02");
 const MockSafeSwapBalancer = artifacts.require('MockSafeSwapBalancer');
 const MockIBalancerVault = artifacts.require("MockIBalancerVault");
+const MockAMMToken0 = artifacts.require('MockAMMToken0');
+const MockAMMToken1 = artifacts.require('MockAMMToken1');
 
 contract('SafeSwapUni', async accounts => {
-    let router;
-    let lib;
+    let router, lib, token0, token1;
 
     before(async () => {
         // Create a mock router
         router = await MockAMMRouter02.deployed();
+        await router.setBurnAddress(accounts[4]);
+
+        // Tokens
+        token0 = await MockAMMToken0.deployed();
+        token1 = await MockAMMToken1.deployed();
 
         // Get contract that wraps lib
         lib = await MockSafeSwapUni.deployed();
@@ -17,69 +23,103 @@ contract('SafeSwapUni', async accounts => {
 
     it('calculates correct amount out when exchange rates are provided', async () => {
         // Prep test conditions
-        const amountIn = 100e18; // Qty 100
+        const amountIn = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
         const priceTokenIn = 342e12; // Exchange rate of 342 USD per In token
         const priceTokenOut = 1e12; // Parity with USD
         const slippageFactor = 990;
+        await token0.mint(lib.address, amountIn);
+        await token0.approve(router.address, amountIn);
         // Run safeSwap()
+        console.log('router: ', router.address, 
+            'acc0: ', accounts[0], 'token0 addr', token0.address);
         const tx = await lib.safeSwap(
             router.address,
-            web3.utils.toBN(amountIn),
+            amountIn,
             priceTokenIn,
             priceTokenOut,
             slippageFactor,
-            [],
-            '0x0000000000000000000000000000000000000000', 
+            [token0.address, token1.address],
+            accounts[1],
             9999999,
         );
         // Get emitted log results 
         // (Also: The fact that the SwappedToken event was emitted means that the router swap occured)
-        const {rawLogs} = tx.receipt;
-        const {topics} = rawLogs[0];
-        const emittedAmtIn = web3.utils.toBN(topics[1]);
-        const emittedMinAmtOut = web3.utils.toBN(topics[2]);
+        const sig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
+        const { rawLogs } = tx.receipt;
+        let swapEvent;
+        for (let rl of rawLogs) {
+            if (rl.topics[0] === sig) {
+                swapEvent = rl;
+                break;
+            }
+        }
+        const emittedAmtIn = web3.utils.toBN(swapEvent.topics[2]);
+        const emittedMinAmtOut = web3.utils.toBN(swapEvent.topics[3]);
 
         // Check that the amount IN never changed
-        assert.equal(emittedAmtIn, amountIn);
+        console.log('emittedAmtIn: ', emittedAmtIn.toString());
+        console.log('actualAmtIn: ', amountIn.toString());
+        console.log('emittedMinAmtOut: ', emittedMinAmtOut.toString());
+        console.log('priceTokenIn: ', priceTokenIn.toString());
+        console.log('priceTokenOut: ', priceTokenOut.toString());
+        assert.isTrue(emittedAmtIn.eq(amountIn));
         // Check that the amount out was calculated correctly
-        assert.equal(
-            emittedMinAmtOut, 
-            ((amountIn*priceTokenIn) / priceTokenOut) * (slippageFactor/1000) 
+        assert.isTrue(
+            emittedMinAmtOut.eq(
+                amountIn
+                    .mul(web3.utils.toBN(priceTokenIn))
+                    .mul(web3.utils.toBN(slippageFactor))
+                    .div(web3.utils.toBN(priceTokenOut).mul(web3.utils.toBN(1000)))
+            )
         );
     });
 
     it('calculates correct amount out when exchange rates ommitted', async () => {
         // Prep test conditions
-        const amountIn = 100e18; // Qty 100
+        const amountIn = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
         // Simulate the case that we do not know the exchange rates
         const priceTokenIn = 0;
         const priceTokenOut = 0;
         const slippageFactor = 990;
+        await token0.mint(lib.address, amountIn);
+        await token0.approve(router.address, amountIn);
         // Run safeSwap()
         const tx = await lib.safeSwap(
             router.address,
-            web3.utils.toBN(amountIn),
+            amountIn,
             priceTokenIn,
             priceTokenOut,
             slippageFactor,
-            [],
-            '0x0000000000000000000000000000000000000000', 
+            [token0.address, token1.address],
+            accounts[1],
             9999999,
         );
         // Get emitted log results 
         // (Also: The fact that the SwappedToken event was emitted means that the router swap occured)
-        const {rawLogs} = tx.receipt;
-        const {topics} = rawLogs[0];
-        const emittedAmtIn = web3.utils.toBN(topics[1]);
-        const emittedMinAmtOut = web3.utils.toBN(topics[2]);
+        const sig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
+        const { rawLogs } = tx.receipt;
+        let swapEvent;
+        for (let rl of rawLogs) {
+            if (rl.topics[0] === sig) {
+                swapEvent = rl;
+                break;
+            }
+        }
+        const emittedAmtIn = web3.utils.toBN(swapEvent.topics[2]);
+        const emittedMinAmtOut = web3.utils.toBN(swapEvent.topics[3]);
 
         // Check that the amount IN never changed
-        assert.equal(emittedAmtIn, amountIn);
+        console.log('emittedAmtIn1: ', emittedAmtIn.toString());
+        console.log('actualAmtIn1: ', amountIn.toString());
+        assert.isTrue(emittedAmtIn.eq(amountIn));
         // Check that the amount out was calculated correctly
         // NOTE: MockAMMRouter02.getAmountsOut() should just assume amountIN for the sake of testing
-        assert.equal(
-            emittedMinAmtOut, 
-            amountIn * (slippageFactor/1000) 
+        assert.isTrue(
+            emittedMinAmtOut.eq(
+                amountIn
+                    .mul(web3.utils.toBN(slippageFactor))
+                    .div(web3.utils.toBN(1000))
+            )
         );
     });
 });
@@ -121,9 +161,9 @@ contract('SafeSwapBalancer', async accounts => {
             }
         );
         // Get emitted log results 
-        const {rawLogs} = tx.receipt;
-        const {topics} = rawLogs[0];
-        
+        const { rawLogs } = tx.receipt;
+        const { topics } = rawLogs[0];
+
         const emittedAmtIn = web3.utils.toBN(topics[1]);
         const emittedMinAmtOut = web3.utils.toBN(topics[2]);
 
@@ -131,8 +171,8 @@ contract('SafeSwapBalancer', async accounts => {
         assert.equal(emittedAmtIn, amountIn);
         // Check that the amount out was calculated correctly
         assert.equal(
-            emittedMinAmtOut, 
-            ((amountIn*priceTokenIn) / priceTokenOut) * (slippageFactor/1000) 
+            emittedMinAmtOut,
+            ((amountIn * priceTokenIn) / priceTokenOut) * (slippageFactor / 1000)
         );
     });
 
@@ -172,18 +212,18 @@ contract('SafeSwapBalancer', async accounts => {
         );
         console.log('tx: ', tx);
         // Get emitted log results 
-        const {rawLogs} = tx.receipt;
-        const {topics} = rawLogs[0];
-        
+        const { rawLogs } = tx.receipt;
+        const { topics } = rawLogs[0];
+
         const emittedAmtIn = web3.utils.toBN(topics[1]);
         const emittedMinAmtOut = web3.utils.toBN(topics[2]).div(web3.utils.toBN(1e12));
 
         // Check that the amount IN never changed
         assert.equal(emittedAmtIn, amountIn);
         // Check that the amount out was calculated correctly
-        const expectedMinOutAmt = web3.utils.toBN((amountIn * (balTokenOut / token1Weight) * (slippageFactor/1000)) / (balTokenIn / token0Weight)).div(web3.utils.toBN(1e12));
+        const expectedMinOutAmt = web3.utils.toBN((amountIn * (balTokenOut / token1Weight) * (slippageFactor / 1000)) / (balTokenIn / token0Weight)).div(web3.utils.toBN(1e12));
         assert.equal(
-            emittedMinAmtOut.toNumber(), 
+            emittedMinAmtOut.toNumber(),
             expectedMinOutAmt.toNumber(),
         );
     });
