@@ -12,6 +12,13 @@ const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 
+const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(uint256,uint256)');
+const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(uint256,uint256)');
+const approvalEventSig = web3.eth.abi.encodeEventSignature('Approval(address,address,uint256)');
+const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
+const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
+const addedLiqEventSig = web3.eth.abi.encodeEventSignature('AddedLiquidity(uint256,uint256,uint256)');
+
 const setupContracts = async (accounts) => {
     // Router
     const router = await MockAMMRouter02.deployed();
@@ -164,8 +171,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Logs
         const { rawLogs } = tx.receipt;
-        const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
-        const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(uint256,uint256)');
         let transferred;
         let farmed;
         for (let rl of rawLogs) {
@@ -238,8 +243,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Get logs
         const { rawLogs } = tx.receipt;
-        const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
-        const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(uint256,uint256)');
         let transferred;
         let unfarmed;
         for (let rl of rawLogs) {
@@ -279,7 +282,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Get logs
         const { rawLogs } = tx.receipt;
-        const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
         let transferred;
         for (let rl of rawLogs) {
             const { topics } = rl;
@@ -338,9 +340,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Logs
         const { rawLogs } = tx.receipt;
-
-        const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
-        const addedLiqEventSig = web3.eth.abi.encodeEventSignature('AddedLiquidity(uint256,uint256,uint256)');
 
         let swappedTokens = [];
         let addedLiq;
@@ -510,8 +509,6 @@ contract('VaultStandardAMM', async accounts => {
         const tx = await instance.farm();
         const { rawLogs } = tx.receipt;
 
-        const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(uint256,uint256)');
-        const approvalEventSig = web3.eth.abi.encodeEventSignature('Approval(address,address,uint256)');
         let depositedInFarm;
         let approvedSpending;
         for (let rl of rawLogs) {
@@ -561,7 +558,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Get logs
         const { rawLogs } = tx.receipt;
-        const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(uint256,uint256)');
         let unfarmed;
         for (let rl of rawLogs) {
             const { topics } = rl;
