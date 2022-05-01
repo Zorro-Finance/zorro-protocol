@@ -100,6 +100,21 @@ contract('MockVaultStandardAMM', async accounts => {
         }
     });
 
+    it('sets burn address', async () => {
+        // Normal
+        const burn = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setBurnAddress(burn);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.burnAddress.call()), burn);
+
+        // Only by owner
+        try {
+            await instance.setBurnAddress(burn, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+    });
+
     it('sets want address', async () => {
         // Normal
         const want = web3.utils.toChecksumAddress(web3.utils.randomHex(20));

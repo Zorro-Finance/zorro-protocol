@@ -38,13 +38,13 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         __Ownable_init();
         // Transfer ownership
         transferOwnership(_timelockOwner);
+        // Other
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
     }
 
     /* Constants */
 
     // Addresses
-    address public constant burnAddress =
-        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     // Fee min/max bounds
     uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
     uint256 public constant controllerFeeUL = 1000; // Upper limit on controller fee rate (10%)
@@ -78,6 +78,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
     address public tokenUSDCAddress; // USDC token address
     // Other addresses
+    address public burnAddress; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
     address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
@@ -217,6 +218,10 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     function setRewardsAddress(address _rewardsAddress) public onlyOwner {
         rewardsAddress = _rewardsAddress;
+    }
+
+    function setBurnAddress(address _burnAddress) public onlyOwner {
+        burnAddress = _burnAddress;
     }
 
     function setWantAddress(address _wantAddress) public onlyOwner {

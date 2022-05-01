@@ -156,7 +156,7 @@ module.exports = async function (deployer, network, accounts) {
     // VaultAcryptosSingle
     const initVal1 = {
       pid: 0,
-      isHomeChain: network === 'avax',
+      isHomeChain: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
@@ -203,7 +203,7 @@ module.exports = async function (deployer, network, accounts) {
     // VaultStandardAMM
     const initVal2 = {
       pid: 0,
-      isHomeChain: network === 'avax',
+      isHomeChain: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
@@ -249,7 +249,7 @@ module.exports = async function (deployer, network, accounts) {
     // VaultStargate
     const initVal3 = {
       pid: 0,
-      isHomeChain: network === 'avax',
+      isHomeChain: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',

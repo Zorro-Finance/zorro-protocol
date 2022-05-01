@@ -522,7 +522,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
         uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
+        uint256 _lpPoolOtherTokenExchangeRate = lpPoolOtherTokenPriceFeed.getExchangeRate();
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
             earn: _earnTokenExchangeRate,
@@ -539,8 +539,6 @@ contract VaultStandardAMM is VaultBase {
             _rates
         );
 
-        // Approve the router contract
-        IERC20Upgradeable(earnedAddress).safeApprove(uniRouterAddress, 0);
         // Allow the router contract to spen up to earnedAmt
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -624,7 +622,7 @@ contract VaultStandardAMM is VaultBase {
             uniRouterAddress,
             _amount
         );
-
+        
         // Swap to ZOR Token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
@@ -635,7 +633,6 @@ contract VaultStandardAMM is VaultBase {
             address(this),
             block.timestamp.add(600)
         );
-
         // Swap to Other token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
@@ -653,6 +650,7 @@ contract VaultStandardAMM is VaultBase {
         );
         uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
             .balanceOf(address(this));
+
         IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -661,6 +659,7 @@ contract VaultStandardAMM is VaultBase {
             uniRouterAddress,
             otherTokenAmt
         );
+
         IAMMRouter02(uniRouterAddress).addLiquidity(
             ZORROAddress,
             zorroLPPoolOtherToken,

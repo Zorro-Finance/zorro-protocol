@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../interfaces/IZorro.sol";
 
-
 /// @title The Zorro token (cross chain)
 contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
     /* Modifiers */
@@ -28,12 +27,16 @@ contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
     function setZorroController(address _zorroController) external onlyOwner {
         zorroControllerAddress = _zorroController;
     }
-    
+
     /* Functions */
     /// @notice Allows authorized minting of the Zorro token to a specified address
     /// @param _to The address to mint to
     /// @param _amount The amount to mint
-    function mint(address _to, uint256 _amount) public onlyZorroController {
+    function mint(address _to, uint256 _amount)
+        public
+        virtual
+        onlyZorroController
+    {
         _mint(_to, _amount);
     }
 
@@ -42,6 +45,7 @@ contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
     /// @param _amount The amount of ZOR to transfer and burn
     function burn(address _account, uint256 _amount)
         public
+        virtual
         onlyZorroController
     {
         _burn(_account, _amount);
