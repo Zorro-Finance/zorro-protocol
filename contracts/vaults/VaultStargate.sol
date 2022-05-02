@@ -434,7 +434,7 @@ contract VaultStargate is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (ACS, etc.)
-        uint256 earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
+        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
         uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
@@ -448,21 +448,25 @@ contract VaultStargate is VaultBase {
             lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
         });
 
-        // Reassign value of earned amount after distributing fees
-        earnedAmt = _distributeFees(earnedAmt);
-        // Reassign value of earned amount after buying back a certain amount of Zorro, sharing revenue
-        earnedAmt = _buyBackAndRevShare(
-            earnedAmt,
+        // Distribute fees
+        uint256 _controllerFee = _distributeFees(_earnedAmt);
+
+        // Buyback & rev share
+        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
+            _earnedAmt,
             _maxMarketMovementAllowed,
             _rates
         );
 
+        // Net earned amt
+        uint256 _earnedAmtNet = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt);
+
         // Allow spending
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, earnedAmt);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _earnedAmt);
 
         // Swap Earn token for single asset token (STG -> token0)
         IAMMRouter02(uniRouterAddress).safeSwap(
-            earnedAmt,
+            _earnedAmtNet,
             _earnTokenExchangeRate,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,

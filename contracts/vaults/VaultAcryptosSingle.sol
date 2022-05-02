@@ -496,7 +496,7 @@ contract VaultAcryptosSingle is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (ACS, etc.)
-        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
+        uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
         uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
@@ -510,21 +510,25 @@ contract VaultAcryptosSingle is VaultBase {
             lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
         });
 
-        // Reassign value of earned amount after distributing fees
-        earnedAmt = _distributeFees(earnedAmt);
-        // Reassign value of earned amount after buying back a certain amount of Zorro, sharing revenue
-        earnedAmt = _buyBackAndRevShare(
-            earnedAmt,
+        // Distribute fees
+        uint256 _controllerFee = _distributeFees(_earnedAmt);
+
+        // Buyback & rev share
+        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
+            _earnedAmt,
             _maxMarketMovementAllowed,
             _rates
         );
+
+        // Net earned amt
+        uint256 _earnedAmtNet = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt);
 
         // Swap Earn token for single asset token
 
         // Step 1: Earned to BUSD
         _safeSwap(
             SafeSwapParams({
-                amountIn: earnedAmt,
+                amountIn: _earnedAmtNet,
                 priceToken0: _earnTokenExchangeRate,
                 priceToken1: 1e12,
                 token0: earnedAddress,

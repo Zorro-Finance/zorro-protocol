@@ -513,28 +513,23 @@ contract VaultStandardAMM is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (CAKE, BANANA, etc.)
-        uint256 earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
+        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
             address(this)
         );
 
-        // Get exchange rate from price feed
-        uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
-        uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _lpPoolOtherTokenExchangeRate = lpPoolOtherTokenPriceFeed.getExchangeRate();
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
-            earn: _earnTokenExchangeRate,
-            ZOR: _ZORExchangeRate,
-            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
+            earn: earnTokenPriceFeed.getExchangeRate(),
+            ZOR: ZORPriceFeed.getExchangeRate(),
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate()
         });
-        // TODO BB and revshare should be calculated against full earnAmt, not net of distributeFees()
-        // Reassign value of earned amount after distributing fees
-        earnedAmt = _distributeFees(earnedAmt);
-        // Reassign value of earned amount after buying back a certain amount of Zorro and sharing revenue w/ ZOR stakeholders
-        earnedAmt = _buyBackAndRevShare(
-            earnedAmt,
+
+        // Distribute fees
+        uint256 _controllerFee = _distributeFees(_earnedAmt);
+
+        // Buyback & rev share
+        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
+            _earnedAmt,
             _maxMarketMovementAllowed,
             _rates
         );
@@ -542,16 +537,16 @@ contract VaultStandardAMM is VaultBase {
         // Allow the router contract to spen up to earnedAmt
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
-            earnedAmt
+            _earnedAmt
         );
 
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
             // Swap half earned to token0
             IAMMRouter02(uniRouterAddress).safeSwap(
-                earnedAmt.div(2),
-                _earnTokenExchangeRate,
-                _token0ExchangeRate,
+                (_earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt)).div(2),
+                _rates.earn,
+                token0PriceFeed.getExchangeRate(),
                 _maxMarketMovementAllowed,
                 earnedToToken0Path,
                 address(this),
@@ -563,9 +558,9 @@ contract VaultStandardAMM is VaultBase {
         if (earnedAddress != token1Address) {
             // Swap half earned to token1
             IAMMRouter02(uniRouterAddress).safeSwap(
-                earnedAmt.div(2),
-                _earnTokenExchangeRate,
-                _token1ExchangeRate,
+                (_earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt)).div(2),
+                _rates.earn,
+                token1PriceFeed.getExchangeRate(),
                 _maxMarketMovementAllowed,
                 earnedToToken1Path,
                 address(this),
@@ -580,6 +575,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
             address(this)
         );
+
         // Provided that token0 and token1 are both > 0, add liquidity
         if (token0Amt > 0 && token1Amt > 0) {
             // Increase the allowance of the router to spend token0

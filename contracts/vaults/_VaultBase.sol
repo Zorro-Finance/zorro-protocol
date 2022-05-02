@@ -424,38 +424,37 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
     /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc.
-    /// @return uint256 the remaining earned token amount after buyback and revshare operations
     /// @param _rates ExchangeRates struct with realtime rates information for swaps
+    /// @return buybackAmt Amount bought back for LP and burn
+    /// @return revShareAmt Amount shared with ZOR stakers
     function _buyBackAndRevShare(
         uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
-    ) internal virtual returns (uint256) {
+    ) internal virtual returns (uint256 buybackAmt, uint256 revShareAmt) {
         // Calculate buyback amount
-        uint256 _buyBackAmt = 0;
         if (buyBackRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            _buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
+            buybackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
         }
 
         // Calculate revshare amount
-        uint256 _revShareAmt = 0;
-        if (_revShareAmt > 0) {
+        if (revShareRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            _revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
+            revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
         }
 
         // Routing: Determine whether on home chain or not
         if (isHomeChain) {
             // If on home chain, perform buyback, revshare locally
-            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed, _rates);
-            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _rates);
+            _buybackOnChain(buybackAmt, _maxMarketMovementAllowed, _rates);
+            _revShareOnChain(revShareAmt, _maxMarketMovementAllowed, _rates);
         } else {
             // Otherwise, contact controller, to make cross chain call
 
             // Swap to Earn to USDC and send to zorro controller contract
             _swapEarnedToUSDC(
-                _buyBackAmt.add(_revShareAmt),
+                buybackAmt.add(revShareAmt),
                 zorroControllerAddress,
                 _maxMarketMovementAllowed,
                 _rates
@@ -465,39 +464,32 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
             IZorroControllerXChainEarn(zorroXChainController)
                 .sendXChainDistributeEarningsRequest(
                     pid,
-                    _buyBackAmt,
-                    _revShareAmt,
+                    buybackAmt,
+                    revShareAmt,
                     _maxMarketMovementAllowed
                 );
         }
-
-        // Return net earnings
-        return (_earnedAmt.sub(_buyBackAmt)).sub(_revShareAmt);
     }
 
     /// @notice distribute controller (performance) fees
     /// @param _earnedAmt The Earned token amount (profits)
-    /// @return The Earned token amount net of distributed fees
+    /// @return fee The amount of controller fees collected for the treasury
     function _distributeFees(uint256 _earnedAmt)
         internal
         virtual
-        returns (uint256)
+        returns (uint256 fee)
     {
         if (_earnedAmt > 0) {
             // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
             if (controllerFee > 0) {
                 // Calculate the fee from the controllerFee parameters
-                uint256 fee = _earnedAmt.mul(controllerFee).div(
+                fee = _earnedAmt.mul(controllerFee).div(
                     controllerFeeMax
                 );
                 // Transfer the fee to the rewards address
                 IERC20Upgradeable(earnedAddress).safeTransfer(rewardsAddress, fee);
-                // Decrement the Earned token amount by the fee
-                _earnedAmt = _earnedAmt.sub(fee);
             }
         }
-
-        return _earnedAmt;
     }
 
     /* Abstract methods */

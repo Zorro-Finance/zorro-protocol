@@ -409,22 +409,55 @@ contract('VaultStandardAMM', async accounts => {
 
     xit('exchanges Want token for USD', async () => {
         /* Prep */
-        
+        // Transfer Want token
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
+        await router.mint(accounts[0], wantAmt);
+        // Give perms
+        await router.approve(instance.address, wantAmt);
+        // Simulate bal & total supply of tokens 0, 1 in pool
+        // TODO (see _exitPool())
+
         /* Exchange (0) */
-        
+        try {
+            await instance.exchangeWantTokenForUSD(0, 990);
+        } catch (err) {
+            assert.include(err.message, 'Want amt must be > 0');
+        }
 
         /* Exchange (> 0) */
-        // Transfer Want token
+        // Vars
+        // TODO
+        const USDCPreExch = await usdc.getBalanceOf(accounts[0]).call();
+        const expToken0 = wantAmt.mul(0); // Do bal & total supply logic
+        const expToken1 = 0; // Ditto above
+        const expUSDC = 0; // Account for pre-existing usdc bal, if any
         // Exchange
-        // Simulate tokens 0, 1 bal by minting some tokens
+        const tx = await instance.exchangeWantTokenForUSD(wantAmt, 990);
 
-        // Assert: Liquidity removed
-        // Assert: Tokens 0, 1 obtained
-        // Assert: Approvals called for tokens 0 and 1
-        // Assert: Swap event for tokens 0 and 1
-        // Assert: USDC obtained
+        // Logs
+        const { rawLogs } = tx.receipt;
+        console.log('rawLogs exch want -> USDC: ', rawLogs);
+
+        let removedLiq;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === removedLiqEventSig) {
+                removedLiq = rl;
+            }
+        }
+
+        // Assert: Liquidity removed  (event: RemovedLiquidity for tokens 0, 1, no more Want bal)
+        assert.isNotNull(removedLiq);
+
+        // Assert: USDC obtained (check Bal)
+        assert.isTrue((await usdc.getBalanceOf(accounts[0]).call()).eq(expUSDC));
 
         /* Only Zorro Controller */
+        try {
+            await instance.exchangeWantTokenForUSD(wantAmt, 990, {from: accounts[2]});
+        } catch (err) {
+            assert.include(err.message, '!zorroController');
+        }
     });
 });
 
@@ -448,19 +481,11 @@ contract('VaultStandardAMM', async accounts => {
 
         /* Expectations */
         const controllerFeeAmt = earnedAmt.mul(web3.utils.toBN(500)).div(web3.utils.toBN(10000));
-        const buybackAmt = (earnedAmt.sub(controllerFeeAmt)).mul(web3.utils.toBN(600)).div(web3.utils.toBN(10000));
-        const revShareAmt = (earnedAmt.sub(controllerFeeAmt)).mul(web3.utils.toBN(300)).div(web3.utils.toBN(10000));
+        const buybackAmt = earnedAmt.mul(web3.utils.toBN(600)).div(web3.utils.toBN(10000));
+        const revShareAmt = earnedAmt.mul(web3.utils.toBN(300)).div(web3.utils.toBN(10000));
         const token0Amt = (earnedAmt.sub(controllerFeeAmt).sub(buybackAmt).sub(revShareAmt)).div(web3.utils.toBN(2));
         const token1Amt = token0Amt; // Assumes 1:1 exchange rate between Earn, Token0, Token1
         const farmedAmt = web3.utils.toBN(web3.utils.toWei('1', 'ether')); // Default amt returned from Mock addLiquidity
-        console.log('amounts: ', 
-            earnedAmt.toString(), 
-            controllerFeeAmt.toString(), 
-            buybackAmt.toString(), 
-            revShareAmt.toString(), 
-            token0Amt.toString(), 
-            farmedAmt.toString() 
-        );
 
         /* Earn */
         // Earn
@@ -468,7 +493,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Logs
         const { rawLogs } = tx.receipt;
-        // console.log('rawLogs earn: ', rawLogs);
 
         let harvestedEarned, distributedFees, boughtBack, revShared
         let swapped = []; 
@@ -483,9 +507,7 @@ contract('VaultStandardAMM', async accounts => {
                 boughtBack = rl;
             } else if (topics[0] === revShareEventSig && web3.utils.toBN(topics[1]).eq(revShareAmt)) {
                 revShared = rl;
-            } else if (topics[0] === swappedEventSig && web3.utils.toBN(topics[1]).eq(web3.utils.toBN(instance.address))) {
-                // web3.utils.toBN(topics[2]).eq(token0Amt)
-                console.log('swap: ', rl);
+            } else if (topics[0] === swappedEventSig && web3.utils.toBN(topics[1]).eq(web3.utils.toBN(instance.address)) && web3.utils.toBN(topics[2]).eq(token0Amt)) {
                 swapped.push(rl);
             } else if (topics[0] === addedLiqEventSig && web3.utils.toBN(topics[1]).eq(token0Amt) && web3.utils.toBN(topics[2]).eq(token1Amt)) {
                 addedLiq = rl;
@@ -507,15 +529,13 @@ contract('VaultStandardAMM', async accounts => {
         assert.isNotNull(revShared);
 
         // Assert: swaps tokens 0, 1 (event SwappedToken for tokens 0, 1)
-        // TODO: Add back in
-        // assert.equal(swapped.length, 2);
+        assert.equal(swapped.length, 2);
         
         // Assert: Adds liquidity (event AddedLiquidity)
         assert.isNotNull(addedLiq);
         
         // Assert: Updates last earn block (block should match latest block)
-        // TODO: Add back in
-        // assert.equal(await instance.lastEarnBlock.call(), web3.eth.getBlockNumber())
+        assert.isTrue((await instance.lastEarnBlock.call()).eq(web3.utils.toBN(await web3.eth.getBlockNumber())))
 
         // Assert: Re-Farms want token (event Deposited w/ correct amount)
         assert.isNotNull(farmed);
