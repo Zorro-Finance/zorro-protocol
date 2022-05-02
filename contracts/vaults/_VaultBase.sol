@@ -168,12 +168,15 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate
+        uint256 _buyBackRate,
+        uint256 _revShareRate
     );
     event SetGov(address _govAddress);
     event SetOnlyGov(bool _onlyGov);
     event SetUniRouterAddress(address _uniRouterAddress);
     event SetRewardsAddress(address _rewardsAddress);
+    event Buyback(uint256 indexed _amount);
+    event RevShare(uint256 indexed _amount);
 
     /* Modifiers */
 
@@ -321,11 +324,13 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
     /// @param _controllerFee Controller fee numerator
     /// @param _buyBackRate Buy back rate fee numerator
+    /// @param _revShareRate Rev share rate fee numerator
     function setFeeSettings(
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate
+        uint256 _buyBackRate,
+        uint256 _revShareRate
     ) public virtual onlyAllowGov {
         // Entrance fee
         require(
@@ -357,12 +362,17 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         require(_buyBackRate <= buyBackRateUL, "_buyBackRate too high");
         buyBackRate = _buyBackRate;
 
+        // Revshare
+        require(_revShareRate <= revShareRateUL, "_revShareRate too high");
+        revShareRate = _revShareRate;
+
         // Emit event with new settings
         emit SetSettings(
             _entranceFeeFactor,
             _withdrawFeeFactor,
             _controllerFee,
-            _buyBackRate
+            _buyBackRate,
+            _revShareRate
         );
     }
 

@@ -22,6 +22,8 @@ const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,
 const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
 const addedLiqEventSig = web3.eth.abi.encodeEventSignature('AddedLiquidity(uint256,uint256,uint256)');
 const removedLiqEventSig = web3.eth.abi.encodeEventSignature('RemovedLiquidity(uint256,uint256)');
+const buybackEventSig = web3.eth.abi.encodeEventSignature('Buyback(uint256)');
+const revShareEventSig = web3.eth.abi.encodeEventSignature('RevShare(uint256)');
 
 const setupContracts = async (accounts) => {
     // Router
@@ -222,6 +224,7 @@ contract('VaultStandardAMM', async accounts => {
             9990, // 0.1% deposit fee
             10000,
             0,
+            0,
             0
         );
         // Deposit
@@ -291,8 +294,6 @@ contract('VaultStandardAMM', async accounts => {
 
     it('withdraws safely when excess Want token specified', async () => {
         // Prep
-        const currentSharesTotal = await instance.sharesTotal.call();
-        const currentUserShares = await instance.userShares.call(account);
         const currentWantLockedTotal = await instance.wantLockedTotal.call();
         const wantAmt = currentWantLockedTotal.add(web3.utils.toBN(1e12)); // Set to exceed the tokens locked, intentionally
 
@@ -431,9 +432,12 @@ contract('VaultStandardAMM', async accounts => {
     let instance, farmContract;
 
     before(async () => {
+        // Setup
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         farmContract = setupObj.farmContract;
+        // Fees
+        await instance.setFeeSettings(10000, 10000, 500, 600, 300);
     });
 
     it('auto compounds and earns', async () => {
@@ -441,6 +445,22 @@ contract('VaultStandardAMM', async accounts => {
         const earnedAmt = web3.utils.toBN(web3.utils.toWei('3', 'ether'));
         // Mint some Earn token to this contract
         await farmContract.mint(instance.address, earnedAmt);
+
+        /* Expectations */
+        const controllerFeeAmt = earnedAmt.mul(web3.utils.toBN(500)).div(web3.utils.toBN(10000));
+        const buybackAmt = (earnedAmt.sub(controllerFeeAmt)).mul(web3.utils.toBN(600)).div(web3.utils.toBN(10000));
+        const revShareAmt = (earnedAmt.sub(controllerFeeAmt)).mul(web3.utils.toBN(300)).div(web3.utils.toBN(10000));
+        const token0Amt = (earnedAmt.sub(controllerFeeAmt).sub(buybackAmt).sub(revShareAmt)).div(web3.utils.toBN(2));
+        const token1Amt = token0Amt; // Assumes 1:1 exchange rate between Earn, Token0, Token1
+        const farmedAmt = web3.utils.toBN(web3.utils.toWei('1', 'ether')); // Default amt returned from Mock addLiquidity
+        console.log('amounts: ', 
+            earnedAmt.toString(), 
+            controllerFeeAmt.toString(), 
+            buybackAmt.toString(), 
+            revShareAmt.toString(), 
+            token0Amt.toString(), 
+            farmedAmt.toString() 
+        );
 
         /* Earn */
         // Earn
@@ -451,33 +471,55 @@ contract('VaultStandardAMM', async accounts => {
         // console.log('rawLogs earn: ', rawLogs);
 
         let harvestedEarned, distributedFees, boughtBack, revShared
-        let swappedToToken0, swappedTotoken1, addedLiq, farmed;
+        let swapped = []; 
+        let addedLiq, farmed;
         for (let rl of rawLogs) {
             const { topics } = rl;
-            if (topics[0] === approvalEventSig) {
-                approvedSpending = rl;
-            } else if (topics[0] === swappedEventSig) {
-                swapped = rl;
+            if (topics[0] === withdrewEventSig) {
+                harvestedEarned = rl;
+            } else if (topics[0] === transferredEventSig && web3.utils.toBN(rl.data).eq(controllerFeeAmt)) {
+                distributedFees = rl;
+            } else if (topics[0] === buybackEventSig && web3.utils.toBN(topics[1]).eq(buybackAmt)) {
+                boughtBack = rl;
+            } else if (topics[0] === revShareEventSig && web3.utils.toBN(topics[1]).eq(revShareAmt)) {
+                revShared = rl;
+            } else if (topics[0] === swappedEventSig && web3.utils.toBN(topics[1]).eq(web3.utils.toBN(instance.address))) {
+                // web3.utils.toBN(topics[2]).eq(token0Amt)
+                console.log('swap: ', rl);
+                swapped.push(rl);
+            } else if (topics[0] === addedLiqEventSig && web3.utils.toBN(topics[1]).eq(token0Amt) && web3.utils.toBN(topics[2]).eq(token1Amt)) {
+                addedLiq = rl;
+            } else if (topics[0] === depositedEventSig && web3.utils.toBN(topics[2]).eq(farmedAmt)) {
+                farmed = rl;
             }
         }
 
         // Assert: Harvests Earn token (event Withdrew w/ amount 0)
-
+        assert.isNotNull(harvestedEarned);
+        
         // Assert: Distributes fees (event Transfer to account0 w/ controller fee)
-
+        assert.isNotNull(distributedFees);
+        
         // Assert: Buys back (event Buyback w/ buyback rate)
-
+        assert.isNotNull(boughtBack);
+        
         // Assert: Revshares (event Revshare w/ revshare rate)
+        assert.isNotNull(revShared);
 
         // Assert: swaps tokens 0, 1 (event SwappedToken for tokens 0, 1)
-
+        // TODO: Add back in
+        // assert.equal(swapped.length, 2);
+        
         // Assert: Adds liquidity (event AddedLiquidity)
-
+        assert.isNotNull(addedLiq);
+        
         // Assert: Updates last earn block (block should match latest block)
+        // TODO: Add back in
+        // assert.equal(await instance.lastEarnBlock.call(), web3.eth.getBlockNumber())
 
         // Assert: Re-Farms want token (event Deposited w/ correct amount)
+        assert.isNotNull(farmed);
     });
-    // TODO: Do this for the case where one of tokens 0,1 is the Earn token
 });
 
 contract('VaultStandardAMM', async accounts => {

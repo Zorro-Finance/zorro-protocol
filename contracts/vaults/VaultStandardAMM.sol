@@ -529,7 +529,7 @@ contract VaultStandardAMM is VaultBase {
             ZOR: _ZORExchangeRate,
             lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
         });
-
+        // TODO BB and revshare should be calculated against full earnAmt, not net of distributeFees()
         // Reassign value of earned amount after distributing fees
         earnedAmt = _distributeFees(earnedAmt);
         // Reassign value of earned amount after buying back a certain amount of Zorro and sharing revenue w/ ZOR stakeholders
@@ -622,7 +622,7 @@ contract VaultStandardAMM is VaultBase {
             uniRouterAddress,
             _amount
         );
-        
+
         // Swap to ZOR Token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),

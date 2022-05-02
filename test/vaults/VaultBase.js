@@ -339,18 +339,21 @@ contract('MockVaultStandardAMM', async accounts => {
         const withdrawFeeFactor = 9970;
         const controllerFee = 200;
         const buybackRate = 400;
+        const revShareRate = 500;
 
         // Test for green light
         await instance.setFeeSettings(
             entranceFeeFactor,
             withdrawFeeFactor,
             controllerFee,
-            buybackRate
+            buybackRate,
+            revShareRate
         );
         assert.equal(await instance.entranceFeeFactor.call(), entranceFeeFactor);
         assert.equal(await instance.withdrawFeeFactor.call(), withdrawFeeFactor);
         assert.equal(await instance.controllerFee.call(), controllerFee);
         assert.equal(await instance.buyBackRate.call(), buybackRate);
+        assert.equal(await instance.revShareRate.call(), revShareRate);
 
         // Test for when exceeding bounds
         try {
@@ -358,7 +361,8 @@ contract('MockVaultStandardAMM', async accounts => {
                 8000,
                 withdrawFeeFactor,
                 controllerFee,
-                buybackRate
+                buybackRate,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_entranceFeeFactor too low');
@@ -368,7 +372,8 @@ contract('MockVaultStandardAMM', async accounts => {
                 11000,
                 withdrawFeeFactor,
                 controllerFee,
-                buybackRate
+                buybackRate,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_entranceFeeFactor too high');
@@ -379,7 +384,8 @@ contract('MockVaultStandardAMM', async accounts => {
                 entranceFeeFactor,
                 880,
                 controllerFee,
-                buybackRate
+                buybackRate,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_withdrawFeeFactor too low');
@@ -390,7 +396,8 @@ contract('MockVaultStandardAMM', async accounts => {
                 entranceFeeFactor,
                 12000,
                 controllerFee,
-                buybackRate
+                buybackRate,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_withdrawFeeFactor too high');
@@ -401,7 +408,8 @@ contract('MockVaultStandardAMM', async accounts => {
                 entranceFeeFactor,
                 withdrawFeeFactor,
                 2000,
-                buybackRate
+                buybackRate,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_controllerFee too high');
@@ -412,15 +420,28 @@ contract('MockVaultStandardAMM', async accounts => {
                 entranceFeeFactor,
                 withdrawFeeFactor,
                 controllerFee,
-                3000
+                3000,
+                revShareRate
             );
         } catch (err) {
             assert.include(err.message, '_buyBackRate too high');
         }
 
+        try {
+            await instance.setFeeSettings(
+                entranceFeeFactor,
+                withdrawFeeFactor,
+                controllerFee,
+                buybackRate,
+                3000
+            );
+        } catch (err) {
+            assert.include(err.message, '_revShareRate too high');
+        }
+
         // Test for only owner
         try {
-            await instance.setFeeSettings(0,0,0,0, { from: accounts[1] });
+            await instance.setFeeSettings(0,0,0,0,0, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, '!gov');
         }
