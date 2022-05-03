@@ -110,3 +110,4 @@ contract MockAMMFarm is IAMMFarm, MockERC20Upgradeable {
 contract MockAMMToken0 is MockERC20Upgradeable {}
 contract MockAMMToken1 is MockERC20Upgradeable {}
 contract MockAMMOtherLPToken is MockERC20Upgradeable {}
+contract MockLPPool is MockERC20Upgradeable {}

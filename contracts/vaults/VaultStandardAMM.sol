@@ -388,6 +388,8 @@ contract VaultStandardAMM is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
 
+        // revert("pre exit pool");
+
         // Exit LP pool
         _exitPool(_amount, _maxMarketMovementAllowed, address(this));
 
@@ -484,6 +486,12 @@ contract VaultStandardAMM is VaultBase {
             .mul(_maxMarketMovementAllowed)
             .div(1000);
 
+        // Approve
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amountLP
+        );
+
         // Remove liquidity
         IAMMRouter02(uniRouterAddress).removeLiquidity(
             token0Address,
@@ -544,7 +552,11 @@ contract VaultStandardAMM is VaultBase {
         if (earnedAddress != token0Address) {
             // Swap half earned to token0
             IAMMRouter02(uniRouterAddress).safeSwap(
-                (_earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt)).div(2),
+                (
+                    _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
+                        _revShareAmt
+                    )
+                ).div(2),
                 _rates.earn,
                 token0PriceFeed.getExchangeRate(),
                 _maxMarketMovementAllowed,
@@ -558,7 +570,11 @@ contract VaultStandardAMM is VaultBase {
         if (earnedAddress != token1Address) {
             // Swap half earned to token1
             IAMMRouter02(uniRouterAddress).safeSwap(
-                (_earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt)).div(2),
+                (
+                    _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
+                        _revShareAmt
+                    )
+                ).div(2),
                 _rates.earn,
                 token1PriceFeed.getExchangeRate(),
                 _maxMarketMovementAllowed,

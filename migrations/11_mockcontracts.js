@@ -26,6 +26,7 @@ const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 // Other contracts
 const MockAMMFarm = artifacts.require('MockAMMFarm');
+const MockLPPool = artifacts.require('MockLPPool');
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks: Test/dev only
@@ -298,6 +299,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockPriceAggEarnToken);
     await deployer.deploy(MockPriceAggZOR);
     await deployer.deploy(MockPriceAggLPOtherToken);
+    await deployer.deploy(MockLPPool);
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }

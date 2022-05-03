@@ -43,9 +43,14 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public burnAddress;
+    address public poolAddress;
 
     function setBurnAddress(address _burnAddress) public {
         burnAddress = _burnAddress;
+    }
+
+    function setPoolAddress(address _poolAddress) public {
+        poolAddress = _poolAddress;
     }
 
     event SwappedToken(
@@ -143,7 +148,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         amountB = amountBMin;
 
         // Safe transfer liquidity & burn
-        IERC20Upgradeable(address(this)).safeTransferFrom(
+        IERC20Upgradeable(poolAddress).safeTransferFrom(
             msg.sender,
             burnAddress,
             liquidity

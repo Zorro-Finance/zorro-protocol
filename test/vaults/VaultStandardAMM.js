@@ -14,6 +14,7 @@ const MockPriceAggToken1 = artifacts.require('MockPriceAggToken1');
 const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
+const MockLPPool = artifacts.require('MockLPPool');
 
 const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(uint256,uint256)');
 const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(uint256,uint256)');
@@ -36,14 +37,17 @@ const setupContracts = async (accounts) => {
     const token1 = await MockAMMToken1.deployed();
     const ZORToken = await MockZorroToken.deployed();
     const ZORLPPoolOtherToken = await MockAMMOtherLPToken.deployed();
+    // LP Pool
+    const lpPool = await MockLPPool.deployed();
     // Farm contract
     const farmContract = await MockAMMFarm.deployed();
-    await farmContract.setWantAddress(router.address);
+    await farmContract.setWantAddress(lpPool.address);
     await farmContract.setBurnAddress(accounts[4]);
     // Vault
     const zorroStakingVault = await MockVaultZorro.deployed();
     const instance = await MockVaultStandardAMM.deployed();
-    await instance.setWantAddress(router.address);
+    await instance.setWantAddress(lpPool.address);
+    await instance.setPoolAddress(lpPool.address);
     await instance.setFarmContractAddress(farmContract.address);
     await instance.setZorroStakingVault(zorroStakingVault.address);
     await instance.setEarnedAddress(farmContract.address);
@@ -79,7 +83,6 @@ const setupContracts = async (accounts) => {
     await instance.setSwapPaths(7, [farmContract.address, ZORLPPoolOtherToken.address]);
     await instance.setSwapPaths(8, [farmContract.address, usdc.address]);
 
-
     return {
         instance,
         router,
@@ -89,6 +92,7 @@ const setupContracts = async (accounts) => {
         token1,
         ZORToken,
         zorroStakingVault,
+        lpPool,
     };
 }
 
@@ -165,13 +169,14 @@ contract('VaultFactoryStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance, router;
+    let instance, router, lpPool;
     const account = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         router = setupObj.router;
+        lpPool = setupObj.lpPool;
     });
 
     it('deposits Want token', async () => {
@@ -186,9 +191,9 @@ contract('VaultStandardAMM', async accounts => {
         }
 
         // Mint some tokens
-        await router.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await lpPool.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await router.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await lpPool.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
 
         /* First deposit */
         // Deposit
@@ -335,8 +340,6 @@ contract('VaultStandardAMM', async accounts => {
         /* Prep */
         const amountUSD = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
 
-        // TODO: Probably need exchange rates to be set
-
         /* Exchange (0) */
         try {
             await instance.exchangeUSDForWantToken(0, 990);
@@ -400,22 +403,31 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance;
+    let instance, router, usdc, lpPool, token0, token1;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
+        router = setupObj.router;
+        usdc = setupObj.usdc;
+        lpPool = setupObj.lpPool;
+        token0 = setupObj.token0;
+        token1 = setupObj.token1;
     });
 
-    xit('exchanges Want token for USD', async () => {
+    it('exchanges Want token for USD', async () => {
         /* Prep */
         // Transfer Want token
         const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
-        await router.mint(accounts[0], wantAmt);
+        await lpPool.mint(accounts[0], wantAmt);
         // Give perms
-        await router.approve(instance.address, wantAmt);
+        await lpPool.approve(instance.address, wantAmt);
+        await router.setPoolAddress(lpPool.address);
         // Simulate bal & total supply of tokens 0, 1 in pool
-        // TODO (see _exitPool())
+        const token0Amt = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
+        const token1Amt = web3.utils.toBN(web3.utils.toWei('3', 'ether'));
+        await token0.mint(lpPool.address, token0Amt);
+        await token1.mint(lpPool.address, token1Amt);
 
         /* Exchange (0) */
         try {
@@ -425,12 +437,13 @@ contract('VaultStandardAMM', async accounts => {
         }
 
         /* Exchange (> 0) */
+
         // Vars
-        // TODO
-        const USDCPreExch = await usdc.getBalanceOf(accounts[0]).call();
-        const expToken0 = wantAmt.mul(0); // Do bal & total supply logic
-        const expToken1 = 0; // Ditto above
-        const expUSDC = 0; // Account for pre-existing usdc bal, if any
+        const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
+        const expToken0 = token0Amt.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000)); // Assumes total supply of LP and amount LP token are the same
+        const expToken1 = token1Amt.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000)); // Ditto
+        const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(expToken1.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
+
         // Exchange
         const tx = await instance.exchangeWantTokenForUSD(wantAmt, 990);
 
@@ -450,7 +463,7 @@ contract('VaultStandardAMM', async accounts => {
         assert.isNotNull(removedLiq);
 
         // Assert: USDC obtained (check Bal)
-        assert.isTrue((await usdc.getBalanceOf(accounts[0]).call()).eq(expUSDC));
+        assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
 
         /* Only Zorro Controller */
         try {
@@ -683,18 +696,18 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance, router;
+    let instance, lpPool;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        router = setupObj.router;
+        lpPool = setupObj.lpPool;
     });
 
     it('farms Want token', async () => {
         // Mint tokens
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.628', 'ether'));
-        await router.mint(instance.address, wantAmt);
+        await lpPool.mint(instance.address, wantAmt);
         // Farm
         const tx = await instance.farm();
         const { rawLogs } = tx.receipt;
@@ -722,13 +735,14 @@ contract('VaultStandardAMM', async accounts => {
 });
 
 contract('VaultStandardAMM', async accounts => {
-    let instance, router;
+    let instance, router, lpPool;
     const account = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         router = setupObj.router;
+        lpPool = setupObj.lpPool;
     });
 
     it('unfarms Want token', async () => {
@@ -736,9 +750,9 @@ contract('VaultStandardAMM', async accounts => {
         const wantAmt = web3.utils.toBN(1e17)
         
         // Mint some tokens
-        await router.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await lpPool.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await router.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await lpPool.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
         // Simulate deposit
         await instance.depositWantToken(account, wantAmt);
         const wantLockedTotal = await instance.wantLockedTotal.call();
