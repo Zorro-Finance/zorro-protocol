@@ -101,6 +101,8 @@ contract VaultAcryptosSingle is VaultBase {
         balancerPool = 0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001;
         balancerVaultAddress = 0xa82f327BBbF0667356D2935C6532d164b06cEced;
         tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
+        balancerACSWeightBasisPoints = 30;
+        balancerBUSDWeightBasisPoints = 10;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -320,12 +322,16 @@ contract VaultAcryptosSingle is VaultBase {
     /// @param _swapParams SafeSwapParams for swap
     function _safeSwap(SafeSwapParams memory _swapParams) internal {
         if (_swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS) {
+            // Allowance
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(balancerVaultAddress, _swapParams.amountIn);
             // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
             IBalancerVault(balancerVaultAddress).safeSwap(
                 balancerPool,
                 _swapParams
             );
         } else {
+            // Allowance
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(uniRouterAddress, _swapParams.amountIn);
             // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _swapParams.amountIn,
@@ -782,7 +788,7 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Swap path
-        address[] memory _path;
+        address[] memory _path = new address[](2);
         _path[0] = tokenBUSD;
         _path[1] = tokenUSDCAddress;
 

@@ -8,6 +8,7 @@ const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain")
 const MockZorroToken = artifacts.require("MockZorroToken");
 const MockUSDC = artifacts.require("MockUSDC");
 const MockBUSD = artifacts.require("MockBUSD");
+const MockACS = artifacts.require("MockACS");
 const MockAMMToken0 = artifacts.require("MockAMMToken0");
 const MockAMMToken1 = artifacts.require("MockAMMToken1");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
@@ -28,6 +29,7 @@ const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 // Other contracts
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
+const MockAcryptosVault = artifacts.require('MockAcryptosVault');
 const MockLPPool = artifacts.require('MockLPPool');
 
 module.exports = async function (deployer, network, accounts) {
@@ -111,6 +113,7 @@ module.exports = async function (deployer, network, accounts) {
     // Tokens
     await deployer.deploy(MockUSDC);
     await deployer.deploy(MockBUSD);
+    await deployer.deploy(MockACS);
     await deployer.deploy(MockAMMToken0);
     await deployer.deploy(MockAMMToken1);
     await deployer.deploy(MockAMMOtherLPToken);
@@ -118,6 +121,7 @@ module.exports = async function (deployer, network, accounts) {
     // Other contracts
     await deployer.deploy(MockAMMFarm);
     await deployer.deploy(MockAcryptosFarm);
+    await deployer.deploy(MockAcryptosVault);
 
     // Vaults
     // VaultZorro

@@ -404,14 +404,21 @@ contract MockSafeSwapBalancer {
     }
 }
 
-/// @title MockIBalancerVault: Mock contract for the IBalancerVault library
-contract MockIBalancerVault is IBalancerVault {
-    event SwappedToken(uint256 indexed amountIn, uint256 indexed minAmountOut);
+/// @title MockBalancerVault: Mock contract for the IBalancerVault library
+contract MockBalancerVault is IBalancerVault {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    event SwappedToken(address indexed _dest, uint256 indexed amountIn, uint256 indexed minAmountOut);
 
     mapping(address => uint256) internal _cash;
+    address public burnAddress;
 
     function setCash(address _token, uint256 _amount) public {
         _cash[_token] = _amount;
+    }
+
+    function setBurnAddress(address _burn) public {
+        burnAddress = _burn;
     }
 
     function swap(
@@ -420,7 +427,17 @@ contract MockIBalancerVault is IBalancerVault {
         uint256 limit,
         uint256 deadline
     ) external payable returns (uint256 amountCalculated) {
-        emit SwappedToken(singleSwap.amount, limit);
+        // Burn token IN
+        IERC20Upgradeable(address(singleSwap.assetIn)).safeTransferFrom(msg.sender, burnAddress, singleSwap.amount);
+
+        // Mint token OUT -> to
+        IMockERC20Upgradeable(address(singleSwap.assetOut)).mint(funds.recipient, limit);
+
+        // Event
+        emit SwappedToken(funds.recipient, singleSwap.amount, limit);
+
+        // Return
+        amountCalculated = limit;
     }
 
     function getPoolTokenInfo(bytes32 poolId, IERC20 token)
@@ -450,12 +467,16 @@ contract MockIBalancerVault is IBalancerVault {
         address sender,
         address recipient,
         JoinPoolRequest memory request
-    ) external {}
+    ) external {
+        
+    }
 
     function exitPool(
         bytes32 poolId,
         address sender,
         address payable recipient,
         ExitPoolRequest memory request
-    ) external {}
+    ) external {
+
+    }
 }

@@ -3,10 +3,13 @@ const MockVaultFactoryAcryptosSingle = artifacts.require('MockVaultFactoryAcrypt
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
+const MockAcryptosVault = artifacts.require('MockAcryptosVault');
+const MockBalancerVault = artifacts.require('MockBalancerVault');
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const MockAMMRouter02 = artifacts.require('MockAMMRouter02');
 const MockUSDC = artifacts.require('MockUSDC');
 const MockBUSD = artifacts.require('MockBUSD');
+const MockACS = artifacts.require('MockACS');
 const MockZorroToken = artifacts.require("MockZorroToken");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 const MockAMMToken0 = artifacts.require('MockAMMToken0');
@@ -34,25 +37,34 @@ const setupContracts = async (accounts) => {
     const busd = await MockBUSD.deployed();
     // Tokens
     const token0 = await MockAMMToken0.deployed();
+    const acs = await MockACS.deployed();
     const ZORToken = await MockZorroToken.deployed();
     const ZORLPPoolOtherToken = await MockAMMOtherLPToken.deployed();
+    // LP
+    const acsVault = await MockAcryptosVault.deployed();
+    // Swaps
+    const balancerVault = await MockBalancerVault.deployed();
+    await balancerVault.setBurnAddress(accounts[4]);
     // Farm contract
     const farmContract = await MockAcryptosFarm.deployed();
-    await farmContract.setWantAddress(lpPool.address);
+    await farmContract.setWantAddress(acsVault.address);
     await farmContract.setBurnAddress(accounts[4]);
     // Vault
     const zorroStakingVault = await MockVaultZorro.deployed();
-    const instance = await MockVaultStandardAMM.deployed();
-    await instance.setWantAddress(lpPool.address);
-    await instance.setPoolAddress(lpPool.address);
-    await instance.setFarmContractAddress(farmContract.address);
+    const instance = await MockVaultAcryptosSingle.deployed();
+    await instance.setWantAddress(acsVault.address);
+    await instance.setPoolAddress(acsVault.address); // IAcryptosVault (for entering strategy)
+    await instance.setBalancerVaultAddress(balancerVault.address); // IBalancerVault (router for swaps)
+    await instance.setFarmContractAddress(farmContract.address); // IAcryptosFarm (for farming want token)
     await instance.setZorroStakingVault(zorroStakingVault.address);
-    await instance.setEarnedAddress(farmContract.address);
+    await instance.setEarnedAddress(acs.address);
     await instance.setRewardsAddress(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(token0.address);
     await instance.setTokenUSDCAddress(usdc.address);
+    await instance.setBUSD(busd.address);
+    await instance.setACS(acs.address);
     await instance.setZORROAddress(ZORToken.address);
     await instance.setZorroLPPoolOtherToken(ZORLPPoolOtherToken.address);
     // Set controller
@@ -79,10 +91,11 @@ const setupContracts = async (accounts) => {
 
     return {
         instance,
-        router,
+        acsVault,
         farmContract,
         usdc,
         busd,
+        acs,
         token0,
         ZORToken,
         zorroStakingVault,
@@ -277,49 +290,384 @@ contract('VaultAcryptosSingle', async accounts => {
             assert.include(err.message, 'caller is not the owner');
         }
     });
+});
 
-    xit('deposits Want token', async () => {
-        // check auth
+contract('VaultAcryptosSingle', async accounts => {
+    let instance, acsVault;
+
+    before(async () => {
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        acsVault = setupObj.acsVault;
     });
 
-    xit('exchanges USD for Want token', async () => {
-        // Check auth
+    it('deposits Want token', async () => {
+        // Prep
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('0.547', 'ether'));
+
+        /* Deposit (0) */
+        try {
+            await instance.depositWantToken(accounts[0], 0);
+        } catch (err) {
+            assert.include(err.message, 'Want token deposit must be > 0');
+        }
+
+        // Mint some tokens
+        await acsVault.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        // Approval
+        await acsVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+
+        /* First deposit */
+        // Deposit
+        const tx = await instance.depositWantToken(accounts[0], wantAmt);
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let transferred;
+        let farmed;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig && !transferred) {
+                transferred = rl;
+            } else if (topics[0] === depositedEventSig) {
+                farmed = rl;
+            }
+        }
+
+        // Assert: transfers Want token
+        assert.equal(web3.utils.toChecksumAddress(web3.utils.toHex(web3.utils.toBN(transferred.topics[1]))), accounts[0]);
+        assert.equal(web3.utils.toHex(web3.utils.toBN(transferred.data)), web3.utils.toHex(wantAmt));
+
+        // Assert: increments shares (total shares and user shares)
+        assert.isTrue((await instance.sharesTotal.call()).eq(wantAmt));
+        assert.isTrue((await instance.userShares.call(accounts[0])).eq(wantAmt));
+
+        // Assert: calls farm()
+        assert.isNotNull(farmed);
+
+        /* Next deposit */
+        // Set fees
+        await instance.setFeeSettings(
+            9990, // 0.1% deposit fee
+            10000,
+            0,
+            0,
+            0
+        );
+        // Deposit
+        await instance.depositWantToken(accounts[0], wantAmt);
+
+        // Assert: returns correct shares added (based on current shares etc.)
+        const sharesTotal = wantAmt; // Total shares before second deposit
+        const wantLockedTotal = wantAmt; // Total want locked before second deposit
+        const sharesAdded = wantAmt.mul(sharesTotal).mul(web3.utils.toBN(9990)).div(wantLockedTotal.mul(web3.utils.toBN(10000)));
+        const newTotalShares = web3.utils.toBN(sharesAdded).add(wantAmt);
+        assert.isTrue((await instance.sharesTotal.call()).eq(newTotalShares));
+        assert.isTrue((await instance.userShares.call(accounts[0])).eq(newTotalShares));
+
+        /* Only Zorro controller */
+        try {
+            await instance.depositWantToken(zeroAddress, 0, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, '!zorroController');
+        }
+
+    });
+    it('withdraws Want token', async () => {
+        // Prep
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('0.547', 'ether'));
+        const currentSharesTotal = await instance.sharesTotal.call();
+        const currentUserShares = await instance.userShares.call(accounts[0]);
+        const currentWantLockedTotal = await instance.wantLockedTotal.call();
+
+        /* Withdraw 0 */
+        try {
+            await instance.withdrawWantToken(accounts[0], 0); 
+        } catch (err) {
+            assert.include(err.message, 'want amt <= 0');
+        }
+        
+        /* Withdraw > 0 */
+        
+        // Withdraw
+        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+
+        // Get logs
+        const { rawLogs } = tx.receipt;
+        let transferred;
+        let unfarmed;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig) {
+                transferred = rl;
+            } else if (topics[0] === withdrewEventSig) {
+                unfarmed = rl;
+            }
+        }
+
+        // Assert: Correct sharesTotal and userShares
+        const sharesRemoved = wantAmt.mul(currentSharesTotal).div(currentWantLockedTotal);
+        const expectedSharesTotal = currentSharesTotal.sub(sharesRemoved);
+        const expectedUserShares = currentUserShares.sub(sharesRemoved);
+        assert.isTrue((await instance.sharesTotal.call()).eq(expectedSharesTotal));
+        assert.isTrue((await instance.userShares.call(accounts[0])).eq(expectedUserShares));
+
+        // Assert: calls unfarm()
+        assert.isNotNull(unfarmed);
+
+        // Assert: Xfers back to controller and for wantAmt
+        assert.equal(web3.utils.toHex(web3.utils.toBN(transferred.data)), web3.utils.toHex(wantAmt));
     });
 
-    xit('selectively swaps based on token type', async () => {
-        // _safeSwap()
-        // Check auth
+    it('withdraws safely when excess Want token specified', async () => {
+        // Prep
+        const currentWantLockedTotal = await instance.wantLockedTotal.call();
+        const wantAmt = currentWantLockedTotal.add(web3.utils.toBN(1e12)); // Set to exceed the tokens locked, intentionally
+
+        /* Withdraw > wantToken */
+
+        // Withdraw
+        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+
+        // Get logs
+        const { rawLogs } = tx.receipt;
+        let transferred;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig) {
+                transferred = rl;
+            }
+        }
+
+        // Assert: Correct sharesTotal and userShares
+        assert.isTrue((await instance.sharesTotal.call()).isZero());
+        assert.isTrue((await instance.userShares.call(accounts[0])).isZero());
+
+        // Assert: Xfers back to controller and for wantAmt
+        assert.equal(web3.utils.toHex(web3.utils.toBN(transferred.data)), web3.utils.toHex(currentWantLockedTotal));
+    });
+});
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('exchanges USD for Want token', async () => {
+//         // Check auth
+//     });
+
+// });
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('selectively swaps based on token type', async () => {
+//         // _safeSwap()
+//         // Check auth
+//     });
+
+// });
+
+contract('VaultAcryptosSingle', async accounts => {
+    let instance, acsVault;
+
+    before(async () => {
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        acsVault = setupObj.acsVault;
     });
 
     xit('farms Want token', async () => {
-        // Check auth
+        // Mint tokens
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('0.628', 'ether'));
+        await lpPool.mint(instance.address, wantAmt);
+        // Farm
+        const tx = await instance.farm();
+        const { rawLogs } = tx.receipt;
+
+        let depositedInFarm;
+        let approvedSpending;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === depositedEventSig) {
+                depositedInFarm = rl;
+            } else if (topics[0] === approvalEventSig && !approvedSpending) {
+                approvedSpending = rl;
+            }
+        }
+
+        // Assert: Increments Want locked total
+        assert.isTrue((await instance.wantLockedTotal.call()).eq(wantAmt));
+
+        // Assert: Allows farm contract to spend
+        assert.equal(web3.utils.toHex(web3.utils.toBN(approvedSpending.data)), web3.utils.toHex(wantAmt));
+
+        // Assert: farms token (wantLockedTotal incremented, farm's deposit() func called)
+        assert.isTrue(web3.utils.toBN(depositedInFarm.topics[2]).eq(wantAmt));
+    });
+
+});
+
+contract('VaultAcryptosSingle', async accounts => {
+    let instance, acsVault;
+
+    before(async () => {
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        acsVault = setupObj.acsVault;
     });
 
     xit('unfarms Earn token', async () => {
-        // Check auth
+        // Prep
+        const wantAmt = web3.utils.toBN(1e17)
+        
+        // Mint some tokens
+        await lpPool.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        // Approval
+        await lpPool.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        // Simulate deposit
+        await instance.depositWantToken(account, wantAmt);
+        const wantLockedTotal = await instance.wantLockedTotal.call();
+
+        // Unfarm
+        const tx = await instance.unfarm(wantAmt);
+
+        // Get logs
+        const { rawLogs } = tx.receipt;
+        let unfarmed;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === withdrewEventSig) {
+                unfarmed = rl;
+            }
+        }
+
+        // Assert: called unfarm() func
+        assert.isTrue(web3.utils.toBN(unfarmed.topics[1]).eq(await instance.pid.call()));
+        assert.isTrue(web3.utils.toBN(unfarmed.topics[2]).eq(wantAmt));
+
+        // Assert wantLockedTotal updated
+        assert.isTrue((await instance.wantLockedTotal.call()).isZero());
     });
 
-    xit('withdraws Want token', async () => {
-        // Check auth
+});
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('exchanges Want token for USD', async () => {
+//         // Check auth
+//     });
+
+// });
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('auto compounds and earns', async () => {
+//         // Check auth
+//     });
+
+// });
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('buys back Earn token, adds liquidity, and burns LP', async () => {
+//         // Check auth
+//     });
+
+// });
+
+// contract('VaultAcryptosSingle', async accounts => {
+//     let instance, acsVault;
+
+//     before(async () => {
+//         const setupObj = await setupContracts(accounts);
+//         instance = setupObj.instance;
+//         acsVault = setupObj.acsVault;
+//     });
+
+//     xit('shares revenue with ZOR stakers', async () => {
+//         // Check auth
+//     });
+
+// });
+
+contract('VaultAcryptosSingle', async accounts => {
+    let instance, acs;
+
+    before(async () => {
+        const setupObj = await setupContracts(accounts);
+        instance = setupObj.instance;
+        acs = setupObj.acs;
     });
 
-    xit('exchanges Want token for USD', async () => {
-        // Check auth
-    });
+    it('swaps Earn token to USD', async () => {
+        /* Prep */
+        const earnedAmt = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
+        const rates = {
+            earn: 1.2e12,
+            ZOR: 1050,
+            lpPoolOtherToken: 333,
+        };
+        // Send some Earn token
+        await acs.mint(instance.address, earnedAmt);
 
-    xit('auto compounds and earns', async () => {
-        // Check auth
-    });
+        /* SwapEarnedToUSDC */
+        // Swap
+        const tx = await instance.swapEarnedToUSDC(
+            earnedAmt,
+            accounts[2],
+            990,
+            rates
+        );
 
-    xit('buys back Earn token, adds liquidity, and burns LP', async () => {
-        // Check auth
-    });
+        // Logs
+        const { rawLogs } = tx.receipt;
 
-    xit('shares revenue with ZOR stakers', async () => {
-        // Check auth
-    });
+        let approvedSpending, swapped;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === approvalEventSig && !approvalEventSig && topics[2] === router.address && web3.utils.toBN(rl.data).eq(earnedAmt)) {
+                approvedSpending = rl;
+            } else if (topics[0] === swappedEventSig && topics[1] === accounts[2] && web3.utils.toBN(topics[2]).eq(earnedAmt)) {
+                swapped = rl;
+            }
+        }
 
-    xit('swaps Earn token to USD', async () => {
-        // Check auth
+        // Assert: Approval
+        assert.isNotNull(approvedSpending);
+        // Assert: Swap
+        assert.isNotNull(swapped);
     });
 });

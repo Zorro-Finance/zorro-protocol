@@ -1,7 +1,7 @@
 const MockSafeSwapUni = artifacts.require('MockSafeSwapUni');
 const MockAMMRouter02 = artifacts.require("MockAMMRouter02");
 const MockSafeSwapBalancer = artifacts.require('MockSafeSwapBalancer');
-const MockIBalancerVault = artifacts.require("MockIBalancerVault");
+const MockBalancerVault = artifacts.require("MockBalancerVault");
 const MockAMMToken0 = artifacts.require('MockAMMToken0');
 const MockAMMToken1 = artifacts.require('MockAMMToken1');
 
@@ -130,7 +130,7 @@ contract('SafeSwapBalancer', async accounts => {
 
     before(async () => {
         // Create a mock IBalancerVault
-        vault = await MockIBalancerVault.deployed();
+        vault = await MockBalancerVault.deployed();
 
         // Get contract that wraps lib
         lib = await MockSafeSwapBalancer.deployed();
