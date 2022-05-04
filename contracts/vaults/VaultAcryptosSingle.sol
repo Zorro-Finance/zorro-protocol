@@ -89,7 +89,6 @@ contract VaultAcryptosSingle is VaultBase {
         zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
         wantAddress = _initValue.keyAddresses.wantAddress;
         token0Address = _initValue.keyAddresses.token0Address;
-        token1Address = _initValue.keyAddresses.token1Address;
         earnedAddress = _initValue.keyAddresses.earnedAddress;
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
@@ -98,6 +97,10 @@ contract VaultAcryptosSingle is VaultBase {
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
+        tokenBUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+        balancerPool = 0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001;
+        balancerVaultAddress = 0xa82f327BBbF0667356D2935C6532d164b06cEced;
+        tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -155,17 +158,6 @@ contract VaultAcryptosSingle is VaultBase {
         VaultPriceFeeds priceFeeds;
     }
 
-    /* Constants */
-
-    address public constant tokenACS =
-        0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
-    address public constant balancerVaultAddress =
-        0xa82f327BBbF0667356D2935C6532d164b06cEced; // Address of Balancer/ACSI.finance Vault for swaps etc.
-    bytes32 public constant balancerPool =
-        0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
-    address public constant tokenBUSD =
-        0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
-
     /* State */
 
     uint256 public balancerACSWeightBasisPoints; // Relative weight of ACS token in balancer pool
@@ -173,6 +165,10 @@ contract VaultAcryptosSingle is VaultBase {
     address[] public BUSDToToken0Path; // Swap path from BUSD to Token0 (PCS)
     address[] public BUSDToZORROPath; // Swap path from BUSD to ZOR (PCS)
     address[] public BUSDToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
+    address public tokenBUSD;
+    address public tokenACS;
+    bytes32 public balancerPool; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
+    address public balancerVaultAddress; // Address of Balancer/ACSI.finance Vault for swaps etc.
 
     /* Setters */
 
@@ -197,6 +193,22 @@ contract VaultAcryptosSingle is VaultBase {
         } else {
             revert("unsupported idx swap path");
         }
+    }
+
+    function setBUSD(address _token) external onlyOwner {
+        tokenBUSD = _token;
+    }
+
+    function setACS(address _token) external onlyOwner {
+        tokenACS = _token;
+    }
+
+    function setBalancerPool(bytes32 _pool) external onlyOwner {
+        balancerPool = _pool;
+    }
+
+    function setBalancerVaultAddress(address _vault) external onlyOwner {
+        balancerVaultAddress = _vault;
     }
 
     /* Investment Actions */
