@@ -81,7 +81,7 @@ library SafeSwapBalancer {
         // Calculate min amount out
         uint256 _amountOut;
         if (_swapParams.priceToken0 == 0 || _swapParams.priceToken1 == 0) {
-            // If no exchange rates provided, use on-chain functions provided by router (not ideal)
+            // If no exchange rates provided, use on-chain functions provided by router (not ideal)]
             _amountOut = _swapParams
                 .amountIn
                 .mul(
@@ -91,16 +91,14 @@ library SafeSwapBalancer {
                         _swapParams
                     )
                 )
-                .div(1e12)
                 .mul(_swapParams.maxMarketMovementAllowed)
-                .div(1000);
+                .div(uint256(1000).mul(1e12));
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = (
-                _swapParams.amountIn.mul(_swapParams.priceToken0).div(
-                    _swapParams.priceToken1
-                )
-            ).mul(_swapParams.maxMarketMovementAllowed).div(1000);
+            _amountOut = _swapParams.amountIn
+                .mul(_swapParams.priceToken0)
+                .mul(_swapParams.maxMarketMovementAllowed)
+                .div(_swapParams.priceToken1.mul(1000));
         }
 
         // Swap Earned token to token0

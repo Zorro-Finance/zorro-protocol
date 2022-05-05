@@ -394,12 +394,14 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
 /// @title MockSafeSwapBalancer: Mock contract for testing the SafeSwapBalancer library
 contract MockSafeSwapBalancer {
     using SafeSwapBalancer for IBalancerVault;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function safeSwap(
         address _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
     ) public {
+        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(_balancerVault, _swapParams.amountIn);
         IBalancerVault(_balancerVault).safeSwap(_poolId, _swapParams);
     }
 }
