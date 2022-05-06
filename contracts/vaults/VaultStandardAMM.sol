@@ -320,7 +320,7 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account Address of user
     /// @param _wantAmt The amount of Want token to withdraw
-    /// @return sharesRemoved uint256 The number of shares removed
+    /// @return sharesRemoved The number of shares removed
     function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         override

@@ -623,7 +623,6 @@ contract('VaultStandardAMM', async accounts => {
         };
         // Send some Earn token
         await farmContract.mint(instance.address, earnedAmt);
-        // Let 
 
         /* RevShare */
         // RevShare

@@ -601,7 +601,7 @@
                 }
               ]
             },
-            "name": "abi_encode_tuple_t_contract$_VaultStargate_$18199__to_t_address__fromStack_reversed",
+            "name": "abi_encode_tuple_t_contract$_VaultStargate_$18189__to_t_address__fromStack_reversed",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -6694,7 +6694,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_addresst_struct$_VaultStargateInit_$17268_memory_ptr",
+            "name": "abi_decode_tuple_t_addresst_struct$_VaultStargateInit_$17258_memory_ptr",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -11651,7 +11651,7 @@
                 }
               ]
             },
-            "name": "abi_encode_tuple_t_address_t_struct$_VaultStargateInit_$17268_memory_ptr__to_t_address_t_struct$_VaultStargateInit_$17268_memory_ptr__fromStack_reversed",
+            "name": "abi_encode_tuple_t_address_t_struct$_VaultStargateInit_$17258_memory_ptr__to_t_address_t_struct$_VaultStargateInit_$17258_memory_ptr__fromStack_reversed",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -12539,7 +12539,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := calldataload(headStart)\n    }\n    function abi_encode_tuple_t_contract$_VaultStargate_$18199__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, sub(shl(160, 1), 1)))) { revert(0, 0) }\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, shl(224, 0x4e487b71))\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_1870() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x01e0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xa0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_1874() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0180)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_bool(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_struct_VaultAddresses(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0x01e0) { revert(0, 0) }\n        value := allocate_memory_1870()\n        mstore(value, abi_decode_address(headStart))\n        mstore(add(value, 32), abi_decode_address(add(headStart, 32)))\n        mstore(add(value, 64), abi_decode_address(add(headStart, 64)))\n        mstore(add(value, 96), abi_decode_address(add(headStart, 96)))\n        mstore(add(value, 128), abi_decode_address(add(headStart, 128)))\n        mstore(add(value, 160), abi_decode_address(add(headStart, 160)))\n        mstore(add(value, 192), abi_decode_address(add(headStart, 192)))\n        mstore(add(value, 224), abi_decode_address(add(headStart, 224)))\n        let _1 := 256\n        mstore(add(value, _1), abi_decode_address(add(headStart, _1)))\n        let _2 := 288\n        mstore(add(value, _2), abi_decode_address(add(headStart, _2)))\n        let _3 := 320\n        mstore(add(value, _3), abi_decode_address(add(headStart, _3)))\n        let _4 := 352\n        mstore(add(value, _4), abi_decode_address(add(headStart, _4)))\n        let _5 := 384\n        mstore(add(value, _5), abi_decode_address(add(headStart, _5)))\n        let _6 := 416\n        mstore(add(value, _6), abi_decode_address(add(headStart, _6)))\n        let _7 := 448\n        mstore(add(value, _7), abi_decode_address(add(headStart, _7)))\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let _3 := 0xffffffffffffffff\n        if gt(_1, _3) { panic_error_0x41() }\n        let _4 := shl(5, _1)\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(_4, 63), not(31)))\n        if or(gt(newFreePtr, _3), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        let dst := memPtr\n        mstore(memPtr, _1)\n        dst := add(memPtr, _2)\n        let srcEnd := add(add(offset, _4), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            mstore(dst, abi_decode_address(src))\n            dst := add(dst, _2)\n        }\n        array := memPtr\n    }\n    function abi_decode_struct_VaultFees(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        value := allocate_memory()\n        mstore(value, calldataload(headStart))\n        mstore(add(value, 32), calldataload(add(headStart, 32)))\n        mstore(add(value, 64), calldataload(add(headStart, 64)))\n        mstore(add(value, 96), calldataload(add(headStart, 96)))\n        mstore(add(value, 128), calldataload(add(headStart, 128)))\n    }\n    function abi_decode_struct_VaultPriceFeeds(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        value := allocate_memory()\n        mstore(value, abi_decode_address(headStart))\n        mstore(add(value, 32), abi_decode_address(add(headStart, 32)))\n        mstore(add(value, 64), abi_decode_address(add(headStart, 64)))\n        mstore(add(value, 96), abi_decode_address(add(headStart, 96)))\n        mstore(add(value, 128), abi_decode_address(add(headStart, 128)))\n    }\n    function abi_decode_uint16(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, 0xffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_addresst_struct$_VaultStargateInit_$17268_memory_ptr(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0440) { revert(0, 0) }\n        let value := allocate_memory_1874()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), abi_decode_bool(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_struct_VaultAddresses(add(_2, 64), dataEnd))\n        let offset_1 := calldataload(add(_2, 544))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 0x60), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        let offset_2 := calldataload(add(_2, 576))\n        if gt(offset_2, _1) { revert(0, 0) }\n        mstore(add(value, 0x80), abi_decode_array_address_dyn(add(_2, offset_2), dataEnd))\n        let offset_3 := calldataload(add(_2, 608))\n        if gt(offset_3, _1) { revert(0, 0) }\n        mstore(add(value, 0xa0), abi_decode_array_address_dyn(add(_2, offset_3), dataEnd))\n        let offset_4 := calldataload(add(_2, 640))\n        if gt(offset_4, _1) { revert(0, 0) }\n        mstore(add(value, 0xc0), abi_decode_array_address_dyn(add(_2, offset_4), dataEnd))\n        let offset_5 := calldataload(add(_2, 672))\n        if gt(offset_5, _1) { revert(0, 0) }\n        mstore(add(value, 0xe0), abi_decode_array_address_dyn(add(_2, offset_5), dataEnd))\n        mstore(add(value, 0x0100), abi_decode_struct_VaultFees(add(_2, 704), dataEnd))\n        mstore(add(value, 0x0120), abi_decode_struct_VaultPriceFeeds(add(_2, 864), dataEnd))\n        mstore(add(value, 0x0140), abi_decode_address(add(_2, 1024)))\n        mstore(add(value, 0x0160), abi_decode_uint16(add(_2, 1056)))\n        value1 := value\n    }\n    function abi_encode_address(value, pos)\n    {\n        mstore(pos, and(value, sub(shl(160, 1), 1)))\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_bool(value, pos)\n    {\n        mstore(pos, iszero(iszero(value)))\n    }\n    function abi_encode_struct_VaultAddresses(value, pos)\n    {\n        abi_encode_address(mload(value), pos)\n        let memberValue0 := mload(add(value, 0x20))\n        abi_encode_address(memberValue0, add(pos, 0x20))\n        let memberValue0_1 := mload(add(value, 0x40))\n        abi_encode_address(memberValue0_1, add(pos, 0x40))\n        let memberValue0_2 := mload(add(value, 0x60))\n        abi_encode_address(memberValue0_2, add(pos, 0x60))\n        let memberValue0_3 := mload(add(value, 0x80))\n        abi_encode_address(memberValue0_3, add(pos, 0x80))\n        let memberValue0_4 := mload(add(value, 0xa0))\n        abi_encode_address(memberValue0_4, add(pos, 0xa0))\n        let memberValue0_5 := mload(add(value, 0xc0))\n        abi_encode_address(memberValue0_5, add(pos, 0xc0))\n        let memberValue0_6 := mload(add(value, 0xe0))\n        abi_encode_address(memberValue0_6, add(pos, 0xe0))\n        let _1 := 0x0100\n        let memberValue0_7 := mload(add(value, _1))\n        abi_encode_address(memberValue0_7, add(pos, _1))\n        let _2 := 0x0120\n        let memberValue0_8 := mload(add(value, _2))\n        abi_encode_address(memberValue0_8, add(pos, _2))\n        let _3 := 0x0140\n        let memberValue0_9 := mload(add(value, _3))\n        abi_encode_address(memberValue0_9, add(pos, _3))\n        let _4 := 0x0160\n        let memberValue0_10 := mload(add(value, _4))\n        abi_encode_address(memberValue0_10, add(pos, _4))\n        let _5 := 0x0180\n        let memberValue0_11 := mload(add(value, _5))\n        abi_encode_address(memberValue0_11, add(pos, _5))\n        let _6 := 0x01a0\n        let memberValue0_12 := mload(add(value, _6))\n        abi_encode_address(memberValue0_12, add(pos, _6))\n        let _7 := 0x01c0\n        let memberValue0_13 := mload(add(value, _7))\n        abi_encode_address(memberValue0_13, add(pos, _7))\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), sub(shl(160, 1), 1)))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_struct_VaultFees(value, pos)\n    {\n        mstore(pos, mload(value))\n        mstore(add(pos, 0x20), mload(add(value, 0x20)))\n        mstore(add(pos, 0x40), mload(add(value, 0x40)))\n        mstore(add(pos, 0x60), mload(add(value, 0x60)))\n        mstore(add(pos, 0x80), mload(add(value, 0x80)))\n    }\n    function abi_encode_struct_VaultPriceFeeds(value, pos)\n    {\n        let _1 := sub(shl(160, 1), 1)\n        mstore(pos, and(mload(value), _1))\n        mstore(add(pos, 0x20), and(mload(add(value, 0x20)), _1))\n        mstore(add(pos, 0x40), and(mload(add(value, 0x40)), _1))\n        mstore(add(pos, 0x60), and(mload(add(value, 0x60)), _1))\n        mstore(add(pos, 0x80), and(mload(add(value, 0x80)), _1))\n    }\n    function abi_encode_uint16(value, pos)\n    {\n        mstore(pos, and(value, 0xffff))\n    }\n    function abi_encode_tuple_t_address_t_struct$_VaultStargateInit_$17268_memory_ptr__to_t_address_t_struct$_VaultStargateInit_$17268_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n        mstore(add(headStart, 32), 64)\n        mstore(add(headStart, 64), mload(value1))\n        let memberValue0 := mload(add(value1, 32))\n        abi_encode_bool(memberValue0, add(headStart, 96))\n        let memberValue0_1 := mload(add(value1, 64))\n        abi_encode_struct_VaultAddresses(memberValue0_1, add(headStart, 128))\n        let memberValue0_2 := mload(add(value1, 96))\n        let _1 := 0x0440\n        mstore(add(headStart, 608), _1)\n        let tail_1 := abi_encode_array_address_dyn(memberValue0_2, add(headStart, 1152))\n        let memberValue0_3 := mload(add(value1, 128))\n        let _2 := not(63)\n        mstore(add(headStart, 640), add(sub(tail_1, headStart), _2))\n        let tail_2 := abi_encode_array_address_dyn(memberValue0_3, tail_1)\n        let memberValue0_4 := mload(add(value1, 0xa0))\n        mstore(add(headStart, 672), add(sub(tail_2, headStart), _2))\n        let tail_3 := abi_encode_array_address_dyn(memberValue0_4, tail_2)\n        let memberValue0_5 := mload(add(value1, 0xc0))\n        mstore(add(headStart, 704), add(sub(tail_3, headStart), _2))\n        let tail_4 := abi_encode_array_address_dyn(memberValue0_5, tail_3)\n        let memberValue0_6 := mload(add(value1, 0xe0))\n        mstore(add(headStart, 736), add(sub(tail_4, headStart), _2))\n        let tail_5 := abi_encode_array_address_dyn(memberValue0_6, tail_4)\n        let memberValue0_7 := mload(add(value1, 0x0100))\n        abi_encode_struct_VaultFees(memberValue0_7, add(headStart, 768))\n        let memberValue0_8 := mload(add(value1, 0x0120))\n        abi_encode_struct_VaultPriceFeeds(memberValue0_8, add(headStart, 928))\n        let memberValue0_9 := mload(add(value1, 0x0140))\n        abi_encode_address(memberValue0_9, add(headStart, _1))\n        let memberValue0_10 := mload(add(value1, 0x0160))\n        abi_encode_uint16(memberValue0_10, add(headStart, 1120))\n        tail := tail_5\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_68ca40b61460257f14e69f48b1a4dbc812e9afc6932f127ef8084544457b3335__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"ERC1167: create failed\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_d688db918bb9dd50354922faa108595679886fe9ff08046ad1ffe30aaea55f8b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 43)\n        mstore(add(headStart, 64), \"Initializable: contract is not i\")\n        mstore(add(headStart, 96), \"nitializing\")\n        tail := add(headStart, 128)\n    }\n}",
+      "contents": "{\n    { }\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := calldataload(headStart)\n    }\n    function abi_encode_tuple_t_contract$_VaultStargate_$18189__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, sub(shl(160, 1), 1)))) { revert(0, 0) }\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, shl(224, 0x4e487b71))\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_1870() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x01e0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xa0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_1874() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0180)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_bool(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_struct_VaultAddresses(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0x01e0) { revert(0, 0) }\n        value := allocate_memory_1870()\n        mstore(value, abi_decode_address(headStart))\n        mstore(add(value, 32), abi_decode_address(add(headStart, 32)))\n        mstore(add(value, 64), abi_decode_address(add(headStart, 64)))\n        mstore(add(value, 96), abi_decode_address(add(headStart, 96)))\n        mstore(add(value, 128), abi_decode_address(add(headStart, 128)))\n        mstore(add(value, 160), abi_decode_address(add(headStart, 160)))\n        mstore(add(value, 192), abi_decode_address(add(headStart, 192)))\n        mstore(add(value, 224), abi_decode_address(add(headStart, 224)))\n        let _1 := 256\n        mstore(add(value, _1), abi_decode_address(add(headStart, _1)))\n        let _2 := 288\n        mstore(add(value, _2), abi_decode_address(add(headStart, _2)))\n        let _3 := 320\n        mstore(add(value, _3), abi_decode_address(add(headStart, _3)))\n        let _4 := 352\n        mstore(add(value, _4), abi_decode_address(add(headStart, _4)))\n        let _5 := 384\n        mstore(add(value, _5), abi_decode_address(add(headStart, _5)))\n        let _6 := 416\n        mstore(add(value, _6), abi_decode_address(add(headStart, _6)))\n        let _7 := 448\n        mstore(add(value, _7), abi_decode_address(add(headStart, _7)))\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let _3 := 0xffffffffffffffff\n        if gt(_1, _3) { panic_error_0x41() }\n        let _4 := shl(5, _1)\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(_4, 63), not(31)))\n        if or(gt(newFreePtr, _3), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        let dst := memPtr\n        mstore(memPtr, _1)\n        dst := add(memPtr, _2)\n        let srcEnd := add(add(offset, _4), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            mstore(dst, abi_decode_address(src))\n            dst := add(dst, _2)\n        }\n        array := memPtr\n    }\n    function abi_decode_struct_VaultFees(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        value := allocate_memory()\n        mstore(value, calldataload(headStart))\n        mstore(add(value, 32), calldataload(add(headStart, 32)))\n        mstore(add(value, 64), calldataload(add(headStart, 64)))\n        mstore(add(value, 96), calldataload(add(headStart, 96)))\n        mstore(add(value, 128), calldataload(add(headStart, 128)))\n    }\n    function abi_decode_struct_VaultPriceFeeds(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        value := allocate_memory()\n        mstore(value, abi_decode_address(headStart))\n        mstore(add(value, 32), abi_decode_address(add(headStart, 32)))\n        mstore(add(value, 64), abi_decode_address(add(headStart, 64)))\n        mstore(add(value, 96), abi_decode_address(add(headStart, 96)))\n        mstore(add(value, 128), abi_decode_address(add(headStart, 128)))\n    }\n    function abi_decode_uint16(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, 0xffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_addresst_struct$_VaultStargateInit_$17258_memory_ptr(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0440) { revert(0, 0) }\n        let value := allocate_memory_1874()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), abi_decode_bool(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_struct_VaultAddresses(add(_2, 64), dataEnd))\n        let offset_1 := calldataload(add(_2, 544))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 0x60), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        let offset_2 := calldataload(add(_2, 576))\n        if gt(offset_2, _1) { revert(0, 0) }\n        mstore(add(value, 0x80), abi_decode_array_address_dyn(add(_2, offset_2), dataEnd))\n        let offset_3 := calldataload(add(_2, 608))\n        if gt(offset_3, _1) { revert(0, 0) }\n        mstore(add(value, 0xa0), abi_decode_array_address_dyn(add(_2, offset_3), dataEnd))\n        let offset_4 := calldataload(add(_2, 640))\n        if gt(offset_4, _1) { revert(0, 0) }\n        mstore(add(value, 0xc0), abi_decode_array_address_dyn(add(_2, offset_4), dataEnd))\n        let offset_5 := calldataload(add(_2, 672))\n        if gt(offset_5, _1) { revert(0, 0) }\n        mstore(add(value, 0xe0), abi_decode_array_address_dyn(add(_2, offset_5), dataEnd))\n        mstore(add(value, 0x0100), abi_decode_struct_VaultFees(add(_2, 704), dataEnd))\n        mstore(add(value, 0x0120), abi_decode_struct_VaultPriceFeeds(add(_2, 864), dataEnd))\n        mstore(add(value, 0x0140), abi_decode_address(add(_2, 1024)))\n        mstore(add(value, 0x0160), abi_decode_uint16(add(_2, 1056)))\n        value1 := value\n    }\n    function abi_encode_address(value, pos)\n    {\n        mstore(pos, and(value, sub(shl(160, 1), 1)))\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_bool(value, pos)\n    {\n        mstore(pos, iszero(iszero(value)))\n    }\n    function abi_encode_struct_VaultAddresses(value, pos)\n    {\n        abi_encode_address(mload(value), pos)\n        let memberValue0 := mload(add(value, 0x20))\n        abi_encode_address(memberValue0, add(pos, 0x20))\n        let memberValue0_1 := mload(add(value, 0x40))\n        abi_encode_address(memberValue0_1, add(pos, 0x40))\n        let memberValue0_2 := mload(add(value, 0x60))\n        abi_encode_address(memberValue0_2, add(pos, 0x60))\n        let memberValue0_3 := mload(add(value, 0x80))\n        abi_encode_address(memberValue0_3, add(pos, 0x80))\n        let memberValue0_4 := mload(add(value, 0xa0))\n        abi_encode_address(memberValue0_4, add(pos, 0xa0))\n        let memberValue0_5 := mload(add(value, 0xc0))\n        abi_encode_address(memberValue0_5, add(pos, 0xc0))\n        let memberValue0_6 := mload(add(value, 0xe0))\n        abi_encode_address(memberValue0_6, add(pos, 0xe0))\n        let _1 := 0x0100\n        let memberValue0_7 := mload(add(value, _1))\n        abi_encode_address(memberValue0_7, add(pos, _1))\n        let _2 := 0x0120\n        let memberValue0_8 := mload(add(value, _2))\n        abi_encode_address(memberValue0_8, add(pos, _2))\n        let _3 := 0x0140\n        let memberValue0_9 := mload(add(value, _3))\n        abi_encode_address(memberValue0_9, add(pos, _3))\n        let _4 := 0x0160\n        let memberValue0_10 := mload(add(value, _4))\n        abi_encode_address(memberValue0_10, add(pos, _4))\n        let _5 := 0x0180\n        let memberValue0_11 := mload(add(value, _5))\n        abi_encode_address(memberValue0_11, add(pos, _5))\n        let _6 := 0x01a0\n        let memberValue0_12 := mload(add(value, _6))\n        abi_encode_address(memberValue0_12, add(pos, _6))\n        let _7 := 0x01c0\n        let memberValue0_13 := mload(add(value, _7))\n        abi_encode_address(memberValue0_13, add(pos, _7))\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), sub(shl(160, 1), 1)))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_struct_VaultFees(value, pos)\n    {\n        mstore(pos, mload(value))\n        mstore(add(pos, 0x20), mload(add(value, 0x20)))\n        mstore(add(pos, 0x40), mload(add(value, 0x40)))\n        mstore(add(pos, 0x60), mload(add(value, 0x60)))\n        mstore(add(pos, 0x80), mload(add(value, 0x80)))\n    }\n    function abi_encode_struct_VaultPriceFeeds(value, pos)\n    {\n        let _1 := sub(shl(160, 1), 1)\n        mstore(pos, and(mload(value), _1))\n        mstore(add(pos, 0x20), and(mload(add(value, 0x20)), _1))\n        mstore(add(pos, 0x40), and(mload(add(value, 0x40)), _1))\n        mstore(add(pos, 0x60), and(mload(add(value, 0x60)), _1))\n        mstore(add(pos, 0x80), and(mload(add(value, 0x80)), _1))\n    }\n    function abi_encode_uint16(value, pos)\n    {\n        mstore(pos, and(value, 0xffff))\n    }\n    function abi_encode_tuple_t_address_t_struct$_VaultStargateInit_$17258_memory_ptr__to_t_address_t_struct$_VaultStargateInit_$17258_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, and(value0, sub(shl(160, 1), 1)))\n        mstore(add(headStart, 32), 64)\n        mstore(add(headStart, 64), mload(value1))\n        let memberValue0 := mload(add(value1, 32))\n        abi_encode_bool(memberValue0, add(headStart, 96))\n        let memberValue0_1 := mload(add(value1, 64))\n        abi_encode_struct_VaultAddresses(memberValue0_1, add(headStart, 128))\n        let memberValue0_2 := mload(add(value1, 96))\n        let _1 := 0x0440\n        mstore(add(headStart, 608), _1)\n        let tail_1 := abi_encode_array_address_dyn(memberValue0_2, add(headStart, 1152))\n        let memberValue0_3 := mload(add(value1, 128))\n        let _2 := not(63)\n        mstore(add(headStart, 640), add(sub(tail_1, headStart), _2))\n        let tail_2 := abi_encode_array_address_dyn(memberValue0_3, tail_1)\n        let memberValue0_4 := mload(add(value1, 0xa0))\n        mstore(add(headStart, 672), add(sub(tail_2, headStart), _2))\n        let tail_3 := abi_encode_array_address_dyn(memberValue0_4, tail_2)\n        let memberValue0_5 := mload(add(value1, 0xc0))\n        mstore(add(headStart, 704), add(sub(tail_3, headStart), _2))\n        let tail_4 := abi_encode_array_address_dyn(memberValue0_5, tail_3)\n        let memberValue0_6 := mload(add(value1, 0xe0))\n        mstore(add(headStart, 736), add(sub(tail_4, headStart), _2))\n        let tail_5 := abi_encode_array_address_dyn(memberValue0_6, tail_4)\n        let memberValue0_7 := mload(add(value1, 0x0100))\n        abi_encode_struct_VaultFees(memberValue0_7, add(headStart, 768))\n        let memberValue0_8 := mload(add(value1, 0x0120))\n        abi_encode_struct_VaultPriceFeeds(memberValue0_8, add(headStart, 928))\n        let memberValue0_9 := mload(add(value1, 0x0140))\n        abi_encode_address(memberValue0_9, add(headStart, _1))\n        let memberValue0_10 := mload(add(value1, 0x0160))\n        abi_encode_uint16(memberValue0_10, add(headStart, 1120))\n        tail := tail_5\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_68ca40b61460257f14e69f48b1a4dbc812e9afc6932f127ef8084544457b3335__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"ERC1167: create failed\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_d688db918bb9dd50354922faa108595679886fe9ff08046ad1ffe30aaea55f8b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 43)\n        mstore(add(headStart, 64), \"Initializable: contract is not i\")\n        mstore(add(headStart, 96), \"nitializing\")\n        tail := add(headStart, 128)\n    }\n}",
       "id": 80,
       "language": "Yul",
       "name": "#utility.yul"
@@ -12670,13 +12670,13 @@
         10661
       ],
       "VaultBase": [
-        19929
+        19919
       ],
       "VaultFactoryStargate": [
-        16988
+        16978
       ],
       "VaultStargate": [
-        18199
+        18189
       ]
     },
     "id": 20440,
@@ -12701,7 +12701,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 20440,
-        "sourceUnit": 18200,
+        "sourceUnit": 18190,
         "src": "58:30:78",
         "symbolAliases": [],
         "unitAlias": ""
@@ -12714,7 +12714,7 @@
               "id": 20434,
               "name": "VaultStargate",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 18199,
+              "referencedDeclaration": 18189,
               "src": "120:13:78"
             },
             "id": 20435,
@@ -12729,8 +12729,8 @@
         "id": 20436,
         "linearizedBaseContracts": [
           20436,
-          18199,
-          19929,
+          18189,
+          19919,
           434,
           493,
           169,
@@ -12754,7 +12754,7 @@
               "id": 20437,
               "name": "VaultFactoryStargate",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 16988,
+              "referencedDeclaration": 16978,
               "src": "177:20:78"
             },
             "id": 20438,
@@ -12769,7 +12769,7 @@
         "id": 20439,
         "linearizedBaseContracts": [
           20439,
-          16988,
+          16978,
           169,
           1718,
           323
@@ -12906,13 +12906,13 @@
         10661
       ],
       "VaultBase": [
-        19929
+        19919
       ],
       "VaultFactoryStargate": [
-        16988
+        16978
       ],
       "VaultStargate": [
-        18199
+        18189
       ]
     },
     "id": 20440,
@@ -12937,7 +12937,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 20440,
-        "sourceUnit": 18200,
+        "sourceUnit": 18190,
         "src": "58:30:78",
         "symbolAliases": [],
         "unitAlias": ""
@@ -12950,7 +12950,7 @@
               "id": 20434,
               "name": "VaultStargate",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 18199,
+              "referencedDeclaration": 18189,
               "src": "120:13:78"
             },
             "id": 20435,
@@ -12965,8 +12965,8 @@
         "id": 20436,
         "linearizedBaseContracts": [
           20436,
-          18199,
-          19929,
+          18189,
+          19919,
           434,
           493,
           169,
@@ -12990,7 +12990,7 @@
               "id": 20437,
               "name": "VaultFactoryStargate",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 16988,
+              "referencedDeclaration": 16978,
               "src": "177:20:78"
             },
             "id": 20438,
@@ -13005,7 +13005,7 @@
         "id": 20439,
         "linearizedBaseContracts": [
           20439,
-          16988,
+          16978,
           169,
           1718,
           323
@@ -13026,14 +13026,14 @@
     "version": "0.8.10+commit.fc410830.Emscripten.clang"
   },
   "networks": {
-    "1651671423946": {
+    "1651758002357": {
       "events": {},
       "links": {},
-      "address": "0xB1AeaE9DB90c0a29C6bFA8ac0729994203729730"
+      "address": "0x47f214Da7E874151F82244fa6B831FC2F9910441"
     }
   },
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-05-05T12:44:27.095Z",
+  "updatedAt": "2022-05-06T22:45:13.342Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

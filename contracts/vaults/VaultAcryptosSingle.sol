@@ -323,7 +323,10 @@ contract VaultAcryptosSingle is VaultBase {
     function _safeSwap(SafeSwapParams memory _swapParams) internal {
         if (_swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS) {
             // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(balancerVaultAddress, _swapParams.amountIn);
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
+                balancerVaultAddress,
+                _swapParams.amountIn
+            );
             // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
             IBalancerVault(balancerVaultAddress).safeSwap(
                 balancerPool,
@@ -331,7 +334,10 @@ contract VaultAcryptosSingle is VaultBase {
             );
         } else {
             // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(uniRouterAddress, _swapParams.amountIn);
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
+                uniRouterAddress,
+                _swapParams.amountIn
+            );
             // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _swapParams.amountIn,
@@ -370,15 +376,34 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal virtual {
+    /// @return wantUnfarmed The net amount of Want tokens unfarmed
+    function _unfarm(uint256 _wantAmt) internal returns (uint256 wantUnfarmed) {
         // Withdraw the Want tokens from the Farm contract
         IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _wantAmt);
+
+        // Init
+        wantUnfarmed = _wantAmt;
+
+        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        if (wantUnfarmed > _wantBal) {
+            wantUnfarmed = _wantBal;
+        }
+        // Safety: cap _wantAmt at the total quantity of Want tokens locked
+        if (wantLockedTotal < _wantAmt) {
+            wantUnfarmed = wantLockedTotal;
+        }
+
+        // Decrement the total Want locked tokens by the _wantAmt
+        wantLockedTotal = wantLockedTotal.sub(wantUnfarmed);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account The address of the owner of vault investment
     /// @param _wantAmt The amount of Want token to withdraw
-    /// @return uint256 The number of shares removed
+    /// @return sharesRemoved The number of shares removed
     function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         virtual
@@ -386,13 +411,13 @@ contract VaultAcryptosSingle is VaultBase {
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesRemoved)
     {
         // Preflight checks
         require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
@@ -409,30 +434,13 @@ contract VaultAcryptosSingle is VaultBase {
         }
 
         // Unfarm Want token
-        _unfarm(_wantAmt);
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
-        }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        uint256 _wantUnfarmed = _unfarm(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
-            _wantAmt
+            _wantUnfarmed
         );
-
-        return sharesRemoved;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -539,7 +547,10 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt);
+        uint256 _earnedAmtNet = _earnedAmt
+            .sub(_controllerFee)
+            .sub(_buybackAmt)
+            .sub(_revShareAmt);
 
         // Swap Earn token for single asset token
 
@@ -563,11 +574,7 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
             address(this)
         );
-        // Increase allowance
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
-            uniRouterAddress,
-            _balBUSD
-        );
+
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,
@@ -585,7 +592,9 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Redeposit single asset token to get Want token
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        // Allow spending
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(poolAddress, _token0Bal);
         // Deposit token to get Want token
         IAcryptosVault(poolAddress).deposit(_token0Bal);
 
@@ -606,12 +615,6 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amount
-        );
-
         // 1. Swap Earned -> BUSD
         address[] memory _dummyEarnedToBUSDPath;
         _safeSwap(
@@ -632,11 +635,6 @@ contract VaultAcryptosSingle is VaultBase {
         // Get BUSD bal
         uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
             address(this)
-        );
-        // Approve spending
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
-            uniRouterAddress,
-            _balBUSD
         );
 
         // 2. Swap 1/2 BUSD -> ZOR

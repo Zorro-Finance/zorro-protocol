@@ -11,6 +11,10 @@ contract MockVaultFactoryAcryptosSingle is VaultFactoryAcryptosSingle {
 }
 
 contract MockVaultAcryptosSingle is VaultAcryptosSingle {
+    function unfarm(uint256 _wantAmt) public {
+        _unfarm(_wantAmt);
+    }
+    
     function swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
