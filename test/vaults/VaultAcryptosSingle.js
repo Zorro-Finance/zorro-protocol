@@ -536,22 +536,6 @@ contract('VaultAcryptosSingle', async accounts => {
         acsVault = setupObj.acsVault;
     });
 
-    xit('selectively swaps based on token type', async () => {
-        // _safeSwap()
-        // Check auth
-    });
-
-});
-
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
-
-    before(async () => {
-        const setupObj = await setupContracts(accounts);
-        instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
-    });
-
     it('farms Want token', async () => {
         // Mint tokens
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.628', 'ether'));
@@ -626,25 +610,22 @@ contract('VaultAcryptosSingle', async accounts => {
 });
 
 contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
+    let instance, acsVault, usdc;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         acsVault = setupObj.acsVault;
+        usdc = setupObj.usdc;
     });
 
-    xit('exchanges Want token for USD', async () => {
+    it('exchanges Want token for USD', async () => {
         /* Prep */
         // Transfer Want token
         const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
         await acsVault.mint(accounts[0], wantAmt);
-        // Give perms
+        // Allow VaultAcryptosSingle to spend want token
         await acsVault.approve(instance.address, wantAmt);
-        await router.setPoolAddress(lpPool.address);
-        // Simulate bal & total supply of tokens 0, 1 in pool
-        const token0Amt = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
-        await token0.mint(lpPool.address, token0Amt);
 
         /* Exchange (0) */
         try {
@@ -657,8 +638,8 @@ contract('VaultAcryptosSingle', async accounts => {
 
         // Vars
         const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
-        const expToken0 = token0Amt.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000)); // Assumes total supply of LP and amount LP token are the same
-        const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(expToken1.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
+        const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in MockVaultAcryptosSingle.sol
+        const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
 
         // Exchange
         const tx = await instance.exchangeWantTokenForUSD(wantAmt, 990);
@@ -675,10 +656,12 @@ contract('VaultAcryptosSingle', async accounts => {
             }
         }
 
-        // Assert: Liquidity removed  (event: RemovedLiquidity for tokens 0, 1, no more Want bal)
+        // Assert: Liquidity removed  (event: RemovedLiquidity for token0, no more Want bal)
         assert.isNotNull(removedLiq);
 
         // Assert: USDC obtained (check Bal)
+        console.log('post usdc bal: ', (await usdc.balanceOf.call(accounts[0])).toString());
+        console.log('expected usdc bal: ', expUSDC.toString());
         assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
 
         /* Only Zorro Controller */

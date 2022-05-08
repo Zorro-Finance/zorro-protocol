@@ -471,8 +471,11 @@ contract VaultAcryptosSingle is VaultBase {
             _amount
         );
 
+        // Approve
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(poolAddress, _amount);
+
         // Withdraw Want token to get Token0
-        IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _amount);
+        IAcryptosVault(poolAddress).withdraw(_amount);
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();

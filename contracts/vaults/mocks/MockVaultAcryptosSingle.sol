@@ -67,7 +67,9 @@ contract MockAcryptosVault is IAcryptosVault, MockERC20Upgradeable {
 
     function withdraw(uint256 _shares) public {
         IERC20Upgradeable(address(this)).safeTransferFrom(msg.sender, burnAddress, _shares);
-        emit RemovedLiquidity(2 ether); // Hard code for tests
+        uint256 _withdrawalAmt = 2 ether; // Hard code for tests
+        IMockERC20Upgradeable(token0).mint(msg.sender, _withdrawalAmt);
+        emit RemovedLiquidity(_withdrawalAmt);
     }
 }
 
