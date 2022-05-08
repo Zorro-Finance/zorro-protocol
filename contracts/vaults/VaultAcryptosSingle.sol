@@ -301,6 +301,9 @@ contract VaultAcryptosSingle is VaultBase {
             address(this)
         );
 
+        // Increase allowance
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(poolAddress, _token0Bal);
+
         // Deposit token to get Want token
         IAcryptosVault(poolAddress).deposit(_token0Bal);
 

@@ -451,16 +451,78 @@ contract('VaultAcryptosSingle', async accounts => {
 });
 
 contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
+    let instance, acsVault, usdc;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         acsVault = setupObj.acsVault;
+        usdc = setupObj.usdc;
     });
 
-    xit('exchanges USD for Want token', async () => {
-        // Check auth
+    it('exchanges USD for Want token', async () => {
+        /* Prep */
+        const amountUSD = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+
+        /* Exchange (0) */
+        try {
+            await instance.exchangeUSDForWantToken(0, 990);
+        } catch (err) {
+            assert.include(err.message, 'USDC deposit must be > 0');
+        }
+
+        /* Exchange (> balance) */
+        try {
+            await instance.exchangeUSDForWantToken(amountUSD, 990);
+        } catch (err) {
+            assert.include(err.message, 'USDC desired exceeded bal');
+        }
+
+        /* Exchange (> 0) */
+        // Record Want bal pre exchange
+        const preExchangeWantBal = await acsVault.balanceOf.call(accounts[0]);
+        // Transfer USDC
+        await usdc.mint(accounts[0], amountUSD);
+        await usdc.transfer(instance.address, amountUSD);
+        // Exchange
+        const tx = await instance.exchangeUSDForWantToken(amountUSD, 990);
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+
+        let swappedTokens = [];
+        let addedLiq;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === swappedEventSig) {
+                if (web3.utils.toBN(topics[2]).eq(amountUSD)) {
+                    swappedTokens.push(rl);
+                }
+            } else if (topics[0] === addedLiqEventSig) {
+                addedLiq = rl;
+            }
+        }
+
+        // Assert: Swap event for token 0
+        assert.equal(swappedTokens.length, 1);
+        
+        // Assert: Liquidity added
+        assert.isNotNull(addedLiq);
+
+
+        // Assert: Want token obtained
+        const postExchangeWantBal = await acsVault.balanceOf.call(accounts[0]);
+        const expLiquidity = web3.utils.toBN(web3.utils.toWei('1', 'ether'));
+        assert.isTrue(postExchangeWantBal.sub(preExchangeWantBal).eq(expLiquidity))
+
+        /* Only Zorro Controller */
+        try {
+            await usdc.mint(accounts[0], amountUSD);
+            await usdc.transfer(instance.address, amountUSD);
+            await instance.exchangeUSDForWantToken(amountUSD, 990);
+        } catch (err) {
+            assert.include(err.message, '!zorroController');
+        }
     });
 
 });
@@ -573,7 +635,58 @@ contract('VaultAcryptosSingle', async accounts => {
     });
 
     xit('exchanges Want token for USD', async () => {
-        // Check auth
+        /* Prep */
+        // Transfer Want token
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
+        await acsVault.mint(accounts[0], wantAmt);
+        // Give perms
+        await acsVault.approve(instance.address, wantAmt);
+        await router.setPoolAddress(lpPool.address);
+        // Simulate bal & total supply of tokens 0, 1 in pool
+        const token0Amt = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
+        await token0.mint(lpPool.address, token0Amt);
+
+        /* Exchange (0) */
+        try {
+            await instance.exchangeWantTokenForUSD(0, 990);
+        } catch (err) {
+            assert.include(err.message, 'Want amt must be > 0');
+        }
+
+        /* Exchange (> 0) */
+
+        // Vars
+        const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
+        const expToken0 = token0Amt.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000)); // Assumes total supply of LP and amount LP token are the same
+        const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(expToken1.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
+
+        // Exchange
+        const tx = await instance.exchangeWantTokenForUSD(wantAmt, 990);
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        console.log('rawLogs exch want -> USDC: ', rawLogs);
+
+        let removedLiq;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === removedLiqEventSig) {
+                removedLiq = rl;
+            }
+        }
+
+        // Assert: Liquidity removed  (event: RemovedLiquidity for tokens 0, 1, no more Want bal)
+        assert.isNotNull(removedLiq);
+
+        // Assert: USDC obtained (check Bal)
+        assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
+
+        /* Only Zorro Controller */
+        try {
+            await instance.exchangeWantTokenForUSD(wantAmt, 990, {from: accounts[2]});
+        } catch (err) {
+            assert.include(err.message, '!zorroController');
+        }
     });
 
 });
