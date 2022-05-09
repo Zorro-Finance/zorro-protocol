@@ -101,7 +101,6 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     uint256 public lastEarnBlock; // Last recorded block for an earn() event
     uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
     uint256 public sharesTotal; // Total shares for this Vault
-    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
     // Swap routes
     address[] public USDCToToken0Path;
     address[] public USDCToToken1Path;

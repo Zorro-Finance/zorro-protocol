@@ -1,4 +1,4 @@
-const GeneralVault = artifacts.require('MockVaultZorro');
+const MockVaultZorro = artifacts.require('MockVaultZorro');
 
 contract('VaultZorro', async accounts => {
     xit('deposits want token', async () => {

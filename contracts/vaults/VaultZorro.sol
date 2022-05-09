@@ -104,7 +104,6 @@ contract VaultZorro is VaultBase {
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
-        userShares[_account] = userShares[_account].add(sharesAdded);
 
         // Update want locked total
         wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));

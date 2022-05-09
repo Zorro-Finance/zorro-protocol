@@ -212,7 +212,6 @@ contract VaultStargate is VaultBase {
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
-        userShares[_account] = userShares[_account].add(sharesAdded);
 
         // Farm Want token
         _farm();
@@ -368,7 +367,6 @@ contract VaultStargate is VaultBase {
         }
         // Decrement the total shares by the sharesRemoved
         sharesTotal = sharesTotal.sub(sharesRemoved);
-        userShares[_account] = userShares[_account].sub(sharesRemoved);
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {

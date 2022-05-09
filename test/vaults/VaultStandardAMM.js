@@ -218,7 +218,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Assert: increments shares (total shares and user shares)
         assert.isTrue((await instance.sharesTotal.call()).eq(wantAmt));
-        assert.isTrue((await instance.userShares.call(account)).eq(wantAmt));
 
         // Assert: calls farm()
         assert.isNotNull(farmed);
@@ -241,7 +240,6 @@ contract('VaultStandardAMM', async accounts => {
         const sharesAdded = wantAmt.mul(sharesTotal).mul(web3.utils.toBN(9990)).div(wantLockedTotal.mul(web3.utils.toBN(10000)));
         const newTotalShares = web3.utils.toBN(sharesAdded).add(wantAmt);
         assert.isTrue((await instance.sharesTotal.call()).eq(newTotalShares));
-        assert.isTrue((await instance.userShares.call(account)).eq(newTotalShares));
 
         /* Only Zorro controller */
         try {
@@ -255,7 +253,6 @@ contract('VaultStandardAMM', async accounts => {
         // Prep
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.547', 'ether'));
         const currentSharesTotal = await instance.sharesTotal.call();
-        const currentUserShares = await instance.userShares.call(account);
         const currentWantLockedTotal = await instance.wantLockedTotal.call();
 
         /* Withdraw 0 */
@@ -283,12 +280,10 @@ contract('VaultStandardAMM', async accounts => {
             }
         }
 
-        // Assert: Correct sharesTotal and userShares
+        // Assert: Correct sharesTotal
         const sharesRemoved = wantAmt.mul(currentSharesTotal).div(currentWantLockedTotal);
         const expectedSharesTotal = currentSharesTotal.sub(sharesRemoved);
-        const expectedUserShares = currentUserShares.sub(sharesRemoved);
         assert.isTrue((await instance.sharesTotal.call()).eq(expectedSharesTotal));
-        assert.isTrue((await instance.userShares.call(account)).eq(expectedUserShares));
 
         // Assert: calls unfarm()
         assert.isNotNull(unfarmed);
@@ -317,9 +312,8 @@ contract('VaultStandardAMM', async accounts => {
             }
         }
 
-        // Assert: Correct sharesTotal and userShares
+        // Assert: Correct sharesTotal
         assert.isTrue((await instance.sharesTotal.call()).isZero());
-        assert.isTrue((await instance.userShares.call(account)).isZero());
 
         // Assert: Xfers back to controller and for wantAmt
         assert.equal(web3.utils.toHex(web3.utils.toBN(transferred.data)), web3.utils.toHex(currentWantLockedTotal));
