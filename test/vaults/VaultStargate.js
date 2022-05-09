@@ -540,7 +540,6 @@ contract('VaultStargate', async accounts => {
 
         // Logs
         const { rawLogs } = tx.receipt;
-        console.log('rawLogs exch want -> USDC: ', rawLogs);
 
         let removedLiq;
         for (let rl of rawLogs) {
@@ -554,8 +553,6 @@ contract('VaultStargate', async accounts => {
         assert.isNotNull(removedLiq);
 
         // Assert: USDC obtained (check Bal)
-        console.log('usdc bal at end: ', (await usdc.balanceOf.call(accounts[0])).toString());
-        console.log('expUSDC: ', expUSDC.toString());
         assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
 
         /* Only Zorro Controller */

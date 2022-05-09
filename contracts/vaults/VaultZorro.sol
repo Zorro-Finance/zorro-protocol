@@ -136,7 +136,7 @@ contract VaultZorro is VaultBase {
 
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
+            _amountUSDC,
             1e12,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,
