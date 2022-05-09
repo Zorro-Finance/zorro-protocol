@@ -27,10 +27,17 @@ const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 // Other contracts
+// AMM
 const MockAMMFarm = artifacts.require('MockAMMFarm');
+const MockLPPool = artifacts.require('MockLPPool');
+// Acryptos
 const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
 const MockAcryptosVault = artifacts.require('MockAcryptosVault');
-const MockLPPool = artifacts.require('MockLPPool');
+// Stargate
+const MockStargateRouter = artifacts.require('MockStargateRouter');
+const MockStargatePool = artifacts.require('MockStargatePool');
+const MockStargateLPStaking = artifacts.require('MockStargateLPStaking');
+const MockSTGToken = artifacts.require('MockSTGToken');
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks: Test/dev only
@@ -122,6 +129,10 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockAMMFarm);
     await deployer.deploy(MockAcryptosFarm);
     await deployer.deploy(MockAcryptosVault);
+    await deployer.deploy(MockStargateRouter);
+    await deployer.deploy(MockStargatePool);
+    await deployer.deploy(MockStargateLPStaking);
+    await deployer.deploy(MockSTGToken);
 
     // Vaults
     // VaultZorro
@@ -296,6 +307,7 @@ module.exports = async function (deployer, network, accounts) {
         lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
       },
       tokenSTG: '0x0000000000000000000000000000000000000000',
+      stargateRouter: '0x0000000000000000000000000000000000000000',
       stargatePoolId: 0
     };
   

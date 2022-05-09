@@ -102,7 +102,7 @@ const setupContracts = async (accounts) => {
         ZORToken,
         zorroStakingVault,
     };
-}
+};
 
 contract('VaultFactoryAcryptosSingle', async accounts => {
     let factory;
@@ -375,6 +375,7 @@ contract('VaultAcryptosSingle', async accounts => {
         }
 
     });
+
     it('withdraws Want token', async () => {
         // Prep
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.547', 'ether'));
@@ -660,8 +661,6 @@ contract('VaultAcryptosSingle', async accounts => {
         assert.isNotNull(removedLiq);
 
         // Assert: USDC obtained (check Bal)
-        console.log('post usdc bal: ', (await usdc.balanceOf.call(accounts[0])).toString());
-        console.log('expected usdc bal: ', expUSDC.toString());
         assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
 
         /* Only Zorro Controller */

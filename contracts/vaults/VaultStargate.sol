@@ -60,7 +60,6 @@ contract VaultFactoryStargate is Initializable, OwnableUpgradeable {
     }
 }
 
-
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
 contract VaultStargate is VaultBase {
     /* Libraries */
@@ -95,6 +94,7 @@ contract VaultStargate is VaultBase {
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
         poolAddress = _initValue.keyAddresses.poolAddress;
+        stargateRouter = _initValue.stargateRouter;
         uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
@@ -152,13 +152,14 @@ contract VaultStargate is VaultBase {
         VaultFees fees;
         VaultPriceFeeds priceFeeds;
         address tokenSTG;
+        address stargateRouter;
         uint16 stargatePoolId;
     }
 
     /* State */
     address public tokenSTG; // Stargate token
+    address public stargateRouter; // Stargate Router for adding/removing liquidity etc.
     uint16 public stargatePoolId; // Stargate Pool that tokens shall be lent to
-
 
     /* Setters */
     function setTokenSTG(address _token) external onlyOwner {
@@ -167,6 +168,10 @@ contract VaultStargate is VaultBase {
 
     function setStargatePoolId(uint16 _poolId) external onlyOwner {
         stargatePoolId = _poolId;
+    }
+
+    function setStargateRouter(address _router) external onlyOwner {
+        stargateRouter = _router;
     }
 
     /* Investment Actions */
@@ -224,7 +229,9 @@ contract VaultStargate is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
+            address(this)
+        );
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
@@ -253,22 +260,31 @@ contract VaultStargate is VaultBase {
             );
         }
 
-
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+
+        // Safe approve
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(stargateRouter, _token0Bal);
 
         // Deposit token to get Want token
-        IStargateRouter(poolAddress).addLiquidity(
+        IStargateRouter(stargateRouter).addLiquidity(
             stargatePoolId,
             _token0Bal,
             address(this)
         );
 
         // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
 
         // Transfer back to sender
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
 
         return _wantAmt;
     }
@@ -281,27 +297,57 @@ contract VaultStargate is VaultBase {
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal virtual {
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         // Increment the total Want tokens locked into this contract
         wantLockedTotal = wantLockedTotal.add(wantAmt);
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(farmContractAddress, wantAmt);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            farmContractAddress,
+            wantAmt
+        );
 
         // Deposit the Want tokens in the Farm contract
-        IStargateLPStaking(farmContractAddress).deposit(stargatePoolId, wantAmt);
+        IStargateLPStaking(farmContractAddress).deposit(
+            stargatePoolId,
+            wantAmt
+        );
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal virtual {
+    /// @return wantUnfarmed The net amount of Want tokens unfarmed
+    function _unfarm(uint256 _wantAmt) internal returns (uint256 wantUnfarmed) {
         // Withdraw the Want tokens from the Farm contract
-        IStargateLPStaking(farmContractAddress).deposit(stargatePoolId, _wantAmt);
+        IStargateLPStaking(farmContractAddress).withdraw(
+            stargatePoolId,
+            _wantAmt
+        );
+
+        // Init
+        wantUnfarmed = _wantAmt;
+
+        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        if (wantUnfarmed > _wantBal) {
+            wantUnfarmed = _wantBal;
+        }
+        // Safety: cap _wantAmt at the total quantity of Want tokens locked
+        if (wantLockedTotal < _wantAmt) {
+            wantUnfarmed = wantLockedTotal;
+        }
+
+        // Decrement the total Want locked tokens by the _wantAmt
+        wantLockedTotal = wantLockedTotal.sub(wantUnfarmed);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _account The address of the owner of vault investment
     /// @param _wantAmt The amount of Want token to withdraw
-    /// @return uint256 The number of shares removed
+    /// @return sharesRemoved The number of shares removed
     function withdrawWantToken(address _account, uint256 _wantAmt)
         public
         virtual
@@ -309,13 +355,13 @@ contract VaultStargate is VaultBase {
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesRemoved)
     {
         // Preflight checks
         require(_wantAmt > 0, "want amt <= 0");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
@@ -332,25 +378,13 @@ contract VaultStargate is VaultBase {
         }
 
         // Unfarm Want token
-        _unfarm(_wantAmt);
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
-        }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        uint256 _wantUnfarmed = _unfarm(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
-
-        return sharesRemoved;
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantUnfarmed
+        );
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -378,27 +412,34 @@ contract VaultStargate is VaultBase {
             _amount
         );
 
-        // Withdraw Want token to get Token0
-        IStargateRouter(poolAddress).instantRedeemLocal(
-            stargatePoolId,
-            _amount,
-            address(this)
-        );
-
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-
-        // Swap Token0 for USDC
-        // Get Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-        // Increase allowance
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            _token0Bal
-        );
+        // Safe approve
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(stargateRouter, _amount);
 
         if (token0Address != tokenUSDCAddress) {
+            // Withdraw Want token to get Token0
+            IStargateRouter(stargateRouter).instantRedeemLocal(
+                stargatePoolId,
+                _amount,
+                address(this)
+            );
+
+            // Get Token0 balance
+            uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+                address(this)
+            );
+
             // Only swap if the token is not USDC
+
+            // Use price feed to determine exchange rates
+            uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+
+            // Swap Token0 for USDC
+
+            // Increase allowance
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+                uniRouterAddress,
+                _token0Bal
+            );
 
             // Swap Token0 -> USDC
             IAMMRouter02(uniRouterAddress).safeSwap(
@@ -407,12 +448,19 @@ contract VaultStargate is VaultBase {
                 1e12,
                 _maxMarketMovementAllowed,
                 token0ToUSDCPath,
-                address(this),
+                msg.sender,
                 block.timestamp.add(600)
+            );
+        } else {
+            // Withdraw Want token to get Token0
+            IStargateRouter(stargateRouter).instantRedeemLocal(
+                stargatePoolId,
+                _amount,
+                msg.sender
             );
         }
 
-        // Calculate USDC balance
+        // Calculate USDC balance. // TODO: Not so useful if we're transferring immediately to user. Wouldn't this always be zero?
         return IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
     }
 
@@ -434,7 +482,9 @@ contract VaultStargate is VaultBase {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract (ACS, etc.)
-        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
+        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
+            address(this)
+        );
 
         // Get exchange rate from price feed
         uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
@@ -459,10 +509,16 @@ contract VaultStargate is VaultBase {
         );
 
         // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(_revShareAmt);
+        uint256 _earnedAmtNet = _earnedAmt
+            .sub(_controllerFee)
+            .sub(_buybackAmt)
+            .sub(_revShareAmt);
 
         // Allow spending
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _earnedAmt);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _earnedAmt
+        );
 
         // Swap Earn token for single asset token (STG -> token0)
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -477,9 +533,15 @@ contract VaultStargate is VaultBase {
 
         // Redeposit single asset token to get Want token
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+
+        // Safe approve
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(stargateRouter, _token0Bal);
+
         // Deposit token to get Want token
-        IStargateRouter(poolAddress).addLiquidity(
+        IStargateRouter(stargateRouter).addLiquidity(
             stargatePoolId,
             _token0Bal,
             address(this)
@@ -503,7 +565,10 @@ contract VaultStargate is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // 1. Swap 1/2 Earned -> ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -528,10 +593,11 @@ contract VaultStargate is VaultBase {
         );
 
         // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(address(this));
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
+        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
             address(this)
         );
+        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
+            .balanceOf(address(this));
         IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
             uniRouterAddress,
             zorroTokenAmt
@@ -562,7 +628,10 @@ contract VaultStargate is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _amount
+        );
 
         // Swap Earn to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -588,7 +657,10 @@ contract VaultStargate is VaultBase {
         ExchangeRates memory _rates
     ) internal override {
         // Increase allowance
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(uniRouterAddress, _earnedAmount);
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            uniRouterAddress,
+            _earnedAmount
+        );
 
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(

@@ -49,6 +49,7 @@ module.exports = async function (deployer, network, accounts) {
       lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
     },
     tokenSTG: '0x0000000000000000000000000000000000000000',
+    stargateRouter: '0x0000000000000000000000000000000000000000',
     stargatePoolId: 0
   };
 
