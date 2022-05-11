@@ -68,6 +68,8 @@ contract MockStargateRouter is IStargateRouter, MockERC20Upgradeable {
 
     event RemovedLiquidity(uint256 indexed _amount);
 
+    event SgSwapped(uint256 indexed _chainId, uint256 indexed _qty, bytes indexed _dstContract);
+
     function addLiquidity(
         uint256 _poolId,
         uint256 _amountLD,
@@ -98,7 +100,12 @@ contract MockStargateRouter is IStargateRouter, MockERC20Upgradeable {
         lzTxObj memory _lzTxParams,
         bytes calldata _to,
         bytes calldata _payload
-    ) external payable {}
+    ) external payable {
+        // Transfer to burn
+        IERC20Upgradeable(asset).safeTransferFrom(msg.sender, burnAddress, _amountLD);
+        // Log
+        emit SgSwapped(_dstChainId, _minAmountLD, _to);
+    }
 
     function redeemRemote(
         uint16 _dstChainId,
@@ -155,7 +162,9 @@ contract MockStargateRouter is IStargateRouter, MockERC20Upgradeable {
         bytes calldata _toAddress,
         bytes calldata _transferAndCallPayload,
         lzTxObj memory _lzTxParams
-    ) external view returns (uint256, uint256) {}
+    ) external view returns (uint256, uint256) {
+        return (0.01 ether, 0.02 ether); // Hardcoded for tests
+    }
 }
 
 contract MockStargatePool is MockERC20Upgradeable {}

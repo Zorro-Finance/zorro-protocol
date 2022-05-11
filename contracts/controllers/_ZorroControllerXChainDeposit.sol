@@ -115,12 +115,6 @@ contract ZorroControllerXChainDeposit is
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
 
-        // Allow this contract to spend USDC
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            address(this),
-            _valueUSDC
-        );
-
         // Transfer USDC into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,

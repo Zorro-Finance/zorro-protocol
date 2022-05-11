@@ -297,8 +297,6 @@ contract('VaultZorro', async accounts => {
         await instance.exchangeWantTokenForUSD(wantAmt, 990);
 
         // Assert: USDC obtained (check Bal)
-        console.log('usdc bal at end: ', (await usdc.balanceOf.call(accounts[0])).toString());
-        console.log('expUSDC: ', expUSDC.toString());
         assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
 
         /* Only Zorro Controller */

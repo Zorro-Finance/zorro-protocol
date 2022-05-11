@@ -27,6 +27,7 @@ contract ZorroControllerXChainBase is
 {
     /* Libraries */
     using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* State */
 
@@ -144,6 +145,11 @@ contract ZorroControllerXChainBase is
     function _callStargateSwap(StargateSwapPayload memory _swapPayload)
         internal
     {
+        // Approve spending by Stargate 
+        // TODO: Can't assume that defaultStablecoin is always going to be USDC. Or can we?
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(stargateRouter, _swapPayload.qty);
+
+        // Swap call
         IStargateRouter.lzTxObj memory _lzTxObj;
         IStargateRouter(stargateRouter).swap{value: msg.value}(
             ZorroChainToLZMap[_swapPayload.chainId],
