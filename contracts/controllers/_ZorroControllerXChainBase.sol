@@ -29,8 +29,39 @@ contract ZorroControllerXChainBase is
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /* Structs */
+
+    // Stargate swaps
+    struct StargateSwapPayload {
+        uint256 chainId;
+        uint256 qty;
+        bytes dstContract;
+        bytes payload;
+        uint256 maxMarketMovement;
+    }
+
+    // LayerZero messages
+    struct LZMessagePayload {
+        uint256 zorroChainId;
+        bytes destinationContract;
+        bytes payload;
+        address payable refundAddress;
+        address _zroPaymentAddress;
+        bytes adapterParams;
+    }
+
     /* State */
 
+    // Stargate/LZ
+    address public stargateRouter; // Address to on-chain Stargate router
+    uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
+    mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
+    address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
+    // Chain maps
+    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
+    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+    mapping(uint256 => uint256) public chainTypes; // Mapping of Zorro Chain ID to chain type. 0: EVM, 1: Solana
     // Tokens
     address public defaultStablecoin;
     address public ZORRO;
@@ -59,39 +90,6 @@ contract ZorroControllerXChainBase is
         chainId = _chainIds[0];
         homeChainId = _chainIds[1];
     }
-
-    /* Structs */
-
-    // Stargate swaps
-    struct StargateSwapPayload {
-        uint256 chainId;
-        uint256 qty;
-        bytes dstContract;
-        bytes payload;
-        uint256 maxMarketMovement;
-    }
-
-    // LayerZero messages
-    struct LZMessagePayload {
-        uint256 zorroChainId;
-        bytes destinationContract;
-        bytes payload;
-        address payable refundAddress;
-        address _zroPaymentAddress;
-        bytes adapterParams;
-    }
-
-    /* State */
-
-    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
-    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
-    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
-    address public stargateRouter; // Address to on-chain Stargate router
-    uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
-    mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
-    address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
-
-    /* Setters */
 
     /// @notice Setter: Controller contract for each chain
     /// @param _zorroChainId Zorro Chain ID
@@ -138,6 +136,13 @@ contract ZorroControllerXChainBase is
         layerZeroEndpoint = _layerZeroEndpoint;
     }
 
+    function setChainType(
+        uint256 _zorroChainId,
+        uint256 _chainType
+    ) external onlyOwner {
+        chainTypes[_zorroChainId] = _chainType;
+    }
+
     /* Router functions */
 
     /// @notice Internal function for making swap calls to Stargate
@@ -179,5 +184,11 @@ contract ZorroControllerXChainBase is
             _msgPayload.refundAddress,
             _msgPayload.adapterParams
         );
+    }
+
+    function _bytesToAddress(bytes memory bys) internal pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys,20))
+        } 
     }
 }

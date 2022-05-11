@@ -71,12 +71,11 @@ contract('ZorroController', async accounts => {
         // Prep
         const depositUSDC = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
         const originWallet = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        console.log('origin wallet: ', originWallet);
         const destWallet = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        console.log('dest wallet: ', destWallet);
 
         // Run
         const res = await instance.encodeXChainDepositPayload.call(
+            0,
             0,
             depositUSDC,
             4,
@@ -105,8 +104,6 @@ contract('ZorroController', async accounts => {
             originWallet,
             destWallet,
         ]);
-        console.log('expectedPayload: ', expectedPayload);
-        console.log('resulting payload: ', res);
         assert.isTrue(web3.utils.toBN(res).eq(web3.utils.toBN(expectedPayload)));
     });
 

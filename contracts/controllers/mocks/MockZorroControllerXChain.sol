@@ -6,15 +6,17 @@ import "../ZorroControllerXChain.sol";
 
 contract MockZorroControllerXChain is ZorroControllerXChain {
     function encodeXChainDepositPayload(
+        uint256 _chainId,
         uint256 _pid,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         address _originWallet,
         bytes memory _destWallet
-    ) public pure returns (bytes memory) {
+    ) public view returns (bytes memory) {
         return
             _encodeXChainDepositPayload(
+                _chainId,
                 _pid,
                 _valueUSDC,
                 _weeksCommitted,
