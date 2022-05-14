@@ -38,6 +38,8 @@ const MockStargateRouter = artifacts.require('MockStargateRouter');
 const MockStargatePool = artifacts.require('MockStargatePool');
 const MockStargateLPStaking = artifacts.require('MockStargateLPStaking');
 const MockSTGToken = artifacts.require('MockSTGToken');
+// LayerZero
+const MockLayerZeroEndpoint = artifacts.require('MockLayerZeroEndpoint');
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks: Test/dev only
@@ -133,6 +135,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockStargatePool);
     await deployer.deploy(MockStargateLPStaking);
     await deployer.deploy(MockSTGToken);
+    await deployer.deploy(MockLayerZeroEndpoint);
 
     // Vaults
     // VaultZorro

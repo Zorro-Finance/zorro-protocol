@@ -47,6 +47,7 @@ contract ZorroControllerXChainEarn is
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
     /* Constants */
+    // TODO: May need to make this a var: 
     address public constant burnAddress =
         0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
 

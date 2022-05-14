@@ -7,7 +7,7 @@ const MockStargateRouter = artifacts.require('MockStargateRouter');
 const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
 const stargateSwapEventSig = web3.eth.abi.encodeEventSignature('StargateSwap(address,address,uint256)');
 
-contract('ZorroController', async accounts => {
+contract('ZorroControllerXChain', async accounts => {
     let instance, controller, usdc, sgRouter, ZORToken;
 
     before(async () => {
