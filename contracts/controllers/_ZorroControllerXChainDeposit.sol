@@ -203,7 +203,7 @@ contract ZorroControllerXChainDeposit is
         uint256 _maxMarketMovement,
         bytes memory _originAccount,
         address _destAccount
-    ) internal {
+    ) internal virtual {
         // Call deposit function
         IZorroControllerInvestment(currentChainController)
             .depositFullServiceFromXChain(
