@@ -89,7 +89,6 @@ contract ZorroControllerXChainReceiver is
         } else if (this.receiveXChainRepatriationRequest.selector == _funcSig) {
             // Decode params from payload
             (
-                ,
                 uint256 _originChainId,
                 uint256 _pid,
                 uint256 _trancheId,
@@ -97,8 +96,8 @@ contract ZorroControllerXChainReceiver is
                 uint256 _burnableZORRewards,
                 uint256 _rewardsDue
             ) = abi.decode(
-                    payload,
-                    (bytes4, uint256, uint256, uint256, bytes, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, uint256, uint256, bytes, uint256, uint256)
                 );
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
@@ -112,15 +111,14 @@ contract ZorroControllerXChainReceiver is
         } else if (this.receiveXChainDistributionRequest.selector == _funcSig) {
             // Decode params from payload
             (
-                ,
                 uint256 _remoteChainId,
                 uint256 _amountUSDCBuyback,
                 uint256 _amountUSDCRevShare,
                 uint256 _accSlashedRewards,
                 uint256 _maxMarketMovement
             ) = abi.decode(
-                    payload,
-                    (bytes4, uint256, uint256, uint256, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, uint256, uint256, uint256, uint256)
                 );
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
@@ -144,19 +142,20 @@ contract ZorroControllerXChainReceiver is
         // Determine function based on signature
         // Get func signature
         bytes4 _funcSig = bytes4(_payload);
+        // Get params-only payload
+        bytes memory _paramsPayload = this.extractParamsPayload(_payload);
         // Match to appropriate func
         if (this.receiveXChainWithdrawalRequest.selector == _funcSig) {
             // Decode params
             (
-                ,
                 uint256 _originChainId,
                 bytes memory _originAccount,
                 uint256 _pid,
                 uint256 _trancheId,
                 uint256 _maxMarketMovement
             ) = abi.decode(
-                    _payload,
-                    (bytes4, uint256, bytes, uint256, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, bytes, uint256, uint256, uint256)
                 );
 
             // Call receiving function for cross chain withdrawals

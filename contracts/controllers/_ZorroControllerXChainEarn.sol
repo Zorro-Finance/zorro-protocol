@@ -241,7 +241,7 @@ contract ZorroControllerXChainEarn is
         uint256 _maxMarketMovement
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDistributionRequest(
@@ -265,7 +265,7 @@ contract ZorroControllerXChainEarn is
         uint256 _amountUSDCRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
-    ) internal {
+    ) internal virtual {
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
 

@@ -245,7 +245,7 @@ contract ZorroControllerXChainWithdraw is
     /* Sending::repatriation */
 
     /// @notice Prepares and sends cross chain repatriation request via Stargate
-    /// @param _originChainId Chain ID of origin chain that repatriation shall go to
+    /// @param _originChainId Zorro chain ID of origin chain that repatriation shall go to
     /// @param _pid Pool ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriate funds shall go to
@@ -301,7 +301,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _maxMarketMovement
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainWithdrawalRequest(
@@ -325,7 +325,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
-    ) internal {
+    ) internal virtual {
         // Get on-chain account using foreign account as guide
         address _account = ZorroControllerInvestment(currentChainController)
             .foreignTrancheInfo(_pid, _originAccount, _trancheId);
@@ -351,6 +351,8 @@ contract ZorroControllerXChainWithdraw is
 
         // Only proceed if there is something to withdraw
         require(_balUSDC > 0, "Nothing to withdraw");
+
+        // TODO: How will the other side know how much USDC to return to the account, vs minted ZOR rewards vs rewards due?
 
         // Repatriate funds
         _sendXChainRepatriationRequest(
@@ -378,7 +380,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _rewardsDue
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainRepatriationRequest(
@@ -405,7 +407,7 @@ contract ZorroControllerXChainWithdraw is
         bytes memory _originRecipient,
         uint256 _burnableZORRewards,
         uint256 _rewardsDue
-    ) internal {
+    ) internal virtual {
         // Emit repatriation event
         emit XChainRepatriation(
             _pid,
