@@ -94,7 +94,6 @@ contract ZorroControllerXChainWithdraw is
     /// @param _originRecipient Recipient of funds on the origin chain
     /// @param _burnableZORRewards Quantity of ZOR tokens minted for rewards here that need to be burned on the home chain
     /// @param _rewardsDue ZOR rewards due to the recipient
-    /// @param _gasForDestinationLZReceive How much additional gas to provide at destination contract
     /// @return uint256 Estimated fee in native tokens
     function checkXChainRepatriationFee(
         uint256 _originChainId,
@@ -102,8 +101,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _burnableZORRewards,
-        uint256 _rewardsDue,
-        uint256 _gasForDestinationLZReceive
+        uint256 _rewardsDue
     ) external view returns (uint256) {
         // Init empty LZ object
         IStargateRouter.lzTxObj memory _lzTxParams;

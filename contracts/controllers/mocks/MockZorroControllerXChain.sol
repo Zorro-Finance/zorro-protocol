@@ -180,9 +180,69 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     {
         return _getLZAdapterParamsForWithdraw(_gasForDestinationLZReceive);
     }
+
+    function encodeXChainWithdrawalPayload(
+        uint256 _originChainId,
+        bytes memory _originAccount,
+        uint256 _pid,
+        uint256 _trancheId,
+        uint256 _maxMarketMovement
+    ) public pure returns (bytes memory) {
+        return
+            _encodeXChainWithdrawalPayload(
+                _originChainId,
+                _originAccount,
+                _pid,
+                _trancheId,
+                _maxMarketMovement
+            );
+    }
+
+    function encodeXChainRepatriationPayload(
+        uint256 _originChainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        bytes memory _originRecipient,
+        uint256 _burnableZORRewards,
+        uint256 _rewardsDue
+    ) public pure returns (bytes memory) {
+        return
+            _encodeXChainRepatriationPayload(
+                _originChainId,
+                _pid,
+                _trancheId,
+                _originRecipient,
+                _burnableZORRewards,
+                _rewardsDue
+            );
+    }
+
+    function sendXChainRepatriationRequest(
+        uint256 _originChainId,
+        uint256 _pid,
+        uint256 _trancheId,
+        bytes memory _originRecipient,
+        uint256 _amountUSDC,
+        uint256 _burnableZORRewards,
+        uint256 _rewardsDue,
+        uint256 _maxMarketMovementAllowed
+    ) public payable {
+        _sendXChainRepatriationRequest(
+            _originChainId,
+            _pid,
+            _trancheId,
+            _originRecipient,
+            _amountUSDC,
+            _burnableZORRewards,
+            _rewardsDue,
+            _maxMarketMovementAllowed
+        );
+    }
 }
 
 contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
+    event SentMessage(uint16 indexed _dstChainId, uint256 indexed msgValue);
+
     function send(
         uint16 _dstChainId,
         bytes calldata _destination,
@@ -190,7 +250,9 @@ contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
         address payable _refundAddress,
         address _zroPaymentAddress,
         bytes calldata _adapterParams
-    ) external payable {}
+    ) external payable {
+        emit SentMessage(_dstChainId, msg.value);
+    }
 
     function receivePayload(
         uint16 _srcChainId,

@@ -325,7 +325,7 @@ contract ZorroControllerXChainEarn is
         // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            1e12,
+            1e12, // TODO: Globally: Make sure to use actual exch values in case it depegs
             _exchangeRateZOR,
             _maxMarketMovement,
             USDCToZorroPath,
