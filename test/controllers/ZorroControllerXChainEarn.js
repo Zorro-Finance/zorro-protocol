@@ -171,13 +171,6 @@ contract('ZorroControllerXChainEarn', async accounts => {
         await usdc.mint(instance.address, amountUSDC);
 
         // Run
-        console.log('instance addr: ', instance.address);
-        console.log('router addr: ', router.address);
-        console.log('usdc address: ', usdc.address);
-        console.log('zor address: ', ZORToken.address);
-        console.log('path0: ', await instance.USDCToZorroPath.call(0));
-        console.log('path1: ', await instance.USDCToZorroPath.call(1));
-        console.log('set router addr: ', await instance.uniRouterAddress.call());
         const tx = await instance.buybackOnChain(
             amountUSDC,
             maxMarketMovement
@@ -208,8 +201,43 @@ contract('ZorroControllerXChainEarn', async accounts => {
         assert.isNotNull(transferred);
     });
 
-    xit('rev shares', async () => {
+    it('rev shares', async () => {
+        // Prep
+        const amountUSDC = web3.utils.toBN(web3.utils.toWei('300', 'ether'));
+        const maxMarketMovement = 990;
+        const preZORVaultBal = await ZORToken.balanceOf.call(ZORStakingVault.address);
 
+        // Mint some USDC to instance
+        await usdc.mint(instance.address, amountUSDC);
+
+        // Run
+        const tx = await instance.revShareOnChain(
+            amountUSDC,
+            maxMarketMovement
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let transferred;
+        let swapped = [];
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig && topics[2] === ZORStakingVault.address) {
+                transferred = rl;
+            } else if (topics[0] === swappedEventSig) {
+                swapped.push(rl);
+            }
+        }
+
+        // Tests
+
+        // Swaps to ZOR, other LP token
+        assert.equal(swapped.length, 1);
+        // Sends to ZOR Vault
+        assert.isNotNull(transferred);
+        // Balance increased on ZOR staking vault
+        const postZORVaultBal = await ZORToken.balanceOf.call(ZORStakingVault.address);
+        assert.isTrue((postZORVaultBal.sub(preZORVaultBal)).eq(amountUSDC.mul(web3.utils.toBN(maxMarketMovement)).div(web3.utils.toBN(1000)))); // Assumes 1:1 exchange rate
     });
 
     it('awards slashed rewards to stakers', async () => {

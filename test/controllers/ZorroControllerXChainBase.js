@@ -114,7 +114,8 @@ contract('ZorroController', async accounts => {
 
     it('sets burn address', async () => {
         // Normal
-        const burnAddress = web3.toChecksumAddress(accounts[4]);
+        const burnAddress = web3.utils.toChecksumAddress(accounts[4]);
+        await instance.setBurnAddress(burnAddress);
         assert.equal(web3.utils.toChecksumAddress(await instance.burnAddress.call()), burnAddress);
         // Only by owner
         try {
