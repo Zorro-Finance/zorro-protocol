@@ -63,8 +63,6 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainEarn
 interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
-    function setTokenUSDC(address _token) external;
-
     function setZorroLPPoolOtherToken(address _token) external;
 
     function setZorroStakingVault(address _contract) external;

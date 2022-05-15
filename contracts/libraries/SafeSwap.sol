@@ -51,7 +51,6 @@ library SafeSwapUni {
                 .mul(_slippageFactor)
                 .div(_priceTokenOut.mul(1000));
         }
-
         // Swap
         _uniRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             _amountIn,

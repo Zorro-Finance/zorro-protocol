@@ -72,6 +72,8 @@ contract ZorroControllerXChainBase is
     // Chain config
     uint256 public chainId;
     uint256 public homeChainId;
+    // Other
+    address public burnAddress; // Address to send funds to, to burn them
 
     /* Setters */
 
@@ -141,6 +143,10 @@ contract ZorroControllerXChainBase is
         uint256 _chainType
     ) external onlyOwner {
         chainTypes[_zorroChainId] = _chainType;
+    }
+
+    function setBurnAddress(address _burn) external onlyOwner {
+        burnAddress = _burn;
     }
 
     /* Router functions */

@@ -53,6 +53,7 @@ contract ZorroControllerXChain is
         stargateRouter = _initValue.bridge.stargateRouter;
         stargateSwapPoolId = _initValue.bridge.stargateSwapPoolId;
         layerZeroEndpoint = _initValue.bridge.layerZeroEndpoint;
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
 
         for (uint16 i = 0; i < _initValue.bridge.ZorroChainIDs.length; ++i) {
             uint256 _zChainId = _initValue.bridge.ZorroChainIDs[i];

@@ -111,4 +111,16 @@ contract('ZorroController', async accounts => {
             assert.include(err.message, 'caller is not the owner');
         }
     });
+
+    it('sets burn address', async () => {
+        // Normal
+        const burnAddress = web3.toChecksumAddress(accounts[4]);
+        assert.equal(web3.utils.toChecksumAddress(await instance.burnAddress.call()), burnAddress);
+        // Only by owner
+        try {
+            await instance.setBurnAddress(accounts[4], { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+    });
 });
