@@ -8,6 +8,7 @@ const MockLayerZeroEndpoint = artifacts.require('MockLayerZeroEndpoint');
 const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
 const stargateSwapEventSig = web3.eth.abi.encodeEventSignature('StargateSwap(address,address,uint256)');
 const lzSentEventSig = web3.eth.abi.encodeEventSignature('SentMessage(uint16,uint256)');
+const receiveXChainWithdrawalReqEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainWithdrawalReq(uint256,uint256,uint256)');
 
 contract('ZorroControllerXChain', async accounts => {
     let instance, controller, usdc, sgRouter, lzEndpoint, ZORToken;
@@ -260,26 +261,5 @@ contract('ZorroControllerXChain', async accounts => {
 
         // Assert StargateSwap occurred
         assert.isNotNull(sgSwapped);
-    });
-
-    xit('receives X chain withdrawal request', async () => {
-        // Prep
-
-        // Run
-        // const tx = await instance.mockReceiveXChainWithdrawalRequest(
-        //     originChainId,
-        //     originAccount,
-        //     pid,
-        //     trancheId,
-        //     maxMarketMovement
-        // );
-
-        // Logs
-
-        // Test
-    });
-
-    xit('receives X chain repatriation request', async () => {
-        // Check auth
     });
 });
