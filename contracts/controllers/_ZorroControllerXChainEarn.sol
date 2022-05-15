@@ -267,6 +267,7 @@ contract ZorroControllerXChainEarn is
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal virtual {
+        // TODO: Only allow this to be run on the home chain
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
 

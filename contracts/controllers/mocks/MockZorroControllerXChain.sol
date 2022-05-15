@@ -238,6 +238,29 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _maxMarketMovementAllowed
         );
     }
+
+    function encodeXChainDistributeEarningsPayload(
+        uint256 _remoteChainId,
+        uint256 _amountUSDCBuyback,
+        uint256 _amountUSDCRevShare,
+        uint256 _accSlashedRewards,
+        uint256 _maxMarketMovement
+    ) public pure returns (bytes memory) {
+        return
+            _encodeXChainDistributeEarningsPayload(
+                _remoteChainId,
+                _amountUSDCBuyback,
+                _amountUSDCRevShare,
+                _accSlashedRewards,
+                _maxMarketMovement
+            );
+    }
+
+    function awardSlashedRewardsToStakers(uint256 _slashedZORRewards)
+        public
+    {
+        _awardSlashedRewardsToStakers(_slashedZORRewards);
+    }
 }
 
 contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
