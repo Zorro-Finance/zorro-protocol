@@ -1,4 +1,6 @@
 const MockZorroController = artifacts.require('MockZorroController');
+const MockLPPool = artifacts.require('MockLPPool');
+const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
 
 contract('ZorroController', async accounts => {
     let instance;
@@ -107,34 +109,6 @@ contract('ZorroController', async accounts => {
         }
     });
 
-    xit('deposits Want token', async () => {
-
-    });
-
-    xit('deposits USDC into Vault', async () => {
-
-    });
-
-    xit('withdraws Want token', async () => {
-
-    });
-
-    xit('withdraws from Vault into USDC', async () => {
-
-    });
-
-    xit('gets pending rewards by tranche', async () => {
-
-    });
-
-    xit('transfers investment', async () => {
-
-    });
-
-    xit('withdraws all tranches owned by a user in a pool', async () => {
-
-    });
-
     it('gets the correct time multiplier value', async () => {
         // Set time multiplier active
         await instance.setIsTimeMultiplierActive(true);
@@ -166,5 +140,78 @@ contract('ZorroController', async accounts => {
         const multiplierFactor = await instance.getTimeMultiplier.call(durationCommittedWeeks);
         const expectedMultFactor = 1e12;
         assert.equal(multiplierFactor, expectedMultFactor);
+    });
+});
+
+contract('ZorroControllerInvestment Main', async accounts => {
+    let instance, lpPool, vault;
+
+    before(async () => {
+        // Get contracts
+        instance = await MockZorroController.deployed();
+        lpPool = await MockLPPool.deployed();
+        vault = await MockVaultStandardAMM.deployed();
+
+        // Create pool
+        await instance.add(
+            1,
+            lpPool.address,
+            true,
+            vault.address
+        );
+    });
+
+    it('deposits Want token with local account', async () => {
+        // Prep
+        const pid = 0;
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('0.035', 'ether'));
+        const weeksCommitted = 4; 
+
+        // Mint want tokens to account
+        await lpPool.mint(accounts[0], wantAmt);
+        // Approve
+        await lpPool.approve(instance.address, wantAmt);
+
+        // Run
+        await instance.deposit(pid, wantAmt, weeksCommitted);
+
+        // Test
+
+        // TODO
+
+        // Updates Pool rewards
+
+        // Performs Vault deposit
+
+        // Updates poolInfo
+
+        // Updates trancheInfo ledger
+
+    });
+
+    // TODO: How to test for case with foreign account
+
+    xit('deposits USDC into Vault', async () => {
+
+    });
+
+    xit('withdraws Want token', async () => {
+
+    });
+
+    xit('withdraws from Vault into USDC', async () => {
+
+    });
+
+    xit('gets pending rewards by tranche', async () => {
+
+    });
+
+    xit('transfers investment', async () => {
+
+    });
+
+    xit('withdraws all tranches owned by a user in a pool', async () => {
+
     });
 });

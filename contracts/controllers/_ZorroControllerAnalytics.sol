@@ -10,22 +10,25 @@ import "../interfaces/IZorroController.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
-contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerBase {
+contract ZorroControllerAnalytics is
+    IZorroControllerAnalytics,
+    ZorroControllerBase
+{
     using SafeMathUpgradeable for uint256;
 
     /// @notice View function to see pending ZORRO on frontend.
     /// @param _pid Index of pool
     /// @param _account Wallet address of on chain account
     /// @param _trancheId Tranche ID. If -1, will do pending rewards for all active tranches
-    /// @return _pendingRewards Amount of Zorro rewards
+    /// @return pendingRewards Amount of Zorro rewards
     function pendingZORRORewards(
         uint256 _pid,
         address _account,
         int256 _trancheId
-    ) external view returns (uint256 _pendingRewards) {
+    ) external view returns (uint256 pendingRewards) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
-        uint256 accZORRORewards = pool.accZORRORewards;
+        uint256 _accZORRORewards = pool.accZORRORewards;
 
         // Increment accumulated ZORRO rewards by the current pending Zorro rewards,
         // IF we are on a block that is greater than the previous block this function was executed in
@@ -35,7 +38,7 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
                 .mul(ZORROPerBlock)
                 .mul(pool.allocPoint)
                 .div(totalAllocPoint);
-            accZORRORewards = accZORRORewards.add(ZORROReward);
+            _accZORRORewards = _accZORRORewards.add(ZORROReward);
         }
 
         // Calculate pending rewards
@@ -55,13 +58,12 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
                 // Ensure tranche is not yet exited
                 if (_tranche.exitedVaultAt > 0) {
                     // Return the user's share of the Zorro rewards for this pool, net of the reward debt
-                    uint256 _trancheShare = _tranche.contribution.mul(1e6).div(
-                        pool.totalTrancheContributions
-                    );
-                    _pendingRewards = _pendingRewards.add(
-                        _trancheShare.mul(accZORRORewards).div(1e6).sub(
-                            _tranche.rewardDebt
-                        )
+                    pendingRewards = pendingRewards.add(
+                        _tranche
+                            .contribution
+                            .mul(_accZORRORewards)
+                            .div(pool.totalTrancheContributions)
+                            .sub(_tranche.rewardDebt)
                     );
                 }
             }
@@ -73,15 +75,13 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
             // Ensure tranche is not yet exited
             if (_tranche.exitedVaultAt == 0) {
                 // Return the tranche's share of the Zorro rewards for this pool, net of the reward debt
-                uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
-                    pool.totalTrancheContributions
-                );
-                _pendingRewards = _trancheShare
-                    .mul(accZORRORewards)
-                    .div(1e12)
-                    .sub(_tranche.rewardDebt);
+                pendingRewards = (
+                    _tranche.contribution.mul(_accZORRORewards).div(
+                        pool.totalTrancheContributions
+                    )
+                ).sub(_tranche.rewardDebt);
             } else {
-                _pendingRewards = 0;
+                pendingRewards = 0;
             }
         }
     }
@@ -90,12 +90,12 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
     /// @param _pid Index of pool
     /// @param _account Wallet address of on chain account
     /// @param _trancheId Tranche ID, or -1 to aggregate across all tranches
-    /// @return _stakedWantTokens Amount of staked Want tokens
+    /// @return stakedWantAmt Amount of staked Want tokens
     function stakedWantTokens(
         uint256 _pid,
         address _account,
         int256 _trancheId
-    ) external view returns (uint256 _stakedWantTokens) {
+    ) external view returns (uint256 stakedWantAmt) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
 
@@ -107,7 +107,7 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
 
         // If total shares is zero, there are no staked Want tokens
         if (sharesTotal == 0) {
-            _stakedWantTokens = 0;
+            stakedWantAmt = 0;
         }
 
         // Check to see if data is needed for all tranches or a specific tranche
@@ -122,7 +122,7 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
                 uint256 trancheShares = _tranche.contribution.mul(1e6).div(
                     _tranche.timeMultiplier
                 );
-                _stakedWantTokens = _stakedWantTokens.add(
+                stakedWantAmt = stakedWantAmt.add(
                     (trancheShares.mul(wantLockedTotal).div(1e6)).div(
                         sharesTotal
                     )
@@ -136,16 +136,15 @@ contract ZorroControllerAnalytics is IZorroControllerAnalytics, ZorroControllerB
             // Ensure tranche is not yet exited
             if (_tranche.exitedVaultAt > 0) {
                 // Otherwise, staked Want tokens is the tranche's shares as a percentage of total shares multiplied by total Want tokens locked
-                uint256 trancheShares = _tranche.contribution.mul(1e6).div(
-                    _tranche.timeMultiplier
-                );
-                _stakedWantTokens = _stakedWantTokens.add(
-                    (trancheShares.mul(wantLockedTotal).div(1e6)).div(
-                        sharesTotal
-                    )
+                stakedWantAmt = stakedWantAmt.add(
+                    (
+                        _tranche.contribution.mul(wantLockedTotal).div(
+                            _tranche.timeMultiplier
+                        )
+                    ).div(sharesTotal)
                 );
             } else {
-                _stakedWantTokens = 0;
+                stakedWantAmt = 0;
             }
         }
     }

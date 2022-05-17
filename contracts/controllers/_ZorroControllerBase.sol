@@ -66,6 +66,7 @@ contract ZorroControllerBase is
 
     /* Constants */
 
+    // TODO: Make this a variable
     address public constant burnAddress =
         0x000000000000000000000000000000000000dEaD;
 

@@ -179,8 +179,8 @@ contract ZorroControllerInvestment is
         );
     }
 
-    /// @notice Internal function for depositing Want tokens into Vault
-    /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be called indirectly through other functions
+    /// @notice Deposits tokens into Vault, updates poolInfo and trancheInfo ledgers
+    /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be accessed indirectly through other functions
     /// @param _pid index of pool
     /// @param _account address of on-chain user (required for onchain, optional for cross-chain)
     /// @param _foreignAccount address of origin chain user (for cross chain transactions it's required)
@@ -205,19 +205,8 @@ contract ZorroControllerInvestment is
         // Update the pool before anything to ensure rewards have been updated and transferred
         _mintedZORRewards = updatePool(_pid);
 
-        // Associate foreign and local account address, as applicable
-
         // Get local chain account, as applicable
-        address _localAccount = _account;
-        if (_account == address(0)) {
-            // Foreign account MUST be provided
-            require(
-                _foreignAccount.length > 0,
-                "Neither foreign acct nor local acct provided"
-            );
-            // If no local account provided, truncate foreign chain address to 20-bytes
-            _localAccount = address(bytes20(_foreignAccount));
-        }
+        address _localAccount = _getLocalAccount(_account, _foreignAccount);
 
         // Allowance
         IERC20Upgradeable(pool.want).safeIncreaseAllowance(pool.vault, _wantAmt);
@@ -227,57 +216,88 @@ contract ZorroControllerInvestment is
             _localAccount,
             _wantAmt
         );
+
         // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
-        uint256 timeMultiplier = 1e12;
+        uint256 _timeMultiplier = 1e12;
         if (pool.vault != zorroStakingVault) {
             // Determine the time multiplier value based on the duration committed to in weeks
-            timeMultiplier = getTimeMultiplier(_weeksCommitted);
+            _timeMultiplier = _getTimeMultiplier(_weeksCommitted);
         }
+
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-        uint256 contributionAdded = getUserContribution(
+        uint256 _contributionAdded = _getUserContribution(
             sharesAdded,
-            timeMultiplier
-        );
-        // Increment the pool's total contributions by the contribution added
-        pool.totalTrancheContributions = pool.totalTrancheContributions.add(
-            contributionAdded
-        );
-        // Update the reward debt that the user owes by multiplying user share % by the pool's accumulated Zorro rewards
-        uint256 newTrancheShare = contributionAdded.mul(1e12).div(
-            pool.totalTrancheContributions
+            _timeMultiplier
         );
 
-        // Create tranche info
-        TrancheInfo memory _trancheInfo = TrancheInfo({
-            contribution: contributionAdded,
-            timeMultiplier: timeMultiplier,
-            rewardDebt: pool.accZORRORewards.mul(newTrancheShare).div(1e12),
-            durationCommittedInWeeks: _weeksCommitted,
-            enteredVaultAt: _enteredVaultAt,
-            exitedVaultAt: 0
-        });
-        _updateTrancheInfoForDeposit(
+        // Update pool info: Increment the pool's total contributions by the contribution added
+        pool.totalTrancheContributions = pool.totalTrancheContributions.add(
+            _contributionAdded
+        );
+
+        // Create tranche
+        _createTranche(
             _pid,
             _localAccount,
             _foreignAccount,
-            _trancheInfo
+            _contributionAdded,
+            _timeMultiplier,
+            _weeksCommitted,
+            _enteredVaultAt
         );
 
         // Emit deposit event
         emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
     }
 
+    // TODO: docstrings
+    // TODO: test
+    function _getLocalAccount(address _account, bytes memory _foreignAccount) private pure returns(address localAccount) {
+        // Default to provided address if applicable
+        localAccount = _account;
+
+        // Otherwise try to extract from foreign account
+        if (_account == address(0)) {
+            // Foreign account MUST be provided
+            require(
+                _foreignAccount.length > 0,
+                "Neither foreign acct nor local acct provided"
+            );
+            // If no local account provided, truncate foreign chain address to 20-bytes
+            localAccount = address(bytes20(_foreignAccount));
+        }
+    }
+
+    // TODO: test
     /// @notice Internal function for updating tranche ledger upon deposit
     /// @param _pid Index of pool
     /// @param _localAccount On-chain address
     /// @param _foreignAccount Cross-chain address, if applicable
-    /// @param _trancheInfo TrancheInfo object
-    function _updateTrancheInfoForDeposit(
+    /// @param _timeMultiplier Time multiplier factor for rewards
+    /// @param _durationCommittedInWeeks Commitment in weeks for time multiplier
+    /// @param _enteredVaultAt Timestamp at which entered vault
+    function _createTranche(
         uint256 _pid,
         address _localAccount,
         bytes memory _foreignAccount,
-        TrancheInfo memory _trancheInfo
+        uint256 _contributionAdded,
+        uint256 _timeMultiplier,
+        uint256 _durationCommittedInWeeks,
+        uint256 _enteredVaultAt
     ) internal {
+        // Get pool
+        PoolInfo memory pool = poolInfo[_pid];
+
+        // Create tranche info
+        TrancheInfo memory _trancheInfo = TrancheInfo({
+            contribution: _contributionAdded, // Contribution including time multiplier
+            timeMultiplier: _timeMultiplier,
+            rewardDebt: pool.accZORRORewards.mul(_contributionAdded).div(pool.totalTrancheContributions), // Pro-rata share of accumulated pool rewards, time-commitment weighted
+            durationCommittedInWeeks: _durationCommittedInWeeks,
+            enteredVaultAt: _enteredVaultAt,
+            exitedVaultAt: 0
+        });
+
         // Push a new tranche for this on-chain user
         trancheInfo[_pid][_localAccount].push(_trancheInfo);
 
@@ -770,23 +790,24 @@ contract ZorroControllerInvestment is
     /* Allocations */
 
     /// @notice Calculate time multiplier based on duration committed
+    /// @dev For Zorro staking vault, returns 1e12 no matter what
     /// @param durationInWeeks number of weeks committed into Vault
-    /// @return multiplier factor, times 1e12
-    function getTimeMultiplier(uint256 durationInWeeks)
-        public
+    /// @return timeMultiplier Time multiplier factor, times 1e12
+    function _getTimeMultiplier(uint256 durationInWeeks)
+        internal
         view
-        returns (uint256)
+        returns (uint256 timeMultiplier)
     {
+        timeMultiplier = 1e12;
+
         if (isTimeMultiplierActive) {
             // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
-            return
+            timeMultiplier =
                 ((durationInWeeks.mul(1e4)).sqrt())
                     .mul(1e12)
                     .mul(2)
                     .div(1000)
                     .add(1e12);
-        } else {
-            return 1e12;
         }
     }
 
@@ -794,10 +815,10 @@ contract ZorroControllerInvestment is
     /// @param _liquidityCommitted How many tokens staked (e.g. LP tokens)
     /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
     /// @return uint256 The relative contribution of the user (unitless)
-    function getUserContribution(
+    function _getUserContribution(
         uint256 _liquidityCommitted,
         uint256 _timeMultiplier
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
 }

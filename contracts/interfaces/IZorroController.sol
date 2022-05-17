@@ -143,16 +143,6 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     ) external;
 
     function withdrawAll(uint256 _pid) external;
-
-    function getTimeMultiplier(uint256 durationInWeeks)
-        external
-        view
-        returns (uint256);
-
-    function getUserContribution(
-        uint256 _liquidityCommitted,
-        uint256 _timeMultiplier
-    ) external pure returns (uint256);
 }
 
 /// @title IZorroControllerPoolMgmt
