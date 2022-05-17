@@ -217,12 +217,8 @@ contract ZorroControllerInvestment is
             _wantAmt
         );
 
-        // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
-        uint256 _timeMultiplier = 1e12;
-        if (pool.vault != zorroStakingVault) {
-            // Determine the time multiplier value based on the duration committed to in weeks
-            _timeMultiplier = _getTimeMultiplier(_weeksCommitted);
-        }
+        // Determine time multiplier value.
+        uint256 _timeMultiplier = _getTimeMultiplier(_weeksCommitted);
 
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
         uint256 _contributionAdded = _getUserContribution(
@@ -465,6 +461,7 @@ contract ZorroControllerInvestment is
         uint256 _trancheId,
         bool _harvestOnly
     ) internal returns (WithdrawalResult memory _res) {
+        // TODO: Consider making WithdrwalResult an event instead?
         // Can only specify one account (on-chain/foreign, but not both)
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
@@ -499,6 +496,7 @@ contract ZorroControllerInvestment is
         uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
             _pool.totalTrancheContributions
         );
+        // TODO: This seems really messy. Can't we abstract out some of this logic to the ZorroControllerAnalytics.sol functions? 
         uint256 _pendingRewards = _trancheShare
             .mul(_pool.accZORRORewards)
             .div(1e12)
@@ -589,6 +587,7 @@ contract ZorroControllerInvestment is
         }
     }
 
+    // TODO: This is really about accounting for slashes right? Perhaps use a better name for this function??
     /// @notice Prepares values for paying out rewards
     /// @param _tranche TrancheInfo object
     /// @param _pendingRewards Qty of ZOR tokens as pending rewards
@@ -605,6 +604,7 @@ contract ZorroControllerInvestment is
         // Check if this is an early withdrawal
         // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
         // If not, distribute rewards as normal
+        // TODO: Important and test for this.: This is a uint256 so it's not going to be < 0 right? Maybe use int256 instead?
         uint256 timeRemainingInCommitment = _tranche
             .enteredVaultAt
             .add(_tranche.durationCommittedInWeeks.mul(1 weeks))
