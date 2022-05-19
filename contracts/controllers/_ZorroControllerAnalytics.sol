@@ -56,7 +56,7 @@ contract ZorroControllerAnalytics is
                 // Get the tranch
                 TrancheInfo storage _tranche = trancheInfo[_pid][_account][tid];
                 // Ensure tranche is not yet exited
-                if (_tranche.exitedVaultAt > 0) {
+                if (_tranche.exitedVaultAt == 0) {
                     // Return the user's share of the Zorro rewards for this pool, net of the reward debt
                     pendingRewards = pendingRewards.add(
                         _tranche
