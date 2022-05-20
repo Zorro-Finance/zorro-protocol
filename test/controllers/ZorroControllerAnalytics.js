@@ -82,24 +82,24 @@ contract('ZorroControllerAnalytics::Pending Rewards', async accounts => {
                 enteredVaultAt: 0,
                 exitedVaultAt: 0,
             }
-            );
-            
+        );
+
         const poolInfo = await instance.poolInfo.call(0);
         const elapsedBlocks = web3.utils.toBN(await web3.eth.getBlockNumber()).sub(poolInfo.lastRewardBlock);
         const zorPerBlock = await instance.ZORROPerBlock.call();
         const poolAllocPoints = web3.utils.toBN(1);
         const totAllocPoints = web3.utils.toBN(1);
-    
+
         const accRewards = elapsedBlocks.mul(zorPerBlock).mul(poolAllocPoints).div(totAllocPoints);
         const totalContribs = (await instance.poolInfo.call(0)).totalTrancheContributions;
         const expPendingRewards = web3.utils.toBN(contribution).mul(accRewards).div(totalContribs);
-    
+
         const pendingRewards = await instance.pendingZORRORewards.call(
             0, // pid
-            accounts[1], 
+            accounts[1],
             0 // trancheId
         );
-    
+
         assert.isTrue(pendingRewards.eq(expPendingRewards));
     });
 
@@ -121,7 +121,7 @@ contract('ZorroControllerAnalytics::Pending Rewards', async accounts => {
 
         const pendingRewards = await instance.pendingZORRORewards.call(
             0, // pid
-            accounts[1], 
+            accounts[1],
             1 // trancheId
         );
 
@@ -148,7 +148,7 @@ contract('ZorroControllerAnalytics::Pending Rewards', async accounts => {
             );
             contribs = contribs.add(web3.utils.toBN(contribution));
         }
-        
+
         // Vars
         const totalContribs = web3.utils.toBN((await instance.poolInfo.call(0)).totalTrancheContributions);
         const poolInfo = await instance.poolInfo.call(0);
@@ -164,52 +164,110 @@ contract('ZorroControllerAnalytics::Pending Rewards', async accounts => {
         // Run
         const pendingRewards = await instance.pendingZORRORewards.call(
             0, // pid
-            accounts[2], 
+            accounts[2],
             -1 // trancheId -1 means "all"
         );
 
         // Tests
-        console.log('pendingRewards: ', pendingRewards.toString());
-        console.log('expPendingRewards: ', expPendingRewards.toString());
         assert.closeTo(pendingRewards.div(web3.utils.toBN(1e18)).toNumber(), expPendingRewards.div(web3.utils.toBN(1e18)).toNumber(), 1);
     });
 });
 
 contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
-    let instance;
-    
+    let instance, vault, ZORToken;
+
     before(async () => {
+        // Setup
+        const obj = await setupObj(accounts);
         // Get instance 
-        instance = await (await setupObj(accounts)).instance;
+        instance = obj.instance;
+        vault = obj.vault;
+        ZORToken = obj.ZORToken;
+        // Set ZC 
+        await vault.setZorroControllerAddress(accounts[0]);
+        // Set addresses
+        await vault.setWantAddress(ZORToken.address);
+        await vault.setToken0Address(ZORToken.address);
+        // Set fees
+        await vault.setFeeSettings(
+            10e3, // Entrance FF
+            10e3, // Withdraw FF
+            0, // Controller Fee
+            0, // BB rate
+            0 // Revshare rate
+        );
     });
-    
-    
 
     it('should show the amt Want tokens staked for a single tranche', async () => {
         // Prep
+        const amtDeposit = web3.utils.toWei('1', 'ether');
+        // Mint token, approve
+        await ZORToken.mint(accounts[0], amtDeposit);
+        await ZORToken.approve(vault.address, amtDeposit);
+        // Deposit Want token
+        await vault.depositWantToken(accounts[0], amtDeposit);
+        // Add tranche
+        await instance.addTranche(
+            0, //pid
+            accounts[0],
+            {
+                contribution: amtDeposit,
+                timeMultiplier: 1,
+                rewardDebt: 0,
+                durationCommittedInWeeks: 0,
+                enteredVaultAt: 0,
+                exitedVaultAt: 0,
+            }
+        );
 
         // Run
         const amtStaked = await instance.stakedWantTokens.call(
             0, // pid
-            accounts[1], 
+            accounts[0],
             0 // trancheId
         );
 
         // Tests
-        assert.isTrue(amtStaked.eq(contribution));
+        assert.isTrue(amtStaked.eq(web3.utils.toBN(amtDeposit)));
     });
 
     it('should show the amt Want tokens staked for all tranches', async () => {
         // Prep
-    
-    
+        let contribs = web3.utils.toBN(0);
+
+        for (let i = 0; i < 3; i++) {
+            // Prep
+            const amtDeposit = web3.utils.toWei('1', 'ether');
+            // Mint token, approve
+            await ZORToken.mint(accounts[1], amtDeposit, { from: accounts[1] });
+            await ZORToken.approve(vault.address, amtDeposit, { from: accounts[1] });
+            // Set ZC 
+            await vault.setZorroControllerAddress(accounts[1]);
+            // Deposit Want token
+            await vault.depositWantToken(accounts[1], amtDeposit, { from: accounts[1] });
+            // Add tranche
+            await instance.addTranche(
+                0, //pid
+                accounts[1],
+                {
+                    contribution: amtDeposit,
+                    timeMultiplier: 1,
+                    rewardDebt: 0,
+                    durationCommittedInWeeks: 0,
+                    enteredVaultAt: 0,
+                    exitedVaultAt: 0,
+                }
+            );
+            contribs = contribs.add(web3.utils.toBN(amtDeposit));
+        }
+
         // Run
         const amtStaked = await instance.stakedWantTokens.call(
             0, // pid
-            accounts[1], 
+            accounts[1],
             -1 // all tranches
         );
-    
+
         // Tests
         assert.isTrue(amtStaked.eq(contribs));
     });

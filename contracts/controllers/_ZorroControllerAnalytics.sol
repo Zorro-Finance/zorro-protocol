@@ -98,12 +98,10 @@ contract ZorroControllerAnalytics is
     ) external view returns (uint256 stakedWantAmt) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
-
         // Determine total number of shares in the underlying Zorro Vault contract
         uint256 sharesTotal = IVault(pool.vault).sharesTotal();
         // Determine the total number of Want tokens locked into the underlying Zorro Vault contract
-        uint256 wantLockedTotal = IVault(poolInfo[_pid].vault)
-            .wantLockedTotal();
+        uint256 wantLockedTotal = IVault(pool.vault).wantLockedTotal();
 
         // If total shares is zero, there are no staked Want tokens
         if (sharesTotal == 0) {
@@ -119,12 +117,9 @@ contract ZorroControllerAnalytics is
             for (uint256 tid = 0; tid < numTranches; ++tid) {
                 TrancheInfo storage _tranche = trancheInfo[_pid][_account][tid];
                 // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
-                uint256 trancheShares = _tranche.contribution.mul(1e6).div(
-                    _tranche.timeMultiplier
-                );
                 stakedWantAmt = stakedWantAmt.add(
-                    (trancheShares.mul(wantLockedTotal).div(1e6)).div(
-                        sharesTotal
+                    _tranche.contribution.mul(wantLockedTotal).div(
+                        sharesTotal.mul(_tranche.timeMultiplier)
                     )
                 );
             }
@@ -134,14 +129,12 @@ contract ZorroControllerAnalytics is
                 uint256(_trancheId)
             ];
             // Ensure tranche is not yet exited
-            if (_tranche.exitedVaultAt > 0) {
+            if (_tranche.exitedVaultAt == 0) {
                 // Otherwise, staked Want tokens is the tranche's shares as a percentage of total shares multiplied by total Want tokens locked
                 stakedWantAmt = stakedWantAmt.add(
-                    (
-                        _tranche.contribution.mul(wantLockedTotal).div(
-                            _tranche.timeMultiplier
-                        )
-                    ).div(sharesTotal)
+                    _tranche.contribution.mul(wantLockedTotal).div(
+                        sharesTotal.mul(_tranche.timeMultiplier)
+                    )
                 );
             } else {
                 stakedWantAmt = 0;
