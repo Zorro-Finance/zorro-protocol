@@ -158,13 +158,10 @@ contract ZorroControllerInvestment is
         // Get pool info
         PoolInfo storage pool = poolInfo[_pid];
 
-        // Safely allow this contract to transfer the Want token from the sender to the underlying Vault contract
-        pool.want.safeIncreaseAllowance(address(this), _wantAmt);
-
-        // Transfer the Want token from the user to the Vault contract
+        // Transfer the Want token from the user to the this contract
         IERC20Upgradeable(pool.want).safeTransferFrom(
             msg.sender,
-            pool.vault,
+            address(this),
             _wantAmt
         );
 
@@ -184,7 +181,7 @@ contract ZorroControllerInvestment is
     /// @param _pid index of pool
     /// @param _account address of on-chain user (required for onchain, optional for cross-chain)
     /// @param _foreignAccount address of origin chain user (for cross chain transactions it's required)
-    /// @param _wantAmt how much Want token to deposit (must already be sent to vault contract)
+    /// @param _wantAmt how much Want token to deposit (must already be sent to the vault)
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @param _enteredVaultAt Date to backdate vault entry to
     /// @return _mintedZORRewards Amount of ZOR rewards minted
@@ -218,7 +215,7 @@ contract ZorroControllerInvestment is
         );
 
         // Determine time multiplier value.
-        uint256 _timeMultiplier = _getTimeMultiplier(_weeksCommitted);
+        uint256 _timeMultiplier = getTimeMultiplier(_weeksCommitted);
 
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
         uint256 _contributionAdded = _getUserContribution(
@@ -319,11 +316,6 @@ contract ZorroControllerInvestment is
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
 
-        // Approve spending of USDC (from user to this contract)
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            address(this),
-            _valueUSDC
-        );
         // Safe transfer to Vault contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
@@ -793,8 +785,8 @@ contract ZorroControllerInvestment is
     /// @dev For Zorro staking vault, returns 1e12 no matter what
     /// @param durationInWeeks number of weeks committed into Vault
     /// @return timeMultiplier Time multiplier factor, times 1e12
-    function _getTimeMultiplier(uint256 durationInWeeks)
-        internal
+    function getTimeMultiplier(uint256 durationInWeeks)
+        public
         view
         returns (uint256 timeMultiplier)
     {

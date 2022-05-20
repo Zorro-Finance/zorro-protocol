@@ -1,12 +1,57 @@
 const MockZorroController = artifacts.require('MockZorroController');
 const MockLPPool = artifacts.require('MockLPPool');
-const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
+const MockInvestmentVault = artifacts.require('MockInvestmentVault');
+const MockUSDC = artifacts.require('MockUSDC');
+const MockZorroToken = artifacts.require("MockZorroToken");
+
+const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
+const depositedWantEventSig = web3.eth.abi.encodeEventSignature('DepositedWant(uint256)');
+const withdrewWantEventSig = web3.eth.abi.encodeEventSignature('WithdrewWant(uint256)');
+const exchangedUSDCForWantEventSig = web3.eth.abi.encodeEventSignature('ExchangedUSDCForWant(uint256,uint256)');
+const exchangedWantForUSDCEventSig = web3.eth.abi.encodeEventSignature('ExchangedWantForUSDC(uint256,uint256)');
+
+const setupObj = async (accounts) => {
+    // Get contracts
+    const instance = await MockZorroController.deployed();
+    const lpPool = await MockLPPool.deployed();
+    const vault = await MockInvestmentVault.deployed();
+    const usdc = await MockUSDC.deployed();
+    const ZORToken = await MockZorroToken.deployed();
+
+    // Vault
+    await vault.setZorroControllerAddress(instance.address);
+    await vault.setWantAddress(lpPool.address);
+    await vault.setBurnAddress(accounts[4]);
+    await vault.setTokenUSDCAddress(usdc.address);
+
+    // Config
+    await instance.setKeyAddresses(
+        ZORToken.address,
+        usdc.address
+    );
+
+    // Create pool
+    await instance.add(
+        1,
+        lpPool.address,
+        true,
+        vault.address
+    );
+
+    return {
+        instance,
+        lpPool,
+        vault,
+        usdc,
+    };
+};
 
 contract('ZorroController', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockZorroController.deployed();
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
     });
 
     it('sets time multiplier', async () => {
@@ -126,7 +171,8 @@ contract('ZorroController', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockZorroController.deployed();
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
     });
 
     it('gets the correct time multiplier value when time multiplier inactive', async () => {
@@ -144,21 +190,14 @@ contract('ZorroController', async accounts => {
 });
 
 contract('ZorroControllerInvestment Main', async accounts => {
-    let instance, lpPool, vault;
+    let instance, lpPool, vault, usdc;
 
     before(async () => {
-        // Get contracts
-        instance = await MockZorroController.deployed();
-        lpPool = await MockLPPool.deployed();
-        vault = await MockVaultStandardAMM.deployed();
-
-        // Create pool
-        await instance.add(
-            1,
-            lpPool.address,
-            true,
-            vault.address
-        );
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        usdc = obj.usdc;
     });
 
     it('deposits Want token with local account', async () => {
@@ -173,33 +212,102 @@ contract('ZorroControllerInvestment Main', async accounts => {
         await lpPool.approve(instance.address, wantAmt);
 
         // Run
-        await instance.deposit(pid, wantAmt, weeksCommitted);
+        const tx = await instance.deposit(pid, wantAmt, weeksCommitted);
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let depositedWant;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === depositedWantEventSig && web3.utils.toBN(topics[1]).eq(wantAmt)) {
+                depositedWant = rl;
+            }
+        }
 
         // Test
 
-        // TODO
-
-        // Updates Pool rewards
+        // Updates Pool reward
+        const latestPoolInfo = await instance.poolInfo.call(pid);
+        const latestBlock = web3.utils.toBN(await web3.eth.getBlockNumber());
+        assert.isTrue(latestPoolInfo.lastRewardBlock.eq(latestBlock));
 
         // Performs Vault deposit
+        assert.isNotNull(depositedWant);
 
         // Updates poolInfo
+        const timeMultiplier = web3.utils.toBN((1 + 0.2 * Math.sqrt(weeksCommitted)) * 1e12);
+        const contrib = wantAmt.mul(timeMultiplier).div(web3.utils.toBN(1e12));
+        assert.isTrue(latestPoolInfo.totalTrancheContributions.eq(contrib));
 
         // Updates trancheInfo ledger
-
+        const trancheInfo = await instance.trancheInfo.call(pid, accounts[0], 0);
+        const blockts = (await web3.eth.getBlock('latest')).timestamp;
+        assert.isTrue(trancheInfo.contribution.eq(contrib));
+        assert.isTrue(trancheInfo.timeMultiplier.eq(timeMultiplier));
+        assert.isTrue(trancheInfo.durationCommittedInWeeks.eq(web3.utils.toBN(weeksCommitted)));
+        assert.isTrue(trancheInfo.enteredVaultAt.eq(web3.utils.toBN(blockts)));
+        assert.isTrue(trancheInfo.exitedVaultAt.isZero());
     });
 
     // TODO: How to test for case with foreign account
 
-    xit('deposits USDC into Vault', async () => {
+    it('deposits from USDC', async () => {
+        // Prep
+        const pid = 0;
+        const valueUSDC = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+        const weeksCommitted = 4;
+        const maxMarketMovement = 990;
 
+        // Mint and approve USDC
+        await usdc.mint(accounts[0], valueUSDC);
+        await usdc.approve(instance.address, valueUSDC);
+    
+        // Run 
+        const tx = await instance.depositFullService(
+            pid,
+            valueUSDC,
+            weeksCommitted,
+            maxMarketMovement
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let exchangedUSDCForWant, depositedWant;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === exchangedUSDCForWantEventSig && web3.utils.toBN(topics[1]).eq(valueUSDC)) {
+                exchangedUSDCForWant = rl;
+            } else if (topics[0] === depositedWantEventSig && web3.utils.toBN(topics[1]).eq(valueUSDC)) {
+                depositedWant = rl; // Assumes 1:1 exchange rate
+            }
+        }
+    
+        // Test
+    
+        // Assert exchanged USD for Want token
+        assert.isNotNull(exchangedUSDCForWant);
+        
+        // Assert deposited Want token
+        assert.isNotNull(depositedWant);
     });
+});
+
+contract('ZorroControllerInvestment Main', async accounts => {
+    let instance, lpPool, vault;
+
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+    });
+    
 
     xit('withdraws Want token', async () => {
 
     });
 
-    xit('withdraws from Vault into USDC', async () => {
+    xit('withdraws to USDC', async () => {
 
     });
 
