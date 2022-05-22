@@ -219,7 +219,6 @@ contract ZorroControllerInvestment is
             _localAccount,
             _wantAmt
         );
-        // revert("terrier");
 
         // Determine time multiplier value.
         uint256 _timeMultiplier = getTimeMultiplier(_weeksCommitted);
@@ -235,8 +234,6 @@ contract ZorroControllerInvestment is
             _contributionAdded
         );
 
-        // revert("before create tranche");
-
         // Create tranche
         _createTranche(
             _pid,
@@ -250,8 +247,6 @@ contract ZorroControllerInvestment is
 
         // Emit deposit event
         emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
-
-        // revert("boston");
     }
 
     // TODO: docstrings
@@ -481,7 +476,6 @@ contract ZorroControllerInvestment is
     ) internal returns (WithdrawalResult memory _res) {
         // TODO: Consider making WithdrwalResult an event instead?
         // Can only specify one account (on-chain/foreign, but not both)
-        require(_pid == 0, "meerkat");
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
                 (_localAccount != address(0) && _foreignAccount.length == 0),
@@ -518,8 +512,6 @@ contract ZorroControllerInvestment is
             )
         ).sub(_tranche.rewardDebt);
 
-        require(_pid == 0, "moose");
-
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         if (_pendingRewards > 0) {
             // If pending rewards payable, pay them out
@@ -552,7 +544,6 @@ contract ZorroControllerInvestment is
 
         // If not just harvesting (withdrawing too), proceed with below
         if (!_harvestOnly) {
-            require(_pid == 0, "zebra");
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
             // TODO: VERY IMPORTANT. The wantAmt is potentially NOT the same as shares removed
             // We should be converting the contribution (after time multiplier) to want and then calling withdrawWantToken()
@@ -738,8 +729,6 @@ contract ZorroControllerInvestment is
             uint256 _slashedRewardsXChain
         )
     {
-        // require(_pid == 0, "whale");
-        // revert("shark");
         // Get Vault contract
         address _vaultAddr = poolInfo[_pid].vault;
 
@@ -752,7 +741,6 @@ contract ZorroControllerInvestment is
             _harvestOnly
         );
 
-        // require(_pid == 0, "buffalo");
         // Safe increase spending of Vault contract for Want token
         IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(
             _vaultAddr,
@@ -781,7 +769,6 @@ contract ZorroControllerInvestment is
         uint256 _toPid,
         uint256 _maxMarketMovement
     ) public nonReentrant {
-        // revert("birdz");
         // Get weeks committed and entered at
         uint256 weeksCommitted = trancheInfo[_fromPid][msg.sender][
             _fromTrancheId
@@ -791,7 +778,6 @@ contract ZorroControllerInvestment is
         ].enteredVaultAt;
 
         // Withdraw
-        // revert("beez");
         (uint256 withdrawnUSDC, , , ) = _withdrawalFullService(
             msg.sender,
             "",
