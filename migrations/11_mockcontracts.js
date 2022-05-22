@@ -21,6 +21,7 @@ const MockVaultStargate = artifacts.require("MockVaultStargate");
 const MockVaultFactoryStargate = artifacts.require("MockVaultFactoryStargate");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const MockInvestmentVault = artifacts.require("MockInvestmentVault");
+const MockInvestmentVault1 = artifacts.require("MockInvestmentVault1");
 // Price feeds
 const MockPriceAggToken0 = artifacts.require('MockPriceAggToken0');
 const MockPriceAggToken1 = artifacts.require('MockPriceAggToken1');
@@ -31,6 +32,7 @@ const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 // AMM
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const MockLPPool = artifacts.require('MockLPPool');
+const MockLPPool1 = artifacts.require('MockLPPool1');
 // Acryptos
 const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
 const MockAcryptosVault = artifacts.require('MockAcryptosVault');
@@ -324,9 +326,11 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockPriceAggZOR);
     await deployer.deploy(MockPriceAggLPOtherToken);
     await deployer.deploy(MockLPPool);
+    await deployer.deploy(MockLPPool1);
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }
 
   await deployProxy(MockInvestmentVault, [accounts[0]], {deployer});
+  await deployProxy(MockInvestmentVault1, [accounts[0]], {deployer});
 };

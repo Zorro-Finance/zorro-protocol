@@ -111,6 +111,8 @@ contract MockInvestmentVault is VaultBase {
         MockERC20Upgradeable(tokenUSDCAddress).mint(msg.sender, _amount);
 
         emit ExchangedWantForUSDC(_amount, _amount);
+
+        return _amount;
     }
 
     function earn(uint256 _maxMarketMovementAllowed) public override {}
@@ -136,3 +138,5 @@ contract MockInvestmentVault is VaultBase {
 
     function farm() external {}
 }
+
+contract MockInvestmentVault1 is MockInvestmentVault {}

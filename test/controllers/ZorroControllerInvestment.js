@@ -1,6 +1,8 @@
 const MockZorroController = artifacts.require('MockZorroController');
 const MockLPPool = artifacts.require('MockLPPool');
+const MockLPPool1 = artifacts.require('MockLPPool1');
 const MockInvestmentVault = artifacts.require('MockInvestmentVault');
+const MockInvestmentVault1 = artifacts.require('MockInvestmentVault1');
 const MockUSDC = artifacts.require('MockUSDC');
 const MockZorroToken = artifacts.require("MockZorroToken");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
@@ -16,7 +18,9 @@ const setupObj = async (accounts) => {
     // Get contracts
     const instance = await MockZorroController.deployed();
     const lpPool = await MockLPPool.deployed();
+    const lpPool1 = await MockLPPool1.deployed();
     const vault = await MockInvestmentVault.deployed();
+    const vault1 = await MockInvestmentVault1.deployed();
     const usdc = await MockUSDC.deployed();
     const ZORToken = await MockZorroToken.deployed();
     const ZORStakingVault = await MockVaultZorro.deployed();
@@ -27,6 +31,11 @@ const setupObj = async (accounts) => {
     await vault.setWantAddress(lpPool.address);
     await vault.setBurnAddress(accounts[4]);
     await vault.setTokenUSDCAddress(usdc.address);
+
+    await vault1.setZorroControllerAddress(instance.address);
+    await vault1.setWantAddress(lpPool1.address);
+    await vault1.setBurnAddress(accounts[4]);
+    await vault1.setTokenUSDCAddress(usdc.address);
 
     // Config
     await instance.setXChainParams(
@@ -80,12 +89,16 @@ const setupObj = async (accounts) => {
     return {
         instance,
         lpPool,
+        lpPool1,
         vault,
+        vault1,
         usdc,
         ZORStakingVault,
+        ZORToken,
     };
 };
 
+/*
 contract('ZorroController', async accounts => {
     let instance;
 
@@ -512,38 +525,203 @@ contract('ZorroControllerInvestment::Withdraw', async accounts => {
         // Assert receives the full Want qty back
         assert.isUndefined(withdrewWant);
         const wantBal = await lpPool.balanceOf.call(accounts[0]);
-        console.log('wantBal: ', wantBal.toString());
         assert.isTrue(wantBal.isZero());
 
         // Assert receives full rewards for elapsed blocks
         assert.isNotNull(harvested);
     });
+});
 
-    xit('withdraws to USDC', async () => {
-
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, vault, ZORStakingVault;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        ZORStakingVault = obj.ZORStakingVault;
     });
 
-    xit('withdraws all tranches owned by a user in a pool', async () => {
-    
-    });
+    it('withdraws to USDC', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        const maxMarketMovement = 990;
+        await lpPool.mint(accounts[0], depositWantAmt);
+        await lpPool.approve(instance.address, depositWantAmt);
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+        );
 
-    xit('transfers investment', async () => {
+        // Run
+        const tx = await instance.withdrawalFullService(
+            0, // pid, 
+            0, // trancheId, 
+            false, // harvestOnly
+            maxMarketMovement
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let exchangedWantForUSD, withdrewWant;
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === exchangedWantForUSDCEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                exchangedWantForUSD = rl;
+            } else if (topics[0] === withdrewWantEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant = rl; // Assumes 1:1 exchange rate
+            }
+        }
     
+        // Test
+    
+        // Assert exchanged USD for Want token
+        assert.isNotNull(exchangedWantForUSD);
+        
+        // Assert deposited Want token
+        assert.isNotNull(withdrewWant);
     });
 });
 
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, vault, ZORStakingVault;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        ZORStakingVault = obj.ZORStakingVault;
+    });
+
+    it('withdraws all tranches owned by a user in a pool', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        await lpPool.mint(accounts[0], depositWantAmt.mul(web3.utils.toBN(2)));
+        await lpPool.approve(instance.address, depositWantAmt.mul(web3.utils.toBN(2)));
+        for (let i = 0; i < 2; i++) {
+            await instance.deposit(
+                0, // pid
+                depositWantAmt,
+                weeksCommitted
+            );
+        }
+
+        // Run
+        const tx = await instance.withdrawAll(
+            0, // pid
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let withdrewWant = [];
+
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === withdrewWant && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant.push(rl);
+            }
+        }
+
+        // Test
+        // Assert receives the full Want qty back
+        assert.equal(withdrewWant.length, 2);
+        const wantBal = await lpPool.balanceOf.call(accounts[0]);
+        assert.isTrue(wantBal.eq(depositWantAmt.mul(web3.utils.toBN(2))));
+    });
+});
+*/
+
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, lpPool1, vault, vault1, ZORStakingVault, ZORToken, usdc;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        lpPool1 = obj.lpPool1;
+        vault = obj.vault;
+        vault1 = obj.vault1;
+        ZORStakingVault = obj.ZORStakingVault;
+        ZORToken = obj.ZORToken;
+        usdc = obj.usdc;
+    });
+
+    it('transfers investment', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        await lpPool.mint(accounts[0], depositWantAmt);
+        await lpPool.approve(instance.address, depositWantAmt);
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+        );
+        const zpb = await instance.ZORROPerBlock.call();
+        const pi = await instance.poolInfo.call(0);
+        const tranche = await instance.trancheInfo.call(0, accounts[0], 0);
+        // Add new pool
+        await instance.add(
+            1, // alloc point (multiplier)
+            lpPool1.address, // _want address
+            true, // withUpdate
+            vault1.address // _vault address
+        );
+
+        // Run
+        const tx = await instance.transferInvestment(
+            0, // fromPid
+            0, // fromTranche
+            1, // toPid
+            990 // maxMarketMovement
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let withdrewWant, exchangedWantForUSD, depositedWant, exchangedUSDCForWant;
+
+        const newAccRewards = pi.accZORRORewards.add(zpb);
+        const rewardsDue = newAccRewards.sub(tranche.rewardDebt);
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === withdrewWantEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant = rl;
+            } else if (topics[0] === depositedWantEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                depositedWant = rl;
+            } else if (topics[0] === exchangedWantForUSDCEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                exchangedWantForUSD = rl;
+            } else if (topics[0] === exchangedUSDCForWantEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                exchangedUSDCForWant = rl;
+            }
+        }
+
+        // Test
+        // Assert withdrew, deposited, exchanged
+        assert.isNotNull(withdrewWant);
+        assert.isNotNull(depositedWant);
+        assert.isNotNull(exchangedWantForUSD);
+        assert.isNotNull(exchangedUSDCForWant);
+    });
+});
+
+
 contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
-    let instance, lpPool, vault;
+    let instance, lpPool, vault, usdc;
 
     before(async () => {
         const obj = await setupObj(accounts);
         instance = obj.instance;
         lpPool = obj.lpPool;
         vault = obj.vault;
-    });
-
-    xit('withdraws Want token with foreign account', async () => {
-
+        usdc = obj.usdc;
     });
 
     it('does not withdraw when both addresses given', async () => {
@@ -563,5 +741,50 @@ contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
             // Test
             assert.include(err.message, 'Only one account type allowed');
         }
+    });
+
+    it('withdraws Want token with foreign account', async () => {
+        // Prep
+        const weeksCommitted = 0;
+        const depositUSDCAmt = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+        const foreignAcct = web3.utils.asciiToHex('JTmFx5zX9mM94itfk2nQcJnQQDPjcv4UPD7SYj6xDCV');
+        const vaultEnteredAt = parseInt(Date.now() / 1000);
+        const maxMarketMovement = 990;
+        const zeroAddress = '0x0000000000000000000000000000000000000000';
+
+        // Mint, approval 
+        await usdc.mint(accounts[0], depositUSDCAmt);
+        await usdc.approve(instance.address, depositUSDCAmt);
+
+        // Deposit foreign account
+        await instance.depositFullServiceFromXChain(
+            0, //pid
+            zeroAddress, //account
+            foreignAcct,
+            depositUSDCAmt,
+            weeksCommitted,
+            vaultEnteredAt,
+            maxMarketMovement
+        )
+
+        // Run
+        await instance.withdrawalFullServiceFromXChain(
+            zeroAddress,
+            foreignAcct,
+            0,
+            0,
+            false,
+            990
+        );
+
+        // Test
+        // TODO: All these need to be filled in
+        // Assert that a foreign account map was created
+        const foreignTranche = await instance.foreignTrancheInfo.call(0, foreignAcct, 0);
+        console.log('fti: ', foreignTranche);
+
+        // Assert that Want token was withdrawn
+
+        // Assert that Want was exchanged for USDC
     });
 });

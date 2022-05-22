@@ -132,7 +132,9 @@ contract ZorroControllerXChainDeposit is
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(
+            address(this)
+        );
 
         // Generate payload
         bytes memory _payload = _encodeXChainDepositPayload(
@@ -204,6 +206,12 @@ contract ZorroControllerXChainDeposit is
         bytes memory _originAccount,
         address _destAccount
     ) internal virtual {
+        // Approve spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            currentChainController,
+            _valueUSDC
+        );
+        
         // Call deposit function
         IZorroControllerInvestment(currentChainController)
             .depositFullServiceFromXChain(

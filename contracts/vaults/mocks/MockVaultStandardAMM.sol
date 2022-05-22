@@ -111,3 +111,4 @@ contract MockAMMToken0 is MockERC20Upgradeable {}
 contract MockAMMToken1 is MockERC20Upgradeable {}
 contract MockAMMOtherLPToken is MockERC20Upgradeable {}
 contract MockLPPool is MockERC20Upgradeable {}
+contract MockLPPool1 is MockLPPool {}
