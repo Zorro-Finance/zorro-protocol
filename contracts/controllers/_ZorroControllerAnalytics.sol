@@ -25,7 +25,7 @@ contract ZorroControllerAnalytics is
         uint256 _pid,
         address _account,
         int256 _trancheId
-    ) external view returns (uint256 pendingRewards) {
+    ) public view returns (uint256 pendingRewards) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
         uint256 _accZORRORewards = pool.accZORRORewards;

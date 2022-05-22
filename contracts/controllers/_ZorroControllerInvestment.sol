@@ -10,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol";
+
 import "../libraries/Math.sol";
 
 import "../libraries/SafeSwap.sol";
@@ -25,6 +27,7 @@ contract ZorroControllerInvestment is
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeMathUpgradeable for uint256;
+    using SignedSafeMathUpgradeable for int256;
     using CustomMath for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
@@ -206,7 +209,10 @@ contract ZorroControllerInvestment is
         address _localAccount = _getLocalAccount(_account, _foreignAccount);
 
         // Allowance
-        IERC20Upgradeable(pool.want).safeIncreaseAllowance(pool.vault, _wantAmt);
+        IERC20Upgradeable(pool.want).safeIncreaseAllowance(
+            pool.vault,
+            _wantAmt
+        );
 
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
@@ -245,7 +251,11 @@ contract ZorroControllerInvestment is
 
     // TODO: docstrings
     // TODO: test
-    function _getLocalAccount(address _account, bytes memory _foreignAccount) private pure returns(address localAccount) {
+    function _getLocalAccount(address _account, bytes memory _foreignAccount)
+        private
+        pure
+        returns (address localAccount)
+    {
         // Default to provided address if applicable
         localAccount = _account;
 
@@ -285,7 +295,9 @@ contract ZorroControllerInvestment is
         TrancheInfo memory _trancheInfo = TrancheInfo({
             contribution: _contributionAdded, // Contribution including time multiplier
             timeMultiplier: _timeMultiplier,
-            rewardDebt: pool.accZORRORewards.mul(_contributionAdded).div(pool.totalTrancheContributions), // Pro-rata share of accumulated pool rewards, time-commitment weighted
+            rewardDebt: pool.accZORRORewards.mul(_contributionAdded).div(
+                pool.totalTrancheContributions
+            ), // Pro-rata share of accumulated pool rewards, time-commitment weighted
             durationCommittedInWeeks: _durationCommittedInWeeks,
             enteredVaultAt: _enteredVaultAt,
             exitedVaultAt: 0
@@ -484,15 +496,14 @@ contract ZorroControllerInvestment is
         // Update the pool before anything to ensure rewards have been updated and transferred
         _res.mintedZORRewards = updatePool(_pid);
 
+        // Get pending rewards
+        uint256 _pendingRewards = (
+            _tranche.contribution.mul(_pool.accZORRORewards).div(
+                _pool.totalTrancheContributions
+            )
+        ).sub(_tranche.rewardDebt);
+
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
-        uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
-            _pool.totalTrancheContributions
-        );
-        // TODO: This seems really messy. Can't we abstract out some of this logic to the ZorroControllerAnalytics.sol functions? 
-        uint256 _pendingRewards = _trancheShare
-            .mul(_pool.accZORRORewards)
-            .div(1e12)
-            .sub(_tranche.rewardDebt);
         if (_pendingRewards > 0) {
             // If pending rewards payable, pay them out
             (uint256 _rewardsDue, uint256 _slashedRewards) = _getPendingRewards(
@@ -567,7 +578,7 @@ contract ZorroControllerInvestment is
         bytes memory _foreignAccount,
         address _localAccount
     ) internal view returns (TrancheInfo memory _tranche) {
-        if (_localAccount == address(0)) {
+        if (_localAccount != address(0)) {
             // On-chain withdrawal
             _tranche = trancheInfo[_pid][_localAccount][_trancheId];
         } else {
@@ -596,14 +607,13 @@ contract ZorroControllerInvestment is
         // Check if this is an early withdrawal
         // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
         // If not, distribute rewards as normal
-        // TODO: Important and test for this.: This is a uint256 so it's not going to be < 0 right? Maybe use int256 instead?
-        uint256 timeRemainingInCommitment = _tranche
-            .enteredVaultAt
-            .add(_tranche.durationCommittedInWeeks.mul(1 weeks))
-            .sub(block.timestamp);
+        int256 timeRemainingInCommitment = int256(_tranche
+            .enteredVaultAt)
+            .add(int256(_tranche.durationCommittedInWeeks.mul(1 weeks)))
+            .sub(int256(block.timestamp));
         if (timeRemainingInCommitment > 0) {
             _slashedRewards = _pendingRewards
-                .mul(timeRemainingInCommitment)
+                .mul(uint256(timeRemainingInCommitment))
                 .div(_tranche.durationCommittedInWeeks.mul(1 weeks));
             _rewardsDue = _pendingRewards.sub(_slashedRewards);
         } else {
@@ -794,12 +804,11 @@ contract ZorroControllerInvestment is
 
         if (isTimeMultiplierActive) {
             // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
-            timeMultiplier =
-                ((durationInWeeks.mul(1e4)).sqrt())
-                    .mul(1e12)
-                    .mul(2)
-                    .div(1000)
-                    .add(1e12);
+            timeMultiplier = ((durationInWeeks.mul(1e4)).sqrt())
+                .mul(1e12)
+                .mul(2)
+                .div(1000)
+                .add(1e12);
         }
     }
 

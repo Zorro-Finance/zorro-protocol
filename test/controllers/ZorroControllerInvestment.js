@@ -30,12 +30,37 @@ const setupObj = async (accounts) => {
         usdc.address
     );
 
-    // Create pool
+    // Set rewards params
+    await instance.setRewardsParams(
+        14400, // blocks per day
+        [
+            1, // Min daily dist points bp
+            20, // Max daily dist points bp
+        ],
+        1, // Chain multiplier
+        10 // Base reward rate bp
+    );
+
+    // Add pool
     await instance.add(
-        1,
-        lpPool.address,
-        true,
-        vault.address
+        1, // alloc point (multiplier)
+        lpPool.address, // _want address
+        true, // withUpdate
+        vault.address // _vault address
+    );
+
+    // Set Zorro Oracle (to allow setting below)
+    await instance.setZorroControllerOracle(accounts[0]);
+
+    // Fill public pool
+
+    // Set ZORROPerBlock
+    await instance.setZorroPerBlock(
+        web3.utils.toBN(1), // totalChainMultipliers
+        web3.utils.toBN(10e9), // totalMarketTVLUSD
+        web3.utils.toBN(5000), // _targetTVLCaptureBasisPoints
+        web3.utils.toBN(1e6), // _ZorroTotalVaultTVLUSD
+        web3.utils.toBN(web3.utils.toWei('800000', 'ether')) // _publicPoolZORBalance
     );
 
     return {
@@ -249,8 +274,6 @@ contract('ZorroControllerInvestment Main', async accounts => {
         assert.isTrue(trancheInfo.exitedVaultAt.isZero());
     });
 
-    // TODO: How to test for case with foreign account
-
     it('deposits from USDC', async () => {
         // Prep
         const pid = 0;
@@ -292,7 +315,123 @@ contract('ZorroControllerInvestment Main', async accounts => {
     });
 });
 
-contract('ZorroControllerInvestment Main', async accounts => {
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, vault;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        
+    });
+    
+    it('withdraws Want token with local account, no time commitment', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        await lpPool.mint(accounts[0], depositWantAmt);
+        await lpPool.approve(instance.address, depositWantAmt);
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+        );
+        const zpb = await instance.ZORROPerBlock.call();
+        const pi = await instance.poolInfo.call(0);
+        const tranche = await instance.trancheInfo.call(0, accounts[0], 0);
+
+        // Run
+        const tx = await instance.withdraw(
+            0, // pid, 
+            0, // trancheId, 
+            false // harvestOnly
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let harvested, withdrewWant;
+
+        const newAccRewards = pi.accZORRORewards.add(zpb);
+        const rewardsDue = newAccRewards.sub(tranche.rewardDebt);
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig && web3.utils.toBN(topics[2]).eq(web3.utils.toBN(accounts[0])) && web3.utils.toBN(rl.data).eq(rewardsDue)) {
+                harvested = rl;
+            } else if (topics[0] === withdrewWant && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant = rl;
+            }
+        }
+
+        // Test
+        // Assert receives the full Want qty back
+        assert.isNotNull(withdrewWant);
+        const wantBal = await lpPool.balanceOf.call(accounts[0]);
+        assert.isTrue(wantBal.eq(depositWantAmt));
+
+        // Assert receives full rewards for elapsed blocks
+        assert.isNotNull(harvested);
+    });
+
+    xit('withdraws Want token with local account, WITH penalty', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 4;
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+            );
+            
+        // Run
+        const tx = await instance.withdraw(
+            0, // pid, 
+            0, // trancheId, 
+            false // harvestOnly
+        )
+
+        // Test
+    });
+
+    xit('withdraws Want token with local account, harvest only', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 4;
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+            );
+            
+        // Run
+        const tx = await instance.withdraw(
+            0, // pid, 
+            0, // trancheId, 
+            false // harvestOnly
+        )
+
+        // Test
+    });
+
+    xit('withdraws to USDC', async () => {
+
+    });
+
+    xit('gets pending rewards by tranche', async () => {
+        // TODO: Consider getting this as part of some other test
+    });
+
+    xit('withdraws all tranches owned by a user in a pool', async () => {
+    
+    });
+
+    xit('transfers investment', async () => {
+    
+    });
+});
+
+contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
     let instance, lpPool, vault;
 
     before(async () => {
@@ -301,25 +440,22 @@ contract('ZorroControllerInvestment Main', async accounts => {
         lpPool = obj.lpPool;
         vault = obj.vault;
     });
-    
 
-    xit('withdraws Want token', async () => {
-
-    });
-
-    xit('withdraws to USDC', async () => {
+    xit('withdraws Want token with foreign account', async () => {
 
     });
 
-    xit('gets pending rewards by tranche', async () => {
+    xit('does not withdraw when both addresses given', async () => {
+        // Prep 
 
-    });
+        // Run
+        try {
+            await instance.withdraw(
 
-    xit('transfers investment', async () => {
-
-    });
-
-    xit('withdraws all tranches owned by a user in a pool', async () => {
-
+            );
+        } catch (err) {
+            // Test
+            assert.include(err.message, 'Only one account type allowed');
+        }
     });
 });
