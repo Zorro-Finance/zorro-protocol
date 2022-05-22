@@ -3,6 +3,8 @@ const MockLPPool = artifacts.require('MockLPPool');
 const MockInvestmentVault = artifacts.require('MockInvestmentVault');
 const MockUSDC = artifacts.require('MockUSDC');
 const MockZorroToken = artifacts.require("MockZorroToken");
+const MockVaultZorro = artifacts.require("MockVaultZorro");
+const PoolPublic = artifacts.require("PoolPublic");
 
 const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
 const depositedWantEventSig = web3.eth.abi.encodeEventSignature('DepositedWant(uint256)');
@@ -17,6 +19,8 @@ const setupObj = async (accounts) => {
     const vault = await MockInvestmentVault.deployed();
     const usdc = await MockUSDC.deployed();
     const ZORToken = await MockZorroToken.deployed();
+    const ZORStakingVault = await MockVaultZorro.deployed();
+    const publicPool = await PoolPublic.deployed();
 
     // Vault
     await vault.setZorroControllerAddress(instance.address);
@@ -25,10 +29,20 @@ const setupObj = async (accounts) => {
     await vault.setTokenUSDCAddress(usdc.address);
 
     // Config
+    await instance.setXChainParams(
+        0,
+        0,
+        instance.address
+    );
     await instance.setKeyAddresses(
         ZORToken.address,
         usdc.address
     );
+    await instance.setZorroContracts(
+        publicPool.address,
+        ZORStakingVault.address
+    );
+    await instance.setZorroXChainEndpoint(accounts[0]);
 
     // Set rewards params
     await instance.setRewardsParams(
@@ -68,6 +82,7 @@ const setupObj = async (accounts) => {
         lpPool,
         vault,
         usdc,
+        ZORStakingVault,
     };
 };
 
@@ -373,53 +388,139 @@ contract('ZorroControllerInvestment::Withdraw', async accounts => {
         // Assert receives full rewards for elapsed blocks
         assert.isNotNull(harvested);
     });
+});
 
-    xit('withdraws Want token with local account, WITH penalty', async () => {
-        // Prep 
-        // Deposit 
-        const weeksCommitted = 4;
-        await instance.deposit(
-            0, // pid
-            depositWantAmt,
-            weeksCommitted
-            );
-            
-        // Run
-        const tx = await instance.withdraw(
-            0, // pid, 
-            0, // trancheId, 
-            false // harvestOnly
-        )
-
-        // Test
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, vault, ZORStakingVault;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        ZORStakingVault = obj.ZORStakingVault;
     });
 
-    xit('withdraws Want token with local account, harvest only', async () => {
+    it('withdraws Want token with local account, WITH penalty', async () => {
         // Prep 
         // Deposit 
         const weeksCommitted = 4;
+        await lpPool.mint(accounts[0], depositWantAmt);
+        await lpPool.approve(instance.address, depositWantAmt);
         await instance.deposit(
             0, // pid
             depositWantAmt,
             weeksCommitted
-            );
-            
+        );
+        const zpb = await instance.ZORROPerBlock.call();
+        const pi = await instance.poolInfo.call(0);
+        const tranche = await instance.trancheInfo.call(0, accounts[0], 0);
+
         // Run
         const tx = await instance.withdraw(
             0, // pid, 
             0, // trancheId, 
             false // harvestOnly
-        )
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let harvested, slashed, withdrewWant;
+
+        const newAccRewards = pi.accZORRORewards.add(zpb);
+        const pendingRewards = newAccRewards.sub(tranche.rewardDebt);
+        const block = (await web3.eth.getBlockNumber()) - 1;
+        const blockTimestamp = (await web3.eth.getBlock(block)).timestamp;
+        const timeRemainingSecs = tranche.enteredVaultAt.add(web3.utils.toBN(weeksCommitted * 7 * 60 * 60)).sub(web3.utils.toBN(blockTimestamp));
+        const slashedRewards = pendingRewards.mul(timeRemainingSecs).div(web3.utils.toBN(weeksCommitted * 7 * 60 * 60));
+        const rewardsDue = pendingRewards.sub(slashedRewards);
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig && web3.utils.toBN(topics[2]).eq(web3.utils.toBN(accounts[0])) && web3.utils.toBN(rl.data).eq(rewardsDue)) {
+                harvested = rl;
+            } else if (topics[0] === withdrewWant && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant = rl;
+            } else if (topics[0] === transferredEventSig && web3.utils.toBN(topics[2]).eq(web3.utils.toBN(ZORStakingVault.address)) && web3.utils.toBN(rl.data).eq(slashedRewards)) {
+                slashed = rl;
+            }
+        }
 
         // Test
+        // Assert receives the full Want qty back
+        assert.isNotNull(withdrewWant);
+        const wantBal = await lpPool.balanceOf.call(accounts[0]);
+        assert.isTrue(wantBal.eq(depositWantAmt));
+
+        // Assert receives full rewards for elapsed blocks
+        assert.isNotNull(harvested);
+        // Assert slashes rewards and sends to ZOR stakers
+        assert.isNotNull(slashed);
+    });
+});
+
+contract('ZorroControllerInvestment::Withdraw', async accounts => {
+    let instance, lpPool, vault, ZORStakingVault;
+    const depositWantAmt = web3.utils.toBN(web3.utils.toWei('10', 'ether'));
+    
+    before(async () => {
+        const obj = await setupObj(accounts);
+        instance = obj.instance;
+        lpPool = obj.lpPool;
+        vault = obj.vault;
+        ZORStakingVault = obj.ZORStakingVault;
+    });
+
+    it('withdraws Want token with local account, harvest only', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        await lpPool.mint(accounts[0], depositWantAmt);
+        await lpPool.approve(instance.address, depositWantAmt);
+        await instance.deposit(
+            0, // pid
+            depositWantAmt,
+            weeksCommitted
+        );
+        const zpb = await instance.ZORROPerBlock.call();
+        const pi = await instance.poolInfo.call(0);
+        const tranche = await instance.trancheInfo.call(0, accounts[0], 0);
+
+        // Run
+        const tx = await instance.withdraw(
+            0, // pid, 
+            0, // trancheId, 
+            true // harvestOnly
+        );
+
+        // Logs
+        const { rawLogs } = tx.receipt;
+        let harvested, withdrewWant;
+
+        const newAccRewards = pi.accZORRORewards.add(zpb);
+        const rewardsDue = newAccRewards.sub(tranche.rewardDebt);
+        for (let rl of rawLogs) {
+            const { topics } = rl;
+            if (topics[0] === transferredEventSig && web3.utils.toBN(topics[2]).eq(web3.utils.toBN(accounts[0])) && web3.utils.toBN(rl.data).eq(rewardsDue)) {
+                harvested = rl;
+            } else if (topics[0] === withdrewWant && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+                withdrewWant = rl;
+            }
+        }
+
+        // Test
+        // Assert receives the full Want qty back
+        assert.isUndefined(withdrewWant);
+        const wantBal = await lpPool.balanceOf.call(accounts[0]);
+        console.log('wantBal: ', wantBal.toString());
+        assert.isTrue(wantBal.isZero());
+
+        // Assert receives full rewards for elapsed blocks
+        assert.isNotNull(harvested);
     });
 
     xit('withdraws to USDC', async () => {
 
-    });
-
-    xit('gets pending rewards by tranche', async () => {
-        // TODO: Consider getting this as part of some other test
     });
 
     xit('withdraws all tranches owned by a user in a pool', async () => {
@@ -445,13 +546,18 @@ contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
 
     });
 
-    xit('does not withdraw when both addresses given', async () => {
+    it('does not withdraw when both addresses given', async () => {
         // Prep 
 
         // Run
         try {
-            await instance.withdraw(
-
+            await instance.withdrawalFullServiceFromXChain(
+                accounts[0],
+                web3.utils.hexToBytes(web3.utils.asciiToHex("xyz123_abc")),
+                0,
+                0,
+                false,
+                990
             );
         } catch (err) {
             // Test

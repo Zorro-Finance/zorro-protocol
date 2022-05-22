@@ -271,7 +271,7 @@ contract ZorroControllerInvestment is
         }
     }
 
-    // TODO: test
+    // TODO: test, and docstrings need to be updated
     /// @notice Internal function for updating tranche ledger upon deposit
     /// @param _pid Index of pool
     /// @param _localAccount On-chain address
@@ -510,6 +510,7 @@ contract ZorroControllerInvestment is
                 _tranche,
                 _pendingRewards
             );
+
             if (chainId == homeChainId) {
                 // Simply transfer on-chain
                 // Transfer ZORRO rewards to user, net of any applicable slashing
@@ -535,9 +536,11 @@ contract ZorroControllerInvestment is
         // If not just harvesting (withdrawing too), proceed with below
         if (!_harvestOnly) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
+            // TODO: VERY IMPORTANT. The wantAmt is NOT the same as shares removed
+            // We should be converting the contribution (after time multiplier) to want and then calling withdrawWantToken()
             IVault(poolInfo[_pid].vault).withdrawWantToken(
                 _localAccount,
-                _tranche.contribution
+                _tranche.contribution.mul(1e12).div(_tranche.timeMultiplier) // TODO: Should probably have a sister function to _getContribution
             );
 
             // Update shares safely
@@ -607,13 +610,12 @@ contract ZorroControllerInvestment is
         // Check if this is an early withdrawal
         // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
         // If not, distribute rewards as normal
-        int256 timeRemainingInCommitment = int256(_tranche
-            .enteredVaultAt)
+        int256 _timeRemainingInCommitment = int256(_tranche.enteredVaultAt)
             .add(int256(_tranche.durationCommittedInWeeks.mul(1 weeks)))
             .sub(int256(block.timestamp));
-        if (timeRemainingInCommitment > 0) {
+        if (_timeRemainingInCommitment > 0) {
             _slashedRewards = _pendingRewards
-                .mul(uint256(timeRemainingInCommitment))
+                .mul(uint256(_timeRemainingInCommitment))
                 .div(_tranche.durationCommittedInWeeks.mul(1 weeks));
             _rewardsDue = _pendingRewards.sub(_slashedRewards);
         } else {
@@ -679,7 +681,16 @@ contract ZorroControllerInvestment is
             uint256 _rewardsDueXChain,
             uint256 _slashedRewardsXChain
         )
-    {}
+    {
+        return _withdrawalFullService(
+            _account,
+            _foreignAccount,
+            _pid,
+            _trancheId,
+            _harvestOnly,
+            _maxMarketMovement
+        );
+    }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
     /// @param _account address of wallet on-chain
