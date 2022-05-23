@@ -17,6 +17,8 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../interfaces/IZorroController.sol";
 
+import "../interfaces/IVault.sol";
+
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
@@ -263,6 +265,13 @@ contract ZorroControllerBase is
 
         // If current block is <= last reward block, exit
         if (block.number <= pool.lastRewardBlock) {
+            return 0;
+        }
+
+        // If underlying vault's shares are zero, skip
+        uint256 sharesTotal = IVault(pool.vault).sharesTotal();
+        if (sharesTotal == 0) {
+            pool.lastRewardBlock = block.number;
             return 0;
         }
 

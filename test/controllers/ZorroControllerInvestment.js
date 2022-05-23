@@ -98,7 +98,6 @@ const setupObj = async (accounts) => {
     };
 };
 
-/*
 contract('ZorroController', async accounts => {
     let instance;
 
@@ -617,14 +616,14 @@ contract('ZorroControllerInvestment::Withdraw', async accounts => {
         const tx = await instance.withdrawAll(
             0, // pid
         );
-
+            
         // Logs
         const { rawLogs } = tx.receipt;
         let withdrewWant = [];
 
         for (let rl of rawLogs) {
             const { topics } = rl;
-            if (topics[0] === withdrewWant && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
+            if (topics[0] === withdrewWantEventSig && web3.utils.toBN(topics[1]).eq(depositWantAmt)) {
                 withdrewWant.push(rl);
             }
         }
@@ -633,10 +632,10 @@ contract('ZorroControllerInvestment::Withdraw', async accounts => {
         // Assert receives the full Want qty back
         assert.equal(withdrewWant.length, 2);
         const wantBal = await lpPool.balanceOf.call(accounts[0]);
+        console.log('wantBal: ', wantBal.toString());
         assert.isTrue(wantBal.eq(depositWantAmt.mul(web3.utils.toBN(2))));
     });
 });
-*/
 
 contract('ZorroControllerInvestment::Withdraw', async accounts => {
     let instance, lpPool, lpPool1, vault, vault1, ZORStakingVault, ZORToken, usdc;

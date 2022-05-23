@@ -810,9 +810,16 @@ contract ZorroControllerInvestment is
     /// @notice Withdraw the maximum number of Want tokens from a pool
     /// @param _pid index of pool
     function withdrawAll(uint256 _pid) public nonReentrant {
+        // Iterate through all tranches for the current user and pool and withdraw
         uint256 numTranches = trancheLength(_pid, msg.sender);
         for (uint256 tid = 0; tid < numTranches; ++tid) {
             _withdraw(_pid, msg.sender, "", tid, false);
+        }
+
+        // Transfer balance as applicable
+        uint256 _wantBal = IERC20Upgradeable(poolInfo[_pid].want).balanceOf(address(this));
+        if (_wantBal > 0) {
+            IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(msg.sender, _wantBal);
         }
     }
 
