@@ -331,6 +331,7 @@ contract ZorroControllerXChainWithdraw is
         // Withdraw funds
         (
             ,
+            // TODO x. remove this and all instances of _mintedZORRewards. Not needed
             uint256 _mintedZORRewards,
             uint256 _rewardsDue,
 
@@ -415,10 +416,21 @@ contract ZorroControllerXChainWithdraw is
             _originChainId
         );
 
+        /*
+        TODO x.
+        If homeChainId == chainId that means we're on AVAX. Fetch _rewardsDue from public pool
+        Else: we're on another chain. Mint synth ZOR as _rewardsDue (assumes corresp. amount was burned before sending)
+        Write test for this
+        */
+
         // Mint ZOR and send to user
+        // TODO x: Don't mint. This should be fetched from the public pool. AND shouldn't this be done on the controller, NOT the xchain ctrl? ALSO: not sure if abi.decode address works
         IZorro(ZORRO).mint(abi.decode(_originRecipient, (address)), _rewardsDue);
 
+        // TODO: Where are the slashed rewards?
+
         // Burn ZOR rewards as applicable (since rewards were minted on the other chain)
+        // TODO x: Let's consider removing this, and having an Oracle job that reconciles burned ZOR instead
         if (_burnableZORRewards > 0) {
             IZorro(ZORRO).burn(publicPool, _burnableZORRewards);
         }

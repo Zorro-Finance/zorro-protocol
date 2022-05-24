@@ -35,8 +35,10 @@ contract ZorroControllerInvestment is
     /* Structs */
     struct WithdrawalResult {
         uint256 wantAmt; // Amount of Want token withdrawn
+        // TODO x. Remove this. 
         uint256 mintedZORRewards; // ZOR rewards minted (to be burned XChain)
         uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
+        // TODO x. Remove this.
         uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     }
 
@@ -202,6 +204,12 @@ contract ZorroControllerInvestment is
         // Preflight checks
         require(_wantAmt > 0, "_wantAmt must be > 0!");
 
+        /*
+        TODO x.
+        - IF not on home chain: record minted ZOR rewards for pickup by Oracle job
+        - IF ON home chain: do nothing
+        - Write tests
+        */
         // Update the pool before anything to ensure rewards have been updated and transferred
         _mintedZORRewards = updatePool(_pid);
 
@@ -503,6 +511,12 @@ contract ZorroControllerInvestment is
         require(_tranche.exitedVaultAt == 0, "Already exited vault");
 
         // Update the pool before anything to ensure rewards have been updated and transferred
+        /*
+        TODO x.
+        - IF not on home chain: record minted ZOR rewards for pickup by Oracle job
+        - IF ON home chain: do nothing
+        - Write tests
+        */
         _res.mintedZORRewards = updatePool(_pid);
 
         // Get pending rewards
@@ -538,6 +552,7 @@ contract ZorroControllerInvestment is
                     _rewardsDue.add(_slashedRewards)
                 );
                 _res.rewardsDueXChain = _rewardsDue;
+                // TODO x. Replace slashedRewardsXChain with recordSlashed
                 _res.slashedRewardsXChain = _slashedRewards;
             }
         }
