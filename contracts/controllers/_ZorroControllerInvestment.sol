@@ -691,7 +691,13 @@ contract ZorroControllerInvestment is
             uint256 _slashedRewardsXChain
         )
     {
-        return
+        // Call withdrawal function on chain
+        (
+            _amountUSDC,
+            _mintedZORRewards,
+            _rewardsDueXChain,
+            _slashedRewardsXChain
+        ) =
             _withdrawalFullService(
                 _account,
                 _foreignAccount,
@@ -700,6 +706,9 @@ contract ZorroControllerInvestment is
                 _harvestOnly,
                 _maxMarketMovement
             );
+
+        // Transfer USDC balance obtained to caller
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
