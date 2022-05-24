@@ -534,6 +534,14 @@ contract ZorroControllerInvestment is
                 _pendingRewards
             );
 
+            /* 
+            TODO x. It's not enough to say if it's on home chain transfer to local wallet. 
+            - If it's on home chain AND repatriating then update the rewardsDueXChain result. Transfer slashed rewards to Zorro Staking Vault
+            - If it's on home chain AND NOT repatriating then transfer to local wallet. rewardsDueXChain should be set to zero. AND transfer slashed rewards to Zorro Staking Vault
+            - Else if NOT on home chain at all AND repatriating, record amount slashed for Oracle to pick up, AND set rewardsDueXChain.
+            - ---- else if NOT on home chain at all AND NOT repatriating, record amount slashed, AND set rewardsDueXChain to zero.
+            - write tests for this
+            */
             if (chainId == homeChainId) {
                 // Simply transfer on-chain
                 // Transfer ZORRO rewards to user, net of any applicable slashing
@@ -549,7 +557,7 @@ contract ZorroControllerInvestment is
                 // Burn rewards due and slashed rewards, as we will be taking the equivalent amounts from the public pool on the home chain instead
                 _safeZORROTransfer(
                     burnAddress,
-                    _rewardsDue.add(_slashedRewards)
+                    _rewardsDue.add(_slashedRewards) // TODO x. No need to add slashed rewards here. We are recording here instead (see below).
                 );
                 _res.rewardsDueXChain = _rewardsDue;
                 // TODO x. Replace slashedRewardsXChain with recordSlashed

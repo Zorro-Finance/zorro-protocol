@@ -345,6 +345,8 @@ contract ZorroControllerXChainWithdraw is
                     _maxMarketMovement
                 );
 
+        // TODO x: Need to burn ZOR rewards due before repatriating
+
         // Get USDC bal
         uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
 
@@ -419,7 +421,7 @@ contract ZorroControllerXChainWithdraw is
         /*
         TODO x.
         If homeChainId == chainId that means we're on AVAX. Fetch _rewardsDue from public pool
-        Else: we're on another chain. Mint synth ZOR as _rewardsDue (assumes corresp. amount was burned before sending)
+        Else: we're on another chain. Mint synth ZOR as _rewardsDue (assumes corresp. amount was burned before sending) to wallet
         Write test for this
         */
 
