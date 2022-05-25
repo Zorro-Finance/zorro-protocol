@@ -44,6 +44,13 @@ contract ZorroControllerBase is
         _;
     }
 
+    /// @notice Can only be called on non home chain
+    modifier nonHomeChainOnly() {
+        // Check to make sure not on home chain
+        require(chainId != homeChainId, "For non home chain only");
+        _;
+    }
+
     /* Structs */
 
     // Info of each tranche.
@@ -89,6 +96,8 @@ contract ZorroControllerBase is
     uint256 public chainMultiplier; // Proportional rewards to be sent to this chain
     uint256 public baseRewardRateBasisPoints;
     uint256 public totalAllocPoint; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
+    uint256 public accSynthRewardsMinted; // Accumulated synthetic rewards minted on non home-chain
+    uint256 public accSynthRewardsSlashed; // Accumulated synthetic rewards slashed on non home-chain
     // Cross-chain
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint256 public homeChainId; // The chain ID of the home chain
@@ -301,12 +310,42 @@ contract ZorroControllerBase is
             
             // Return ZOR minted
             mintedZOR = ZORROReward;
+
+            // Record minted amount. // TODO xt. write tests
+            _recordMintedRewards(mintedZOR);
         }
 
         // Increment this pool's accumulated Zorro per share value by the reward amount
         pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
         // Update the pool's last reward block to the current block
         pool.lastRewardBlock = block.number;
+    }
+
+    // TODO xt. tests needed for this and reset func below.
+    /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning. 
+    /// @param _mintedRewards Amount of rewards that were minted    
+    function _recordMintedRewards(uint256 _mintedRewards) internal nonHomeChainOnly {
+        // Accumulate rewards
+        accSynthRewardsMinted = accSynthRewardsMinted.add(_mintedRewards);
+    }
+
+    /// @notice Resets accumulated synthentic rewards minted
+    /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
+    function resetSyntheticRewardsSlashed() external onlyAllowZorroControllerOracle nonHomeChainOnly {
+        accSynthRewardsMinted = 0;
+    }
+
+    /// @notice Stores cumulative total of slashed rewards on a non-home chain, for future burning. 
+    /// @param _slashedRewards Amount of rewards that were minted    
+    function _recordSlashedRewards(uint256 _slashedRewards) internal nonHomeChainOnly {
+        // Accumulate rewards
+        accSynthRewardsSlashed = accSynthRewardsSlashed.add(_slashedRewards);
+    }
+
+    /// @notice Resets accumulated synthentic rewards minted
+    /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
+    function resetSyntheticRewardsMinted() external onlyAllowZorroControllerOracle nonHomeChainOnly {
+        accSynthRewardsSlashed = 0;
     }
 
     /// @notice Gets the specified amount of ZOR tokens from the public pool and transfers to this contract

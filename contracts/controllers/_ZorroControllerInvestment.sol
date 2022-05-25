@@ -35,11 +35,7 @@ contract ZorroControllerInvestment is
     /* Structs */
     struct WithdrawalResult {
         uint256 wantAmt; // Amount of Want token withdrawn
-        // TODO x. Remove this. 
-        uint256 mintedZORRewards; // ZOR rewards minted (to be burned XChain)
         uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
-        // TODO x. Remove this.
-        uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     }
 
     /* State */
@@ -204,12 +200,6 @@ contract ZorroControllerInvestment is
         // Preflight checks
         require(_wantAmt > 0, "_wantAmt must be > 0!");
 
-        /*
-        TODO x.
-        - IF not on home chain: record minted ZOR rewards for pickup by Oracle job
-        - IF ON home chain: do nothing
-        - Write tests
-        */
         // Update the pool before anything to ensure rewards have been updated and transferred
         _mintedZORRewards = updatePool(_pid);
 
@@ -455,7 +445,8 @@ contract ZorroControllerInvestment is
             msg.sender,
             "",
             _trancheId,
-            _harvestOnly
+            _harvestOnly,
+            false
         );
 
         // Transfer to user and return Want amount
@@ -474,13 +465,15 @@ contract ZorroControllerInvestment is
     /// @param _foreignAccount Address of the foreign chain account that this inviestment was made with
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
+    /// @param _xChainRepatriation Intended for repatriation to another chain
     /// @return _res A WithdrawalResult struct containing relevant withdrawal result parameters
     function _withdraw(
         uint256 _pid,
         address _localAccount,
         bytes memory _foreignAccount,
         uint256 _trancheId,
-        bool _harvestOnly
+        bool _harvestOnly,
+        bool _xChainRepatriation
     ) internal returns (WithdrawalResult memory _res) {
         // TODO: Consider making WithdrwalResult an event instead?
         // Can only specify one account (on-chain/foreign, but not both)
@@ -511,13 +504,7 @@ contract ZorroControllerInvestment is
         require(_tranche.exitedVaultAt == 0, "Already exited vault");
 
         // Update the pool before anything to ensure rewards have been updated and transferred
-        /*
-        TODO x.
-        - IF not on home chain: record minted ZOR rewards for pickup by Oracle job
-        - IF ON home chain: do nothing
-        - Write tests
-        */
-        _res.mintedZORRewards = updatePool(_pid);
+        updatePool(_pid);
 
         // Get pending rewards
         uint256 _pendingRewards = (
@@ -535,33 +522,60 @@ contract ZorroControllerInvestment is
             );
 
             /* 
-            TODO x. It's not enough to say if it's on home chain transfer to local wallet. 
-            - If it's on home chain AND repatriating then update the rewardsDueXChain result. Transfer slashed rewards to Zorro Staking Vault
-            - If it's on home chain AND NOT repatriating then transfer to local wallet. rewardsDueXChain should be set to zero. AND transfer slashed rewards to Zorro Staking Vault
-            - Else if NOT on home chain at all AND repatriating, record amount slashed for Oracle to pick up, AND set rewardsDueXChain.
-            - ---- else if NOT on home chain at all AND NOT repatriating, record amount slashed, AND set rewardsDueXChain to zero.
+            TODO x. 
             - write tests for this
             */
-            if (chainId == homeChainId) {
-                // Simply transfer on-chain
-                // Transfer ZORRO rewards to user, net of any applicable slashing
-                if (_rewardsDue > 0) {
-                    _safeZORROTransfer(_localAccount, _rewardsDue);
-                }
-                // Transfer any slashed rewards to single Zorro staking vault, if applicable
-                if (_slashedRewards > 0) {
-                    // Transfer slashed rewards to vault to reward ZORRO stakers
-                    _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+            if (_xChainRepatriation) {
+                if (chainId == homeChainId) {
+                    // If repatriating AND on home chain
+                    
+                    // Update rewardsDueXChain
+                    _res.rewardsDueXChain = _rewardsDue;
+                    
+                    // Transfer ZORRO rewards to user, net of any applicable slashing
+                    if (_rewardsDue > 0) {
+                        _safeZORROTransfer(_localAccount, _rewardsDue);
+                    }
+
+                    // Transfer any slashed rewards to single Zorro staking vault, if applicable
+                    if (_slashedRewards > 0) {
+                        // Transfer slashed rewards to vault to reward ZORRO stakers
+                        _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+                    }
+                } else {
+                    // If repatriating and NOT on home chain, 
+
+                    // Update rewardsDueXChain
+                    _res.rewardsDueXChain = _rewardsDue;
+
+                    // Record slashed rewards for Oracle to pick up and burn the corresponding amount on the home chain
+                    _recordSlashedRewards(_slashedRewards);
                 }
             } else {
-                // Burn rewards due and slashed rewards, as we will be taking the equivalent amounts from the public pool on the home chain instead
-                _safeZORROTransfer(
-                    burnAddress,
-                    _rewardsDue.add(_slashedRewards) // TODO x. No need to add slashed rewards here. We are recording here instead (see below).
-                );
-                _res.rewardsDueXChain = _rewardsDue;
-                // TODO x. Replace slashedRewardsXChain with recordSlashed
-                _res.slashedRewardsXChain = _slashedRewards;
+                if (chainId == homeChainId) {
+                    // If NOT repatriating AND on home chain
+
+                    // Transfer ZORRO rewards to user, net of any applicable slashing
+                    if (_rewardsDue > 0) {
+                        _safeZORROTransfer(_localAccount, _rewardsDue);
+                    }
+
+                    // Transfer any slashed rewards to single Zorro staking vault, if applicable
+                    if (_slashedRewards > 0) {
+                        // Transfer slashed rewards to vault to reward ZORRO stakers
+                        _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+                    }
+                } else {
+                    // If NOT repatriating and NOT on home chain
+
+                    // Transfer ZORRO rewards to user, net of any applicable slashing
+                    if (_rewardsDue > 0) {
+                        _safeZORROTransfer(_localAccount, _rewardsDue);
+                    }
+
+                    // Record slashed rewards for Oracle to pick up and burn the corresponding amount on the home chain
+                    _recordSlashedRewards(_slashedRewards);
+                }
             }
         }
 
@@ -668,13 +682,14 @@ contract ZorroControllerInvestment is
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (uint256 _amountUSDC, , , ) = _withdrawalFullService(
+        (uint256 _amountUSDC,) = _withdrawalFullService(
             msg.sender,
             "",
             _pid,
             _trancheId,
             _harvestOnly,
-            _maxMarketMovement
+            _maxMarketMovement,
+            false
         );
 
         // Send USDC funds back to sender
@@ -717,9 +732,7 @@ contract ZorroControllerInvestment is
         // Call withdrawal function on chain
         (
             _amountUSDC,
-            _mintedZORRewards,
-            _rewardsDueXChain,
-            _slashedRewardsXChain
+            _rewardsDueXChain
         ) =
             _withdrawalFullService(
                 _account,
@@ -727,7 +740,8 @@ contract ZorroControllerInvestment is
                 _pid,
                 _trancheId,
                 _harvestOnly,
-                _maxMarketMovement
+                _maxMarketMovement,
+                true
             );
 
         // Transfer USDC balance obtained to caller
@@ -741,24 +755,22 @@ contract ZorroControllerInvestment is
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
+    /// @param _xChainRepatriation Intended for repatriation to another chain
     /// @return _amountUSDC Amount of USDC withdrawn
-    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
-    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     function _withdrawalFullService(
         address _account,
         bytes memory _foreignAccount,
         uint256 _pid,
         uint256 _trancheId,
         bool _harvestOnly,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        bool _xChainRepatriation
     )
         internal
         returns (
             uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
+            uint256 _rewardsDueXChain
         )
     {
         // Get Vault contract
@@ -770,7 +782,8 @@ contract ZorroControllerInvestment is
             _account,
             _foreignAccount,
             _trancheId,
-            _harvestOnly
+            _harvestOnly,
+            _xChainRepatriation
         );
 
         // Safe increase spending of Vault contract for Want token
@@ -785,9 +798,7 @@ contract ZorroControllerInvestment is
             _maxMarketMovement
         );
 
-        _mintedZORRewards = _res.mintedZORRewards;
         _rewardsDueXChain = _res.rewardsDueXChain;
-        _slashedRewardsXChain = _res.slashedRewardsXChain;
     }
 
     /// @notice Transfer all assets from a tranche in one vault to a new vault (works on-chain only)
@@ -810,13 +821,14 @@ contract ZorroControllerInvestment is
         ].enteredVaultAt;
 
         // Withdraw
-        (uint256 withdrawnUSDC, , , ) = _withdrawalFullService(
+        (uint256 withdrawnUSDC,) = _withdrawalFullService(
             msg.sender,
             "",
             _fromPid,
             _fromTrancheId,
             false,
-            _maxMarketMovement
+            _maxMarketMovement,
+            false
         );
 
         // Transfer funds to vault
@@ -845,7 +857,7 @@ contract ZorroControllerInvestment is
         // Iterate through all tranches for the current user and pool and withdraw
         uint256 numTranches = trancheLength(_pid, msg.sender);
         for (uint256 tid = 0; tid < numTranches; ++tid) {
-            _withdraw(_pid, msg.sender, "", tid, false);
+            _withdraw(_pid, msg.sender, "", tid, false, false);
         }
 
         // Transfer balance as applicable
