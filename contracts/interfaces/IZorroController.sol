@@ -130,9 +130,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         external
         returns (
             uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
+            uint256 _rewardsDueXChain
         );
 
     function transferInvestment(
@@ -143,6 +141,8 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     ) external;
 
     function withdrawAll(uint256 _pid) external;
+
+    function repatriateRewards(uint256 _rewardsDue, address _destination) external;
 }
 
 /// @title IZorroControllerPoolMgmt

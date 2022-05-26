@@ -528,10 +528,10 @@ contract ZorroControllerInvestment is
             if (_xChainRepatriation) {
                 if (chainId == homeChainId) {
                     // If repatriating AND on home chain
-                    
+
                     // Update rewardsDueXChain
                     _res.rewardsDueXChain = _rewardsDue;
-                    
+
                     // Transfer ZORRO rewards to user, net of any applicable slashing
                     if (_rewardsDue > 0) {
                         _safeZORROTransfer(_localAccount, _rewardsDue);
@@ -543,7 +543,7 @@ contract ZorroControllerInvestment is
                         _safeZORROTransfer(zorroStakingVault, _slashedRewards);
                     }
                 } else {
-                    // If repatriating and NOT on home chain, 
+                    // If repatriating and NOT on home chain,
 
                     // Update rewardsDueXChain
                     _res.rewardsDueXChain = _rewardsDue;
@@ -682,7 +682,7 @@ contract ZorroControllerInvestment is
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (uint256 _amountUSDC,) = _withdrawalFullService(
+        (uint256 _amountUSDC, ) = _withdrawalFullService(
             msg.sender,
             "",
             _pid,
@@ -709,9 +709,7 @@ contract ZorroControllerInvestment is
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return _amountUSDC Amount of USDC withdrawn
-    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
-    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     function withdrawalFullServiceFromXChain(
         address _account,
         bytes memory _foreignAccount,
@@ -722,30 +720,27 @@ contract ZorroControllerInvestment is
     )
         public
         onlyZorroXChain
-        returns (
-            uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
-        )
+        returns (uint256 _amountUSDC, uint256 _rewardsDueXChain)
     {
         // Call withdrawal function on chain
-        (
-            _amountUSDC,
-            _rewardsDueXChain
-        ) =
-            _withdrawalFullService(
-                _account,
-                _foreignAccount,
-                _pid,
-                _trancheId,
-                _harvestOnly,
-                _maxMarketMovement,
-                true
-            );
+        (_amountUSDC, _rewardsDueXChain) = _withdrawalFullService(
+            _account,
+            _foreignAccount,
+            _pid,
+            _trancheId,
+            _harvestOnly,
+            _maxMarketMovement,
+            true
+        );
 
         // Transfer USDC balance obtained to caller
-        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(
+            msg.sender,
+            _amountUSDC
+        );
+
+        // Burn xchain ZOR rewards due before repatriating, if applicable. (They will be minted on opposite chain)
+        IZorro(ZORRO).burn(_account, _rewardsDueXChain);
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
@@ -766,13 +761,7 @@ contract ZorroControllerInvestment is
         bool _harvestOnly,
         uint256 _maxMarketMovement,
         bool _xChainRepatriation
-    )
-        internal
-        returns (
-            uint256 _amountUSDC,
-            uint256 _rewardsDueXChain
-        )
-    {
+    ) internal returns (uint256 _amountUSDC, uint256 _rewardsDueXChain) {
         // Get Vault contract
         address _vaultAddr = poolInfo[_pid].vault;
 
@@ -821,7 +810,7 @@ contract ZorroControllerInvestment is
         ].enteredVaultAt;
 
         // Withdraw
-        (uint256 withdrawnUSDC,) = _withdrawalFullService(
+        (uint256 withdrawnUSDC, ) = _withdrawalFullService(
             msg.sender,
             "",
             _fromPid,
@@ -861,9 +850,32 @@ contract ZorroControllerInvestment is
         }
 
         // Transfer balance as applicable
-        uint256 _wantBal = IERC20Upgradeable(poolInfo[_pid].want).balanceOf(address(this));
+        uint256 _wantBal = IERC20Upgradeable(poolInfo[_pid].want).balanceOf(
+            address(this)
+        );
         if (_wantBal > 0) {
-            IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(msg.sender, _wantBal);
+            IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(
+                msg.sender,
+                _wantBal
+            );
+        }
+    }
+
+    // TODO tests
+    /// @notice Gets rewards and sends to the recipient of a cross chain withdrawal
+    /// @param _rewardsDue The amount of rewards that need to be fetched and sent to the wallet
+    /// @param _destination Wallet to send funds to
+    function repatriateRewards(uint256 _rewardsDue, address _destination)
+        public
+        onlyZorroXChain
+    {
+        // Get rewards based on chain type
+        if (chainId == homeChainId) {
+            // On Home chain. Fetch rewards from public pool and send to wallet
+            _fetchFundsFromPublicPool(_rewardsDue, _destination);
+        } else {
+            // On other chain. Mint ZORRO tokens and send to wallet
+            IZorro(ZORRO).mint(_destination, _rewardsDue);
         }
     }
 

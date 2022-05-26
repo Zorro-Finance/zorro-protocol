@@ -93,11 +93,10 @@ contract ZorroControllerXChainReceiver is
                 uint256 _pid,
                 uint256 _trancheId,
                 bytes memory _originRecipient,
-                uint256 _burnableZORRewards,
                 uint256 _rewardsDue
             ) = abi.decode(
                     _paramsPayload,
-                    (uint256, uint256, uint256, bytes, uint256, uint256)
+                    (uint256, uint256, uint256, bytes, uint256)
                 );
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
@@ -105,7 +104,6 @@ contract ZorroControllerXChainReceiver is
                 _pid,
                 _trancheId,
                 _originRecipient,
-                _burnableZORRewards,
                 _rewardsDue
             );
         } else if (this.receiveXChainDistributionRequest.selector == _funcSig) {

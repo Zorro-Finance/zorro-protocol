@@ -15,7 +15,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     event ReceiveXChainRepatriationReq(
         uint256 indexed _originChainId,
-        uint256 indexed _burnableZORRewards,
         uint256 indexed _rewardsDue
     );
 
@@ -89,7 +88,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) public {
         _receiveXChainRepatriationRequest(
@@ -97,7 +95,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _pid,
             _trancheId,
             _originRecipient,
-            _burnableZORRewards,
             _rewardsDue
         );
     }
@@ -107,12 +104,10 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) internal override {
         emit ReceiveXChainRepatriationReq(
             _originChainId,
-            _burnableZORRewards,
             _rewardsDue
         );
     }
@@ -203,7 +198,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) public pure returns (bytes memory) {
         return
@@ -212,7 +206,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
                 _pid,
                 _trancheId,
                 _originRecipient,
-                _burnableZORRewards,
                 _rewardsDue
             );
     }
@@ -223,7 +216,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _amountUSDC,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue,
         uint256 _maxMarketMovementAllowed
     ) public payable {
@@ -233,7 +225,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _trancheId,
             _originRecipient,
             _amountUSDC,
-            _burnableZORRewards,
             _rewardsDue,
             _maxMarketMovementAllowed
         );

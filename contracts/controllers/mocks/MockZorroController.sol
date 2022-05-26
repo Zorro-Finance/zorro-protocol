@@ -33,7 +33,7 @@ contract MockZorroController is ZorroController {
         emit UpdatedPool(_res);
     }
 
-    function _fetchFundsFromPublicPool(uint256 _amount) internal override {
+    function _fetchFundsFromPublicPool(uint256 _amount, address _destination) internal override {
         // Do nothing. Dummy func.
     }
 }

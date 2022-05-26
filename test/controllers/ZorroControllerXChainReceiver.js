@@ -136,7 +136,6 @@ contract('ZorroController', async accounts => {
         const originAccount = web3.utils.hexToBytes(accounts[0]);
         const originRecipient = web3.utils.hexToBytes(accounts[1]);
         const amountUSDC = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
-        const burnableZORRewards = web3.utils.toBN(web3.utils.toWei('57', 'ether'));
         const rewardsDue = web3.utils.toBN(web3.utils.toWei('3.2', 'ether'));
 
         const payload = web3.eth.abi.encodeFunctionCall({
@@ -147,7 +146,6 @@ contract('ZorroController', async accounts => {
                 {type: 'uint256', name: '_pid'},
                 {type: 'uint256', name: '_trancheId'},
                 {type: 'bytes', name: '_originRecipient'},
-                {type: 'uint256', name: '_burnableZORRewards'},
                 {type: 'uint256', name: '_rewardsDue'},
             ],
         }, [
@@ -155,7 +153,6 @@ contract('ZorroController', async accounts => {
             pid, 
             trancheId,
             originRecipient,
-            burnableZORRewards,
             rewardsDue,
         ]);
 
@@ -184,8 +181,6 @@ contract('ZorroController', async accounts => {
         // Test
         // Origin chain ID 
         assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[1]).eq(web3.utils.toBN(originChainId)));
-        // Burnable ZOR rewards
-        assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[2]).eq(burnableZORRewards));
         // Rewards due
         assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[3]).eq(rewardsDue));
     });

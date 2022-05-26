@@ -298,7 +298,7 @@ contract ZorroControllerBase is
             // On Home chain. NO cross chain pool updates required
 
             // Transfer Zorro rewards to this contract from the Public Pool
-            _fetchFundsFromPublicPool(ZORROReward);
+            _fetchFundsFromPublicPool(ZORROReward, address(this));
 
             // Return 0, no ZOR minted because we're on chain
             mintedZOR = 0;
@@ -350,10 +350,11 @@ contract ZorroControllerBase is
 
     /// @notice Gets the specified amount of ZOR tokens from the public pool and transfers to this contract
     /// @param _amount The amount to fetch from the public pool
-    function _fetchFundsFromPublicPool(uint256 _amount) internal virtual {
+    /// @param _destination Where to send funds to
+    function _fetchFundsFromPublicPool(uint256 _amount, address _destination) internal virtual {
         IERC20Upgradeable(ZORRO).safeTransferFrom(
             publicPool,
-            address(this),
+            _destination,
             _amount
         );
     }

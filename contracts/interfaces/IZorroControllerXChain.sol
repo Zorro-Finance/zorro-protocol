@@ -114,7 +114,6 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) external view returns (uint256);
 
@@ -139,7 +138,6 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) external;
 }

@@ -80,7 +80,6 @@ contract('ZorroControllerXChain', async accounts => {
 
     it('checks X chain Repatriation fee', async () => {
         // Prep
-        const burnableRewards = web3.utils.toBN(web3.utils.toWei('2.7', 'ether'));
         const rewardsDue = web3.utils.toBN(web3.utils.toWei('3.4', 'ether'));
         const originRecipient = web3.utils.hexToBytes(accounts[1]);
         // Run
@@ -89,7 +88,6 @@ contract('ZorroControllerXChain', async accounts => {
             0,
             0,
             originRecipient,
-            burnableRewards,
             rewardsDue
         );
 
@@ -142,7 +140,6 @@ contract('ZorroControllerXChain', async accounts => {
         const pid = 0;
         const trancheId = 0;
         const originRecipient = web3.utils.hexToBytes(accounts[1]);
-        const burnableRewards = web3.utils.toBN(web3.utils.toWei('2.7', 'ether'));
         const rewardsDue = web3.utils.toBN(web3.utils.toWei('3.4', 'ether'));
 
         // Run
@@ -151,7 +148,6 @@ contract('ZorroControllerXChain', async accounts => {
             pid,
             trancheId,
             originRecipient,
-            burnableRewards,
             rewardsDue
         );
 
@@ -164,7 +160,6 @@ contract('ZorroControllerXChain', async accounts => {
                 {type: 'uint256', name: '_pid'},
                 {type: 'uint256', name: '_trancheId'},
                 {type: 'bytes', name: '_originRecipient'},
-                {type: 'uint256', name: '_burnableZORRewards'},
                 {type: 'uint256', name: '_rewardsDue'},
             ],
         }, [
@@ -172,7 +167,6 @@ contract('ZorroControllerXChain', async accounts => {
             pid,
             trancheId,
             originRecipient,
-            burnableRewards,
             rewardsDue,
         ]);
         assert.isTrue(web3.utils.toBN(res).eq(web3.utils.toBN(expectedPayload)));        
@@ -221,7 +215,6 @@ contract('ZorroControllerXChain', async accounts => {
         const maxMarketMovementAllowed = 990;
         const amountUSDC = web3.utils.toBN(web3.utils.toWei('200', 'ether'));
         const netAmountUSDC = amountUSDC.mul(web3.utils.toBN(maxMarketMovementAllowed)).div(web3.utils.toBN(1000));
-        const burnableRewards = web3.utils.toBN(web3.utils.toWei('2.7', 'ether'));
         const rewardsDue = web3.utils.toBN(web3.utils.toWei('3.4', 'ether'));
         const gasFee = web3.utils.toBN(web3.utils.toWei('0.05', 'ether'));
 
@@ -236,7 +229,6 @@ contract('ZorroControllerXChain', async accounts => {
             trancheId,
             originRecipient,
             amountUSDC,
-            burnableRewards,
             rewardsDue,
             maxMarketMovementAllowed,
             {value: gasFee}
