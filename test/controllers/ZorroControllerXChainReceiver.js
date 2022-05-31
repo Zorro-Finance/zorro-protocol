@@ -2,7 +2,7 @@ const MockZorroControllerXChain = artifacts.require('MockZorroControllerXChain')
 const MockUSDC = artifacts.require('MockUSDC');
 
 const receiveXChainDepositEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainDepositReq(uint256,uint256,address)');
-const receiveXChainRepatriationEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainRepatriationReq(uint256,uint256,uint256)');
+const receiveXChainRepatriationEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainRepatriationReq(uint256,uint256)');
 const receiveXChainDistributionEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainDistributionReq(uint256,uint256,uint256)');
 const receiveXChainWithdrawalEventSig = web3.eth.abi.encodeEventSignature('ReceiveXChainWithdrawalReq(uint256,uint256,uint256)');
 

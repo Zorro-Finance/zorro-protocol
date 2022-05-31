@@ -143,6 +143,8 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     function withdrawAll(uint256 _pid) external;
 
     function repatriateRewards(uint256 _rewardsDue, address _destination) external;
+
+    function handleAccXChainRewards(uint256 _totalMinted, uint256 _totalSlashed) external;
 }
 
 /// @title IZorroControllerPoolMgmt

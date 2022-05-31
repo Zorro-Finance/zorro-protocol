@@ -751,6 +751,13 @@ contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
         const maxMarketMovement = 990;
         const zeroAddress = '0x0000000000000000000000000000000000000000';
 
+        // X chain
+        await instance.setXChainParams(
+            1,
+            0,
+            web3.utils.randomHex(20)
+        );
+
         // Mint, approval 
         await usdc.mint(accounts[0], depositUSDCAmt);
         await usdc.approve(instance.address, depositUSDCAmt);
@@ -785,5 +792,21 @@ contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
         // Assert that Want token was withdrawn
 
         // Assert that Want was exchanged for USDC
+    });
+
+    xit('withdraws want token on home chain for repatriation on another chain', () => {
+
+    });
+
+    xit('withdraws want token on NON home chain for repatriation', () => {
+
+    });
+
+    xit('withdraws want token on home chain (no xchain repatriation)', () => {
+        
+    });
+
+    xit('withdraws want token on home chain (no xchain repatriation)', () => {
+        
     });
 });

@@ -442,5 +442,18 @@ contract('ZorroController', async accounts => {
         const {accZORRORewards, lastRewardBlock} = pool;
         assert.isTrue(accZORRORewards.isZero());
         assert.equal(lastRewardBlock, currBlock);
+
+    });
+    
+    xit('updates pool rewards for non home chain', async () => {
+        // TODO: Test that it records minted rewards ()
+    });
+
+    xit('resets slashed rewards', async () => {
+
+    });
+
+    xit('resets synthetic rewards minted', async () => {
+
     });
 });

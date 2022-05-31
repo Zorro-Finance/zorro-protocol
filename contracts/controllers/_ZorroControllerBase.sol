@@ -311,7 +311,7 @@ contract ZorroControllerBase is
             // Return ZOR minted
             mintedZOR = ZORROReward;
 
-            // Record minted amount. // TODO xt. write tests
+            // Record minted amount.
             _recordMintedRewards(mintedZOR);
         }
 
@@ -321,7 +321,6 @@ contract ZorroControllerBase is
         pool.lastRewardBlock = block.number;
     }
 
-    // TODO xt. tests needed for this and reset func below.
     /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning. 
     /// @param _mintedRewards Amount of rewards that were minted    
     function _recordMintedRewards(uint256 _mintedRewards) internal nonHomeChainOnly {
@@ -332,6 +331,10 @@ contract ZorroControllerBase is
     /// @notice Resets accumulated synthentic rewards minted
     /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
     function resetSyntheticRewardsSlashed() external onlyAllowZorroControllerOracle nonHomeChainOnly {
+        // Burn slashed amount
+        IZorro(ZORRO).burn(address(this), accSynthRewardsMinted);
+
+        // Reset
         accSynthRewardsMinted = 0;
     }
 
