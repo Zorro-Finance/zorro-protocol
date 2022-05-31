@@ -24,7 +24,10 @@ contract MockSafeSwapUni {
         uint256 _deadline
     ) public {
         // Give permission
-        IERC20Upgradeable(_path[0]).safeIncreaseAllowance(_uniRouter, _amountIn);
+        IERC20Upgradeable(_path[0]).safeIncreaseAllowance(
+            _uniRouter,
+            _amountIn
+        );
         // Swap
         IAMMRouter02(_uniRouter).safeSwap(
             _amountIn,
@@ -130,9 +133,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
             uint256 amountETH,
             uint256 liquidity
         )
-    {
-        // TODO
-    }
+    {}
 
     function removeLiquidity(
         address tokenA,
@@ -169,9 +170,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountToken, uint256 amountETH) {
-        // TODO
-    }
+    ) external returns (uint256 amountToken, uint256 amountETH) {}
 
     function removeLiquidityWithPermit(
         address tokenA,
@@ -185,9 +184,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 amountA, uint256 amountB) {
-        // TODO
-    }
+    ) external returns (uint256 amountA, uint256 amountB) {}
 
     function removeLiquidityETHWithPermit(
         address token,
@@ -200,9 +197,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 amountToken, uint256 amountETH) {
-        // TODO
-    }
+    ) external returns (uint256 amountToken, uint256 amountETH) {}
 
     function swapExactTokensForTokens(
         uint256 amountIn,
@@ -233,7 +228,11 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address _tokenOut = path[path.length - 1];
 
         // Burn token IN
-        IERC20Upgradeable(_tokenIn).safeTransferFrom(msg.sender, burnAddress, amountIn);
+        IERC20Upgradeable(_tokenIn).safeTransferFrom(
+            msg.sender,
+            burnAddress,
+            amountIn
+        );
 
         // Mint token OUT -> to
         IMockERC20Upgradeable(_tokenOut).mint(to, amountOutMin);
@@ -253,18 +252,14 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external returns (uint256[] memory amounts) {
-        // TODO
-    }
+    ) external returns (uint256[] memory amounts) {}
 
     function swapExactETHForTokens(
         uint256 amountOutMin,
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable returns (uint256[] memory amounts) {
-        // TODO
-    }
+    ) external payable returns (uint256[] memory amounts) {}
 
     function swapTokensForExactETH(
         uint256 amountOut,
@@ -272,9 +267,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external returns (uint256[] memory amounts) {
-        // TODO
-    }
+    ) external returns (uint256[] memory amounts) {}
 
     function swapExactTokensForETH(
         uint256 amountIn,
@@ -282,26 +275,20 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external returns (uint256[] memory amounts) {
-        // TODO
-    }
+    ) external returns (uint256[] memory amounts) {}
 
     function swapETHForExactTokens(
         uint256 amountOut,
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable returns (uint256[] memory amounts) {
-        // TODO
-    }
+    ) external payable returns (uint256[] memory amounts) {}
 
     function quote(
         uint256 amountA,
         uint256 reserveA,
         uint256 reserveB
-    ) external pure returns (uint256 amountB) {
-        // TODO
-    }
+    ) external pure returns (uint256 amountB) {}
 
     function getAmountOut(
         uint256 amountIn,
@@ -315,9 +302,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint256 amountOut,
         uint256 reserveIn,
         uint256 reserveOut
-    ) external pure returns (uint256 amountIn) {
-        // TODO
-    }
+    ) external pure returns (uint256 amountIn) {}
 
     function getAmountsOut(uint256 amountIn, address[] calldata path)
         external
@@ -333,9 +318,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         external
         view
         returns (uint256[] memory amounts)
-    {
-        // TODO
-    }
+    {}
 
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
@@ -367,12 +350,12 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint256 deadline
     ) external {
         _mockSwapExactTokensForTokens(
-                amountIn,
-                amountOutMin,
-                path,
-                to,
-                deadline
-            );
+            amountIn,
+            amountOutMin,
+            path,
+            to,
+            deadline
+        );
     }
 
     function swapExactETHForTokensSupportingFeeOnTransferTokens(
@@ -401,7 +384,10 @@ contract MockSafeSwapBalancer {
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
     ) public {
-        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(_balancerVault, _swapParams.amountIn);
+        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
+            _balancerVault,
+            _swapParams.amountIn
+        );
         IBalancerVault(_balancerVault).safeSwap(_poolId, _swapParams);
     }
 }
@@ -410,7 +396,11 @@ contract MockSafeSwapBalancer {
 contract MockBalancerVault is IBalancerVault {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    event SwappedToken(address indexed _dest, uint256 indexed amountIn, uint256 indexed minAmountOut);
+    event SwappedToken(
+        address indexed _dest,
+        uint256 indexed amountIn,
+        uint256 indexed minAmountOut
+    );
 
     mapping(address => uint256) internal _cash;
     address public burnAddress;
@@ -430,10 +420,17 @@ contract MockBalancerVault is IBalancerVault {
         uint256 deadline
     ) external payable returns (uint256 amountCalculated) {
         // Burn token IN
-        IERC20Upgradeable(address(singleSwap.assetIn)).safeTransferFrom(msg.sender, burnAddress, singleSwap.amount);
+        IERC20Upgradeable(address(singleSwap.assetIn)).safeTransferFrom(
+            msg.sender,
+            burnAddress,
+            singleSwap.amount
+        );
 
         // Mint token OUT -> to
-        IMockERC20Upgradeable(address(singleSwap.assetOut)).mint(funds.recipient, limit);
+        IMockERC20Upgradeable(address(singleSwap.assetOut)).mint(
+            funds.recipient,
+            limit
+        );
 
         // Event
         emit SwappedToken(funds.recipient, singleSwap.amount, limit);
@@ -469,16 +466,12 @@ contract MockBalancerVault is IBalancerVault {
         address sender,
         address recipient,
         JoinPoolRequest memory request
-    ) external {
-        
-    }
+    ) external {}
 
     function exitPool(
         bytes32 poolId,
         address sender,
         address payable recipient,
         ExitPoolRequest memory request
-    ) external {
-
-    }
+    ) external {}
 }
