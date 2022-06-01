@@ -444,16 +444,131 @@ contract('ZorroController', async accounts => {
         assert.equal(lastRewardBlock, currBlock);
 
     });
+});
+
+contract('ZorroController', async accounts => {
+    let instance, vault, lpPool, mockZorroToken;
+
+    const blocksPerDay = 30000;
+    const distFactorMin = 1;
+    const distFactorMax = 20; 
+    const multiplierVal = 1;
+    const USDCAddress = web3.utils.randomHex(20);
     
-    xit('updates pool rewards for non home chain', async () => {
-        // TODO: Test that it records minted rewards ()
+    before(async () => {
+        mockZorroToken = await MockZorroToken.deployed();
+        instance = await MockZorroController.deployed();
+        vault = await MockInvestmentVault.deployed();
+        lpPool = await MockLPPool.deployed();
+
+        // Vault config
+        await vault.setZorroControllerAddress(instance.address);
+        await vault.setWantAddress(lpPool.address);
+        await vault.setBurnAddress(accounts[4]);
+
+        // Set home chain
+        await instance.setXChainParams(
+            1,
+            0,
+            web3.utils.randomHex(20)
+        );
+        // Set Oracle address
+        await instance.setZorroControllerOracle(accounts[0]);
+
+        // Burn address
+        await instance.setBurnAddress(accounts[4]);
+
+        // Set rewards params
+        await instance.setRewardsParams(
+            blocksPerDay,
+            [distFactorMin, distFactorMax],
+            1,
+            10
+        );
+        // Set ZOR per block
+        await instance.setZorroPerBlock(
+            1,
+            100e9,
+            100,
+            1e9,
+            web3.utils.toWei('800000', 'ether')
+        );
+        // Add pool
+        await instance.add(
+            multiplierVal,
+            lpPool.address,
+            true,
+            vault.address
+        );
+        // Set ZOR token address
+        await instance.setKeyAddresses(
+            mockZorroToken.address,
+            USDCAddress
+        );
+    });
+    
+    it('updates pool rewards for non home chain', async () => {
+        // Expect correct amount of tokens to have been minted
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('1', 'ether'));
+        await lpPool.mint(accounts[0], wantAmt);
+        await lpPool.approve(instance.address, wantAmt);
+        await instance.deposit(0, wantAmt, 0);
+        const tx = await instance.updatePoolMod(0); // Run twice, so we can update pool.lastRewardBlock
+        const currBlock = await web3.eth.getBlockNumber();
+        const {logs} = tx;
+        const {args} = logs[0];
+        const mintedRewards = args._amount;
+        assert.isTrue(mintedRewards.gt(web3.utils.toBN(0)));
+        const recordedMintedAmt = await instance.accSynthRewardsMinted.call();
+        assert.isTrue(recordedMintedAmt.gt(web3.utils.toBN(0)));
     });
 
-    xit('resets slashed rewards', async () => {
+    it('resets slashed rewards', async () => {
+        // Prep
+        const amount = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+        await instance.recordSlashedRewards(amount);
+        await mockZorroToken.mint(instance.address, amount);
 
+        // Test 1
+        const slashedRewardsPre = await instance.accSynthRewardsSlashed.call();
+        assert.isTrue(slashedRewardsPre.eq(amount));
+
+        // Run
+        await instance.resetSyntheticRewardsSlashed();
+
+        // Test 2
+        const slashedRewardsPost = await instance.accSynthRewardsSlashed.call();
+        assert.isFalse(slashedRewardsPost.isZero());
+
+        // Can only be called by Oracle
+        try {
+            await instance.resetSyntheticRewardsSlashed({from: accounts[1]});
+        } catch (err) {
+            assert.include(err.message, 'only Zorro oracle')
+        }
     });
 
-    xit('resets synthetic rewards minted', async () => {
+    it('resets synthetic rewards minted', async () => {
+        // Prep
+        const amount = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+        await instance.recordMintedRewards(amount);
 
+        // Test 1
+        const mintedRewardsPre = await instance.accSynthRewardsMinted.call();
+        assert.isTrue(mintedRewardsPre.eq(amount));
+
+        // Run
+        await instance.resetSyntheticRewardsMinted();
+
+        // Test 2
+        const mintedRewardsPost = await instance.accSynthRewardsMinted.call();
+        assert.isTrue(mintedRewardsPost.isZero());
+
+        // Can only be called by Oracle
+        try {
+            await instance.resetSyntheticRewardsMinted({from: accounts[1]});
+        } catch (err) {
+            assert.include(err.message, 'only Zorro oracle')
+        }
     });
 });

@@ -35,11 +35,12 @@ contract ZorroController is
         defaultStablecoin = _initValue.defaultStablecoin;
         zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
 
-        // Key contracts
+        // Key addresses
         publicPool = _initValue.publicPool;
         zorroStakingVault = _initValue.zorroStakingVault;
         zorroLPPool = _initValue.zorroLPPool;
         uniRouterAddress = _initValue.uniRouterAddress;
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
 
         // Rewards
         ZORRODailyDistributionFactorBasisPointsMin = 1;

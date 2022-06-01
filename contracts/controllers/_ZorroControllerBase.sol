@@ -75,10 +75,6 @@ contract ZorroControllerBase is
 
     /* Constants */
 
-    // TODO: Make this a variable
-    address public constant burnAddress =
-        0x000000000000000000000000000000000000dEaD;
-
     /* State */
 
     // Key tokens/addresses
@@ -86,6 +82,7 @@ contract ZorroControllerBase is
     address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     address public publicPool; // Only to be set on home chain
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
+    address public burnAddress; // Burn address for ERC20 tokens
     // Rewards
     uint256 public startBlock;
     uint256 public blocksPerDay; // Approximate, varies by chain
@@ -123,6 +120,12 @@ contract ZorroControllerBase is
     {
         ZORRO = _ZORRO;
         defaultStablecoin = _defaultStablecoin;
+    }
+
+    /// @notice Setter: Burn address
+    /// @param _burnAddress The burn address on this chain
+    function setBurnAddress(address _burnAddress) external onlyOwner {
+        burnAddress = _burnAddress;
     }
 
     /// @notice Setter: Set key ZOR contract addresses
@@ -307,7 +310,7 @@ contract ZorroControllerBase is
 
             // Mint Zorro on this (remote) chain
             IZorro(ZORRO).mint(address(this), ZORROReward);
-            
+
             // Return ZOR minted
             mintedZOR = ZORROReward;
 
@@ -321,40 +324,60 @@ contract ZorroControllerBase is
         pool.lastRewardBlock = block.number;
     }
 
-    /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning. 
-    /// @param _mintedRewards Amount of rewards that were minted    
-    function _recordMintedRewards(uint256 _mintedRewards) internal nonHomeChainOnly {
+    /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning.
+    /// @param _mintedRewards Amount of rewards that were minted
+    function _recordMintedRewards(uint256 _mintedRewards)
+        internal
+        nonHomeChainOnly
+    {
         // Accumulate rewards
         accSynthRewardsMinted = accSynthRewardsMinted.add(_mintedRewards);
     }
 
     /// @notice Resets accumulated synthentic rewards minted
     /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
-    function resetSyntheticRewardsSlashed() external onlyAllowZorroControllerOracle nonHomeChainOnly {
+    function resetSyntheticRewardsSlashed()
+        external
+        onlyAllowZorroControllerOracle
+        nonHomeChainOnly
+    {
         // Burn slashed amount
-        IZorro(ZORRO).burn(address(this), accSynthRewardsMinted);
+        IERC20Upgradeable(ZORRO).safeTransfer(
+            burnAddress,
+            accSynthRewardsSlashed
+        );
 
         // Reset
         accSynthRewardsMinted = 0;
     }
 
-    /// @notice Stores cumulative total of slashed rewards on a non-home chain, for future burning. 
-    /// @param _slashedRewards Amount of rewards that were minted    
-    function _recordSlashedRewards(uint256 _slashedRewards) internal nonHomeChainOnly {
+    /// @notice Stores cumulative total of slashed rewards on a non-home chain, for future burning.
+    /// @param _slashedRewards Amount of rewards that were minted
+    function _recordSlashedRewards(uint256 _slashedRewards)
+        internal
+        nonHomeChainOnly
+    {
         // Accumulate rewards
         accSynthRewardsSlashed = accSynthRewardsSlashed.add(_slashedRewards);
     }
 
     /// @notice Resets accumulated synthentic rewards minted
     /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
-    function resetSyntheticRewardsMinted() external onlyAllowZorroControllerOracle nonHomeChainOnly {
-        accSynthRewardsSlashed = 0;
+    function resetSyntheticRewardsMinted()
+        external
+        onlyAllowZorroControllerOracle
+        nonHomeChainOnly
+    {
+        accSynthRewardsMinted = 0;
     }
 
     /// @notice Gets the specified amount of ZOR tokens from the public pool and transfers to this contract
     /// @param _amount The amount to fetch from the public pool
     /// @param _destination Where to send funds to
-    function _fetchFundsFromPublicPool(uint256 _amount, address _destination) internal virtual {
+    function _fetchFundsFromPublicPool(uint256 _amount, address _destination)
+        internal
+        virtual
+    {
         IERC20Upgradeable(ZORRO).safeTransferFrom(
             publicPool,
             _destination,

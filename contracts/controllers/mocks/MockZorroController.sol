@@ -36,6 +36,14 @@ contract MockZorroController is ZorroController {
     function _fetchFundsFromPublicPool(uint256 _amount, address _destination) internal override {
         // Do nothing. Dummy func.
     }
+
+    function recordMintedRewards(uint256 _mintedRewards) public nonHomeChainOnly {
+        _recordMintedRewards(_mintedRewards);
+    }
+
+    function recordSlashedRewards(uint256 _slashedRewards) public nonHomeChainOnly {
+        _recordSlashedRewards(_slashedRewards);
+    }
 }
 
 contract MockInvestmentVault is VaultBase {
