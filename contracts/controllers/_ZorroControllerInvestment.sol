@@ -6,13 +6,13 @@ import "./_ZorroControllerBase.sol";
 
 import "../interfaces/IVault.sol";
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+
+import "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol";
 
 import "../libraries/Math.sol";
-
-import "../tokens/ZorroToken.sol";
 
 import "../libraries/SafeSwap.sol";
 
@@ -25,8 +25,9 @@ contract ZorroControllerInvestment is
     ZorroControllerBase
 {
     /* Libraries */
-    using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeMathUpgradeable for uint256;
+    using SignedSafeMathUpgradeable for int256;
     using CustomMath for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
@@ -34,9 +35,7 @@ contract ZorroControllerInvestment is
     /* Structs */
     struct WithdrawalResult {
         uint256 wantAmt; // Amount of Want token withdrawn
-        uint256 mintedZORRewards; // ZOR rewards minted (to be burned XChain)
         uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
-        uint256 slashedRewardsXChain; // Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     }
 
     /* State */
@@ -160,11 +159,12 @@ contract ZorroControllerInvestment is
         // Get pool info
         PoolInfo storage pool = poolInfo[_pid];
 
-        // Safely allow this contract to transfer the Want token from the sender to the underlying Vault contract
-        pool.want.safeIncreaseAllowance(address(this), _wantAmt);
-
-        // Transfer the Want token from the user to the Vault contract
-        IERC20(pool.want).safeTransferFrom(msg.sender, pool.vault, _wantAmt);
+        // Transfer the Want token from the user to the this contract
+        IERC20Upgradeable(pool.want).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _wantAmt
+        );
 
         // Call core deposit function
         _deposit(
@@ -177,12 +177,12 @@ contract ZorroControllerInvestment is
         );
     }
 
-    /// @notice Internal function for depositing Want tokens into Vault
-    /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be called indirectly through other functions
+    /// @notice Deposits tokens into Vault, updates poolInfo and trancheInfo ledgers
+    /// @dev Because the vault entry date can be backdated, this is a dangerous method and should only be accessed indirectly through other functions
     /// @param _pid index of pool
     /// @param _account address of on-chain user (required for onchain, optional for cross-chain)
     /// @param _foreignAccount address of origin chain user (for cross chain transactions it's required)
-    /// @param _wantAmt how much Want token to deposit (must already be sent to vault contract)
+    /// @param _wantAmt how much Want token to deposit (must already be sent to the vault)
     /// @param _weeksCommitted how many weeks the user is committing to on this vault
     /// @param _enteredVaultAt Date to backdate vault entry to
     /// @return _mintedZORRewards Amount of ZOR rewards minted
@@ -203,10 +203,61 @@ contract ZorroControllerInvestment is
         // Update the pool before anything to ensure rewards have been updated and transferred
         _mintedZORRewards = updatePool(_pid);
 
-        // Associate foreign and local account address, as applicable
-
         // Get local chain account, as applicable
-        address _localAccount = _account;
+        address _localAccount = _getLocalAccount(_account, _foreignAccount);
+
+        // Allowance
+        IERC20Upgradeable(pool.want).safeIncreaseAllowance(
+            pool.vault,
+            _wantAmt
+        );
+
+        // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
+        uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
+            _localAccount,
+            _wantAmt
+        );
+
+        // Determine time multiplier value.
+        uint256 _timeMultiplier = getTimeMultiplier(_weeksCommitted);
+
+        // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
+        uint256 _contributionAdded = _getUserContribution(
+            sharesAdded,
+            _timeMultiplier
+        );
+
+        // Update pool info: Increment the pool's total contributions by the contribution added
+        pool.totalTrancheContributions = pool.totalTrancheContributions.add(
+            _contributionAdded
+        );
+
+        // Create tranche
+        _createTranche(
+            _pid,
+            _localAccount,
+            _foreignAccount,
+            _contributionAdded,
+            _timeMultiplier,
+            _weeksCommitted,
+            _enteredVaultAt
+        );
+
+        // Emit deposit event
+        emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
+    }
+
+    // TODO: docstrings
+    // TODO: test
+    function _getLocalAccount(address _account, bytes memory _foreignAccount)
+        private
+        pure
+        returns (address localAccount)
+    {
+        // Default to provided address if applicable
+        localAccount = _account;
+
+        // Otherwise try to extract from foreign account
         if (_account == address(0)) {
             // Foreign account MUST be provided
             require(
@@ -214,65 +265,42 @@ contract ZorroControllerInvestment is
                 "Neither foreign acct nor local acct provided"
             );
             // If no local account provided, truncate foreign chain address to 20-bytes
-            _localAccount = address(bytes20(_foreignAccount));
+            localAccount = address(bytes20(_foreignAccount));
         }
-
-        // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
-        uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
-            _localAccount,
-            _wantAmt
-        );
-        // Determine time multiplier value. Set to 1e12 if the vault is the Zorro staking vault (because we don't do time multipliers on this vault)
-        uint256 timeMultiplier = 1e12;
-        if (pool.vault != zorroStakingVault) {
-            // Determine the time multiplier value based on the duration committed to in weeks
-            timeMultiplier = getTimeMultiplier(_weeksCommitted);
-        }
-        // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-        uint256 contributionAdded = getUserContribution(
-            sharesAdded,
-            timeMultiplier
-        );
-        // Increment the pool's total contributions by the contribution added
-        pool.totalTrancheContributions = pool.totalTrancheContributions.add(
-            contributionAdded
-        );
-        // Update the reward debt that the user owes by multiplying user share % by the pool's accumulated Zorro rewards
-        uint256 newTrancheShare = contributionAdded.mul(1e12).div(
-            pool.totalTrancheContributions
-        );
-
-        // Create tranche info
-        TrancheInfo memory _trancheInfo = TrancheInfo({
-            contribution: contributionAdded,
-            timeMultiplier: timeMultiplier,
-            rewardDebt: pool.accZORRORewards.mul(newTrancheShare).div(1e12),
-            durationCommittedInWeeks: _weeksCommitted,
-            enteredVaultAt: _enteredVaultAt,
-            exitedVaultAt: 0
-        });
-        _updateTrancheInfoForDeposit(
-            _pid,
-            _localAccount,
-            _foreignAccount,
-            _trancheInfo
-        );
-
-        // Emit deposit event
-        emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
     }
 
+    // TODO: test, and docstrings need to be updated
     /// @notice Internal function for updating tranche ledger upon deposit
     /// @param _pid Index of pool
     /// @param _localAccount On-chain address
     /// @param _foreignAccount Cross-chain address, if applicable
-    /// @param _trancheInfo TrancheInfo object
-    function _updateTrancheInfoForDeposit(
+    /// @param _timeMultiplier Time multiplier factor for rewards
+    /// @param _durationCommittedInWeeks Commitment in weeks for time multiplier
+    /// @param _enteredVaultAt Timestamp at which entered vault
+    function _createTranche(
         uint256 _pid,
         address _localAccount,
         bytes memory _foreignAccount,
-        TrancheInfo memory _trancheInfo
+        uint256 _contributionAdded,
+        uint256 _timeMultiplier,
+        uint256 _durationCommittedInWeeks,
+        uint256 _enteredVaultAt
     ) internal {
+        // Get pool
+        PoolInfo memory pool = poolInfo[_pid];
+
+        // Create tranche info
+        TrancheInfo memory _trancheInfo = TrancheInfo({
+            contribution: _contributionAdded, // Contribution including time multiplier
+            timeMultiplier: _timeMultiplier,
+            rewardDebt: pool.accZORRORewards.mul(_contributionAdded).div(
+                pool.totalTrancheContributions
+            ), // Pro-rata share of accumulated pool rewards, time-commitment weighted
+            durationCommittedInWeeks: _durationCommittedInWeeks,
+            enteredVaultAt: _enteredVaultAt,
+            exitedVaultAt: 0
+        });
+
         // Push a new tranche for this on-chain user
         trancheInfo[_pid][_localAccount].push(_trancheInfo);
 
@@ -298,13 +326,8 @@ contract ZorroControllerInvestment is
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
 
-        // Approve spending of USDC (from user to this contract)
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
-            address(this),
-            _valueUSDC
-        );
         // Safe transfer to Vault contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             vaultAddr,
             _valueUSDC
@@ -339,6 +362,16 @@ contract ZorroControllerInvestment is
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
     ) public onlyZorroXChain {
+        // Get Pool, Vault contract
+        address vaultAddr = poolInfo[_pid].vault;
+
+        // Safe transfer to Vault contract
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
+            msg.sender,
+            vaultAddr,
+            _valueUSDC
+        );
+
         // Make deposit full service call
         _depositFullService(
             _pid,
@@ -371,16 +404,18 @@ contract ZorroControllerInvestment is
     ) internal {
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
-        IVault vault = IVault(vaultAddr);
 
         // Exchange USDC for Want token in the Vault contract
-        uint256 _wantAmt = vault.exchangeUSDForWantToken(
+        uint256 _wantAmt = IVault(vaultAddr).exchangeUSDForWantToken(
             _valueUSDC,
             _maxMarketMovement
         );
 
         // Safe increase allowance and xfer Want to vault contract
-        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(vaultAddr, _wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(
+            vaultAddr,
+            _wantAmt
+        );
 
         // Make deposit
         // Call core deposit function
@@ -410,11 +445,15 @@ contract ZorroControllerInvestment is
             msg.sender,
             "",
             _trancheId,
-            _harvestOnly
+            _harvestOnly,
+            false
         );
 
         // Transfer to user and return Want amount
-        IERC20(poolInfo[_pid].want).safeTransfer(msg.sender, _res.wantAmt);
+        IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(
+            msg.sender,
+            _res.wantAmt
+        );
 
         return _res.wantAmt;
     }
@@ -426,14 +465,17 @@ contract ZorroControllerInvestment is
     /// @param _foreignAccount Address of the foreign chain account that this inviestment was made with
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
+    /// @param _xChainRepatriation Intended for repatriation to another chain
     /// @return _res A WithdrawalResult struct containing relevant withdrawal result parameters
     function _withdraw(
         uint256 _pid,
         address _localAccount,
         bytes memory _foreignAccount,
         uint256 _trancheId,
-        bool _harvestOnly
+        bool _harvestOnly,
+        bool _xChainRepatriation
     ) internal returns (WithdrawalResult memory _res) {
+        // TODO: Consider making WithdrwalResult an event instead?
         // Can only specify one account (on-chain/foreign, but not both)
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
@@ -462,51 +504,84 @@ contract ZorroControllerInvestment is
         require(_tranche.exitedVaultAt == 0, "Already exited vault");
 
         // Update the pool before anything to ensure rewards have been updated and transferred
-        _res.mintedZORRewards = updatePool(_pid);
+        updatePool(_pid);
+
+        // Get pending rewards
+        uint256 _pendingRewards = (
+            _tranche.contribution.mul(_pool.accZORRORewards).div(
+                _pool.totalTrancheContributions
+            )
+        ).sub(_tranche.rewardDebt);
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
-        uint256 _trancheShare = _tranche.contribution.mul(1e12).div(
-            _pool.totalTrancheContributions
-        );
-        uint256 _pendingRewards = _trancheShare
-            .mul(_pool.accZORRORewards)
-            .div(1e12)
-            .sub(_tranche.rewardDebt);
         if (_pendingRewards > 0) {
             // If pending rewards payable, pay them out
             (uint256 _rewardsDue, uint256 _slashedRewards) = _getPendingRewards(
                 _tranche,
                 _pendingRewards
             );
-            if (chainId == homeChainId) {
-                // Simply transfer on-chain
+
+            if (_xChainRepatriation) {
+                // Update rewardsDueXChain
+                _res.rewardsDueXChain = _rewardsDue;
+
+                if (chainId == homeChainId) {
+                    // If repatriating AND on home chain
+
+                    // Transfer any slashed rewards to single Zorro staking vault, if applicable
+                    if (_slashedRewards > 0) {
+                        // Transfer slashed rewards to vault to reward ZORRO stakers
+                        _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+                    }
+                } else {
+                    // If repatriating and NOT on home chain,
+
+                    // Record slashed rewards for Oracle to pick up and burn the corresponding amount on the home chain
+                    if (_slashedRewards > 0) {
+                        _recordSlashedRewards(_slashedRewards);
+                    }
+                }
+            } else {
                 // Transfer ZORRO rewards to user, net of any applicable slashing
                 if (_rewardsDue > 0) {
                     _safeZORROTransfer(_localAccount, _rewardsDue);
                 }
-                // Transfer any slashed rewards to single Zorro staking vault, if applicable
-                if (_slashedRewards > 0) {
-                    // Transfer slashed rewards to vault to reward ZORRO stakers
-                    _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+
+                if (chainId == homeChainId) {
+                    // If NOT repatriating AND on home chain
+
+                    // Transfer any slashed rewards to single Zorro staking vault, if applicable
+                    if (_slashedRewards > 0) {
+                        // Transfer slashed rewards to vault to reward ZORRO stakers
+                        _safeZORROTransfer(zorroStakingVault, _slashedRewards);
+                    }
+                } else {
+                    // If NOT repatriating and NOT on home chain
+
+                    // Record slashed rewards for Oracle to pick up and burn the corresponding amount on the home chain
+                    if (_slashedRewards > 0) {
+                        _recordSlashedRewards(_slashedRewards);
+                    }
                 }
-            } else {
-                // Burn rewards due and slashed rewards, as we will be taking the equivalent amounts from the public pool on the home chain instead
-                _safeZORROTransfer(
-                    burnAddress,
-                    _rewardsDue.add(_slashedRewards)
-                );
-                _res.rewardsDueXChain = _rewardsDue;
-                _res.slashedRewardsXChain = _slashedRewards;
             }
         }
 
         // If not just harvesting (withdrawing too), proceed with below
         if (!_harvestOnly) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            IVault(poolInfo[_pid].vault).withdrawWantToken(
+            // TODO: VERY IMPORTANT. The wantAmt is potentially NOT the same as shares removed
+            // We should be converting the contribution (after time multiplier) to want and then calling withdrawWantToken()
+
+            address _resolvedLocalAcct = _getLocalAccount(
                 _localAccount,
-                _tranche.contribution
+                _foreignAccount
             );
+
+            IVault(poolInfo[_pid].vault).withdrawWantToken(
+                _resolvedLocalAcct,
+                _tranche.contribution.mul(1e12).div(_tranche.timeMultiplier) // TODO: Should probably have a sister function to _getContribution
+            );
+
 
             // Update shares safely
             _pool.totalTrancheContributions = _pool
@@ -514,11 +589,13 @@ contract ZorroControllerInvestment is
                 .sub(_tranche.contribution);
 
             // Calculate Want token balance
-            _res.wantAmt = IERC20(_pool.want).balanceOf(address(this));
+            _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(
+                address(this)
+            );
 
             // Mark tranche as exited
-            trancheInfo[_pid][_localAccount][_trancheId].exitedVaultAt = block
-                .timestamp;
+            trancheInfo[_pid][_resolvedLocalAcct][_trancheId]
+                .exitedVaultAt = block.timestamp;
 
             // Emit withdrawal event and return want balance
             emit Withdraw(
@@ -544,7 +621,7 @@ contract ZorroControllerInvestment is
         bytes memory _foreignAccount,
         address _localAccount
     ) internal view returns (TrancheInfo memory _tranche) {
-        if (_localAccount == address(0)) {
+        if (_localAccount != address(0)) {
             // On-chain withdrawal
             _tranche = trancheInfo[_pid][_localAccount][_trancheId];
         } else {
@@ -556,6 +633,7 @@ contract ZorroControllerInvestment is
         }
     }
 
+    // TODO: This is really about accounting for slashes right? Perhaps use a better name for this function??
     /// @notice Prepares values for paying out rewards
     /// @param _tranche TrancheInfo object
     /// @param _pendingRewards Qty of ZOR tokens as pending rewards
@@ -572,13 +650,12 @@ contract ZorroControllerInvestment is
         // Check if this is an early withdrawal
         // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
         // If not, distribute rewards as normal
-        uint256 timeRemainingInCommitment = _tranche
-            .enteredVaultAt
-            .add(_tranche.durationCommittedInWeeks.mul(1 weeks))
-            .sub(block.timestamp);
-        if (timeRemainingInCommitment > 0) {
+        int256 _timeRemainingInCommitment = int256(_tranche.enteredVaultAt)
+            .add(int256(_tranche.durationCommittedInWeeks.mul(1 weeks)))
+            .sub(int256(block.timestamp));
+        if (_timeRemainingInCommitment > 0) {
             _slashedRewards = _pendingRewards
-                .mul(timeRemainingInCommitment)
+                .mul(uint256(_timeRemainingInCommitment))
                 .div(_tranche.durationCommittedInWeeks.mul(1 weeks));
             _rewardsDue = _pendingRewards.sub(_slashedRewards);
         } else {
@@ -599,17 +676,21 @@ contract ZorroControllerInvestment is
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (uint256 _amountUSDC, , , ) = _withdrawalFullService(
+        (uint256 _amountUSDC, ) = _withdrawalFullService(
             msg.sender,
             "",
             _pid,
             _trancheId,
             _harvestOnly,
-            _maxMarketMovement
+            _maxMarketMovement,
+            false
         );
 
         // Send USDC funds back to sender
-        IERC20(defaultStablecoin).safeTransfer(msg.sender, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(
+            msg.sender,
+            _amountUSDC
+        );
 
         return _amountUSDC;
     }
@@ -622,9 +703,7 @@ contract ZorroControllerInvestment is
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @return _amountUSDC Amount of USDC withdrawn
-    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
-    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     function withdrawalFullServiceFromXChain(
         address _account,
         bytes memory _foreignAccount,
@@ -633,14 +712,33 @@ contract ZorroControllerInvestment is
         bool _harvestOnly,
         uint256 _maxMarketMovement
     )
-        public onlyZorroXChain
-        returns (
-            uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
-        )
+        public
+        onlyZorroXChain
+        returns (uint256 _amountUSDC, uint256 _rewardsDueXChain)
     {
+        // Call withdrawal function on chain
+        (_amountUSDC, _rewardsDueXChain) = _withdrawalFullService(
+            _account,
+            _foreignAccount,
+            _pid,
+            _trancheId,
+            _harvestOnly,
+            _maxMarketMovement,
+            true
+        );
+
+        // Transfer USDC balance obtained to caller
+        if (_amountUSDC > 0) {
+            IERC20Upgradeable(defaultStablecoin).safeTransfer(
+                msg.sender,
+                _amountUSDC
+            );
+        }
+
+        // Burn xchain ZOR rewards due before repatriating, if applicable. (They will be minted on opposite chain)
+        if (_rewardsDueXChain > 0) {
+            IERC20Upgradeable(ZORRO).safeTransfer(burnAddress, _rewardsDueXChain);
+        }
     }
 
     /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
@@ -650,29 +748,20 @@ contract ZorroControllerInvestment is
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
+    /// @param _xChainRepatriation Intended for repatriation to another chain
     /// @return _amountUSDC Amount of USDC withdrawn
-    /// @return _mintedZORRewards Amount of ZOR rewards minted (to be burned XChain)
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
-    /// @return _slashedRewardsXChain Amount of ZOR rewards to be slashed (and thus rewarded to ZOR stakers)
     function _withdrawalFullService(
         address _account,
         bytes memory _foreignAccount,
         uint256 _pid,
         uint256 _trancheId,
         bool _harvestOnly,
-        uint256 _maxMarketMovement
-    )
-        internal
-        returns (
-            uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
-        )
-    {
+        uint256 _maxMarketMovement,
+        bool _xChainRepatriation
+    ) internal returns (uint256 _amountUSDC, uint256 _rewardsDueXChain) {
         // Get Vault contract
         address _vaultAddr = poolInfo[_pid].vault;
-        IVault vault = IVault(_vaultAddr);
 
         // Call core withdrawal function (returns actual amount withdrawn)
         WithdrawalResult memory _res = _withdraw(
@@ -680,24 +769,23 @@ contract ZorroControllerInvestment is
             _account,
             _foreignAccount,
             _trancheId,
-            _harvestOnly
+            _harvestOnly,
+            _xChainRepatriation
         );
 
         // Safe increase spending of Vault contract for Want token
-        IERC20(poolInfo[_pid].want).safeIncreaseAllowance(
+        IERC20Upgradeable(poolInfo[_pid].want).safeIncreaseAllowance(
             _vaultAddr,
             _res.wantAmt
         );
 
         // Exchange Want for USD
-        _amountUSDC = vault.exchangeWantTokenForUSD(
+        _amountUSDC = IVault(_vaultAddr).exchangeWantTokenForUSD(
             _res.wantAmt,
             _maxMarketMovement
         );
 
-        _mintedZORRewards = _res.mintedZORRewards;
         _rewardsDueXChain = _res.rewardsDueXChain;
-        _slashedRewardsXChain = _res.slashedRewardsXChain;
     }
 
     /// @notice Transfer all assets from a tranche in one vault to a new vault (works on-chain only)
@@ -718,18 +806,25 @@ contract ZorroControllerInvestment is
         uint256 enteredVaultAt = trancheInfo[_fromPid][msg.sender][
             _fromTrancheId
         ].enteredVaultAt;
+
         // Withdraw
-        (uint256 withdrawnUSDC, , , ) = _withdrawalFullService(
+        (uint256 withdrawnUSDC, ) = _withdrawalFullService(
             msg.sender,
             "",
             _fromPid,
             _fromTrancheId,
             false,
-            _maxMarketMovement
+            _maxMarketMovement,
+            false
         );
+
+        // Transfer funds to vault
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(
+            poolInfo[_toPid].vault,
+            withdrawnUSDC
+        );
+
         // Redeposit
-        address[] memory sourceTokens;
-        sourceTokens[0] = defaultStablecoin;
         _depositFullService(
             _toPid,
             msg.sender,
@@ -739,48 +834,102 @@ contract ZorroControllerInvestment is
             enteredVaultAt,
             _maxMarketMovement
         );
+
         emit TransferInvestment(msg.sender, _fromPid, _fromTrancheId, _toPid);
     }
 
     /// @notice Withdraw the maximum number of Want tokens from a pool
     /// @param _pid index of pool
     function withdrawAll(uint256 _pid) public nonReentrant {
+        // Iterate through all tranches for the current user and pool and withdraw
         uint256 numTranches = trancheLength(_pid, msg.sender);
         for (uint256 tid = 0; tid < numTranches; ++tid) {
-            withdraw(_pid, tid, false);
+            _withdraw(_pid, msg.sender, "", tid, false, false);
         }
+
+        // Transfer balance as applicable
+        uint256 _wantBal = IERC20Upgradeable(poolInfo[_pid].want).balanceOf(
+            address(this)
+        );
+        if (_wantBal > 0) {
+            IERC20Upgradeable(poolInfo[_pid].want).safeTransfer(
+                msg.sender,
+                _wantBal
+            );
+        }
+    }
+
+    /* X-chain rewards management */
+    // TODO tests
+
+    /// @notice Gets rewards and sends to the recipient of a cross chain withdrawal
+    /// @param _rewardsDue The amount of rewards that need to be fetched and sent to the wallet
+    /// @param _destination Wallet to send funds to
+    function repatriateRewards(uint256 _rewardsDue, address _destination)
+        public
+        onlyZorroXChain
+    {
+        // Get rewards based on chain type
+        if (chainId == homeChainId) {
+            // On Home chain. Fetch rewards from public pool and send to wallet
+            _fetchFundsFromPublicPool(_rewardsDue, _destination);
+        } else {
+            // On other chain. Mint ZORRO tokens and send to wallet
+            IZorro(ZORRO).mint(_destination, _rewardsDue);
+        }
+    }
+
+    /// @notice Called by oracle to account for ZOR rewards that were minted or slashed on other chains
+    /// @dev Caller should call "reset" functions so that rewards aren't double-burned/allocated
+    /// @param _totalMinted Total ZOR rewards minted across other chains at this moment
+    /// @param _totalSlashed Total ZOR rewards slashed across other chains at this moment
+    function handleAccXChainRewards(uint256 _totalMinted, uint256 _totalSlashed)
+        public
+        onlyAllowZorroControllerOracle
+        onlyHomeChain
+    {
+        // Burn shares that were minted on other chains so that
+        // the total tokens minted across all chains is constant
+        IERC20Upgradeable(ZORRO).safeTransfer(
+            burnAddress,
+            _totalMinted.sub(_totalSlashed)
+        );
+
+        // Transfer slashed rewards from public pool to ZOR staking vault
+        _fetchFundsFromPublicPool(_totalSlashed, zorroStakingVault);
     }
 
     /* Allocations */
 
     /// @notice Calculate time multiplier based on duration committed
+    /// @dev For Zorro staking vault, returns 1e12 no matter what
     /// @param durationInWeeks number of weeks committed into Vault
-    /// @return multiplier factor, times 1e12
+    /// @return timeMultiplier Time multiplier factor, times 1e12
     function getTimeMultiplier(uint256 durationInWeeks)
         public
         view
-        returns (uint256)
+        returns (uint256 timeMultiplier)
     {
+        timeMultiplier = 1e12;
+
         if (isTimeMultiplierActive) {
-            return
-                (
-                    uint256(1).add(
-                        (uint256(2).div(10)).mul(durationInWeeks.sqrt())
-                    )
-                ).mul(1e12);
-        } else {
-            return 1e12;
+            // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
+            timeMultiplier = ((durationInWeeks.mul(1e4)).sqrt())
+                .mul(1e12)
+                .mul(2)
+                .div(1000)
+                .add(1e12);
         }
     }
 
     /// @notice The contribution of the user, meant to be used in rewards allocations
     /// @param _liquidityCommitted How many tokens staked (e.g. LP tokens)
     /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
-    /// @return The relative contribution of the user (unitless)
-    function getUserContribution(
+    /// @return uint256 The relative contribution of the user (unitless)
+    function _getUserContribution(
         uint256 _liquidityCommitted,
         uint256 _timeMultiplier
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
 }

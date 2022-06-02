@@ -4,15 +4,14 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../interfaces/IBalancerVault.sol";
-
 
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Functions */
     /// @notice Safely swap tokens
@@ -33,7 +32,7 @@ library SafeSwapUni {
         address[] memory _path,
         address _to,
         uint256 _deadline
-    ) public {
+    ) internal {
         // Calculate min amount out (account for slippage)
         uint256 _amountOut;
         if (_priceTokenIn == 0 || _priceTokenOut == 0) {
@@ -47,11 +46,11 @@ library SafeSwapUni {
                 .div(1000);
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = (_amountIn.mul(_priceTokenIn).div(_priceTokenOut))
+            _amountOut = _amountIn
+                .mul(_priceTokenIn)
                 .mul(_slippageFactor)
-                .div(1000);
+                .div(_priceTokenOut.mul(1000));
         }
-
         // Swap
         _uniRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             _amountIn,
@@ -66,7 +65,7 @@ library SafeSwapUni {
 /// @title SafeSwapBalancer: Library for safe swapping of ERC20 tokens for Balancer style protocols (e.g. Acryptos)
 library SafeSwapBalancer {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Functions */
     /// @notice Safely swaps one asset for another using a provided Balancer pool
@@ -77,21 +76,28 @@ library SafeSwapBalancer {
         IBalancerVault _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
-    ) public {
+    ) internal {
         // Calculate min amount out
         uint256 _amountOut;
         if (_swapParams.priceToken0 == 0 || _swapParams.priceToken1 == 0) {
-            // If no exchange rates provided, use on-chain functions provided by router (not ideal)
-            _amountOut = _getBalancerExchangeRate(
-                _balancerVault,
-                _poolId,
-                _swapParams
-            ).mul(_swapParams.maxMarketMovementAllowed).div(1000);
+            // If no exchange rates provided, use on-chain functions provided by router (not ideal)]
+            _amountOut = _swapParams
+                .amountIn
+                .mul(
+                    _getBalancerExchangeRate(
+                        _balancerVault,
+                        _poolId,
+                        _swapParams
+                    )
+                )
+                .mul(_swapParams.maxMarketMovementAllowed)
+                .div(uint256(1000).mul(1e12));
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = (_swapParams.amountIn.mul(_swapParams.priceToken0).div(_swapParams.priceToken1))
+            _amountOut = _swapParams.amountIn
+                .mul(_swapParams.priceToken0)
                 .mul(_swapParams.maxMarketMovementAllowed)
-                .div(1000);
+                .div(_swapParams.priceToken1.mul(1000));
         }
 
         // Swap Earned token to token0
@@ -115,26 +121,27 @@ library SafeSwapBalancer {
         );
     }
 
-    /// @notice Calculates exchange rate of token B per token A. Note: Ignores swap fees!
+    /// @notice Calculates exchange rate of token1 per token0, times 1e12. Note: Ignores swap fees!
     /// @param _swapParams SafeSwapParams for swap
     function _getBalancerExchangeRate(
         IBalancerVault _balancerVault,
         bytes32 _poolId,
         SafeSwapParams memory _swapParams
     ) internal returns (uint256) {
-        // Calculate current balances of each token (Earned, and token0)
-        (uint256 cashB, , , ) = _balancerVault.getPoolTokenInfo(
+        // Calculate current balances of each token
+        (uint256 cash1, , , ) = _balancerVault.getPoolTokenInfo(
             _poolId,
             IERC20(_swapParams.token1)
         );
-        (uint256 cashA, , , ) = _balancerVault.getPoolTokenInfo(
+        (uint256 cash0, , , ) = _balancerVault.getPoolTokenInfo(
             _poolId,
             IERC20(_swapParams.token0)
         );
-        // Return exchange rate, accounting for weightings
+
+        // Return exchange rate, accounting for weightings, mul by 1e12 for float accuracy
         return
-            (cashA.div(_swapParams.token0Weight)).div(
-                cashB.div(_swapParams.token0Weight)
+            cash1.mul(_swapParams.token0Weight).mul(1e12).div(
+                cash0.mul(_swapParams.token1Weight)
             );
     }
 }

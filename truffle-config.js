@@ -41,11 +41,16 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    // development: {
-    //  host: "127.0.0.1",     // Localhost (default: none)
-    //  port: 8545,            // Standard Ethereum port (default: none)
-    //  network_id: "*",       // Any network (default: none)
-    // },
+    ganachecli: {
+     host: "127.0.0.1",     // Localhost (default: none)
+     port: 8545,            // Standard Ethereum port (default: none)
+     network_id: "*",       // Any network (default: none)
+    },
+    ganache: {
+      host: "127.0.0.1",
+      port: 7545,
+      network_id: 5777,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -72,19 +77,19 @@ module.exports = {
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
     bsc: {
-      provider: () => new HDWalletProvider(mnemonic, ''),
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_BSC, ''),
       network_id: 56,
       gas: 8500000,
       gasPrice: 20000000000,
       skipDryRun: false
     },
-    avalanche: {
-      provider: () => new HDWalletProvider(mnemonic, ''),
+    avax: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_AVAX, ''),
       network_id: 43114,
       gas: 8500000,
       gasPrice: 20000000000,
       skipDryRun: false
-    }
+    },
   },
 
   // Set default mocha options here, use special reporters etc.
@@ -102,7 +107,7 @@ module.exports = {
          enabled: true,
          runs: 200
        },
-       evmVersion: "byzantium"
+       evmVersion: "istanbul"
       }
     }
   },

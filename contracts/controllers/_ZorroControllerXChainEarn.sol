@@ -12,13 +12,15 @@ import "../libraries/SafeSwap.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
+import "../interfaces/IZorro.sol";
+
 contract ZorroControllerXChainEarn is
     IZorroControllerXChainEarn,
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
@@ -44,16 +46,11 @@ contract ZorroControllerXChainEarn is
 
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
-    /* Constants */
-    address public constant burnAddress =
-        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
-
     /* State */
 
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
     // TODO: Constructor, setter
     // Tokens
-    address public tokenUSDC;
     address public zorroLPPoolOtherToken;
     // Contracts
     address public zorroStakingVault;
@@ -66,11 +63,6 @@ contract ZorroControllerXChainEarn is
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
 
     /* Setters */
-
-    function setTokenUSDC(address _token) external onlyOwner {
-        tokenUSDC = _token;
-    }
-
     function setZorroLPPoolOtherToken(address _token) external onlyOwner {
         zorroLPPoolOtherToken = _token;
     }
@@ -185,20 +177,20 @@ contract ZorroControllerXChainEarn is
         uint256 _totalUSDC = _buybackAmountUSDC.add(_revShareAmountUSDC);
 
         // Allow this contract to spend USDC
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             address(this),
             _totalUSDC
         );
 
         // Transfer USDC into this contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
             _totalUSDC
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
 
         // Get accumulated ZOR rewards and set value
         uint256 _slashedRewards = _removeSlashedRewards();
@@ -239,7 +231,7 @@ contract ZorroControllerXChainEarn is
         uint256 _maxMarketMovement
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDistributionRequest(
@@ -263,7 +255,8 @@ contract ZorroControllerXChainEarn is
         uint256 _amountUSDCRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
-    ) internal {
+    ) internal virtual {
+        // TODO: Only allow this to be run on the home chain
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
 
@@ -306,7 +299,7 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
@@ -317,18 +310,19 @@ contract ZorroControllerXChainEarn is
             .getExchangeRate();
 
         // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
 
         // Swap to ZOR token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            1e12,
+            1e12, // TODO: Globally: Make sure to use actual exch values in case it depegs
             _exchangeRateZOR,
             _maxMarketMovement,
             USDCToZorroPath,
             address(this),
             block.timestamp.add(600)
         );
+
         // Swap to counterparty token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
@@ -341,12 +335,12 @@ contract ZorroControllerXChainEarn is
         );
 
         // Enter LP pool
-        uint256 tokenZORAmt = IERC20(ZORRO).balanceOf(address(this));
-        uint256 tokenOtherAmt = IERC20(zorroLPPoolOtherToken).balanceOf(
+        uint256 tokenZORAmt = IERC20Upgradeable(ZORRO).balanceOf(address(this));
+        uint256 tokenOtherAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
             address(this)
         );
-        IERC20(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
-        IERC20(zorroLPPoolOtherToken).safeIncreaseAllowance(
+        IERC20Upgradeable(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
+        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
             uniRouterAddress,
             tokenOtherAmt
         );
@@ -369,7 +363,7 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Authorize spending beforehand
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
@@ -379,7 +373,7 @@ contract ZorroControllerXChainEarn is
 
         // Swap to ZOR
         // Increase allowance
-        IERC20(tokenUSDC).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
@@ -400,6 +394,7 @@ contract ZorroControllerXChainEarn is
         internal
         returns (uint256 _slashedZORRewards)
     {
+        // TODO: investigate this function - seems to be out of place
         // Store current rewards amount
         _slashedZORRewards = accumulatedSlashedRewards;
 
@@ -416,6 +411,6 @@ contract ZorroControllerXChainEarn is
         internal
     {
         // Mint ZOR and send to ZOR staking vault.
-        Zorro(ZORRO).mint(zorroStakingVault, _slashedZORRewards);
+        IZorro(ZORRO).mint(zorroStakingVault, _slashedZORRewards);
     }
 }

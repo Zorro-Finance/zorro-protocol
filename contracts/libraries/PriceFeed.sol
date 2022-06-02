@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 
 library PriceFeed {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Functions */
     
@@ -18,7 +18,7 @@ library PriceFeed {
     /// @param _priceFeed The Chainlink price feed
     /// @return uint256 Exchange rate vs USD, multiplied by 1e12
     function getExchangeRate(AggregatorV3Interface _priceFeed)
-        public
+        internal
         view
         returns (uint256)
     {

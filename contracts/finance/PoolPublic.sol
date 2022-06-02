@@ -2,35 +2,31 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /// @title PoolPublic: The public pool contract. Hold all Zorro tokens deemed for public pool at inception and gradually emits to ZorroController contract based on market conditions
-contract PoolPublic is Ownable {
-    using SafeERC20 for IERC20;
+contract PoolPublic is Initializable, OwnableUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Constructor */
 
     /// @notice Constructor
     /// @param _zorroTokenAddress The Zorro token address
     /// @param _controller The address of the ZorroController
-    /// @param _timelockOwner The address of the TimelockController that should own this contract
     function initialize(
         address _zorroTokenAddress,
-        address _controller,
-        address _timelockOwner
-    ) public {
+        address _controller
+    ) public initializer {
         // Set Zorro token address
         ZORRO = _zorroTokenAddress;
         // Set controller address
         controller = _controller;
         // Allow controller to spend tokens on this contract
-        allowControllerToSpend();
-        // Set owner of this contract to Timelock controller address
-        transferOwnership(_timelockOwner);
+        _allowControllerToSpend();
     }
 
     /* State */
@@ -43,8 +39,8 @@ contract PoolPublic is Ownable {
 
     /* Functions */
     /// @notice Increases spending allowance to max amount for Zorro Controller
-    function allowControllerToSpend() internal {
-        IERC20(ZORRO).safeIncreaseAllowance(controller, type(uint256).max);
+    function _allowControllerToSpend() internal {
+        IERC20Upgradeable(ZORRO).safeIncreaseAllowance(controller, type(uint256).max);
     }
 
     /// @notice setter for controller
@@ -52,7 +48,7 @@ contract PoolPublic is Ownable {
         // Update controller
         controller = _controller;
         // Reset spending allowance for new controller
-        allowControllerToSpend();
+        _allowControllerToSpend();
         // Emit event
         emit SetController(_controller);
     }

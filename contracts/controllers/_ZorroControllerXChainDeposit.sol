@@ -13,8 +13,8 @@ contract ZorroControllerXChainDeposit is
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Fees */
 
@@ -41,6 +41,7 @@ contract ZorroControllerXChainDeposit is
 
         // Get payload
         bytes memory _payload = _encodeXChainDepositPayload(
+            _chainId,
             _pid,
             _valueUSDC,
             _weeksCommitted,
@@ -64,34 +65,42 @@ contract ZorroControllerXChainDeposit is
     /* Payload encoding */
 
     /// @notice Encodes payload for making cross chan deposit
+    /// @param _destChainId Destination Zorro Chain ID
     /// @param _pid Pool ID on remote chain
     /// @param _valueUSDC Amount in USDC to deposit
     /// @param _weeksCommitted Number of weeks to commit deposit for in vault
     /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
     /// @param _originWallet Wallet address on origin chain that will be depositing funds cross chain.
     /// @param _destWallet Optional wallet address on destination chain that will be receiving deposit. If not provided, will use a truncated address based on the _originWallet
-    /// @return bytes ABI encoded payload
+    /// @return payload The ABI encoded payload
     function _encodeXChainDepositPayload(
+        uint256 _destChainId,
         uint256 _pid,
         uint256 _valueUSDC,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         address _originWallet,
         bytes memory _destWallet
-    ) internal pure returns (bytes memory) {
-        // Calculate method signature
-        bytes4 _sig = this.receiveXChainDepositRequest.selector;
-        // Calculate abi encoded bytes for input args
-        bytes memory _inputs = abi.encode(
-            _pid,
-            _valueUSDC,
-            _weeksCommitted,
-            _maxMarketMovement,
-            _originWallet,
-            _destWallet
-        );
-        // Concatenate bytes of signature and inputs
-        return bytes.concat(_sig, _inputs);
+    ) internal view returns (bytes memory payload) {
+        if (chainTypes[_destChainId] == 0) {
+            // Destination chain is an EVM chain
+
+            // Calculate method signature
+            bytes4 _sig = this.receiveXChainDepositRequest.selector;
+            // Calculate abi encoded bytes for input args
+            bytes memory _inputs = abi.encode(
+                _pid,
+                _valueUSDC,
+                _weeksCommitted,
+                _maxMarketMovement,
+                abi.encodePacked(_originWallet), // Convert address to bytes
+                _bytesToAddress(_destWallet) // Decode bytes to address
+            );
+            // Concatenate bytes of signature and inputs
+            payload = bytes.concat(_sig, _inputs);
+        }
+
+        require(payload.length > 0, "Invalid xchain payload");
     }
 
     /* Sending */
@@ -115,24 +124,21 @@ contract ZorroControllerXChainDeposit is
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
 
-        // Allow this contract to spend USDC
-        IERC20(defaultStablecoin).safeIncreaseAllowance(
-            address(this),
-            _valueUSDC
-        );
-
         // Transfer USDC into this contract
-        IERC20(defaultStablecoin).safeTransferFrom(
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
             _valueUSDC
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(
+            address(this)
+        );
 
         // Generate payload
         bytes memory _payload = _encodeXChainDepositPayload(
+            _zorroChainId,
             _pid,
             _balUSDC,
             _weeksCommitted,
@@ -169,7 +175,7 @@ contract ZorroControllerXChainDeposit is
         address _destAccount
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDepositRequest(
@@ -199,7 +205,13 @@ contract ZorroControllerXChainDeposit is
         uint256 _maxMarketMovement,
         bytes memory _originAccount,
         address _destAccount
-    ) internal {
+    ) internal virtual {
+        // Approve spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            currentChainController,
+            _valueUSDC
+        );
+        
         // Call deposit function
         IZorroControllerInvestment(currentChainController)
             .depositFullServiceFromXChain(

@@ -63,8 +63,6 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainEarn
 interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
-    function setTokenUSDC(address _token) external;
-
     function setZorroLPPoolOtherToken(address _token) external;
 
     function setZorroStakingVault(address _contract) external;
@@ -116,9 +114,7 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
-        uint256 _rewardsDue,
-        uint256 _gasForDestinationLZReceive
+        uint256 _rewardsDue
     ) external view returns (uint256);
 
     function sendXChainWithdrawalRequest(
@@ -142,7 +138,6 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) external;
 }

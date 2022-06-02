@@ -9,8 +9,8 @@ import "../libraries/PriceFeed.sol";
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
     /* Libraries */
-    using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeMathUpgradeable for uint256;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
@@ -22,12 +22,9 @@ contract VaultZorro is VaultBase {
     function initialize(
         address _timelockOwner,
         VaultZorroInit memory _initValue
-    ) public {
+    ) public initializer {
         // Vault config
         pid = _initValue.pid;
-        isCOREStaking = false;
-        isSingleAssetDeposit = true;
-        isZorroComp = false;
         isHomeChain = true;
 
         // Addresses
@@ -88,7 +85,7 @@ contract VaultZorro is VaultBase {
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
         // Transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
             address(this),
             _wantAmt
@@ -107,10 +104,9 @@ contract VaultZorro is VaultBase {
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
-        userShares[_account] = userShares[_account].add(sharesAdded);
 
         // Update want locked total
-        wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
+        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));
 
         return sharesAdded;
     }
@@ -124,7 +120,7 @@ contract VaultZorro is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "USDC deposit must be > 0");
         require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
@@ -133,14 +129,14 @@ contract VaultZorro is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Increase allowance
-        IERC20(tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
             uniRouterAddress,
             _amountUSDC
         );
 
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
+            _amountUSDC,
             1e12,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,
@@ -150,10 +146,10 @@ contract VaultZorro is VaultBase {
         );
 
         // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20(wantAddress).balanceOf(address(this));
+        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
 
         // Transfer back to sender
-        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
         return _wantAmt;
     }
@@ -193,7 +189,7 @@ contract VaultZorro is VaultBase {
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20(wantAddress).balanceOf(address(this));
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
         if (_wantAmt > _wantBal) {
             _wantAmt = _wantBal;
         }
@@ -206,7 +202,7 @@ contract VaultZorro is VaultBase {
         wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
 
         return sharesRemoved;
     }
@@ -223,7 +219,7 @@ contract VaultZorro is VaultBase {
         require(_amount > 0, "Want amt must be > 0");
 
         // Safely transfer Want token from sender
-        IERC20(wantAddress).safeTransferFrom(
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
             address(this),
             _amount
@@ -233,7 +229,7 @@ contract VaultZorro is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Increase allowance
-        IERC20(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
 
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
@@ -246,7 +242,7 @@ contract VaultZorro is VaultBase {
             block.timestamp.add(600)
         );
 
-        return IERC20(tokenUSDCAddress).balanceOf(address(this));
+        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -257,8 +253,6 @@ contract VaultZorro is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        // Only to be run if this contract is configured for auto-comnpounding
-        require(isZorroComp, "!isZorroComp");
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
@@ -270,7 +264,7 @@ contract VaultZorro is VaultBase {
         lastEarnBlock = block.number;
 
         // Update want locked total
-        wantLockedTotal = IERC20(token0Address).balanceOf(address(this));
+        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));
     }
 
     function _buybackOnChain(

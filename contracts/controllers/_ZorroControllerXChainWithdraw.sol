@@ -8,18 +8,19 @@ import "../interfaces/IZorroController.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
+import "../interfaces/IZorro.sol";
+
 contract ZorroControllerXChainWithdraw is
     IZorroControllerXChainWithdraw,
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Events */
     event XChainRepatriation(
         uint256 indexed _pid,
         address indexed _originRecipient,
-        uint256 indexed _burnableZORRewards,
         uint256 _trancheId,
         uint256 _originChainId
     );
@@ -79,7 +80,7 @@ contract ZorroControllerXChainWithdraw is
         pure
         returns (bytes memory)
     {
-        uint16 _version = 1;
+        uint16 _version = 1; // TODO: Consider making this configurable rather than hardcoded?
         return abi.encodePacked(_version, _gasForDestinationLZReceive);
     }
 
@@ -90,18 +91,14 @@ contract ZorroControllerXChainWithdraw is
     /// @param _pid Pool ID on current chain
     /// @param _trancheId ID of tranche on current chain that funds were withdrawn from
     /// @param _originRecipient Recipient of funds on the origin chain
-    /// @param _burnableZORRewards Quantity of ZOR tokens minted for rewards here that need to be burned on the home chain
     /// @param _rewardsDue ZOR rewards due to the recipient
-    /// @param _gasForDestinationLZReceive How much additional gas to provide at destination contract
     /// @return uint256 Estimated fee in native tokens
     function checkXChainRepatriationFee(
         uint256 _originChainId,
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
-        uint256 _rewardsDue,
-        uint256 _gasForDestinationLZReceive
+        uint256 _rewardsDue
     ) external view returns (uint256) {
         // Init empty LZ object
         IStargateRouter.lzTxObj memory _lzTxParams;
@@ -112,7 +109,6 @@ contract ZorroControllerXChainWithdraw is
             _pid,
             _trancheId,
             _originRecipient,
-            _burnableZORRewards,
             _rewardsDue
         );
         bytes memory _dstContract = controllerContractsMap[_originChainId];
@@ -169,7 +165,6 @@ contract ZorroControllerXChainWithdraw is
     /// @param _pid Pool ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriated funds shall be sent to
-    /// @param _burnableZORRewards Qty of minted ZOR that needs to be burned on the home chain
     /// @param _rewardsDue ZOR rewards due to the recipient
     /// @return bytes ABI encoded payload
     function _encodeXChainRepatriationPayload(
@@ -177,7 +172,6 @@ contract ZorroControllerXChainWithdraw is
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) internal pure returns (bytes memory) {
         // Calculate method signature
@@ -188,7 +182,6 @@ contract ZorroControllerXChainWithdraw is
             _pid,
             _trancheId,
             _originRecipient,
-            _burnableZORRewards,
             _rewardsDue
         );
         // Concatenate bytes of signature and inputs
@@ -243,12 +236,11 @@ contract ZorroControllerXChainWithdraw is
     /* Sending::repatriation */
 
     /// @notice Prepares and sends cross chain repatriation request via Stargate
-    /// @param _originChainId Chain ID of origin chain that repatriation shall go to
+    /// @param _originChainId Zorro chain ID of origin chain that repatriation shall go to
     /// @param _pid Pool ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriate funds shall go to
     /// @param _amountUSDC Amount withdrawn, to be repatriated
-    /// @param _burnableZORRewards ZOR rewards minted, to be burned from the public pool on the home chain
     /// @param _rewardsDue ZOR rewards due to the recipient
     /// @param _maxMarketMovementAllowed Acceptable slippage (950 = 5%, 990 = 1%, etc.)
     function _sendXChainRepatriationRequest(
@@ -257,7 +249,6 @@ contract ZorroControllerXChainWithdraw is
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _amountUSDC,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue,
         uint256 _maxMarketMovementAllowed
     ) internal {
@@ -267,7 +258,6 @@ contract ZorroControllerXChainWithdraw is
             _pid,
             _trancheId,
             _originRecipient,
-            _burnableZORRewards,
             _rewardsDue
         );
         // Destination info
@@ -299,7 +289,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _maxMarketMovement
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainWithdrawalRequest(
@@ -323,7 +313,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _pid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
-    ) internal {
+    ) internal virtual {
         // Get on-chain account using foreign account as guide
         address _account = ZorroControllerInvestment(currentChainController)
             .foreignTrancheInfo(_pid, _originAccount, _trancheId);
@@ -331,9 +321,7 @@ contract ZorroControllerXChainWithdraw is
         // Withdraw funds
         (
             ,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDue,
-
+            uint256 _rewardsDue
         ) = IZorroControllerInvestment(currentChainController)
                 .withdrawalFullServiceFromXChain(
                     _account,
@@ -350,6 +338,8 @@ contract ZorroControllerXChainWithdraw is
         // Only proceed if there is something to withdraw
         require(_balUSDC > 0, "Nothing to withdraw");
 
+        // TODO: How will the other side know how much USDC to return to the account, vs minted ZOR rewards vs rewards due?
+
         // Repatriate funds
         _sendXChainRepatriationRequest(
             _originChainId,
@@ -357,7 +347,6 @@ contract ZorroControllerXChainWithdraw is
             _trancheId,
             _originAccount,
             _balUSDC,
-            _mintedZORRewards,
             _rewardsDue,
             _maxMarketMovement
         );
@@ -372,11 +361,10 @@ contract ZorroControllerXChainWithdraw is
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
     ) public {
         // Revert to make sure this function never gets called
-        revert("illegal dummy func call");
+        require(false, "illegal dummy func call");
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainRepatriationRequest(
@@ -384,7 +372,6 @@ contract ZorroControllerXChainWithdraw is
             _pid,
             _trancheId,
             _originRecipient,
-            _burnableZORRewards,
             _rewardsDue
         );
     }
@@ -394,31 +381,26 @@ contract ZorroControllerXChainWithdraw is
     /// @param _pid The pid of the investment being repatriated
     /// @param _trancheId The tranche ID of the investment being repatriated
     /// @param _originRecipient The wallet address on this chain that funds are being repatriated to
-    /// @param _burnableZORRewards The amount of ZOR token to be burned (since rewards were minted on the opposite chain)
     /// @param _rewardsDue ZOR rewards due to the recipient
     function _receiveXChainRepatriationRequest(
         uint256 _originChainId,
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _burnableZORRewards,
         uint256 _rewardsDue
-    ) internal {
+    ) internal virtual {
+        // Get EVM address (decode)
+        address _destination = _bytesToAddress(_originRecipient);
+
         // Emit repatriation event
         emit XChainRepatriation(
             _pid,
-            abi.decode(_originRecipient, (address)),
-            _burnableZORRewards,
+            _destination,
             _trancheId,
             _originChainId
         );
 
-        // Mint ZOR and send to user
-        Zorro(ZORRO).mint(abi.decode(_originRecipient, (address)), _rewardsDue);
-
-        // Burn ZOR rewards as applicable (since rewards were minted on the other chain)
-        if (_burnableZORRewards > 0) {
-            Zorro(ZORRO).burn(publicPool, _burnableZORRewards);
-        }
+        // Repatriate rewards
+        IZorroControllerInvestment(currentChainController).repatriateRewards(_rewardsDue, _destination);
     }
 }

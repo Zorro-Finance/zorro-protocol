@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 /// @title IZorroControllerBase
 interface IZorroControllerBase {
@@ -15,7 +15,7 @@ interface IZorroControllerBase {
     function setStartBlock(uint256 _startBlock) external;
 
     function setRewardsParams(
-        uint256[] calldata _blockParams,
+        uint256 _blocksPerDay,
         uint256[] calldata _dailyDistFactors,
         uint256 _chainMultiplier,
         uint256 _baseRewardRateBasisPoints
@@ -130,9 +130,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         external
         returns (
             uint256 _amountUSDC,
-            uint256 _mintedZORRewards,
-            uint256 _rewardsDueXChain,
-            uint256 _slashedRewardsXChain
+            uint256 _rewardsDueXChain
         );
 
     function transferInvestment(
@@ -144,22 +142,16 @@ interface IZorroControllerInvestment is IZorroControllerBase {
 
     function withdrawAll(uint256 _pid) external;
 
-    function getTimeMultiplier(uint256 durationInWeeks)
-        external
-        view
-        returns (uint256);
+    function repatriateRewards(uint256 _rewardsDue, address _destination) external;
 
-    function getUserContribution(
-        uint256 _liquidityCommitted,
-        uint256 _timeMultiplier
-    ) external pure returns (uint256);
+    function handleAccXChainRewards(uint256 _totalMinted, uint256 _totalSlashed) external;
 }
 
 /// @title IZorroControllerPoolMgmt
 interface IZorroControllerPoolMgmt is IZorroControllerBase {
     function add(
         uint256 _allocPoint,
-        IERC20 _want,
+        IERC20Upgradeable _want,
         bool _withUpdate,
         address _vault
     ) external;

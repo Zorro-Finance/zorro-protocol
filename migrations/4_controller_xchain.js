@@ -1,18 +1,49 @@
+// Upgrades
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Controller
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
-// Libs
-const PriceFeed = artifacts.require("PriceFeed");
-const SafeSwapUni = artifacts.require("SafeSwapUni");
+// Token
+const Zorro = artifacts.require('Zorro');
 
 module.exports = async function (deployer, network, accounts) {
-  // Libs
-  await deployer.deploy(PriceFeed);
-  await deployer.deploy(SafeSwapUni);
+  // Existing contracts
+  const ZorroToken = await Zorro.deployed();
   
-  // Links
-  await deployer.link(PriceFeed, ZorroControllerXChain);
-  await deployer.link(SafeSwapUni, ZorroControllerXChain);
-  
+  // Prep init values
+  let zcxInitVal = {
+    defaultStablecoin: '0x0000000000000000000000000000000000000000',
+    ZORRO: ZorroToken.address,
+    zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+    zorroStakingVault: '0x0000000000000000000000000000000000000000',
+    uniRouterAddress: '0x0000000000000000000000000000000000000000',
+    homeChainZorroController: '0x0000000000000000000000000000000000000000',
+    currentChainController: '0x0000000000000000000000000000000000000000',
+    publicPool: '0x0000000000000000000000000000000000000000',
+    bridge: {
+      chainId: 0,
+      homeChainId: 0,
+      ZorroChainIDs: [],
+      controllerContracts: [],
+      LZChainIDs: [],
+      stargateDestPoolIds: [],
+      stargateRouter: '0x0000000000000000000000000000000000000000',
+      layerZeroEndpoint: '0x0000000000000000000000000000000000000000',
+      stargateSwapPoolId: '0x0000000000000000000000000000000000000000',
+    },
+    swaps: {
+      USDCToZorroPath: [],
+      USDCToZorroLPPoolOtherTokenPath: [],
+    },
+    priceFeeds: {
+      priceFeedZOR: '0x0000000000000000000000000000000000000000',
+      priceFeedLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
+    },
+  };
+  if (network === 'avax') {
+    // TODO: Other chains
+  }
   // Deploy
-  await deployer.deploy(ZorroControllerXChain);
+  await deployProxy(ZorroControllerXChain, [zcxInitVal], {deployer});
 };
+
+// TODO: Don't forget to eventually assign timelockowner

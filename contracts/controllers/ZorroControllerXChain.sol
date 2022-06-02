@@ -16,9 +16,9 @@ import "../interfaces/IStargateRouter.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./_ZorroControllerXChainBase.sol";
 
@@ -39,50 +39,56 @@ contract ZorroControllerXChain is
     ZorroControllerXChainReceiver
 {
     /* Libraries */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Constructor */
 
     /// @notice Upgradeable constructor
-    /// @param _timelockOwner The timelock contract that shall own this contract
     /// @param _initValue a ZorroControllerXChainInit struct for initializing this contract
-    function initialize(
-        address _timelockOwner,
-        ZorroControllerXChainInit memory _initValue
-    ) public {
+    function initialize(ZorroControllerXChainInit memory _initValue)
+        public
+        initializer
+    {
         // Base
         stargateRouter = _initValue.bridge.stargateRouter;
         stargateSwapPoolId = _initValue.bridge.stargateSwapPoolId;
         layerZeroEndpoint = _initValue.bridge.layerZeroEndpoint;
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
 
         for (uint16 i = 0; i < _initValue.bridge.ZorroChainIDs.length; ++i) {
             uint256 _zChainId = _initValue.bridge.ZorroChainIDs[i];
 
-            controllerContractsMap[_zChainId] = _initValue.bridge.controllerContracts[
-                i
-            ];
+            controllerContractsMap[_zChainId] = _initValue
+                .bridge
+                .controllerContracts[i];
             ZorroChainToLZMap[_zChainId] = _initValue.bridge.LZChainIDs[i];
             LZChainToZorroMap[_initValue.bridge.LZChainIDs[i]] = _zChainId;
-            stargateDestPoolIds[_zChainId] = _initValue.bridge.stargateDestPoolIds[i];
+            stargateDestPoolIds[_zChainId] = _initValue
+                .bridge
+                .stargateDestPoolIds[i];
         }
-
 
         // Earn
         // Tokens
-        tokenUSDC = _initValue.tokenUSDC;
         zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
         // Contracts
         zorroStakingVault = _initValue.zorroStakingVault;
         uniRouterAddress = _initValue.uniRouterAddress;
         // Swaps
         USDCToZorroPath = _initValue.swaps.USDCToZorroPath;
-        USDCToZorroLPPoolOtherTokenPath = _initValue.swaps.USDCToZorroLPPoolOtherTokenPath;
+        USDCToZorroLPPoolOtherTokenPath = _initValue
+            .swaps
+            .USDCToZorroLPPoolOtherTokenPath;
         // Price feed
-        priceFeedZOR = AggregatorV3Interface(_initValue.priceFeeds.priceFeedZOR);
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(_initValue.priceFeeds.priceFeedLPPoolOtherToken);
+        priceFeedZOR = AggregatorV3Interface(
+            _initValue.priceFeeds.priceFeedZOR
+        );
+        priceFeedLPPoolOtherToken = AggregatorV3Interface(
+            _initValue.priceFeeds.priceFeedLPPoolOtherToken
+        );
 
-        // Timelock
-        transferOwnership(_timelockOwner);
+        // Ownable
+        __Ownable_init();
     }
 
     /* Structs */
@@ -113,7 +119,6 @@ contract ZorroControllerXChain is
         // Tokens
         address defaultStablecoin;
         address ZORRO;
-        address tokenUSDC;
         address zorroLPPoolOtherToken;
         // Contracts
         address zorroStakingVault;

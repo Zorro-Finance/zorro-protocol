@@ -1,29 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../tokens/ZorroToken.sol";
+import "../interfaces/IZorro.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../interfaces/IZorroController.sol";
 
+import "../interfaces/IVault.sol";
+
 /* Base Contract */
 
 /// @title ZorroControllerBase: The base controller with main state variables, data types, and functions
-contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
+contract ZorroControllerBase is
+    IZorroControllerBase,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     /* Libraries */
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Modifiers */
     /// @notice Only allows functions to be executed where the sender matches the zorroPriceOracle address
@@ -35,6 +41,13 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
     /// @notice Only allows functions to be executed on contracts matching the home chain controller
     modifier onlyHomeChain() {
         require(address(this) == homeChainZorroController, "only home chain");
+        _;
+    }
+
+    /// @notice Can only be called on non home chain
+    modifier nonHomeChainOnly() {
+        // Check to make sure not on home chain
+        require(chainId != homeChainId, "For non home chain only");
         _;
     }
 
@@ -52,7 +65,7 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
 
     // Info of each pool
     struct PoolInfo {
-        IERC20 want; // Want token contract.
+        IERC20Upgradeable want; // Want token contract.
         uint256 allocPoint; // How many allocation points assigned to this pool.
         uint256 lastRewardBlock; // Last block number that ZORRO distribution occurs.
         uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
@@ -62,9 +75,6 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
 
     /* Constants */
 
-    address public constant burnAddress =
-        0x000000000000000000000000000000000000dEaD;
-
     /* State */
 
     // Key tokens/addresses
@@ -72,7 +82,7 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
     address public defaultStablecoin; // Address of default stablecoin (i.e. USDC)
     address public publicPool; // Only to be set on home chain
     address public zorroStakingVault; // The vault for ZOR stakers on the home chain.
-    address public tokenUSDC; // USDC address on chain
+    address public burnAddress; // Burn address for ERC20 tokens
     // Rewards
     uint256 public startBlock;
     uint256 public blocksPerDay; // Approximate, varies by chain
@@ -83,6 +93,8 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
     uint256 public chainMultiplier; // Proportional rewards to be sent to this chain
     uint256 public baseRewardRateBasisPoints;
     uint256 public totalAllocPoint; // Total allocation points (aka multiplier). Must be the sum of all allocation points in all pools.
+    uint256 public accSynthRewardsMinted; // Accumulated synthetic rewards minted on non home-chain
+    uint256 public accSynthRewardsSlashed; // Accumulated synthetic rewards slashed on non home-chain
     // Cross-chain
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint256 public homeChainId; // The chain ID of the home chain
@@ -110,6 +122,12 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
         defaultStablecoin = _defaultStablecoin;
     }
 
+    /// @notice Setter: Burn address
+    /// @param _burnAddress The burn address on this chain
+    function setBurnAddress(address _burnAddress) external onlyOwner {
+        burnAddress = _burnAddress;
+    }
+
     /// @notice Setter: Set key ZOR contract addresses
     /// @param _publicPool Public pool address (where ZOR minted)
     /// @param _zorroStakingVault Zorro single staking vault address
@@ -131,19 +149,18 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
 
     /// @notice Setter: Reward params (See Tokenomics paper for more details)
     /// @dev NOTE: Must enter all parameters or existing ones will be overwritten!
-    /// @param _blockParams Array of [blocksPerDay, ZORROPerBlock]
+    /// @param _blocksPerDay # of blocks per day for this chain
     /// @param _dailyDistFactors Array of [ZORRODailyDistributionFactorBasisPointsMin, ZORRODailyDistributionFactorBasisPointsMax]
     /// @param _chainMultiplier Rewards multiplier factor to be applied to this chain
     /// @param _baseRewardRateBasisPoints Base reward rate factor, in bp
     function setRewardsParams(
-        uint256[] calldata _blockParams,
+        uint256 _blocksPerDay,
         uint256[] calldata _dailyDistFactors,
         uint256 _chainMultiplier,
         uint256 _baseRewardRateBasisPoints
     ) external onlyOwner {
-        // Set other block params
-        blocksPerDay = _blockParams[1];
-        ZORROPerBlock = _blockParams[2];
+        // Set block production rate for this chain
+        blocksPerDay = _blocksPerDay;
 
         // Tokenomics
         ZORRODailyDistributionFactorBasisPointsMin = _dailyDistFactors[0];
@@ -224,8 +241,9 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
         // Use the Rm formula to determine the percentage of the remaining public pool Zorro tokens to transfer to this contract as rewards
         uint256 ZORRODailyDistributionFactorBasisPoints = baseRewardRateBasisPoints
                 .mul(_totalMarketTVLUSD)
-                .mul(_targetTVLCaptureBasisPoints.div(10000))
-                .div(_ZorroTotalVaultTVLUSD);
+                .mul(_targetTVLCaptureBasisPoints)
+                .div(_ZorroTotalVaultTVLUSD.mul(10000));
+
         // Rail distribution to min and max values
         if (
             ZORRODailyDistributionFactorBasisPoints >
@@ -238,24 +256,22 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
         ) {
             ZORRODailyDistributionFactorBasisPoints = ZORRODailyDistributionFactorBasisPointsMin;
         }
+
         // Multiply the factor above to determine the total Zorro tokens to distribute to this contract on a DAILY basis
-        uint256 publicPoolDailyZORRODistribution = _publicPoolZORBalance
+        // And then multiply by the share of daily distribution for this chain
+        // Finally: Convert this to a BLOCK basis and assign to ZORROPerBlock
+        ZORROPerBlock = _publicPoolZORBalance
             .mul(ZORRODailyDistributionFactorBasisPoints)
-            .div(10000);
-        // Determine the share of daily distribution for this chain
-        uint256 chainDailyDist = chainMultiplier
-            .mul(publicPoolDailyZORRODistribution)
-            .div(_totalChainMultipliers);
-        // Convert this to a BLOCK basis and assign to ZORROPerBlock
-        ZORROPerBlock = chainDailyDist.div(blocksPerDay);
+            .mul(chainMultiplier)
+            .div(_totalChainMultipliers.mul(10000).mul(blocksPerDay));
     }
 
     /* Pool Management */
 
     /// @notice Update reward variables of the given pool to be up-to-date.
     /// @param _pid index of pool
-    /// @return uint256 Amount of ZOR rewards minted (useful for cross chain)
-    function updatePool(uint256 _pid) public returns (uint256) {
+    /// @return mintedZOR Amount of ZOR rewards minted (useful for cross chain)
+    function updatePool(uint256 _pid) public returns (uint256 mintedZOR) {
         // Get the pool matching the given index
         PoolInfo storage pool = poolInfo[_pid];
 
@@ -264,12 +280,15 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             return 0;
         }
 
-        // Determine how many blocks have elapsed since the last updatePool() operation for this pool
-        uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
-        // If no elapsed blocks have occured, exit
-        if (elapsedBlocks <= 0) {
+        // If underlying vault's shares are zero, skip
+        uint256 sharesTotal = IVault(pool.vault).sharesTotal();
+        if (sharesTotal == 0) {
+            pool.lastRewardBlock = block.number;
             return 0;
         }
+
+        // Determine how many blocks have elapsed since the last updatePool() operation for this pool
+        uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
 
         // Finally, multiply rewards/block by the number of elapsed blocks and the pool weighting
         uint256 ZORROReward = elapsedBlocks
@@ -282,25 +301,88 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             // On Home chain. NO cross chain pool updates required
 
             // Transfer Zorro rewards to this contract from the Public Pool
-            IERC20(ZORRO).safeTransferFrom(
-                publicPool,
-                address(this),
-                ZORROReward
-            );
-            // Increment this pool's accumulated Zorro per share value by the reward amount
-            pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
-            // Update the pool's last reward block to the current block
-            pool.lastRewardBlock = block.number;
+            _fetchFundsFromPublicPool(ZORROReward, address(this));
+
             // Return 0, no ZOR minted because we're on chain
-            return 0;
+            mintedZOR = 0;
         } else {
             // On remote chain. Cross chain pool updates required
 
             // Mint Zorro on this (remote) chain
-            Zorro(ZORRO).mint(address(this), ZORROReward);
+            IZorro(ZORRO).mint(address(this), ZORROReward);
+
             // Return ZOR minted
-            return ZORROReward;
+            mintedZOR = ZORROReward;
+
+            // Record minted amount.
+            _recordMintedRewards(mintedZOR);
         }
+
+        // Increment this pool's accumulated Zorro per share value by the reward amount
+        pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
+        // Update the pool's last reward block to the current block
+        pool.lastRewardBlock = block.number;
+    }
+
+    /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning.
+    /// @param _mintedRewards Amount of rewards that were minted
+    function _recordMintedRewards(uint256 _mintedRewards)
+        internal
+        nonHomeChainOnly
+    {
+        // Accumulate rewards
+        accSynthRewardsMinted = accSynthRewardsMinted.add(_mintedRewards);
+    }
+
+    /// @notice Resets accumulated synthentic rewards minted
+    /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
+    function resetSyntheticRewardsSlashed()
+        external
+        onlyAllowZorroControllerOracle
+        nonHomeChainOnly
+    {
+        // Burn slashed amount
+        IERC20Upgradeable(ZORRO).safeTransfer(
+            burnAddress,
+            accSynthRewardsSlashed
+        );
+
+        // Reset
+        accSynthRewardsMinted = 0;
+    }
+
+    /// @notice Stores cumulative total of slashed rewards on a non-home chain, for future burning.
+    /// @param _slashedRewards Amount of rewards that were minted
+    function _recordSlashedRewards(uint256 _slashedRewards)
+        internal
+        nonHomeChainOnly
+    {
+        // Accumulate rewards
+        accSynthRewardsSlashed = accSynthRewardsSlashed.add(_slashedRewards);
+    }
+
+    /// @notice Resets accumulated synthentic rewards minted
+    /// @dev To be called by Oracle only, when batch burning synthetic minted rewards
+    function resetSyntheticRewardsMinted()
+        external
+        onlyAllowZorroControllerOracle
+        nonHomeChainOnly
+    {
+        accSynthRewardsMinted = 0;
+    }
+
+    /// @notice Gets the specified amount of ZOR tokens from the public pool and transfers to this contract
+    /// @param _amount The amount to fetch from the public pool
+    /// @param _destination Where to send funds to
+    function _fetchFundsFromPublicPool(uint256 _amount, address _destination)
+        internal
+        virtual
+    {
+        IERC20Upgradeable(ZORRO).safeTransferFrom(
+            publicPool,
+            _destination,
+            _amount
+        );
     }
 
     /* Safety functions */
@@ -310,11 +392,11 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
     /// @param _ZORROAmt quantity of Zorro tokens to send
     function _safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {
         uint256 _xferAmt = _ZORROAmt;
-        uint256 ZORROBal = IERC20(ZORRO).balanceOf(address(this));
+        uint256 ZORROBal = IERC20Upgradeable(ZORRO).balanceOf(address(this));
         if (_ZORROAmt > ZORROBal) {
             _xferAmt = ZORROBal;
         }
-        IERC20(ZORRO).safeTransfer(_to, _xferAmt);
+        IERC20Upgradeable(ZORRO).safeTransfer(_to, _xferAmt);
     }
 
     /// @notice For owner to recover ERC20 tokens on this contract if stuck
@@ -329,6 +411,6 @@ contract ZorroControllerBase is IZorroControllerBase, Ownable, ReentrancyGuard {
             _token != ZORRO,
             "!safe to use Zorro token in func inCaseTokensGetStuck"
         );
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+        IERC20Upgradeable(_token).safeTransfer(msg.sender, _amount);
     }
 }

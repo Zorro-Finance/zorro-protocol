@@ -208,12 +208,26 @@ to the home chain, and the supply is kept constant across all chains via the pro
 yarn
 ```
 
+# Compiling
+
+NOTE: Ganache CLI is preferred over Ganache desktop and other solutions for local blockchain
+
+```bash
+truffle compile --all
+```
+
+## Migrating
+
+```bash
+truffle migrate --reset --network ganachecli
+```
+
 # Tests
 
 Unit tests are run using Truffle/Mocha. 
 
 ```bash
-truffle test
+truffle test --network ganachecli --compile-none --stacktrace-extra
 ```
 
 # Upgradeability

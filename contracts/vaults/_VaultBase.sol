@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "../interfaces/IAMMRouter01.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "../libraries/SafeSwap.sol";
 
@@ -26,40 +26,40 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
+abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     /* Libraries */
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Constructor */
-    function initialize(address _timelockOwner) public {
+    function initialize(address _timelockOwner) public initializer {
+        // Ownable
+        __Ownable_init();
+        // Transfer ownership
         transferOwnership(_timelockOwner);
+        // Other
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
     }
 
     /* Constants */
 
     // Addresses
-    address public constant burnAddress =
-        0x000000000000000000000000000000000000dEaD; // Address to send funds to, to burn them
     // Fee min/max bounds
     uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
-    uint256 public constant controllerFeeUL = 300; // Upper limit on controller fee rate (3%)
+    uint256 public constant controllerFeeUL = 1000; // Upper limit on controller fee rate (10%)
     uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
-    uint256 public constant buyBackRateUL = 800; // Upper limit on buyback rate (8%)
+    uint256 public constant buyBackRateUL = 1000; // Upper limit on buyback rate (10%)
     uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
-    uint256 public constant revShareRateUL = 800; // Upper limit on rev share rate (8%)
+    uint256 public constant revShareRateUL = 1000; // Upper limit on rev share rate (10%)
     uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
-    uint256 public constant entranceFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = "lowerlimit"
+    uint256 public constant entranceFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = "lowerlimit"
     uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
-    uint256 public constant withdrawFeeFactorLL = 9900; // 1.0% is the max entrance fee settable. LL = lowerlimit
+    uint256 public constant withdrawFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = lowerlimit
 
     /* State */
 
     // Vault characteristics
-    bool public isCOREStaking; // If true, is for staking just core token of AMM (e.g. CAKE for Pancakeswap, BANANA for Apeswap, etc.). Set to false for Zorro single staking vault
-    bool public isSingleAssetDeposit; // Same asset token (not LP pair). Set to True for pools with single assets (ZOR, CAKE, BANANA, ADA, etc.)
-    bool public isZorroComp; // This vault is for compounding. If true, will trigger farming/unfarming on earn events. Set to false for Zorro single staking vault
     bool public isHomeChain; // Whether this is deployed on the home chain
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
     // Governance
@@ -78,6 +78,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
     address public tokenUSDCAddress; // USDC token address
     // Other addresses
+    address public burnAddress; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
     address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
@@ -93,14 +94,13 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     // Revenue sharing - used to share rewards with ZOR stakers
     uint256 public revShareRate; // Numerator for revshare ratio (100 = 1%)
     // Entrance fee - goes to pool + prevents front-running
-    uint256 public entranceFeeFactor = 9990; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
+    uint256 public entranceFeeFactor; // 9990 results in a 0.1% deposit fee (1 - 9990/10000)
     // Withdrawal fee - goes to pool
-    uint256 public withdrawFeeFactor = 10000; // Numerator of withdrawal fee factor
+    uint256 public withdrawFeeFactor; // Numerator of withdrawal fee factor
     // Accounting
     uint256 public lastEarnBlock; // Last recorded block for an earn() event
     uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
     uint256 public sharesTotal; // Total shares for this Vault
-    mapping(address => uint256) public userShares; // Ledger of shares by user for this pool.
     // Swap routes
     address[] public USDCToToken0Path;
     address[] public USDCToToken1Path;
@@ -167,12 +167,15 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate
+        uint256 _buyBackRate,
+        uint256 _revShareRate
     );
     event SetGov(address _govAddress);
     event SetOnlyGov(bool _onlyGov);
     event SetUniRouterAddress(address _uniRouterAddress);
     event SetRewardsAddress(address _rewardsAddress);
+    event Buyback(uint256 indexed _amount);
+    event RevShare(uint256 indexed _amount);
 
     /* Modifiers */
 
@@ -217,6 +220,10 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
 
     function setRewardsAddress(address _rewardsAddress) public onlyOwner {
         rewardsAddress = _rewardsAddress;
+    }
+
+    function setBurnAddress(address _burnAddress) public onlyOwner {
+        burnAddress = _burnAddress;
     }
 
     function setWantAddress(address _wantAddress) public onlyOwner {
@@ -316,11 +323,13 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @param _withdrawFeeFactor Withdrawal fee numerator (higher means smaller percentage)
     /// @param _controllerFee Controller fee numerator
     /// @param _buyBackRate Buy back rate fee numerator
+    /// @param _revShareRate Rev share rate fee numerator
     function setFeeSettings(
         uint256 _entranceFeeFactor,
         uint256 _withdrawFeeFactor,
         uint256 _controllerFee,
-        uint256 _buyBackRate
+        uint256 _buyBackRate,
+        uint256 _revShareRate
     ) public virtual onlyAllowGov {
         // Entrance fee
         require(
@@ -352,28 +361,33 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
         require(_buyBackRate <= buyBackRateUL, "_buyBackRate too high");
         buyBackRate = _buyBackRate;
 
+        // Revshare
+        require(_revShareRate <= revShareRateUL, "_revShareRate too high");
+        revShareRate = _revShareRate;
+
         // Emit event with new settings
         emit SetSettings(
             _entranceFeeFactor,
             _withdrawFeeFactor,
             _controllerFee,
-            _buyBackRate
+            _buyBackRate,
+            _revShareRate
         );
     }
 
     /// @notice Gets the swap path in the opposite direction of a trade
     /// @param _path The swap path to be reversed
-    /// @return An reversed path array
+    /// @return _newPath An reversed path array
     function _reversePath(address[] memory _path)
         internal
         pure
-        returns (address[] memory)
+        returns (address[] memory _newPath)
     {
-        address[] memory _newPath;
-        for (uint16 i = 0; i < _path.length; ++i) {
+        uint256 _pathLength = _path.length;
+        _newPath = new address[](_pathLength);
+        for (uint16 i = 0; i < _pathLength; ++i) {
             _newPath[i] = _path[_path.length.sub(1).sub(i)];
         }
-        return _newPath;
     }
 
     /* Maintenance Functions */
@@ -401,7 +415,7 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     ) public virtual onlyAllowGov {
         require(_token != earnedAddress, "!safe");
         require(_token != wantAddress, "!safe");
-        IERC20(_token).safeTransfer(_to, _amount);
+        IERC20Upgradeable(_token).safeTransfer(_to, _amount);
     }
 
     /* Performance fees & buyback */
@@ -409,38 +423,37 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
     /// @notice Combines buyback and rev share operations
     /// @param _earnedAmt The amount of Earned tokens (profit)
     /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc.
-    /// @return uint256 the remaining earned token amount after buyback and revshare operations
     /// @param _rates ExchangeRates struct with realtime rates information for swaps
+    /// @return buybackAmt Amount bought back for LP and burn
+    /// @return revShareAmt Amount shared with ZOR stakers
     function _buyBackAndRevShare(
         uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
-    ) internal virtual returns (uint256) {
+    ) internal virtual returns (uint256 buybackAmt, uint256 revShareAmt) {
         // Calculate buyback amount
-        uint256 _buyBackAmt = 0;
         if (buyBackRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            _buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
+            buybackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
         }
 
         // Calculate revshare amount
-        uint256 _revShareAmt = 0;
-        if (_revShareAmt > 0) {
+        if (revShareRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            _revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
+            revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
         }
 
         // Routing: Determine whether on home chain or not
         if (isHomeChain) {
             // If on home chain, perform buyback, revshare locally
-            _buybackOnChain(_buyBackAmt, _maxMarketMovementAllowed, _rates);
-            _revShareOnChain(_revShareAmt, _maxMarketMovementAllowed, _rates);
+            _buybackOnChain(buybackAmt, _maxMarketMovementAllowed, _rates);
+            _revShareOnChain(revShareAmt, _maxMarketMovementAllowed, _rates);
         } else {
             // Otherwise, contact controller, to make cross chain call
 
             // Swap to Earn to USDC and send to zorro controller contract
             _swapEarnedToUSDC(
-                _buyBackAmt.add(_revShareAmt),
+                buybackAmt.add(revShareAmt),
                 zorroControllerAddress,
                 _maxMarketMovementAllowed,
                 _rates
@@ -450,39 +463,32 @@ abstract contract VaultBase is IVault, Ownable, ReentrancyGuard, Pausable {
             IZorroControllerXChainEarn(zorroXChainController)
                 .sendXChainDistributeEarningsRequest(
                     pid,
-                    _buyBackAmt,
-                    _revShareAmt,
+                    buybackAmt,
+                    revShareAmt,
                     _maxMarketMovementAllowed
                 );
         }
-
-        // Return net earnings
-        return (_earnedAmt.sub(_buyBackAmt)).sub(_revShareAmt);
     }
 
     /// @notice distribute controller (performance) fees
     /// @param _earnedAmt The Earned token amount (profits)
-    /// @return The Earned token amount net of distributed fees
+    /// @return fee The amount of controller fees collected for the treasury
     function _distributeFees(uint256 _earnedAmt)
         internal
         virtual
-        returns (uint256)
+        returns (uint256 fee)
     {
         if (_earnedAmt > 0) {
             // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
             if (controllerFee > 0) {
                 // Calculate the fee from the controllerFee parameters
-                uint256 fee = _earnedAmt.mul(controllerFee).div(
+                fee = _earnedAmt.mul(controllerFee).div(
                     controllerFeeMax
                 );
                 // Transfer the fee to the rewards address
-                IERC20(earnedAddress).safeTransfer(rewardsAddress, fee);
-                // Decrement the Earned token amount by the fee
-                _earnedAmt = _earnedAmt.sub(fee);
+                IERC20Upgradeable(earnedAddress).safeTransfer(rewardsAddress, fee);
             }
         }
-
-        return _earnedAmt;
     }
 
     /* Abstract methods */

@@ -16,48 +16,18 @@ import "../interfaces/IStargateRouter.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 contract ZorroControllerXChainBase is
     IZorroControllerXChainBase,
-    Ownable,
-    ReentrancyGuard
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     /* Libraries */
-    using SafeMath for uint256;
-
-    /* State */
-
-    // Tokens
-    address public defaultStablecoin;
-    address public ZORRO;
-    // Contracts
-    address public homeChainZorroController;
-    address public currentChainController; // TODO: need constructor, setter
-    address public publicPool;
-    // Chain config
-    uint256 chainId;
-    uint256 homeChainId;
-
-    /* Setters */
-
-    function setTokens(address[] calldata _tokens) external onlyOwner {
-        defaultStablecoin = _tokens[0];
-        ZORRO = _tokens[1];
-    }
-
-    function setKeyContracts(address[] calldata _contracts) external onlyOwner {
-        homeChainZorroController = _contracts[0];
-        currentChainController = _contracts[1];
-        publicPool = _contracts[2];
-    }
-
-    function setChains(uint256[] calldata _chainIds) external onlyOwner {
-        chainId = _chainIds[0];
-        homeChainId = _chainIds[1];
-    }
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Structs */
 
@@ -82,15 +52,46 @@ contract ZorroControllerXChainBase is
 
     /* State */
 
-    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
-    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
-    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+    // Stargate/LZ
     address public stargateRouter; // Address to on-chain Stargate router
     uint256 public stargateSwapPoolId; // Address of the pool to swap from on this contract
     mapping(uint256 => uint256) public stargateDestPoolIds; // Mapping from Zorro chain ID to Stargate dest Pool for the same token
     address public layerZeroEndpoint; // Address to on-chain LayerZero endpoint
+    // Chain maps
+    mapping(uint256 => bytes) public controllerContractsMap; // Mapping of Zorro chain ID to endpoint contract
+    mapping(uint256 => uint16) public ZorroChainToLZMap; // Mapping of Zorro Chain ID to Stargate/LayerZero Chain ID
+    mapping(uint16 => uint256) public LZChainToZorroMap; // Mapping of Stargate/LayerZero Chain ID to Zorro Chain ID
+    mapping(uint256 => uint256) public chainTypes; // Mapping of Zorro Chain ID to chain type. 0: EVM, 1: Solana
+    // Tokens
+    address public defaultStablecoin;
+    address public ZORRO;
+    // Contracts
+    address public homeChainZorroController;
+    address public currentChainController; // TODO: need constructor, setter
+    address public publicPool;
+    // Chain config
+    uint256 public chainId;
+    uint256 public homeChainId;
+    // Other
+    address public burnAddress; // Address to send funds to, to burn them
 
     /* Setters */
+
+    function setTokens(address[] calldata _tokens) external onlyOwner {
+        defaultStablecoin = _tokens[0];
+        ZORRO = _tokens[1];
+    }
+
+    function setKeyContracts(address[] calldata _contracts) external onlyOwner {
+        homeChainZorroController = _contracts[0];
+        currentChainController = _contracts[1];
+        publicPool = _contracts[2];
+    }
+
+    function setChains(uint256[] calldata _chainIds) external onlyOwner {
+        chainId = _chainIds[0];
+        homeChainId = _chainIds[1];
+    }
 
     /// @notice Setter: Controller contract for each chain
     /// @param _zorroChainId Zorro Chain ID
@@ -137,6 +138,17 @@ contract ZorroControllerXChainBase is
         layerZeroEndpoint = _layerZeroEndpoint;
     }
 
+    function setChainType(
+        uint256 _zorroChainId,
+        uint256 _chainType
+    ) external onlyOwner {
+        chainTypes[_zorroChainId] = _chainType;
+    }
+
+    function setBurnAddress(address _burn) external onlyOwner {
+        burnAddress = _burn;
+    }
+
     /* Router functions */
 
     /// @notice Internal function for making swap calls to Stargate
@@ -144,6 +156,11 @@ contract ZorroControllerXChainBase is
     function _callStargateSwap(StargateSwapPayload memory _swapPayload)
         internal
     {
+        // Approve spending by Stargate 
+        // TODO: Can't assume that defaultStablecoin is always going to be USDC. Or can we?
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(stargateRouter, _swapPayload.qty);
+
+        // Swap call
         IStargateRouter.lzTxObj memory _lzTxObj;
         IStargateRouter(stargateRouter).swap{value: msg.value}(
             ZorroChainToLZMap[_swapPayload.chainId],
@@ -173,5 +190,11 @@ contract ZorroControllerXChainBase is
             _msgPayload.refundAddress,
             _msgPayload.adapterParams
         );
+    }
+
+    function _bytesToAddress(bytes memory bys) internal pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys,20))
+        } 
     }
 }

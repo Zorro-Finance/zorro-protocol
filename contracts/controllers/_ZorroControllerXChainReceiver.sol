@@ -49,8 +49,6 @@ contract ZorroControllerXChainReceiver is
         uint256 amountLD,
         bytes memory payload
     ) public override onlyRegXChainController(_chainId, _srcAddress) {
-        // Map to Zorro chain ID
-        uint256 _zorroOriginChainId = LZChainToZorroMap[_chainId];
         // Checks / authorization
         // Amounts
         uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
@@ -59,11 +57,13 @@ contract ZorroControllerXChainReceiver is
         // Determine function based on signature
         // Get func signature
         bytes4 _funcSig = bytes4(payload);
+        // Get params payload only
+        bytes memory _paramsPayload = this.extractParamsPayload(payload);
+
         // Match to appropriate func
         if (this.receiveXChainDepositRequest.selector == _funcSig) {
             // Decode params
             (
-                ,
                 uint256 _pid,
                 ,
                 uint256 _weeksCommitted,
@@ -71,8 +71,8 @@ contract ZorroControllerXChainReceiver is
                 bytes memory _originAccount,
                 address _destAccount
             ) = abi.decode(
-                    payload,
-                    (bytes4, uint256, uint256, uint256, uint256, bytes, address)
+                    _paramsPayload,
+                    (uint256, uint256, uint256, uint256, bytes, address)
                 );
 
             // Call receiving function for cross chain deposits
@@ -89,16 +89,14 @@ contract ZorroControllerXChainReceiver is
         } else if (this.receiveXChainRepatriationRequest.selector == _funcSig) {
             // Decode params from payload
             (
-                ,
                 uint256 _originChainId,
                 uint256 _pid,
                 uint256 _trancheId,
                 bytes memory _originRecipient,
-                uint256 _burnableZORRewards,
                 uint256 _rewardsDue
             ) = abi.decode(
-                    payload,
-                    (bytes4, uint256, uint256, uint256, bytes, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, uint256, uint256, bytes, uint256)
                 );
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
@@ -106,21 +104,19 @@ contract ZorroControllerXChainReceiver is
                 _pid,
                 _trancheId,
                 _originRecipient,
-                _burnableZORRewards,
                 _rewardsDue
             );
         } else if (this.receiveXChainDistributionRequest.selector == _funcSig) {
             // Decode params from payload
             (
-                ,
                 uint256 _remoteChainId,
                 uint256 _amountUSDCBuyback,
                 uint256 _amountUSDCRevShare,
                 uint256 _accSlashedRewards,
                 uint256 _maxMarketMovement
             ) = abi.decode(
-                    payload,
-                    (bytes4, uint256, uint256, uint256, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, uint256, uint256, uint256, uint256)
                 );
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
@@ -141,25 +137,23 @@ contract ZorroControllerXChainReceiver is
         uint64 _nonce,
         bytes calldata _payload
     ) external override onlyRegXChainController(_srcChainId, _srcAddress) {
-        // Map to Zorro chain ID
-        uint256 _zorroOriginChainId = LZChainToZorroMap[_srcChainId];
-
         // Determine function based on signature
         // Get func signature
         bytes4 _funcSig = bytes4(_payload);
+        // Get params-only payload
+        bytes memory _paramsPayload = this.extractParamsPayload(_payload);
         // Match to appropriate func
         if (this.receiveXChainWithdrawalRequest.selector == _funcSig) {
             // Decode params
             (
-                ,
                 uint256 _originChainId,
                 bytes memory _originAccount,
                 uint256 _pid,
                 uint256 _trancheId,
                 uint256 _maxMarketMovement
             ) = abi.decode(
-                    _payload,
-                    (bytes4, uint256, bytes, uint256, uint256, uint256)
+                    _paramsPayload,
+                    (uint256, bytes, uint256, uint256, uint256)
                 );
 
             // Call receiving function for cross chain withdrawals
@@ -174,5 +168,12 @@ contract ZorroControllerXChainReceiver is
         } else {
             revert("Unrecognized func");
         }
+    }
+
+    /// @notice Removes function signature from ABI encoded payload
+    /// @param _payloadWithSig ABI encoded payload with function selector
+    /// @return paramsPayload Payload with params only
+    function extractParamsPayload(bytes calldata _payloadWithSig) public pure returns (bytes memory paramsPayload) {
+        paramsPayload = _payloadWithSig[4:];
     }
 }
