@@ -193,6 +193,21 @@ contract('MockVaultStandardAMM', async accounts => {
         }
     });
 
+    it('sets Zorro XChain controller address', async () => {
+        // Normal
+        const zc = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
+        await instance.setZorroXChainControllerAddress(zc);
+
+        assert.equal(web3.utils.toChecksumAddress(await instance.zorroXChainController.call()), zc);
+
+        // Only by owner
+        try {
+            await instance.setZorroXChainControllerAddress(zc, { from: accounts[1] });
+        } catch (err) {
+            assert.include(err.message, 'caller is not the owner');
+        }
+    });
+
     it('sets Zorro single staking vault', async () => {
         // Normal
         const stakingVault = web3.utils.toChecksumAddress(web3.utils.randomHex(20));

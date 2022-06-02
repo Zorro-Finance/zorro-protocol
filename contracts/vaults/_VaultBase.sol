@@ -67,7 +67,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     bool public onlyGov; // Enforce gov only access on certain functions
     // Key Zorro addresses
     address public zorroControllerAddress; // Address of ZorroController contract
-    address public zorroXChainController; // Address of ZorroControllerXChain contract TODO: Constructor/setter
+    address public zorroXChainController; // Address of ZorroControllerXChain contract
     address public ZORROAddress; // Address of Zorro ERC20 token
     address public zorroStakingVault; // Address of ZOR single staking vault
     // Pool/farm/token IDs/addresses
@@ -124,6 +124,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     struct VaultAddresses {
         address govAddress;
         address zorroControllerAddress;
+        address zorroXChainController;
         address ZORROAddress;
         address zorroStakingVault;
         address wantAddress;
@@ -251,6 +252,13 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         onlyOwner
     {
         zorroControllerAddress = _zorroControllerAddress;
+    }
+
+    function setZorroXChainControllerAddress(address _zorroXChainController)
+        public
+        onlyOwner
+    {
+        zorroXChainController = _zorroXChainController;
     }
 
     function setZorroStakingVault(address _stakingVault) public onlyOwner {

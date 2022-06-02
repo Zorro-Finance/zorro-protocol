@@ -85,6 +85,7 @@ contract VaultStargate is VaultBase {
         govAddress = _initValue.keyAddresses.govAddress;
         onlyGov = true;
         zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
         ZORROAddress = _initValue.keyAddresses.ZORROAddress;
         zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
         wantAddress = _initValue.keyAddresses.wantAddress;

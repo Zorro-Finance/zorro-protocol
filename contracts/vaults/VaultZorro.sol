@@ -31,6 +31,7 @@ contract VaultZorro is VaultBase {
         govAddress = _initValue.keyAddresses.govAddress;
         onlyGov = true;
         zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
         ZORROAddress = _initValue.keyAddresses.ZORROAddress;
         wantAddress = _initValue.keyAddresses.wantAddress;
         token0Address = _initValue.keyAddresses.token0Address;

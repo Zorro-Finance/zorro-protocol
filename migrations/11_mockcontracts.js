@@ -147,6 +147,7 @@ module.exports = async function (deployer, network, accounts) {
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        zorroXChainController: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
         wantAddress: '0x0000000000000000000000000000000000000000',
@@ -186,6 +187,7 @@ module.exports = async function (deployer, network, accounts) {
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        zorroXChainController: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
         wantAddress: '0x0000000000000000000000000000000000000000',
@@ -233,6 +235,7 @@ module.exports = async function (deployer, network, accounts) {
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        zorroXChainController: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
         wantAddress: '0x0000000000000000000000000000000000000000',
@@ -279,6 +282,7 @@ module.exports = async function (deployer, network, accounts) {
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
+        zorroXChainController: '0x0000000000000000000000000000000000000000',
         ZORROAddress: '0x0000000000000000000000000000000000000000',
         zorroStakingVault: '0x0000000000000000000000000000000000000000',
         wantAddress: '0x0000000000000000000000000000000000000000',
