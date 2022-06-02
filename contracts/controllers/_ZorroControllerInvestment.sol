@@ -516,7 +516,7 @@ contract ZorroControllerInvestment is
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         if (_pendingRewards > 0) {
             // If pending rewards payable, pay them out
-            (uint256 _rewardsDue, uint256 _slashedRewards) = _getPendingRewards(
+            (uint256 _rewardsDue, uint256 _slashedRewards) = _getAdjustedRewards(
                 _tranche,
                 _pendingRewards
             );
@@ -633,13 +633,12 @@ contract ZorroControllerInvestment is
         }
     }
 
-    // TODO: This is really about accounting for slashes right? Perhaps use a better name for this function??
-    /// @notice Prepares values for paying out rewards
+    /// @notice Splits rewards into rewards due and slashed rewards (if early withdrawal)
     /// @param _tranche TrancheInfo object
     /// @param _pendingRewards Qty of ZOR tokens as pending rewards
     /// @return _rewardsDue The amount of ZOR rewards payable
     /// @return _slashedRewards The amount of ZOR rewards slashed due to early withdrawals
-    function _getPendingRewards(
+    function _getAdjustedRewards(
         TrancheInfo memory _tranche,
         uint256 _pendingRewards
     ) internal view returns (uint256 _rewardsDue, uint256 _slashedRewards) {
