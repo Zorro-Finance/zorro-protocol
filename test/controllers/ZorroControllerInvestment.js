@@ -99,7 +99,7 @@ const setupObj = async (accounts) => {
         ZORToken,
     };
 };
-/*
+
 contract('ZorroController', async accounts => {
     let instance;
 
@@ -634,7 +634,6 @@ contract('ZorroControllerInvestment::Withdraw', async accounts => {
         // Assert receives the full Want qty back
         assert.equal(withdrewWant.length, 2);
         const wantBal = await lpPool.balanceOf.call(accounts[0]);
-        console.log('wantBal: ', wantBal.toString());
         assert.isTrue(wantBal.eq(depositWantAmt.mul(web3.utils.toBN(2))));
     });
 });
@@ -788,7 +787,6 @@ contract('ZorroControllerInvestment::Withdraw Cross Chain', async accounts => {
         // TODO: All these need to be filled in
         // Assert that a foreign account map was created
         const foreignTranche = await instance.foreignTrancheInfo.call(0, foreignAcct, 0);
-        console.log('fti: ', foreignTranche);
 
         // Assert that Want token was withdrawn
 
@@ -867,7 +865,6 @@ contract('ZorroControllerInvestment::Xchain repatriation on home chain', async a
         assert.isTrue(zorBal.gt(web3.utils.toBN(0)));
     });
 });
-*/
 
 contract('ZorroControllerInvestment::Xchain repatriation on NON home chain', async accounts => {
     let instance, lpPool, vault, usdc, ZORStakingVault, ZORToken;
@@ -911,11 +908,6 @@ contract('ZorroControllerInvestment::Xchain repatriation on NON home chain', asy
             maxMarketMovement
         );
 
-        // Simulate fetching ZOR from public pool
-        const zorRewards = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
-        ZORToken.mint(instance.address, zorRewards);
-
-
         // Run
         const tx = await instance.withdrawMod(
             0, // pid, 
@@ -947,9 +939,8 @@ contract('ZorroControllerInvestment::Xchain repatriation on NON home chain', asy
     });
 });
 
-/*
 contract('ZorroControllerInvestment::Withdraw On chain for NON home chain', async accounts => {
-    let instance, lpPool, vault, usdc;
+    let instance, lpPool, vault, usdc, ZORStakingVault, ZORToken;
 
     before(async () => {
         const obj = await setupObj(accounts);
@@ -957,10 +948,77 @@ contract('ZorroControllerInvestment::Withdraw On chain for NON home chain', asyn
         lpPool = obj.lpPool;
         vault = obj.vault;
         usdc = obj.usdc;
+        ZORStakingVault = obj.ZORStakingVault;
+        ZORToken = obj.ZORToken;
+
+        await instance.setXChainParams(
+            1,
+            0,
+            web3.utils.randomHex(20)
+        );
+    });
+    
+    it('withdraws want token (penalty)', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 1;
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+
+        // Mint & approve
+        await lpPool.mint(accounts[0], wantAmt);
+        await lpPool.approve(instance.address, wantAmt);
+        
+        // Deposit foreign account
+        await instance.deposit(
+            0, //pid
+            wantAmt,
+            weeksCommitted
+        );
+
+        // Simulate fetching ZOR from public pool
+        const zorRewards = web3.utils.toBN(web3.utils.toWei('2', 'ether'));
+        ZORToken.mint(instance.address, zorRewards);
+
+        // Run
+        await instance.withdraw(
+            0, // pid, 
+            0, // trancheId, 
+            false // harvestOnly
+        );
+
+        // Test  
+        // Assert slashed rewards are recorded on chain
+        const slashedRewardQty = await instance.accSynthRewardsSlashed.call();
+        assert.isTrue(slashedRewardQty.gt(web3.utils.toBN(0)));    
     });
 
-    xit('withdraws want token', async () => {
+    it('withdraws want token (NO penalty)', async () => {
+        // Prep 
+        // Deposit 
+        const weeksCommitted = 0;
+        const wantAmt = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
+
+        // Mint & approve
+        await lpPool.mint(accounts[0], wantAmt);
+        await lpPool.approve(instance.address, wantAmt);
         
+        // Deposit foreign account
+        await instance.deposit(
+            0, //pid
+            wantAmt,
+            weeksCommitted
+        );
+
+        // Run
+        await instance.withdraw(
+            0, // pid, 
+            1, // trancheId, 
+            false // harvestOnly
+        );
+
+        // Test
+        // Assert rewards sent to wallet (local on-chain)
+        const walletBal = await ZORToken.balanceOf.call(accounts[0]);
+        assert.isTrue(walletBal.gt(web3.utils.toBN(0)));
     });
 });
-*/
