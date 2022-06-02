@@ -247,8 +247,6 @@ contract('VaultZorro', async accounts => {
 
         // Assert: Want token obtained
         const postExchangeWantBal = await ZORToken.balanceOf.call(accounts[0]);
-        console.log('post exch want: ', postExchangeWantBal.toString());
-        console.log('pre exch want: ', preExchangeWantBal.toString());
         assert.isTrue(postExchangeWantBal.sub(preExchangeWantBal).eq(amountUSD.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000)))); // Assumes 1:1 exchange rate
 
         /* Only Zorro Controller */

@@ -443,7 +443,6 @@ contract('VaultStandardAMM', async accounts => {
 
         // Logs
         const { rawLogs } = tx.receipt;
-        console.log('rawLogs exch want -> USDC: ', rawLogs);
 
         let removedLiq;
         for (let rl of rawLogs) {

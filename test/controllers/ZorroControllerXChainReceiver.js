@@ -182,7 +182,7 @@ contract('ZorroController', async accounts => {
         // Origin chain ID 
         assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[1]).eq(web3.utils.toBN(originChainId)));
         // Rewards due
-        assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[3]).eq(rewardsDue));
+        assert.isTrue(web3.utils.toBN(receiveRepatriationReq.topics[2]).eq(rewardsDue));
     });
 
     it('accepts Stargate :: receive X Chain distribution request', async () => {

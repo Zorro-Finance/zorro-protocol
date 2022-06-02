@@ -24,7 +24,6 @@ contract('ZorroController', async accounts => {
 
         // Test
         const poolInfo = await instance.poolInfo.call(0);
-        console.log('poolInfo: ', poolInfo);
         assert.equal(poolInfo.want, wantAddress);
         assert.isTrue(poolInfo.allocPoint.eq(allocPoint));
         assert.isTrue(poolInfo.lastRewardBlock.eq(web3.utils.toBN(currBlock)));
