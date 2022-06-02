@@ -247,7 +247,6 @@ contract ZorroControllerInvestment is
         emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
     }
 
-    // TODO: docstrings
     // TODO: test
     function _getLocalAccount(address _account, bytes memory _foreignAccount)
         private

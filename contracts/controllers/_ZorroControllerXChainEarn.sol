@@ -36,6 +36,12 @@ contract ZorroControllerXChainEarn is
         _;
     }
 
+    /// @notice Only can be called on home chain
+    modifier onlyHomeChain() {
+        require(chainId == homeChainId, "only home chain");
+        _;
+    }
+
     /* Events */
 
     event XChainDistributeEarnings(
@@ -63,7 +69,7 @@ contract ZorroControllerXChainEarn is
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
 
     /* Setters */
-    
+
     function setZorroLPPoolOtherToken(address _token) external onlyOwner {
         zorroLPPoolOtherToken = _token;
     }
@@ -256,8 +262,7 @@ contract ZorroControllerXChainEarn is
         uint256 _amountUSDCRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
-    ) internal virtual {
-        // TODO: Only allow this to be run on the home chain
+    ) internal virtual onlyHomeChain {
         // Total USDC to perform operations
         uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
 

@@ -338,8 +338,6 @@ contract ZorroControllerXChainWithdraw is
         // Only proceed if there is something to withdraw
         require(_balUSDC > 0, "Nothing to withdraw");
 
-        // TODO: How will the other side know how much USDC to return to the account, vs minted ZOR rewards vs rewards due?
-
         // Repatriate funds
         _sendXChainRepatriationRequest(
             _originChainId,
