@@ -569,19 +569,18 @@ contract ZorroControllerInvestment is
         // If not just harvesting (withdrawing too), proceed with below
         if (!_harvestOnly) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
-            // TODO: VERY IMPORTANT. The wantAmt is potentially NOT the same as shares removed
-            // We should be converting the contribution (after time multiplier) to want and then calling withdrawWantToken()
 
+            // Get local (on-chain) account
             address _resolvedLocalAcct = _getLocalAccount(
                 _localAccount,
                 _foreignAccount
             );
 
+            // Withdraw the want token for this account
             IVault(poolInfo[_pid].vault).withdrawWantToken(
                 _resolvedLocalAcct,
-                _tranche.contribution.mul(1e12).div(_tranche.timeMultiplier) // TODO: Should probably have a sister function to _getContribution
+                _getOrigSharesDeposited(_tranche.contribution, _tranche.timeMultiplier)
             );
-
 
             // Update shares safely
             _pool.totalTrancheContributions = _pool
@@ -859,7 +858,6 @@ contract ZorroControllerInvestment is
     }
 
     /* X-chain rewards management */
-    // TODO tests
 
     /// @notice Gets rewards and sends to the recipient of a cross chain withdrawal
     /// @param _rewardsDue The amount of rewards that need to be fetched and sent to the wallet
@@ -930,5 +928,15 @@ contract ZorroControllerInvestment is
         uint256 _timeMultiplier
     ) internal pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
+    }
+
+    /// @notice Extracts the original shares deposited by user, accounting for the time multiplier
+    /// @param _contribution The tranche contribution
+    /// @param _timeMultiplier The time multiplier factor (including 1e12 factor)
+    function _getOrigSharesDeposited(
+        uint256 _contribution,
+        uint256 _timeMultiplier
+    ) internal pure returns (uint256) {
+        return _contribution.mul(1e12).div(_timeMultiplier);
     }
 }

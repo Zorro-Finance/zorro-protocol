@@ -157,7 +157,6 @@ contract ZorroControllerXChainBase is
         internal
     {
         // Approve spending by Stargate 
-        // TODO: Can't assume that defaultStablecoin is always going to be USDC. Or can we?
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(stargateRouter, _swapPayload.qty);
 
         // Swap call

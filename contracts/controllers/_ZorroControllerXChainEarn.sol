@@ -48,8 +48,6 @@ contract ZorroControllerXChainEarn is
 
     /* State */
 
-    uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
-    // TODO: Constructor, setter
     // Tokens
     address public zorroLPPoolOtherToken;
     // Contracts
@@ -61,8 +59,11 @@ contract ZorroControllerXChainEarn is
     // Price feeds
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
+    // Rewards
+    uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
 
     /* Setters */
+    
     function setZorroLPPoolOtherToken(address _token) external onlyOwner {
         zorroLPPoolOtherToken = _token;
     }
@@ -394,7 +395,6 @@ contract ZorroControllerXChainEarn is
         internal
         returns (uint256 _slashedZORRewards)
     {
-        // TODO: investigate this function - seems to be out of place
         // Store current rewards amount
         _slashedZORRewards = accumulatedSlashedRewards;
 

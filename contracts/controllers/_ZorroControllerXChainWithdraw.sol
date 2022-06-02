@@ -80,7 +80,7 @@ contract ZorroControllerXChainWithdraw is
         pure
         returns (bytes memory)
     {
-        uint16 _version = 1; // TODO: Consider making this configurable rather than hardcoded?
+        uint16 _version = 1;
         return abi.encodePacked(_version, _gasForDestinationLZReceive);
     }
 
