@@ -9,23 +9,23 @@ import "../../vaults/_VaultBase.sol";
 import "../../tokens/mocks/MockToken.sol";
 
 contract MockZorroController is ZorroController {
+    event UpdatedPool(uint256 indexed _amount);
+    event HandledRewards(uint256 indexed _rewardsDue);
+
     function addTranche(
         uint256 _pid,
         address _account,
         TrancheInfo memory _trancheInfo
     ) public {
         trancheInfo[_pid][_account].push(_trancheInfo);
-        poolInfo[_pid].totalTrancheContributions = poolInfo[_pid].totalTrancheContributions + _trancheInfo.contribution;
+        poolInfo[_pid].totalTrancheContributions =
+            poolInfo[_pid].totalTrancheContributions +
+            _trancheInfo.contribution;
     }
 
-    function setLastRewardBlock(
-        uint256 _pid,
-        uint256 _block
-    ) public {
+    function setLastRewardBlock(uint256 _pid, uint256 _block) public {
         poolInfo[_pid].lastRewardBlock = _block;
     }
-
-    event UpdatedPool(uint256 _amount);
 
     function updatePoolMod(uint256 _pid) public {
         uint256 _res = updatePool(_pid);
@@ -33,15 +33,43 @@ contract MockZorroController is ZorroController {
         emit UpdatedPool(_res);
     }
 
-    function _fetchFundsFromPublicPool(uint256 _amount, address _destination) internal override {
+    function withdrawMod(
+        uint256 _pid,
+        address _localAccount,
+        bytes memory _foreignAccount,
+        uint256 _trancheId,
+        bool _harvestOnly,
+        bool _xChainRepatriation
+    ) public returns (WithdrawalResult memory _res) {
+        _res = _withdraw(
+            _pid,
+            _localAccount,
+            _foreignAccount,
+            _trancheId,
+            _harvestOnly,
+            _xChainRepatriation
+        );
+        emit HandledRewards(_res.rewardsDueXChain);
+    }
+
+    function _fetchFundsFromPublicPool(uint256 _amount, address _destination)
+        internal
+        override
+    {
         // Do nothing. Dummy func.
     }
 
-    function recordMintedRewards(uint256 _mintedRewards) public nonHomeChainOnly {
+    function recordMintedRewards(uint256 _mintedRewards)
+        public
+        nonHomeChainOnly
+    {
         _recordMintedRewards(_mintedRewards);
     }
 
-    function recordSlashedRewards(uint256 _slashedRewards) public nonHomeChainOnly {
+    function recordSlashedRewards(uint256 _slashedRewards)
+        public
+        nonHomeChainOnly
+    {
         _recordSlashedRewards(_slashedRewards);
     }
 }
@@ -51,9 +79,15 @@ contract MockInvestmentVault is VaultBase {
     using SafeMathUpgradeable for uint256;
 
     event DepositedWant(uint256 indexed _wantAmt);
-    event ExchangedUSDCForWant(uint256 indexed _amountUSDC, uint256 indexed _amountWant);
+    event ExchangedUSDCForWant(
+        uint256 indexed _amountUSDC,
+        uint256 indexed _amountWant
+    );
     event WithdrewWant(uint256 indexed _wantAmt);
-    event ExchangedWantForUSDC(uint256 indexed _amountWant, uint256 indexed _amountUSDC);
+    event ExchangedWantForUSDC(
+        uint256 indexed _amountWant,
+        uint256 indexed _amountUSDC
+    );
 
     function depositWantToken(address _account, uint256 _wantAmt)
         public
@@ -63,7 +97,11 @@ contract MockInvestmentVault is VaultBase {
         whenNotPaused
         returns (uint256 sharesAdded)
     {
-        IERC20Upgradeable(wantAddress).safeTransferFrom(msg.sender, burnAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
+            msg.sender,
+            burnAddress,
+            _wantAmt
+        );
 
         sharesTotal = sharesTotal.add(_wantAmt);
 
@@ -78,7 +116,10 @@ contract MockInvestmentVault is VaultBase {
         uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        IERC20Upgradeable(tokenUSDCAddress).safeTransfer(burnAddress, _amountUSDC);
+        IERC20Upgradeable(tokenUSDCAddress).safeTransfer(
+            burnAddress,
+            _amountUSDC
+        );
         // Assume 1:1 exch rate
         MockERC20Upgradeable(wantAddress).mint(msg.sender, _amountUSDC);
 
