@@ -458,8 +458,8 @@ contract VaultStargate is VaultBase {
             );
         }
 
-        // Calculate USDC balance. // TODO: Not so useful if we're transferring immediately to user. Wouldn't this always be zero?
-        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
+        // Calculate USDC balance.
+        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.

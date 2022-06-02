@@ -505,7 +505,7 @@ contract VaultAcryptosSingle is VaultBase {
         );
 
         // Calculate USDC balance
-        return IERC20(tokenUSDCAddress).balanceOf(address(this));
+        return IERC20(tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.

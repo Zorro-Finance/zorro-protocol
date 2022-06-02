@@ -242,7 +242,7 @@ contract VaultZorro is VaultBase {
             block.timestamp.add(600)
         );
 
-        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
+        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
