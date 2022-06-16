@@ -32,12 +32,14 @@ module.exports = async function (deployer, network, accounts) {
     vaults,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
 
-  let mockPriceAggZOR;
+  let mockPriceAggZOR; 
 
   if (devNets.includes(network)) {
-    // Deploy Mock ZOR price feed
-    await deployer.deploy(MockPriceAggZOR);
-    mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    // Deploy Mock ZOR price feed if necessary
+    if (!MockPriceAggZOR.hasNetwork(network)) {
+      await deployer.deploy(MockPriceAggZOR);
+      mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    }
   }
 
   // Init values
@@ -82,5 +84,5 @@ module.exports = async function (deployer, network, accounts) {
   const instance = await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });
 
   // Deploy factory contract
-  deployProxy(VaultFactoryStandardAMM, [instance.address], { deployer });
+  await deployProxy(VaultFactoryStandardAMM, [instance.address], { deployer });
 };

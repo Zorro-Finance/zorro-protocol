@@ -30,12 +30,14 @@ module.exports = async function (deployer, network, accounts) {
     vaults,
   } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
 
-  let mockPriceAggZOR;
+  let mockPriceAggZOR; 
 
   if (devNets.includes(network)) {
-    // Deploy Mock ZOR price feed
-    await deployer.deploy(MockPriceAggZOR);
-    mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    // Deploy Mock ZOR price feed if necessary
+    if (!MockPriceAggZOR.hasNetwork(network)) {
+      await deployer.deploy(MockPriceAggZOR);
+      mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    }
   }
 
   if (homeNetworks.includes(network)) {

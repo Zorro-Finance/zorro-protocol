@@ -331,10 +331,11 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockPriceAggLPOtherToken);
     await deployer.deploy(MockLPPool);
     await deployer.deploy(MockLPPool1);
+    
+    await deployProxy(MockInvestmentVault, [accounts[0]], {deployer});
+    await deployProxy(MockInvestmentVault1, [accounts[0]], {deployer});
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }
 
-  await deployProxy(MockInvestmentVault, [accounts[0]], {deployer});
-  await deployProxy(MockInvestmentVault1, [accounts[0]], {deployer});
 };
