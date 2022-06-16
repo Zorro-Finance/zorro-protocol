@@ -37,8 +37,6 @@ contract MockVaultStargate is VaultStargate {
     }
 }
 
-contract MockVaultFactoryStargate is VaultFactoryStargate {}
-
 contract MockStargateRouter is IStargateRouter, MockERC20Upgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

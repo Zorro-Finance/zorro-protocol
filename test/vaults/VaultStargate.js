@@ -1,5 +1,4 @@
 const MockVaultStargate = artifacts.require('MockVaultStargate');
-const MockVaultFactoryStargate = artifacts.require('MockVaultFactoryStargate');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 const MockStargateRouter = artifacts.require('MockStargateRouter');
@@ -96,80 +95,6 @@ const setupContracts = async (accounts) => {
         zorroStakingVault,
     };
 };
-
-contract('VaultFactoryStargate', async accounts => {
-    let factory;
-    let instance;
-    const initVal = {
-        pid: 0,
-        isHomeChain: true,
-        keyAddresses: {
-          govAddress: zeroAddress,
-          zorroControllerAddress: zeroAddress,
-          zorroXChainController: zeroAddress,
-          ZORROAddress: zeroAddress,
-          zorroStakingVault: zeroAddress,
-          wantAddress: zeroAddress,
-          token0Address: zeroAddress,
-          token1Address: zeroAddress,
-          earnedAddress: zeroAddress,
-          farmContractAddress: zeroAddress,
-          rewardsAddress: zeroAddress,
-          poolAddress: zeroAddress,
-          uniRouterAddress: zeroAddress,
-          zorroLPPool: zeroAddress,
-          zorroLPPoolOtherToken: zeroAddress,
-          tokenUSDCAddress: zeroAddress,
-        },
-        earnedToZORROPath: [],
-        earnedToToken0Path: [],
-        USDCToToken0Path: [],
-        earnedToZORLPPoolOtherTokenPath: [],
-        earnedToUSDCPath: [],
-        fees: {
-          controllerFee: 0,
-          buyBackRate: 0,
-          revShareRate: 0,
-          entranceFeeFactor: 0,
-          withdrawFeeFactor: 0,
-        },
-        priceFeeds: {
-          token0PriceFeed: zeroAddress,
-          token1PriceFeed: zeroAddress,
-          earnTokenPriceFeed: zeroAddress,
-          ZORPriceFeed: zeroAddress,
-          lpPoolOtherTokenPriceFeed: zeroAddress,
-        },
-        tokenSTG: zeroAddress,
-        stargateRouter: zeroAddress,
-        stargatePoolId: 0,
-      };
-
-    before(async () => {
-        factory = await MockVaultFactoryStargate.deployed();
-        instance = await MockVaultStargate.deployed();
-    });
-
-    it('has a master vault', async () => {
-        assert.equal(await factory.masterVault.call(), instance.address);
-    });
-
-    it('creates a vault', async () => {
-        // Create vault
-        await factory.createVault(accounts[0], initVal);
-
-        // Check creation
-        assert.equal(await factory.numVaults.call(), 1);
-        assert.isNotNull(await factory.deployedVaults.call(0));
-
-        // Only owner
-        try {
-            await factory.createVault(accounts[0], initVal, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-});
 
 contract('VaultStargate', async accounts => {
     let instance;

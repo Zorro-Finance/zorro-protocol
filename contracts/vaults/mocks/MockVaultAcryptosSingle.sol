@@ -6,9 +6,6 @@ import "../VaultAcryptosSingle.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-contract MockVaultFactoryAcryptosSingle is VaultFactoryAcryptosSingle {
-    
-}
 
 contract MockVaultAcryptosSingle is VaultAcryptosSingle {
     function unfarm(uint256 _wantAmt) public {

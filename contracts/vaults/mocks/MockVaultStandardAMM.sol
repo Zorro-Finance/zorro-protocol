@@ -8,8 +8,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-contract MockVaultFactoryStandardAMM is VaultFactoryStandardAMM {}
-
 contract MockVaultStandardAMM is VaultStandardAMM {
     function reversePath(address[] memory _path)
         public

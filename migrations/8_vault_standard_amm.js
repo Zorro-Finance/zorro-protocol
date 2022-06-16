@@ -8,8 +8,6 @@ const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("zorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
 const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
-// Factory
-const VaultFactoryStandardAMM = artifacts.require('VaultFactoryStandardAMM');
 // Get key params
 const { getKeyParams, devNets, getSynthNetwork } = require('../chains');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
@@ -80,9 +78,5 @@ module.exports = async function (deployer, network, accounts) {
       lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
     },
   };
-  // Deploy master contract
-  const instance = await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });
-
-  // Deploy factory contract
-  await deployProxy(VaultFactoryStandardAMM, [instance.address], { deployer });
+  await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });
 };

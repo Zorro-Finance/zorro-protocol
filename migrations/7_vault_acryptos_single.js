@@ -3,8 +3,6 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultAcryptosSingle = artifacts.require("VaultAcryptosSingle");
 const VaultZorro = artifacts.require("VaultZorro");
-// Factory 
-const VaultFactoryAcryptosSingle = artifacts.require('VaultFactoryAcryptosSingle');
 // Other contracts
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
@@ -90,10 +88,7 @@ module.exports = async function (deployer, network, accounts) {
       },
     };
     // Deploy master contract
-    const instance = await deployProxy(VaultAcryptosSingle, [accounts[0], initVal], {deployer});
-    
-    // Deploy factory
-    await deployProxy(VaultFactoryAcryptosSingle, [instance.address], {deployer});
+    await deployProxy(VaultAcryptosSingle, [accounts[0], initVal], {deployer});
   } else {
     console.log('Not on an allowed chain. Skipping...');
   }

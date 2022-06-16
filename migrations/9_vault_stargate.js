@@ -3,8 +3,6 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultStargate = artifacts.require("VaultStargate");
 const VaultZorro = artifacts.require("VaultZorro");
-// Factory
-const VaultFactoryStargate = artifacts.require("VaultFactoryStargate");
 // Other contracts 
 const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
 const ZorroController = artifacts.require("ZorroController");
@@ -85,8 +83,5 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy master contract
-  const instance = await deployProxy(VaultStargate, [accounts[0], initVal], {deployer});
-  
-  // Deploy factory
-  await deployProxy(VaultFactoryStargate, [instance.address], {deployer});
+  await deployProxy(VaultStargate, [accounts[0], initVal], {deployer});
 };

@@ -20,45 +20,6 @@ import "../interfaces/IBalancerVault.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-
-/// @title Vault factory for VaultAcryptosSingle
-contract VaultFactoryAcryptosSingle is Initializable, OwnableUpgradeable {
-    /* State */
-
-    VaultAcryptosSingle[] public deployedVaults; // All deployed vaults
-    address public masterVault; // Address of the upgradeable proxy that delegates to the master vault contract
-
-    /* Constructor */
-
-    function initialize(address _masterVault) public initializer {
-        // Set master vault address
-        masterVault = _masterVault;
-
-        // Ownable
-        __Ownable_init();
-    }
-
-    /* Factory functions */
-
-    function createVault(
-        address _timelockOwner,
-        VaultAcryptosSingle.VaultAcryptosSingleInit memory _initValue
-    ) external onlyOwner {
-        // Create clone
-        VaultAcryptosSingle _vault = VaultAcryptosSingle(
-            ClonesUpgradeable.clone(masterVault)
-        );
-        // Initialize cloned contract
-        _vault.initialize(_timelockOwner, _initValue);
-        // Add to array of deployed vaults
-        deployedVaults.push(_vault);
-    }
-
-    function numVaults() external view returns (uint256) {
-        return deployedVaults.length;
-    }
-}
 
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {

@@ -14,11 +14,8 @@ const MockAMMToken1 = artifacts.require("MockAMMToken1");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 // Vaults (only for testing)
 const MockVaultAcryptosSingle = artifacts.require("MockVaultAcryptosSingle");
-const MockVaultFactoryAcryptosSingle = artifacts.require("MockVaultFactoryAcryptosSingle");
 const MockVaultStandardAMM = artifacts.require("MockVaultStandardAMM");
-const MockVaultFactoryStandardAMM = artifacts.require("MockVaultFactoryStandardAMM");
 const MockVaultStargate = artifacts.require("MockVaultStargate");
-const MockVaultFactoryStargate = artifacts.require("MockVaultFactoryStargate");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const MockInvestmentVault = artifacts.require("MockInvestmentVault");
 const MockInvestmentVault1 = artifacts.require("MockInvestmentVault1");
@@ -226,7 +223,6 @@ module.exports = async function (deployer, network, accounts) {
       },
     };
     await deployProxy(MockVaultAcryptosSingle, [accounts[0], initVal1], {deployer});
-    await deployProxy(MockVaultFactoryAcryptosSingle, [(await MockVaultAcryptosSingle.deployed()).address], {deployer});
 
     // VaultStandardAMM
     const initVal2 = {
@@ -273,7 +269,6 @@ module.exports = async function (deployer, network, accounts) {
       },
     };
     await deployProxy(MockVaultStandardAMM, [accounts[0], initVal2], {deployer});
-    await deployProxy(MockVaultFactoryStandardAMM, [(await MockVaultStandardAMM.deployed()).address], {deployer});
     
     // VaultStargate
     const initVal3 = {
@@ -322,7 +317,6 @@ module.exports = async function (deployer, network, accounts) {
     };
   
     await deployProxy(MockVaultStargate, [accounts[0], initVal3], {deployer});
-    await deployProxy(MockVaultFactoryStargate, [(await MockVaultStargate.deployed()).address], {deployer});
 
     await deployer.deploy(MockPriceAggToken0);
     await deployer.deploy(MockPriceAggToken1);

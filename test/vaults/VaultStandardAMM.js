@@ -1,5 +1,4 @@
 const MockVaultStandardAMM = artifacts.require('MockVaultStandardAMM');
-const MockVaultFactoryStandardAMM = artifacts.require('MockVaultFactoryStandardAMM');
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const zeroAddress = '0x0000000000000000000000000000000000000000';
@@ -95,79 +94,6 @@ const setupContracts = async (accounts) => {
         lpPool,
     };
 }
-
-contract('VaultFactoryStandardAMM', async accounts => {
-    let factory;
-    let instance;
-    const initVal = {
-        pid: 0,
-        isHomeChain: true,
-        keyAddresses: {
-            govAddress: accounts[0],
-            zorroControllerAddress: zeroAddress,
-            zorroXChainController: zeroAddress,
-            ZORROAddress: zeroAddress,
-            zorroStakingVault: zeroAddress,
-            wantAddress: zeroAddress,
-            token0Address: zeroAddress,
-            token1Address: zeroAddress,
-            earnedAddress: zeroAddress,
-            farmContractAddress: zeroAddress,
-            rewardsAddress: zeroAddress,
-            poolAddress: zeroAddress,
-            uniRouterAddress: zeroAddress,
-            zorroLPPool: zeroAddress,
-            zorroLPPoolOtherToken: zeroAddress,
-            tokenUSDCAddress: zeroAddress,
-        },
-        earnedToZORROPath: [],
-        earnedToToken0Path: [],
-        earnedToToken1Path: [],
-        USDCToToken0Path: [],
-        USDCToToken1Path: [],
-        earnedToZORLPPoolOtherTokenPath: [],
-        earnedToUSDCPath: [],
-        fees: {
-            controllerFee: 0,
-            buyBackRate: 0,
-            revShareRate: 0,
-            entranceFeeFactor: 0,
-            withdrawFeeFactor: 0,
-        },
-        priceFeeds: {
-            token0PriceFeed: zeroAddress,
-            token1PriceFeed: zeroAddress,
-            earnTokenPriceFeed: zeroAddress,
-            ZORPriceFeed: zeroAddress,
-            lpPoolOtherTokenPriceFeed: zeroAddress,
-        },
-    };
-
-    before(async () => {
-        factory = await MockVaultFactoryStandardAMM.deployed();
-        instance = await MockVaultStandardAMM.deployed();
-    });
-
-    it('has a master vault', async () => {
-        assert.equal(await factory.masterVault.call(), instance.address);
-    });
-
-    it('creates a vault', async () => {
-        // Create vault
-        await factory.createVault(accounts[0], initVal);
-
-        // Check creation
-        assert.equal(await factory.numVaults.call(), 1);
-        assert.isNotNull(await factory.deployedVaults.call(0));
-
-        // Only owner
-        try {
-            await factory.createVault(accounts[0], initVal, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-});
 
 contract('VaultStandardAMM', async accounts => {
     let instance, router, lpPool;
