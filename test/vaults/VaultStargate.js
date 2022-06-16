@@ -106,6 +106,7 @@ contract('VaultFactoryStargate', async accounts => {
         keyAddresses: {
           govAddress: zeroAddress,
           zorroControllerAddress: zeroAddress,
+          zorroXChainController: zeroAddress,
           ZORROAddress: zeroAddress,
           zorroStakingVault: zeroAddress,
           wantAddress: zeroAddress,

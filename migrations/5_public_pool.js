@@ -6,22 +6,17 @@ const PoolPublic = artifacts.require("PoolPublic");
 const ZorroController = artifacts.require("ZorroController");
 // Token
 const Zorro = artifacts.require("Zorro");
+// Chain params
+const {homeNetworks} = require('../chains');
 
 
 module.exports = async function (deployer, network, accounts) {
   // Allowed networks
-  const allowedNetworks = [
-    'avax',
-    'ganache',
-    'ganachecli',
-    'default',
-    'development',
-    'test',
-  ];
-  if (allowedNetworks.includes(network)) {
+  if (homeNetworks.includes(network)) {
     // Get existing contracts
     const zorroToken = await Zorro.deployed();
     const zorroController = await ZorroController.deployed();
+
     // Deploy
     await deployProxy(PoolPublic, [
       zorroToken.address,

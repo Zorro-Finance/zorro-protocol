@@ -5,7 +5,7 @@ module.exports = async function (deployer, network, accounts) {
   // Allowed networks
   const allowedNetworks = [
     'avax',
-    'ganache',
+    'ganachecloud',
     'ganachecli',
     'default',
     'development',

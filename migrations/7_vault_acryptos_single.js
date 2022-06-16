@@ -2,42 +2,73 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultAcryptosSingle = artifacts.require("VaultAcryptosSingle");
+const VaultZorro = artifacts.require("VaultZorro");
 // Factory 
 const VaultFactoryAcryptosSingle = artifacts.require('VaultFactoryAcryptosSingle');
-
+// Other contracts
+const ZorroController = artifacts.require("ZorroController");
+const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
+const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
+const Zorro = artifacts.require("Zorro");
+// Get key params
+const {getKeyParams, devNets} = require('../chains');
+const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 module.exports = async function (deployer, network, accounts) {
+  // Deployed contracts
+  const vaultZorro = await VaultZorro.deployed();
+  const zorroController = await ZorroController.deployed();
+  const zorroControllerXChain = await ZorroControllerXChain.deployed();
+  const zorro = await Zorro.deployed();
+
+  // Unpack keyParams
+  const {
+    defaultStablecoin,
+    uniRouterAddress,
+    zorroLPPoolOtherToken,
+    USDCToZorroPath,
+    USDCToZorroLPPoolOtherTokenPath,
+    priceFeeds,
+    vaults,
+  } = getKeyParams(accounts, zorro.address)['bsc'];
+
+  let mockPriceAggZOR;
+
+  if (devNets.includes(network)) {
+    // Deploy Mock ZOR price feed
+    await deployer.deploy(MockPriceAggZOR);
+    mockPriceAggZOR = await MockPriceAggZOR.deployed();
+  }
+
   const deployableNetworks = [
     'bsc',
-    'ganache',
-    'ganachecli',
-    'default',
-    'development',
-    'test',
+    ...devNets,
   ];
+  // TODO: This needs to be filled out in much more detail. Started but incomplete!
+
   if (deployableNetworks.includes(network)) {
     // Init values 
     // TODO: Create for each chain
     const initVal = {
-      pid: 0,
-      isHomeChain: network === 'avax',
+      pid: vaults.pid, 
+      isHomeChain: false,
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
-        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
-        zorroXChainController: '0x0000000000000000000000000000000000000000',
-        ZORROAddress: '0x0000000000000000000000000000000000000000',
-        zorroStakingVault: '0x0000000000000000000000000000000000000000',
-        wantAddress: '0x0000000000000000000000000000000000000000',
-        token0Address: '0x0000000000000000000000000000000000000000',
-        token1Address: '0x0000000000000000000000000000000000000000',
-        earnedAddress: '0x0000000000000000000000000000000000000000',
-        farmContractAddress: '0x0000000000000000000000000000000000000000',
-        rewardsAddress: '0x0000000000000000000000000000000000000000',
-        poolAddress: '0x0000000000000000000000000000000000000000',
-        uniRouterAddress: '0x0000000000000000000000000000000000000000',
-        zorroLPPool: '0x0000000000000000000000000000000000000000',
-        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
-        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
+        zorroControllerAddress: zorroController.address,
+        zorroXChainController: zorroControllerXChain.address,
+        ZORROAddress: zorro.address,
+        zorroStakingVault: vaultZorro.address,
+        wantAddress: zeroAddress,
+        token0Address: zeroAddress,
+        token1Address: zeroAddress,
+        earnedAddress: zeroAddress,
+        farmContractAddress: zeroAddress,
+        rewardsAddress: zeroAddress,
+        poolAddress: zeroAddress,
+        uniRouterAddress,
+        zorroLPPool: zeroAddress,
+        zorroLPPoolOtherToken,
+        tokenUSDCAddress: defaultStablecoin,
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],
@@ -47,19 +78,13 @@ module.exports = async function (deployer, network, accounts) {
       BUSDToToken0Path: [],
       BUSDToZORROPath: [],
       BUSDToLPPoolOtherTokenPath: [],
-      fees: {
-        controllerFee: 0,
-        buyBackRate: 0,
-        revShareRate: 0,
-        entranceFeeFactor: 0,
-        withdrawFeeFactor: 0,
-      },
+      fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: '0x0000000000000000000000000000000000000000',
-        token1PriceFeed: '0x0000000000000000000000000000000000000000',
-        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
-        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
-        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        token0PriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        token1PriceFeed: zeroAddress,
+        earnTokenPriceFeed: zeroAddress,
+        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
       },
     };
     // Deploy master contract

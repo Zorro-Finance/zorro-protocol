@@ -113,6 +113,7 @@ contract('VaultFactoryAcryptosSingle', async accounts => {
         keyAddresses: {
           govAddress: accounts[0],
           zorroControllerAddress: zeroAddress,
+          zorroXChainController: zeroAddress,
           ZORROAddress: zeroAddress,
           zorroStakingVault: zeroAddress,
           wantAddress: zeroAddress,

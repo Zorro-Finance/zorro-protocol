@@ -1,19 +1,20 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
-const VaultStandardAMM = artifacts.require("VaultStandardAMM");
+const VaultStargate = artifacts.require("VaultStargate");
 const VaultZorro = artifacts.require("VaultZorro");
-// Other contracts
-const ZorroController = artifacts.require("ZorroController");
-const ZorroControllerXChain = artifacts.require("zorroControllerXChain");
-const Zorro = artifacts.require("Zorro");
-const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
 // Factory
-const VaultFactoryStandardAMM = artifacts.require('VaultFactoryStandardAMM');
+const VaultFactoryStargate = artifacts.require("VaultFactoryStargate");
+// Other contracts 
+const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
+const ZorroController = artifacts.require("ZorroController");
+const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
+const Zorro = artifacts.require("Zorro");
 // Get key params
-const { getKeyParams, devNets, getSynthNetwork } = require('../chains');
+const { getKeyParams, getSynthNetwork, devNets } = require('../chains');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 
+// TODO: This needs to be filled out in much more detail. Started but incomplete!
 module.exports = async function (deployer, network, accounts) {
   // Deployed contracts
   const vaultZorro = await VaultZorro.deployed();
@@ -30,6 +31,7 @@ module.exports = async function (deployer, network, accounts) {
     USDCToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
+    bridge,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
 
   let mockPriceAggZOR;
@@ -40,7 +42,7 @@ module.exports = async function (deployer, network, accounts) {
     mockPriceAggZOR = await MockPriceAggZOR.deployed();
   }
 
-  // Init values
+  // Init values 
   const initVal = {
     pid: 0,
     isHomeChain: network === 'avax',
@@ -64,9 +66,7 @@ module.exports = async function (deployer, network, accounts) {
     },
     earnedToZORROPath: [],
     earnedToToken0Path: [],
-    earnedToToken1Path: [],
     USDCToToken0Path: [],
-    USDCToToken1Path: [],
     earnedToZORLPPoolOtherTokenPath: [],
     earnedToUSDCPath: [],
     fees: vaults.fees,
@@ -77,10 +77,14 @@ module.exports = async function (deployer, network, accounts) {
       ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
       lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
     },
+    tokenSTG: bridge.tokenSTG,
+    stargateRouter: bridge.stargateRouter,
+    stargatePoolId: bridge.stargatePoolId,
   };
-  // Deploy master contract
-  const instance = await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });
 
-  // Deploy factory contract
-  deployProxy(VaultFactoryStandardAMM, [instance.address], { deployer });
+  // Deploy master contract
+  const instance = await deployProxy(VaultStargate, [accounts[0], initVal], {deployer});
+  
+  // Deploy factory
+  deployProxy(VaultFactoryStargate, [instance.address], {deployer});
 };

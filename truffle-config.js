@@ -46,10 +46,9 @@ module.exports = {
      port: 8545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
-    ganache: {
-      host: "127.0.0.1",
-      port: 7545,
-      network_id: 5777,
+    ganachecloud: {
+      url: process.env.GANACHE_CLOUD_URL,
+      network_id: 43114,
     },
     // Another network with more advanced options...
     // advanced: {

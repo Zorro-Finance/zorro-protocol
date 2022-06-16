@@ -66,6 +66,7 @@ migrations # Directory of all migrations applied (i.e. deployed contracts)
 test # Directory of all tests
 truffle-config.js # Truffle config
 package.json # NPM packages that we import from remote
+chain.js # Helper methods and constants to make populating addresses easier
 ```
 
 ## Conventions
@@ -219,7 +220,7 @@ truffle compile --all
 ## Migrating
 
 ```bash
-truffle migrate --reset --network ganachecli
+truffle migrate --network ganachecli
 ```
 
 # Tests

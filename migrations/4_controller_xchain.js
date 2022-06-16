@@ -2,48 +2,59 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Controller
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
+const ZorroController = artifacts.require("ZorroController");
+const PoolPublic = artifacts.require("PoolPublic");
 // Token
 const Zorro = artifacts.require('Zorro');
+// Get key params
+const {getKeyParams, getSynthNetwork} = require('../chains');
+const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 module.exports = async function (deployer, network, accounts) {
   // Existing contracts
-  const ZorroToken = await Zorro.deployed();
+  const zorro = await Zorro.deployed();
+  const zorroController = await ZorroController.deployed();
+
+  // Unpack keyParams
+  const {
+    defaultStablecoin,
+    uniRouterAddress,
+    zorroLPPoolOtherToken,
+    USDCToZorroPath,
+    USDCToZorroLPPoolOtherTokenPath,
+    priceFeeds,
+    bridge,
+  } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
   
   // Prep init values
   let zcxInitVal = {
-    defaultStablecoin: '0x0000000000000000000000000000000000000000',
-    ZORRO: ZorroToken.address,
-    zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
-    zorroStakingVault: '0x0000000000000000000000000000000000000000',
-    uniRouterAddress: '0x0000000000000000000000000000000000000000',
-    homeChainZorroController: '0x0000000000000000000000000000000000000000',
-    currentChainController: '0x0000000000000000000000000000000000000000',
-    publicPool: '0x0000000000000000000000000000000000000000',
+    defaultStablecoin,
+    ZORRO: zorro.address,
+    zorroLPPoolOtherToken,
+    zorroStakingVault: zeroAddress, // Will be reset in subsequent migration
+    uniRouterAddress,
+    homeChainZorroController: zorroController.address,
+    currentChainController: zorroController.address,
+    publicPool: zeroAddress, // Must be set later
     bridge: {
-      chainId: 0,
-      homeChainId: 0,
-      ZorroChainIDs: [],
-      controllerContracts: [],
-      LZChainIDs: [],
-      stargateDestPoolIds: [],
-      stargateRouter: '0x0000000000000000000000000000000000000000',
-      layerZeroEndpoint: '0x0000000000000000000000000000000000000000',
-      stargateSwapPoolId: '0x0000000000000000000000000000000000000000',
+      ...bridge,
+      ...{
+        controllerContracts: [zorroController.address],
+      },
     },
     swaps: {
-      USDCToZorroPath: [],
-      USDCToZorroLPPoolOtherTokenPath: [],
+      USDCToZorroPath,
+      USDCToZorroLPPoolOtherTokenPath,
     },
-    priceFeeds: {
-      priceFeedZOR: '0x0000000000000000000000000000000000000000',
-      priceFeedLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
-    },
+    priceFeeds,
   };
-  if (network === 'avax') {
-    // TODO: Other chains
-  }
+
   // Deploy
   await deployProxy(ZorroControllerXChain, [zcxInitVal], {deployer});
+
+  // Update ZorroController
+  const zorroControllerXChain = await ZorroControllerXChain.deployed();
+  await zorroController.setZorroXChainEndpoint(zorroControllerXChain.address);
 };
 
 // TODO: Don't forget to eventually assign timelockowner

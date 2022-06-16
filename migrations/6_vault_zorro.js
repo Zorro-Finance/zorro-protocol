@@ -2,62 +2,82 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultZorro = artifacts.require("VaultZorro");
-
+// Other contracts
+const PoolPublic = artifacts.require("PoolPublic");
+const ZorroController = artifacts.require("ZorroController");
+const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
+const Zorro = artifacts.require("Zorro");
+const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
+// Get key params
+const {getKeyParams, getSynthNetwork, devNets, homeNetworks} = require('../chains');
+const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 module.exports = async function (deployer, network, accounts) {
-  const deployableNetworks = [
-    'avax',
-    'ganache',
-    'ganachecli',
-    'default',
-    'development',
-    'test',
-  ];
-  if (deployableNetworks.includes(network)) {
+  // Deployed contracts
+  const zorroController = await ZorroController.deployed();
+  const zorroControllerXChain = await ZorroControllerXChain.deployed();
+  const poolPublic = await PoolPublic.deployed();
+  const zorro = await Zorro.deployed();
+
+  // Unpack keyParams
+  const {
+    defaultStablecoin,
+    uniRouterAddress,
+    zorroLPPoolOtherToken,
+    USDCToZorroPath,
+    USDCToZorroLPPoolOtherTokenPath,
+    priceFeeds,
+    vaults,
+  } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
+
+  let mockPriceAggZOR;
+
+  if (devNets.includes(network)) {
+    // Deploy Mock ZOR price feed
+    await deployer.deploy(MockPriceAggZOR);
+    mockPriceAggZOR = await MockPriceAggZOR.deployed();
+  }
+
+  if (homeNetworks.includes(network)) {
     // Init values 
     const initVal = {
-      pid: 0,
+      pid: vaults.pid,
       keyAddresses: {
-        govAddress: '0x0000000000000000000000000000000000000000',
-        zorroControllerAddress: '0x0000000000000000000000000000000000000000',
-        zorroXChainController: '0x0000000000000000000000000000000000000000',
-        ZORROAddress: '0x0000000000000000000000000000000000000000',
-        zorroStakingVault: '0x0000000000000000000000000000000000000000',
-        wantAddress: '0x0000000000000000000000000000000000000000',
-        token0Address: '0x0000000000000000000000000000000000000000',
-        token1Address: '0x0000000000000000000000000000000000000000',
-        earnedAddress: '0x0000000000000000000000000000000000000000',
-        farmContractAddress: '0x0000000000000000000000000000000000000000',
-        rewardsAddress: '0x0000000000000000000000000000000000000000',
-        poolAddress: '0x0000000000000000000000000000000000000000',
-        uniRouterAddress: '0x0000000000000000000000000000000000000000',
-        zorroLPPool: '0x0000000000000000000000000000000000000000',
-        zorroLPPoolOtherToken: '0x0000000000000000000000000000000000000000',
-        tokenUSDCAddress: '0x0000000000000000000000000000000000000000',
+        govAddress: accounts[0],
+        zorroControllerAddress: zorroController.address,
+        zorroXChainController: zorroControllerXChain.address,
+        ZORROAddress: zorro.address,
+        zorroStakingVault: zeroAddress, // not needed, so use Zero address
+        wantAddress: zorro.address,
+        token0Address: zorro.address,
+        token1Address: zeroAddress, // not needed; use zero address
+        earnedAddress: zeroAddress, // not needed; use zero address
+        farmContractAddress: zeroAddress, // not needed; use zero address
+        rewardsAddress: zeroAddress, // not needed; use zero address
+        poolAddress: zeroAddress, // not needed; use zero address
+        uniRouterAddress,
+        zorroLPPool: zeroAddress, // needs to be filled in with appropriate value later!
+        zorroLPPoolOtherToken,
+        tokenUSDCAddress: defaultStablecoin,
       },
-      USDCToToken0Path: [],
-      fees: {
-        controllerFee: 0,
-        buyBackRate: 0,
-        revShareRate: 0,
-        entranceFeeFactor: 0,
-        withdrawFeeFactor: 0,
-      },
+      USDCToToken0Path: USDCToZorroPath,
+      fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: '0x0000000000000000000000000000000000000000',
-        token1PriceFeed: '0x0000000000000000000000000000000000000000',
-        earnTokenPriceFeed: '0x0000000000000000000000000000000000000000',
-        ZORPriceFeed: '0x0000000000000000000000000000000000000000',
-        lpPoolOtherTokenPriceFeed: '0x0000000000000000000000000000000000000000',
+        token0PriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        token1PriceFeed: zeroAddress,
+        earnTokenPriceFeed: zeroAddress,
+        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
       },
     };
     // Deploy
     // TODO: For this and all ownable contracts, make sure to set an account that we can always have access to. 
     // https://ethereum.stackexchange.com/questions/17441/how-to-choose-an-account-to-deploy-a-contract-in-truffle 
-    const instance = await deployProxy(VaultZorro, [accounts[0], initVal], {deployer});
-    const owner = await instance.owner.call();
-    console.log('owner: ', owner);
-    // console.log('current owner: ', instance.owner.call());
+    await deployProxy(VaultZorro, [accounts[0], initVal], {deployer});
+
+    // Update ZorroController
+    const vaultZorro = await VaultZorro.deployed();
+    await zorroController.setZorroContracts(poolPublic.address, vaultZorro.address);
   } else {
     console.log('Not home chain. Skipping Zorro Single Staking Vault creation');
   }
