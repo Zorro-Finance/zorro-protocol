@@ -62,6 +62,22 @@ module.exports = async function (deployer, network, accounts) {
       },
     };
   }
+
+  zcInitVal = {
+    ZORRO: zorro.address,
+    defaultStablecoin,
+    zorroLPPoolOtherToken,
+    publicPool: zeroAdress,
+    zorroStakingVault: zeroAdress,
+    zorroLPPool,
+    uniRouterAddress,
+    USDCToZorroPath,
+    USDCToZorroLPPoolOtherTokenPath,
+    rewards,
+    xChain,
+    priceFeeds,
+  };
+
   
   // Deploy
   await deployProxy(ZorroController, [zcInitVal], {deployer});

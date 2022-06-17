@@ -181,6 +181,7 @@ module.exports = async function (deployer, network, accounts) {
     const initVal1 = {
       pid: 0,
       isHomeChain: true,
+      isFarmable: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
@@ -228,6 +229,7 @@ module.exports = async function (deployer, network, accounts) {
     const initVal2 = {
       pid: 0,
       isHomeChain: true,
+      isFarmable: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',
@@ -274,6 +276,7 @@ module.exports = async function (deployer, network, accounts) {
     const initVal3 = {
       pid: 0,
       isHomeChain: true,
+      isFarmable: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: '0x0000000000000000000000000000000000000000',

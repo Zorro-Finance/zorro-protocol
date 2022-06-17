@@ -692,8 +692,5 @@ contract('VaultStandardAMM', async accounts => {
         // Assert: called unfarm() func
         assert.isTrue(web3.utils.toBN(unfarmed.topics[1]).eq(await instance.pid.call()));
         assert.isTrue(web3.utils.toBN(unfarmed.topics[2]).eq(wantAmt));
-
-        // Assert wantLockedTotal updated
-        assert.isTrue((await instance.wantLockedTotal.call()).isZero());
     });
 });

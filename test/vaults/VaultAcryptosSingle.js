@@ -523,9 +523,6 @@ contract('VaultAcryptosSingle', async accounts => {
 
         // Assert: called unfarm() func
         assert.isTrue(web3.utils.toBN(unfarmed.topics[2]).eq(wantAmt));
-
-        // Assert wantLockedTotal updated
-        assert.isTrue((await instance.wantLockedTotal.call()).isZero());
     });
 
 });

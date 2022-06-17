@@ -41,6 +41,7 @@ contract VaultStargate is VaultBase {
         // Vault config
         pid = _initValue.pid;
         isHomeChain = _initValue.isHomeChain;
+        isFarmable = _initValue.isFarmable;
 
         // Addresses
         govAddress = _initValue.keyAddresses.govAddress;
@@ -105,6 +106,7 @@ contract VaultStargate is VaultBase {
     struct VaultStargateInit {
         uint256 pid;
         bool isHomeChain;
+        bool isFarmable;
         VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
@@ -175,8 +177,12 @@ contract VaultStargate is VaultBase {
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
 
-        // Farm Want token
-        _farm();
+        // Farm the want token if applicable. Otherwise increment want locked
+        if (isFarmable) {
+            _farm();
+        } else {
+            wantLockedTotal = wantLockedTotal.add(_wantAmt);
+        }
 
         return sharesAdded;
     }
@@ -257,6 +263,8 @@ contract VaultStargate is VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal virtual {
+        require(isFarmable, "!farmable");
+
         // Get the Want token stored on this contract
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
@@ -278,31 +286,12 @@ contract VaultStargate is VaultBase {
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    /// @return wantUnfarmed The net amount of Want tokens unfarmed
-    function _unfarm(uint256 _wantAmt) internal returns (uint256 wantUnfarmed) {
+    function _unfarm(uint256 _wantAmt) internal {
         // Withdraw the Want tokens from the Farm contract
         IStargateLPStaking(farmContractAddress).withdraw(
             stargatePoolId,
             _wantAmt
         );
-
-        // Init
-        wantUnfarmed = _wantAmt;
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (wantUnfarmed > _wantBal) {
-            wantUnfarmed = _wantBal;
-        }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            wantUnfarmed = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(wantUnfarmed);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -337,13 +326,30 @@ contract VaultStargate is VaultBase {
             );
         }
 
-        // Unfarm Want token
-        uint256 _wantUnfarmed = _unfarm(_wantAmt);
+        // Unfarm Want token if applicable
+        if (isFarmable) {
+            _unfarm(_wantAmt);
+        }
+
+        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
+        }
+        // Safety: cap _wantAmt at the total quantity of Want tokens locked
+        if (wantLockedTotal < _wantAmt) {
+            _wantAmt = wantLockedTotal;
+        }
+
+        // Decrement the total Want locked tokens by the _wantAmt
+        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
-            _wantUnfarmed
+            _wantAmt
         );
     }
 
@@ -433,6 +439,8 @@ contract VaultStargate is VaultBase {
         nonReentrant
         whenNotPaused
     {
+        require(isFarmable, "!farmable for earn");
+        
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

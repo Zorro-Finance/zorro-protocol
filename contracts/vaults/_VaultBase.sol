@@ -62,6 +62,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     // Vault characteristics
     bool public isHomeChain; // Whether this is deployed on the home chain
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
+    bool public isFarmable; // If true, will farm tokens and autocompound earnings. If false, will stake the token only
     // Governance
     address public govAddress; // Timelock controller contract
     bool public onlyGov; // Enforce gov only access on certain functions
@@ -194,6 +195,10 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     function setPid(uint256 _pid) public onlyOwner {
         pid = _pid;
+    }
+
+    function setIsFarmable(bool _isFarmable) public onlyOwner {
+        isFarmable = _isFarmable;
     }
 
     function setFarmContractAddress(address _farmContractAddress)
