@@ -697,3 +697,5 @@ contract VaultStandardAMM is VaultBase {
         );
     }
 }
+
+contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {}
