@@ -141,10 +141,9 @@ contract VaultStargate is VaultBase {
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
-    /// @param _account address of user that this deposit is intended for
     /// @param _wantAmt amount of Want token to deposit/stake
     /// @return uint256 Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    function depositWantToken(uint256 _wantAmt)
         public
         virtual
         override
@@ -295,10 +294,9 @@ contract VaultStargate is VaultBase {
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _account The address of the owner of vault investment
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return sharesRemoved The number of shares removed
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         virtual
         override

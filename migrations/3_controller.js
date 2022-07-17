@@ -5,7 +5,7 @@ const ZorroController = artifacts.require("ZorroController");
 // Token
 const Zorro = artifacts.require('Zorro');
 // Other contracts
-const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
+const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
 // Get key params
 const {getKeyParams, getSynthNetwork, homeNetworks, devNets} = require('../chains');
 const zeroAdress = '0x0000000000000000000000000000000000000000';
@@ -27,13 +27,13 @@ module.exports = async function (deployer, network, accounts) {
     zorroLPPool,
   } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
 
-  let mockPriceAggZOR;
+  let mockPriceAggZORLP;
   
   if (devNets.includes(network)) {
     // Deploy Mock ZOR price feed if necessary
-    if (!MockPriceAggZOR.hasNetwork(network)) {
-      await deployer.deploy(MockPriceAggZOR);
-      mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    if (!MockPriceAggZORLP.hasNetwork(network)) {
+      await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
+      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
   }
 
@@ -57,7 +57,7 @@ module.exports = async function (deployer, network, accounts) {
       priceFeeds: {
         ...priceFeeds,
         ...{
-          priceFeedZOR: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+          priceFeedZOR: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         },
       },
     };

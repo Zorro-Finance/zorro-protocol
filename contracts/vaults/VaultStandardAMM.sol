@@ -124,10 +124,9 @@ contract VaultStandardAMM is VaultBase {
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
-    /// @param _account The address of the end user account making the deposit
     /// @param _wantAmt The amount of Want token to deposit (must already be transferred)
     /// @return sharesAdded Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    function depositWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -267,10 +266,9 @@ contract VaultStandardAMM is VaultBase {
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _account Address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return sharesRemoved The number of shares removed
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController

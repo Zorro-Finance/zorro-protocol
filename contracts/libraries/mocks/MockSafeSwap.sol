@@ -47,6 +47,7 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
 
     address public burnAddress;
     address public poolAddress;
+    uint256 private _dummy; // Used to satisfy state mutability compiler warnings on Mock contracts
 
     function setBurnAddress(address _burnAddress) public {
         burnAddress = _burnAddress;
@@ -95,6 +96,9 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
             uint256 liquidity
         )
     {
+        // Requirements
+        require(amountAMin >= 0 && amountBMin >= 0 && deadline > 0);
+
         // Vars
         amountA = amountADesired;
         amountB = amountBDesired;
@@ -144,6 +148,9 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address to,
         uint256 deadline
     ) external returns (uint256 amountA, uint256 amountB) {
+        // Requirements
+        require(deadline > 0);
+
         // Vars
         amountA = amountAMin;
         amountB = amountBMin;
@@ -223,6 +230,9 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         address to,
         uint256 deadline
     ) internal returns (uint256[] memory amounts) {
+        // Reqs
+        require(deadline > 0);
+
         // Vars
         address _tokenIn = path[0];
         address _tokenOut = path[path.length - 1];
@@ -295,6 +305,9 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         uint256 reserveIn,
         uint256 reserveOut
     ) external pure returns (uint256 amountOut) {
+        // Reqs
+        require(reserveIn >= 0 && reserveOut >= 0);
+
         return amountIn;
     }
 
@@ -309,6 +322,9 @@ contract MockAMMRouter02 is IAMMRouter02, MockERC20Upgradeable {
         view
         returns (uint256[] memory amounts)
     {
+        // Reqs, satisfy compiler state mutability errors
+        require(path.length > 0 && _dummy >= 0);
+
         uint256[] memory _amounts = new uint256[](1);
         _amounts[0] = amountIn;
         return _amounts;
@@ -404,6 +420,7 @@ contract MockBalancerVault is IBalancerVault {
 
     mapping(address => uint256) internal _cash;
     address public burnAddress;
+    uint256 private _dummy; // For compiler state mutability satisfaction
 
     function setCash(address _token, uint256 _amount) public {
         _cash[_token] = _amount;
@@ -419,6 +436,9 @@ contract MockBalancerVault is IBalancerVault {
         uint256 limit,
         uint256 deadline
     ) external payable returns (uint256 amountCalculated) {
+        // Reqs
+        require(deadline > 0);
+
         // Burn token IN
         IERC20Upgradeable(address(singleSwap.assetIn)).safeTransferFrom(
             msg.sender,
@@ -448,6 +468,11 @@ contract MockBalancerVault is IBalancerVault {
             address assetManager
         )
     {
+        // Reqs
+        require(abi.encode(poolId).length >= 0); // Satisfy unused variable warning
+        require(managed >= 0 && blockNumber > 0 && assetManager != address(0));
+        _dummy = 0;
+
         cash = _cash[address(token)];
     }
 

@@ -79,6 +79,11 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         bytes memory _originAccount,
         address _destAccount
     ) internal override {
+        // Requirements
+        require(_weeksCommitted >= 0);
+        require(_vaultEnteredAt >= 0);
+        require(_maxMarketMovement > 0);
+        require(_originAccount.length >= 0);
         // TODO: Consider making this an actual event like for repatriation, instead of one just for test
         emit ReceiveXChainDepositReq(_pid, _valueUSDC, _destAccount);
     }
@@ -106,6 +111,11 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         bytes memory _originRecipient,
         uint256 _rewardsDue
     ) internal override {
+        // Requirements
+        require(_pid >= 0);
+        require(_trancheId >= 0);
+        require(_originRecipient.length >= 0);
+
         emit ReceiveXChainRepatriationReq(
             _originChainId,
             _rewardsDue
@@ -135,6 +145,10 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal override {
+        // Requirements
+        require(_remoteChainId >= 0);
+        require(_maxMarketMovement > 0);
+
         emit ReceiveXChainDistributionReq(
             _amountUSDCBuyback,
             _amountUSDCRevShare,
@@ -165,6 +179,10 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) internal override {
+        // Requirements
+        require(_originAccount.length >= 0);
+        require(_maxMarketMovement > 0);
+
         emit ReceiveXChainWithdrawalReq(_originChainId, _pid, _trancheId);
     }
 
@@ -269,6 +287,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
     event SentMessage(uint16 indexed _dstChainId, uint256 indexed msgValue);
 
+    uint256 private _dummy; // For compiler satisfaction of state mutability
+
     function send(
         uint16 _dstChainId,
         bytes calldata _destination,
@@ -277,6 +297,13 @@ contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
         address _zroPaymentAddress,
         bytes calldata _adapterParams
     ) external payable {
+        // Requirements
+        require(_destination.length >= 0);
+        require(_payload.length >= 0);
+        require(_refundAddress != address(0));
+        require(_zroPaymentAddress != address(0));
+        require(_adapterParams.length >= 0);
+
         emit SentMessage(_dstChainId, msg.value);
     }
 
@@ -308,6 +335,14 @@ contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
         bool _payInZRO,
         bytes calldata _adapterParam
     ) external view returns (uint256 nativeFee, uint256 zroFee) {
+        // Requirements (to satisfy compiler warnings for unused variables)
+        require(_dstChainId >= 0);
+        require(_userApplication != address(0));
+        require(_payload.length >= 0);
+        require(_payInZRO || !_payInZRO); 
+        require(_adapterParam.length >= 0);
+        require(_dummy >= 0);
+
         return (0.1 ether, 0);
     }
 

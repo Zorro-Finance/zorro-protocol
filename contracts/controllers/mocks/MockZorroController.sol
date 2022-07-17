@@ -89,7 +89,7 @@ contract MockInvestmentVault is VaultBase {
         uint256 indexed _amountUSDC
     );
 
-    function depositWantToken(address _account, uint256 _wantAmt)
+    function depositWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -116,6 +116,8 @@ contract MockInvestmentVault is VaultBase {
         uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
+        require(_maxMarketMovementAllowed > 0, "slippage cannot be infinite");
+
         IERC20Upgradeable(tokenUSDCAddress).safeTransfer(
             burnAddress,
             _amountUSDC
@@ -128,7 +130,7 @@ contract MockInvestmentVault is VaultBase {
         return _amountUSDC;
     }
 
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -141,6 +143,8 @@ contract MockInvestmentVault is VaultBase {
         wantLockedTotal = wantLockedTotal.sub(_wantAmt);
 
         MockERC20Upgradeable(wantAddress).mint(msg.sender, _wantAmt);
+
+        sharesRemoved = 0;
 
         emit WithdrewWant(_wantAmt);
     }
@@ -156,6 +160,8 @@ contract MockInvestmentVault is VaultBase {
         whenNotPaused
         returns (uint256)
     {
+        // Requirements
+        require(_maxMarketMovementAllowed > 0, "cannot have infinite slippage");
         // Assume 1:1 exch rate
         MockERC20Upgradeable(tokenUSDCAddress).mint(msg.sender, _amount);
 

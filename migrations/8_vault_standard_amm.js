@@ -8,7 +8,7 @@ const VaultZorro = artifacts.require("VaultZorro");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("zorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
-const MockPriceAggZOR = artifacts.require("MockPriceAggZOR");
+const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
 const IUniswapV2Factory = artifacts.require("IUniswapV2Factory");
 // Get key params
 const { getKeyParams, devNets, getSynthNetwork } = require('../chains');
@@ -32,13 +32,13 @@ module.exports = async function (deployer, network, accounts) {
     vaults,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
   
-  let mockPriceAggZOR;
+  let mockPriceAggZORLP;
   
   if (devNets.includes(network)) {
     // Deploy Mock ZOR price feed if necessary
-    if (!MockPriceAggZOR.hasNetwork(network)) {
-      await deployer.deploy(MockPriceAggZOR);
-      mockPriceAggZOR = await MockPriceAggZOR.deployed();
+    if (!MockPriceAggZORLP.hasNetwork(network)) {
+      await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
+      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
   }
   
@@ -59,6 +59,7 @@ module.exports = async function (deployer, network, accounts) {
     initVal = {
       pid: 0,
       isHomeChain: true,
+      isFarmable: false,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,
@@ -86,10 +87,10 @@ module.exports = async function (deployer, network, accounts) {
       earnedToUSDCPath: [tokenJoe, defaultStablecoin],
       fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
-        token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+        token1PriceFeed: '0x0A77230d17318075983913bC2145DB16C7366156',
+        earnTokenPriceFeed: '0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a',
+        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
       },
     };
@@ -98,6 +99,7 @@ module.exports = async function (deployer, network, accounts) {
     initVal = {
       pid: 0,
       isHomeChain: devNets.includes(network),
+      isFarmable: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,

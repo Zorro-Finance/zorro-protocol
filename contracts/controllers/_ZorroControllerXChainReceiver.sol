@@ -50,6 +50,7 @@ contract ZorroControllerXChainReceiver is
         bytes memory payload
     ) public override onlyRegXChainController(_chainId, _srcAddress) {
         // Checks / authorization
+        require(_nonce >= 0);
         // Amounts
         uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
         require(amountLD <= _tokenBal, "amountLD exceeds bal");
@@ -137,6 +138,8 @@ contract ZorroControllerXChainReceiver is
         uint64 _nonce,
         bytes calldata _payload
     ) external override onlyRegXChainController(_srcChainId, _srcAddress) {
+        // Check requirements
+        require(_nonce >= 0);
         // Determine function based on signature
         // Get func signature
         bytes4 _funcSig = bytes4(_payload);

@@ -214,7 +214,6 @@ contract ZorroControllerInvestment is
 
         // Perform the actual deposit function on the underlying Vault contract and get the number of shares to add
         uint256 sharesAdded = IVault(poolInfo[_pid].vault).depositWantToken(
-            _localAccount,
             _wantAmt
         );
 
@@ -247,7 +246,6 @@ contract ZorroControllerInvestment is
         emit Deposit(_localAccount, _foreignAccount, _pid, _wantAmt);
     }
 
-    // TODO: test
     function _getLocalAccount(address _account, bytes memory _foreignAccount)
         private
         pure
@@ -474,7 +472,6 @@ contract ZorroControllerInvestment is
         bool _harvestOnly,
         bool _xChainRepatriation
     ) internal returns (WithdrawalResult memory _res) {
-        // TODO: Consider making WithdrwalResult an event instead?
         // Can only specify one account (on-chain/foreign, but not both)
         require(
             (_localAccount == address(0) && _foreignAccount.length > 0) ||
@@ -577,7 +574,6 @@ contract ZorroControllerInvestment is
 
             // Withdraw the want token for this account
             IVault(poolInfo[_pid].vault).withdrawWantToken(
-                _resolvedLocalAcct,
                 _getOrigSharesDeposited(_tranche.contribution, _tranche.timeMultiplier)
             );
 

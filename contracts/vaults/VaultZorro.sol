@@ -73,8 +73,8 @@ contract VaultZorro is VaultBase {
 
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return uiint256 Number of shares added
-    function depositWantToken(address _account, uint256 _wantAmt)
+    /// @return uint256 Number of shares added
+    function depositWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController
@@ -159,14 +159,12 @@ contract VaultZorro is VaultBase {
     function farm() public nonReentrant {}
 
     /// @notice Withdraw Want tokens from the Farm contract
-    /// @param _account address of user
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return uint256 the number of shares removed
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         override
         onlyZorroController
-        onlyOwner
         nonReentrant
         returns (uint256)
     {
@@ -236,7 +234,7 @@ contract VaultZorro is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
             _token0ExchangeRate,
-            1e12,
+            1e12, // TODO: Use Oracle here - don't assume 1:1 peg
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender,
@@ -254,6 +252,9 @@ contract VaultZorro is VaultBase {
         nonReentrant
         whenNotPaused
     {
+        // Reqs
+        require(_maxMarketMovementAllowed >= 0); // Satisfy compiler warnings of unused var
+
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

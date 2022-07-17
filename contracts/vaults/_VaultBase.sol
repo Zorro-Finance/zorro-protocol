@@ -512,13 +512,13 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         uint256 _maxMarketMovementAllowed
     ) public virtual returns (uint256);
 
-    function depositWantToken(address _account, uint256 _wantAmt)
+    function depositWantToken(uint256 _wantAmt)
         public
         virtual
         returns (uint256);
 
     // Withdrawals
-    function withdrawWantToken(address _account, uint256 _wantAmt)
+    function withdrawWantToken(uint256 _wantAmt)
         public
         virtual
         returns (uint256);

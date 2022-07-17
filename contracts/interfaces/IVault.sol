@@ -18,13 +18,11 @@ interface IVault {
     ) external returns (uint256);
 
     function depositWantToken(
-        address _account,
         uint256 _wantAmt
     ) external returns (uint256);
 
     // Withdrawals
     function withdrawWantToken(
-        address _account,
         uint256 _wantAmt
     ) external returns (uint256);
 
