@@ -128,10 +128,10 @@ module.exports = async function (deployer, network, accounts) {
       earnedToUSDCPath: [],
       fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         token1PriceFeed: zeroAddress,
         earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
+        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
         stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
       },
