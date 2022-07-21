@@ -28,6 +28,7 @@ module.exports = async function (deployer, network, accounts) {
     USDCToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
+    tokenBUSDPriceFeed,
   } = getKeyParams(accounts, zorro.address)['bsc'];
 
   let mockPriceAggZORLP;
@@ -85,7 +86,9 @@ module.exports = async function (deployer, network, accounts) {
         earnTokenPriceFeed: zeroAddress,
         ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
+        stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
       },
+      tokenBUSDPriceFeed,
     };
     // Deploy master contract
     await deployProxy(VaultAcryptosSingle, [accounts[0], initVal], {deployer});

@@ -76,6 +76,7 @@ module.exports = async function (deployer, network, accounts) {
       earnTokenPriceFeed: zeroAddress,
       ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
       lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
+      stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
     },
     tokenSTG: bridge.tokenSTG,
     stargateRouter: bridge.stargateRouter,

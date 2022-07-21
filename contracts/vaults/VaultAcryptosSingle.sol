@@ -512,19 +512,15 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Get exchange rate from price feed
-        uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _stablecoinExchangeRate = stablecoinPriceFeed.getExchangeRate();
         uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
 
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
-            earn: _earnTokenExchangeRate,
-            ZOR: _ZORExchangeRate,
-            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate,
-            stablecoin: _stablecoinExchangeRate
+            earn: earnTokenPriceFeed.getExchangeRate(),
+            ZOR: ZORPriceFeed.getExchangeRate(),
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+            stablecoin: stablecoinPriceFeed.getExchangeRate()
         });
 
         // Distribute fees
@@ -549,7 +545,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _earnedAmtNet,
-                priceToken0: _earnTokenExchangeRate,
+                priceToken0: _rates.earn,
                 priceToken1: _tokenBUSDExchangeRate,
                 token0: earnedAddress,
                 token1: tokenBUSD,
@@ -606,62 +602,65 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
-        // Get exchange rate
-        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+        // Self contained block to limit stack depth
+        {
+            // Get exchange rate
+            uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
 
-        // 1. Swap Earned -> BUSD
-        address[] memory _dummyEarnedToBUSDPath;
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _tokenBUSDExchangeRate,
-                token0: earnedAddress,
-                token1: tokenBUSD,
-                token0Weight: balancerACSWeightBasisPoints,
-                token1Weight: balancerBUSDWeightBasisPoints,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _dummyEarnedToBUSDPath,
-                destination: address(this)
-            })
-        );
+            // 1. Swap Earned -> BUSD
+            address[] memory _dummyEarnedToBUSDPath;
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _amount,
+                    priceToken0: _rates.earn,
+                    priceToken1: _tokenBUSDExchangeRate,
+                    token0: earnedAddress,
+                    token1: tokenBUSD,
+                    token0Weight: balancerACSWeightBasisPoints,
+                    token1Weight: balancerBUSDWeightBasisPoints,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _dummyEarnedToBUSDPath,
+                    destination: address(this)
+                })
+            );
 
-        // Get BUSD bal
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
-            address(this)
-        );
+            // Get BUSD bal
+            uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
+                address(this)
+            );
 
-        // 2. Swap 1/2 BUSD -> ZOR
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _balBUSD.div(2),
-                priceToken0: _tokenBUSDExchangeRate,
-                priceToken1: _rates.ZOR,
-                token0: tokenBUSD,
-                token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: BUSDToZORROPath,
-                destination: address(this)
-            })
-        );
+            // 2. Swap 1/2 BUSD -> ZOR
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _balBUSD.div(2),
+                    priceToken0: _tokenBUSDExchangeRate,
+                    priceToken1: _rates.ZOR,
+                    token0: tokenBUSD,
+                    token1: ZORROAddress,
+                    token0Weight: 0,
+                    token1Weight: 0,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: BUSDToZORROPath,
+                    destination: address(this)
+                })
+            );
 
-        // 3. Swap 1/2 BUSD -> LP "other token"
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _balBUSD.div(2),
-                priceToken0: _tokenBUSDExchangeRate,
-                priceToken1: _rates.lpPoolOtherToken,
-                token0: tokenBUSD,
-                token1: zorroLPPoolOtherToken,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: BUSDToLPPoolOtherTokenPath,
-                destination: address(this)
-            })
-        );
+            // 3. Swap 1/2 BUSD -> LP "other token"
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _balBUSD.div(2),
+                    priceToken0: _tokenBUSDExchangeRate,
+                    priceToken1: _rates.lpPoolOtherToken,
+                    token0: tokenBUSD,
+                    token1: zorroLPPoolOtherToken,
+                    token0Weight: 0,
+                    token1Weight: 0,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: BUSDToLPPoolOtherTokenPath,
+                    destination: address(this)
+                })
+            );
+        }
 
         // Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(

@@ -92,6 +92,7 @@ module.exports = async function (deployer, network, accounts) {
         earnTokenPriceFeed: '0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a',
         ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
+        stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
       },
     };
     await deployProxy(TraderJoe_ZOR_WAVAX, [accounts[0], initVal], { deployer });
@@ -132,6 +133,7 @@ module.exports = async function (deployer, network, accounts) {
         earnTokenPriceFeed: zeroAddress,
         ZORPriceFeed: devNets.includes(network) ? mockPriceAggZOR.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
+        stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
       },
     };
     await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });

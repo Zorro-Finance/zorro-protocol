@@ -458,18 +458,14 @@ contract VaultStargate is VaultBase {
         );
 
         // Get exchange rate from price feed
-        uint256 _earnTokenExchangeRate = earnTokenPriceFeed.getExchangeRate();
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
-            earn: _earnTokenExchangeRate,
-            ZOR: _ZORExchangeRate,
-            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate,
-            stablecoin: _tokenUSDCExchangeRate
+            earn: earnTokenPriceFeed.getExchangeRate(),
+            ZOR: ZORPriceFeed.getExchangeRate(),
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+            stablecoin: stablecoinPriceFeed.getExchangeRate()
         });
 
         // Distribute fees
@@ -497,7 +493,7 @@ contract VaultStargate is VaultBase {
         // Swap Earn token for single asset token (STG -> token0)
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmtNet,
-            _earnTokenExchangeRate,
+            _rates.earn,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,
             earnedToToken0Path,
