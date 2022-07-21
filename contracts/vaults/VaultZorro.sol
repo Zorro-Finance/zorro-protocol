@@ -54,6 +54,9 @@ contract VaultZorro is VaultBase {
         token0PriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.token0PriceFeed
         );
+        stablecoinPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -128,6 +131,7 @@ contract VaultZorro is VaultBase {
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Increase allowance
         IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
@@ -138,7 +142,7 @@ contract VaultZorro is VaultBase {
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
-            1e12,
+            _tokenUSDCExchangeRate,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
@@ -226,6 +230,7 @@ contract VaultZorro is VaultBase {
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Increase allowance
         IERC20Upgradeable(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
@@ -234,7 +239,7 @@ contract VaultZorro is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
             _token0ExchangeRate,
-            1e12, // TODO: Use Oracle here - don't assume 1:1 peg
+            _tokenUSDCExchangeRate,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender,

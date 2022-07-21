@@ -266,7 +266,6 @@ contract ZorroControllerInvestment is
         }
     }
 
-    // TODO: test, and docstrings need to be updated
     /// @notice Internal function for updating tranche ledger upon deposit
     /// @param _pid Index of pool
     /// @param _localAccount On-chain address

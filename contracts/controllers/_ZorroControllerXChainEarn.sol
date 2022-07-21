@@ -332,7 +332,7 @@ contract ZorroControllerXChainEarn is
         // Swap to counterparty token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            1e12,
+            1e12, // TODO: Chainlink
             _exchangeRateLPPoolOtherToken,
             _maxMarketMovement,
             USDCToZorroLPPoolOtherTokenPath,
@@ -383,7 +383,7 @@ contract ZorroControllerXChainEarn is
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
-            1e12,
+            1e12, // TODO
             _ZORROExchangeRate,
             _maxMarketMovement,
             USDCToZorroPath,

@@ -98,6 +98,9 @@ contract VaultStandardAMM is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+        stablecoinPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -183,6 +186,7 @@ contract VaultStandardAMM is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Increase allowance
         IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
@@ -193,7 +197,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            1e12,
+            _tokenUSDCExchangeRate,
             _token0ExchangeRate,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
@@ -204,7 +208,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap USDC for token1 (if applicable)
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            1e12,
+            _tokenUSDCExchangeRate,
             _token1ExchangeRate,
             _maxMarketMovementAllowed,
             USDCToToken1Path,
@@ -350,6 +354,7 @@ contract VaultStandardAMM is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // revert("pre exit pool");
 
@@ -378,7 +383,7 @@ contract VaultStandardAMM is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             token0Amt,
             _token0ExchangeRate,
-            1e12,
+            _tokenUSDCExchangeRate,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
             msg.sender,
@@ -389,7 +394,7 @@ contract VaultStandardAMM is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             token1Amt,
             _token1ExchangeRate,
-            1e12,
+            _tokenUSDCExchangeRate,
             _maxMarketMovementAllowed,
             token1ToUSDCPath,
             msg.sender,
@@ -494,7 +499,8 @@ contract VaultStandardAMM is VaultBase {
         ExchangeRates memory _rates = ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),
             ZOR: ZORPriceFeed.getExchangeRate(),
-            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate()
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+            stablecoin: stablecoinPriceFeed.getExchangeRate()
         });
 
         // Distribute fees
@@ -694,7 +700,7 @@ contract VaultStandardAMM is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,
             _rates.earn,
-            1e12,
+            _rates.stablecoin,
             _maxMarketMovementAllowed,
             earnedToUSDCPath,
             _destination,

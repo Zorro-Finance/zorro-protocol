@@ -119,6 +119,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     AggregatorV3Interface public earnTokenPriceFeed; // Price feed of Earn token
     AggregatorV3Interface public lpPoolOtherTokenPriceFeed; // Price feed of token that is NOT ZOR in liquidity pool
     AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
+    AggregatorV3Interface public stablecoinPriceFeed; // Price feed of stablecoin token (e.g. USDC)
 
     /* Structs */
 
@@ -155,12 +156,14 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         address earnTokenPriceFeed;
         address ZORPriceFeed;
         address lpPoolOtherTokenPriceFeed;
+        address stablecoinPriceFeed;
     }
 
     struct ExchangeRates {
         uint256 earn; // Exchange rate of earn token, times 1e12
         uint256 ZOR; // Exchange rate of ZOR token, times 1e12
-        uint256 lpPoolOtherToken; // Exchange rate of token paired with ZOR in LP pool
+        uint256 lpPoolOtherToken; // Exchange rate of token paired with ZOR in LP pool, times 1e12
+        uint256 stablecoin; // Exchange rate of stablecoin (e.g. USDC), times 1e12
     }
 
     /* Events */
@@ -285,6 +288,8 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
             ZORPriceFeed = AggregatorV3Interface(_priceFeed);
         } else if (_idx == 4) {
             lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_priceFeed);
+        } else if (_idx == 5) {
+            stablecoinPriceFeed = AggregatorV3Interface(_priceFeed);
         } else {
             revert("unsupported feed idx");
         }

@@ -96,6 +96,9 @@ contract VaultStargate is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+        stablecoinPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -204,6 +207,7 @@ contract VaultStargate is VaultBase {
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         if (tokenUSDCAddress != token0Address) {
             // Only perform swaps if the token is not USDC
@@ -217,7 +221,7 @@ contract VaultStargate is VaultBase {
             // Single asset. Swap from USDC directly to Token0
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountUSDC,
-                1e12,
+                _tokenUSDCExchangeRate,
                 _token0ExchangeRate,
                 _maxMarketMovementAllowed,
                 USDCToToken0Path,
@@ -396,6 +400,7 @@ contract VaultStargate is VaultBase {
 
             // Use price feed to determine exchange rates
             uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+            uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
             // Swap Token0 for USDC
 
@@ -409,7 +414,7 @@ contract VaultStargate is VaultBase {
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _token0Bal,
                 _token0ExchangeRate,
-                1e12,
+                _tokenUSDCExchangeRate,
                 _maxMarketMovementAllowed,
                 token0ToUSDCPath,
                 msg.sender,
@@ -457,11 +462,14 @@ contract VaultStargate is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
         uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
             earn: _earnTokenExchangeRate,
             ZOR: _ZORExchangeRate,
-            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
+            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate,
+            stablecoin: _tokenUSDCExchangeRate
         });
 
         // Distribute fees
@@ -632,7 +640,7 @@ contract VaultStargate is VaultBase {
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,
             _rates.earn,
-            1e12,
+            _rates.stablecoin,
             _maxMarketMovementAllowed,
             earnedToUSDCPath,
             _destination,

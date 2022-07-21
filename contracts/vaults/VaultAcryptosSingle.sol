@@ -100,6 +100,12 @@ contract VaultAcryptosSingle is VaultBase {
         ZORPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.ZORPriceFeed
         );
+        stablecoinPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
+        tokenBUSDPriceFeed = AggregatorV3Interface(
+            _initValue.tokenBUSDPriceFeed
+        );
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -122,6 +128,7 @@ contract VaultAcryptosSingle is VaultBase {
         address[] BUSDToLPPoolOtherTokenPath;
         VaultFees fees;
         VaultPriceFeeds priceFeeds;
+        address tokenBUSDPriceFeed;
     }
 
     /* State */
@@ -135,6 +142,7 @@ contract VaultAcryptosSingle is VaultBase {
     address public tokenACS;
     bytes32 public balancerPool; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
     address public balancerVaultAddress; // Address of Balancer/ACSI.finance Vault for swaps etc.
+    AggregatorV3Interface public tokenBUSDPriceFeed; // BUSD Chainlink price feed
 
     /* Setters */
 
@@ -175,6 +183,11 @@ contract VaultAcryptosSingle is VaultBase {
 
     function setBalancerVaultAddress(address _vault) external onlyOwner {
         balancerVaultAddress = _vault;
+    }
+
+    // TODO: Write test for this one
+    function setTokenBUSDPriceFeed(address _priceFeed) external onlyOwner {
+        tokenBUSDPriceFeed = AggregatorV3Interface(_priceFeed);
     }
 
     /* Investment Actions */
@@ -239,6 +252,7 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Swap USDC for tokens
         // Increase allowance
@@ -250,7 +264,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _amountUSDC,
-                priceToken0: 1e12,
+                priceToken0: _tokenUSDCExchangeRate,
                 priceToken1: _token0ExchangeRate,
                 token0: tokenUSDCAddress,
                 token1: token0Address,
@@ -443,6 +457,7 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Swap Token0 for USDC
         // Get Token0 balance
@@ -459,7 +474,7 @@ contract VaultAcryptosSingle is VaultBase {
             SafeSwapParams({
                 amountIn: _token0Bal,
                 priceToken0: _token0ExchangeRate,
-                priceToken1: 1e12,
+                priceToken1: _tokenUSDCExchangeRate,
                 token0: token0Address,
                 token1: tokenUSDCAddress,
                 token0Weight: 0,
@@ -501,11 +516,15 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _ZORExchangeRate = ZORPriceFeed.getExchangeRate();
         uint256 _lpPoolOtherTokenExchangeRate = ZORPriceFeed.getExchangeRate();
+        uint256 _stablecoinExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+
         // Create rates struct
         ExchangeRates memory _rates = ExchangeRates({
             earn: _earnTokenExchangeRate,
             ZOR: _ZORExchangeRate,
-            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate
+            lpPoolOtherToken: _lpPoolOtherTokenExchangeRate,
+            stablecoin: _stablecoinExchangeRate
         });
 
         // Distribute fees
@@ -531,7 +550,7 @@ contract VaultAcryptosSingle is VaultBase {
             SafeSwapParams({
                 amountIn: _earnedAmtNet,
                 priceToken0: _earnTokenExchangeRate,
-                priceToken1: 1e12,
+                priceToken1: _tokenBUSDExchangeRate,
                 token0: earnedAddress,
                 token1: tokenBUSD,
                 token0Weight: balancerACSWeightBasisPoints,
@@ -550,7 +569,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,
-                priceToken0: 1e12,
+                priceToken0: _tokenBUSDExchangeRate,
                 priceToken1: _token0ExchangeRate,
                 token0: tokenBUSD,
                 token1: token0Address,
@@ -587,13 +606,16 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
+        // Get exchange rate
+        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+
         // 1. Swap Earned -> BUSD
         address[] memory _dummyEarnedToBUSDPath;
         _safeSwap(
             SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: _rates.earn,
-                priceToken1: 1e12,
+                priceToken1: _tokenBUSDExchangeRate,
                 token0: earnedAddress,
                 token1: tokenBUSD,
                 token0Weight: balancerACSWeightBasisPoints,
@@ -613,7 +635,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD.div(2),
-                priceToken0: 1e12,
+                priceToken0: _tokenBUSDExchangeRate,
                 priceToken1: _rates.ZOR,
                 token0: tokenBUSD,
                 token1: ZORROAddress,
@@ -629,7 +651,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD.div(2),
-                priceToken0: 1e12,
+                priceToken0: _tokenBUSDExchangeRate,
                 priceToken1: _rates.lpPoolOtherToken,
                 token0: tokenBUSD,
                 token1: zorroLPPoolOtherToken,
@@ -676,6 +698,9 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
+        // Get exchange rate
+        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -690,7 +715,7 @@ contract VaultAcryptosSingle is VaultBase {
             SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: _rates.earn,
-                priceToken1: 1e12,
+                priceToken1: _tokenBUSDExchangeRate,
                 token0: earnedAddress,
                 token1: tokenBUSD,
                 token0Weight: balancerACSWeightBasisPoints,
@@ -712,7 +737,7 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balUSDC,
-                priceToken0: 1e12,
+                priceToken0: _tokenBUSDExchangeRate,
                 priceToken1: _rates.ZOR,
                 token0: tokenUSDCAddress,
                 token1: ZORROAddress,
@@ -736,12 +761,15 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates
     ) internal override {
+        // Get exchange rate
+        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+        
         // Swap ACS to BUSD (Balancer)
         _safeSwap(
             SafeSwapParams({
                 amountIn: _earnedAmount,
                 priceToken0: _rates.earn,
-                priceToken1: 1e12,
+                priceToken1: _tokenBUSDExchangeRate,
                 token0: earnedAddress,
                 token1: tokenBUSD,
                 token0Weight: balancerACSWeightBasisPoints,
@@ -772,8 +800,8 @@ contract VaultAcryptosSingle is VaultBase {
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balBUSD,
-                priceToken0: 1e12,
-                priceToken1: 1e12,
+                priceToken0: _tokenBUSDExchangeRate,
+                priceToken1: _rates.stablecoin,
                 token0: tokenBUSD,
                 token1: tokenUSDCAddress,
                 token0Weight: 0,
