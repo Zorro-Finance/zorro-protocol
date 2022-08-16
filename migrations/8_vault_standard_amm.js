@@ -10,11 +10,18 @@ const ZorroControllerXChain = artifacts.require("zorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
 const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
 const IUniswapV2Factory = artifacts.require("IUniswapV2Factory");
+const IJoeRouter02 = artifacts.require("IJoeRouter02");
 // Get key params
 const { getKeyParams, devNets, getSynthNetwork } = require('../chains');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
+// Migrations
+const Migrations = artifacts.require("Migrations");
 
 module.exports = async function (deployer, network, accounts) {
+  // Web3
+  const adapter = Migrations.interfaceAdapter;
+  const { web3 } = adapter;
+
   // Deployed contracts
   const vaultZorro = await VaultZorro.deployed();
   const zorroController = await ZorroController.deployed();
@@ -54,6 +61,32 @@ module.exports = async function (deployer, network, accounts) {
     await iUniswapV2Factory.createPair(zorro.address, wavax)
     // Get pair address 
     const pairAddr = await iUniswapV2Factory.getPair.call(zorro.address, wavax);
+    // Add liquidity for devnet
+    if (network === 'ganachecloud') {
+      // Prep
+      const amt = web3.utils.toWei('1000', 'ether');
+      const now = Math.floor((new Date).getTime() / 1000);
+
+      // Mint ZOR
+      await zorro.setZorroController(accounts[0]);
+      await zorro.mint(accounts[0], amt);
+      // Set control back to ZC
+      await zorro.setZorroController(zorroController.address);
+
+      // Get router
+      const router = await IJoeRouter02.at('0x60aE616a2155Ee3d9A68541Ba4544862310933d4');
+      // Add liquidity
+      await zorro.approve(router.address, amt);
+      await router.addLiquidityAVAX(
+        zorro.address,
+        amt,
+        (web3.utils.toBN(amt)).mul(web3.utils.toBN(9)).div(web3.utils.toBN(10)),
+        (web3.utils.toBN(amt)).mul(web3.utils.toBN(9)).div(web3.utils.toBN(10)),
+        accounts[0],
+        now + 60,
+        {value: amt}
+      );
+    }
 
     // Init vault
     initVal = {

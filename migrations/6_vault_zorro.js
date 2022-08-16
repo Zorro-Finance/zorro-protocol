@@ -11,6 +11,7 @@ const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
 // Get key params
 const {getKeyParams, getSynthNetwork, devNets, homeNetworks} = require('../chains');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
+const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
 
 module.exports = async function (deployer, network, accounts) {
   // Deployed contracts
@@ -62,7 +63,7 @@ module.exports = async function (deployer, network, accounts) {
         zorroLPPoolOtherToken,
         tokenUSDCAddress: defaultStablecoin,
       },
-      USDCToToken0Path: USDCToZorroPath,
+      USDCToToken0Path: [defaultStablecoin, wavax, zorro.address],
       fees: vaults.fees,
       priceFeeds: {
         token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,

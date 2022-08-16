@@ -174,6 +174,6 @@ contract MockPriceAggZORLP is AggregatorV3Interface {
         _path[2] = usdcToken;
         uint256 _amtIn = 1 ether;
         uint256[] memory _amts = IAMMRouter02(router).getAmountsOut(_amtIn, _path);
-        return _amts[_amts.length.sub(1)].mul(decimals).div(_amtIn); 
+        return _amts[_amts.length.sub(1)].mul(10**decimals).div(_amtIn); 
     }
 }
