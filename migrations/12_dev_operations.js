@@ -24,16 +24,11 @@ module.exports = async function (deployer, network, accounts) {
     const vaultStargate = await VaultStargate.deployed();
     const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
 
-    // Unpack keyParams
-    const {
-        defaultStablecoin,
-        uniRouterAddress,
-    } = getKeyParams(accounts)[getSynthNetwork(network)];
-
     if (network === 'ganachecloud') {
         // Prep
         const now = Math.floor((new Date).getTime() / 1000);
         const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
+        const usdc = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E';
         // Hardcoded addresses used for testing
         const recipient0 = '0x92F0bf71c624FA6E99682bd3FBc8370cc0F366Ae';
         const recipient1 = '0xC5faECaA3d71EF9Ec13cDA5eFfc9ba5C53a823Fe';
@@ -50,23 +45,29 @@ module.exports = async function (deployer, network, accounts) {
             await zorro.setZorroController(zorroController.address);
 
             // Swap USDC to designated wallets
-            const router = await IJoeRouter02.at(uniRouterAddress);
+            const router = await IJoeRouter02.at('0x60aE616a2155Ee3d9A68541Ba4544862310933d4');
             await router.swapExactAVAXForTokens(
                 0,
-                [wavax, defaultStablecoin],
+                [wavax, usdc],
                 recipient,
-                now + 60,
+                now + 300,
                 {value: web3.utils.toWei('1000', 'ether')}
             );
         }
 
         // Transfer ownership of all contracts
         const newOwner = recipient0;
+        console.log('Setting ownership to: ', newOwner);
+        console.log('zc');
+        console.log('owner of zc: ', await zorroController.owner.call());
         await zorroController.transferOwnership(newOwner);
+        console.log('zsv', await vaultZorro.owner.call(), await vaultZorro.govAddress.call());
         await vaultZorro.transferOwnership(newOwner);
         await vaultZorro.setGov(newOwner);
+        console.log('VaultStargate', await vaultStargate.owner.call(), await vaultZorro.govAddress.call());
         await vaultStargate.transferOwnership(newOwner);
         await vaultStargate.setGov(newOwner);
+        console.log('VaultZorAvax', await vaultZorroAvax.owner.call(), await vaultZorroAvax.govAddress.call());
         await vaultZorroAvax.transferOwnership(newOwner);
         await vaultZorroAvax.setGov(newOwner);
     }
