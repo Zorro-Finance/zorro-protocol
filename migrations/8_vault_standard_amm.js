@@ -92,7 +92,7 @@ module.exports = async function (deployer, network, accounts) {
     initVal = {
       pid: 0,
       isHomeChain: true,
-      isFarmable: true,
+      isFarmable: false,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,
@@ -133,7 +133,7 @@ module.exports = async function (deployer, network, accounts) {
     initVal = {
       pid: 0,
       isHomeChain: devNets.includes(network),
-      isFarmable: true,
+      isFarmable: false,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,

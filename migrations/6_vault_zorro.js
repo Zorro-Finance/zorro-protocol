@@ -74,6 +74,7 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed, 
       },
     };
+    console.log('vz: ', 'devNets.includes(network): ', devNets.includes(network), 'priceFeeds.priceFeedZOR: ', priceFeeds.priceFeedZOR, 'mockPriceAggZORLP.address: ', mockPriceAggZORLP.address, 'zcInitVal: ', zcInitVal);
     // Deploy
     // TODO: For this and all ownable contracts, make sure to set an account that we can always have access to. 
     // https://ethereum.stackexchange.com/questions/17441/how-to-choose-an-account-to-deploy-a-contract-in-truffle 

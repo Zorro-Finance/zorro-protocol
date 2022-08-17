@@ -106,6 +106,7 @@ contract ZorroControllerAnalytics is
         // If total shares is zero, there are no staked Want tokens
         if (sharesTotal == 0) {
             stakedWantAmt = 0;
+            return stakedWantAmt;
         }
 
         // Check to see if data is needed for all tranches or a specific tranche
