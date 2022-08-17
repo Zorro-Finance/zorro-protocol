@@ -58,7 +58,7 @@ module.exports = async function (deployer, network, accounts) {
     const masterChefJoe = '0x188bED1968b795d5c9022F6a0bb5931Ac4c18F00';
     // Create pair via Uni
     const iUniswapV2Factory = await IUniswapV2Factory.at('0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10');
-    await iUniswapV2Factory.createPair(zorro.address, wavax)
+    await iUniswapV2Factory.createPair(zorro.address, wavax);
     // Get pair address 
     const pairAddr = await iUniswapV2Factory.getPair.call(zorro.address, wavax);
     // Add liquidity for devnet
@@ -83,7 +83,7 @@ module.exports = async function (deployer, network, accounts) {
         (web3.utils.toBN(amt)).mul(web3.utils.toBN(9)).div(web3.utils.toBN(10)),
         (web3.utils.toBN(amt)).mul(web3.utils.toBN(9)).div(web3.utils.toBN(10)),
         accounts[0],
-        now + 60,
+        now + 300,
         {value: amt}
       );
     }

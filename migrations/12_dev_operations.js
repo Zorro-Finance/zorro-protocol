@@ -26,7 +26,6 @@ module.exports = async function (deployer, network, accounts) {
     const vaultStargate = await VaultStargate.deployed();
     const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
     
-
     if (network === 'ganachecloud') {
         // Prep
         const now = Math.floor((new Date).getTime() / 1000);
