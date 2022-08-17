@@ -118,7 +118,7 @@ contract ZorroControllerAnalytics is
                 TrancheInfo storage _tranche = trancheInfo[_pid][_account][tid];
                 // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
                 stakedWantAmt = stakedWantAmt.add(
-                    _tranche.contribution.mul(wantLockedTotal).div(
+                    _tranche.contribution.mul(wantLockedTotal).mul(1e12).div(
                         sharesTotal.mul(_tranche.timeMultiplier)
                     )
                 );
@@ -132,7 +132,7 @@ contract ZorroControllerAnalytics is
             if (_tranche.exitedVaultAt == 0) {
                 // Otherwise, staked Want tokens is the tranche's shares as a percentage of total shares multiplied by total Want tokens locked
                 stakedWantAmt = stakedWantAmt.add(
-                    _tranche.contribution.mul(wantLockedTotal).div(
+                    _tranche.contribution.mul(wantLockedTotal).mul(1e12).div(
                         sharesTotal.mul(_tranche.timeMultiplier)
                     )
                 );

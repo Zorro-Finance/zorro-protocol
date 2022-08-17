@@ -45,8 +45,8 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy Mock ZOR price feed if necessary
     if (!MockPriceAggZORLP.hasNetwork(network)) {
       await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
+    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
   }
   
   let initVal;
@@ -92,7 +92,7 @@ module.exports = async function (deployer, network, accounts) {
     initVal = {
       pid: 0,
       isHomeChain: true,
-      isFarmable: false,
+      isFarmable: true,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,
@@ -116,7 +116,7 @@ module.exports = async function (deployer, network, accounts) {
       earnedToToken1Path: [tokenJoe, wavax],
       USDCToToken0Path: [defaultStablecoin, wavax, zorro.address],
       USDCToToken1Path: [defaultStablecoin, wavax],
-      earnedToZORLPPoolOtherTokenPath: [tokenJoe, wavax, zorro.address],
+      earnedToZORLPPoolOtherTokenPath: [tokenJoe, wavax],
       earnedToUSDCPath: [tokenJoe, defaultStablecoin],
       fees: vaults.fees,
       priceFeeds: {

@@ -37,8 +37,8 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy Mock ZOR price feed if necessary
     if (!MockPriceAggZORLP.hasNetwork(network)) {
       await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
+    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
   }
 
   if (homeNetworks.includes(network)) {

@@ -53,6 +53,7 @@ contract VaultStandardAMM is VaultBase {
         zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
         wantAddress = _initValue.keyAddresses.wantAddress;
         token0Address = _initValue.keyAddresses.token0Address;
+        token1Address = _initValue.keyAddresses.token1Address;
         earnedAddress = _initValue.keyAddresses.earnedAddress;
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;

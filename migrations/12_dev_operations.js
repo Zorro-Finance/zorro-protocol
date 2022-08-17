@@ -10,6 +10,8 @@ const IJoeRouter02 = artifacts.require("IJoeRouter02");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
+const IERC20 = artifacts.require("IERC20");
+const IUniswapV2Factory = artifacts.require("IUniswapV2Factory");
 
 module.exports = async function (deployer, network, accounts) {
     // Web3
@@ -23,6 +25,7 @@ module.exports = async function (deployer, network, accounts) {
     const zorro = await Zorro.deployed();
     const vaultStargate = await VaultStargate.deployed();
     const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
+    
 
     if (network === 'ganachecloud') {
         // Prep
@@ -53,6 +56,13 @@ module.exports = async function (deployer, network, accounts) {
                 now + 300,
                 {value: web3.utils.toWei('1000', 'ether')}
             );
+
+            // Send some JLP token
+            const factory = await IUniswapV2Factory.at('0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10');
+            const pairAddress = await factory.getPair(zorro.address, wavax);
+            const jlp = await IERC20.at(pairAddress);
+            const jlpBal = await jlp.balanceOf(accounts[0]);
+            await jlp.transfer(recipient, jlpBal.mul(web3.utils.toBN(3)).div(web3.utils.toBN(10)));
         }
 
         // Transfer ownership of all contracts
@@ -61,6 +71,7 @@ module.exports = async function (deployer, network, accounts) {
         console.log('zc');
         console.log('owner of zc: ', await zorroController.owner.call());
         await zorroController.transferOwnership(newOwner);
+        await zorroController.setZorroControllerOracle(newOwner);
         console.log('zsv', await vaultZorro.owner.call(), await vaultZorro.govAddress.call());
         await vaultZorro.transferOwnership(newOwner);
         await vaultZorro.setGov(newOwner);

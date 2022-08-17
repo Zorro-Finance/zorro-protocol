@@ -33,8 +33,8 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy Mock ZOR price feed if necessary
     if (!MockPriceAggZORLP.hasNetwork(network)) {
       await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
+    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
   }
 
   let zcInitVal;
@@ -61,24 +61,24 @@ module.exports = async function (deployer, network, accounts) {
         },
       },
     };
+    console.log('devNets.includes(network): ', devNets.includes(network), 'priceFeeds.priceFeedZOR: ', priceFeeds.priceFeedZOR, 'zcInitVal: ', zcInitVal);
+  } else {
+    zcInitVal = {
+      ZORRO: zorro.address,
+      defaultStablecoin,
+      zorroLPPoolOtherToken,
+      publicPool: zeroAdress,
+      zorroStakingVault: zeroAdress,
+      zorroLPPool,
+      uniRouterAddress,
+      USDCToZorroPath,
+      USDCToZorroLPPoolOtherTokenPath,
+      rewards,
+      xChain,
+      priceFeeds,
+    };
   }
 
-  zcInitVal = {
-    ZORRO: zorro.address,
-    defaultStablecoin,
-    zorroLPPoolOtherToken,
-    publicPool: zeroAdress,
-    zorroStakingVault: zeroAdress,
-    zorroLPPool,
-    uniRouterAddress,
-    USDCToZorroPath,
-    USDCToZorroLPPoolOtherTokenPath,
-    rewards,
-    xChain,
-    priceFeeds,
-  };
-
-  
   // Deploy
   await deployProxy(ZorroController, [zcInitVal], {deployer});
   // Update XChain props to correct home chain Zorro controller if on the home chain

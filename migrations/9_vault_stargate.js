@@ -38,22 +38,24 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy Mock ZOR price feed if necessary
     if (!MockPriceAggZORLP.hasNetwork(network)) {
       await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-      mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
     }
+    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
   }
+
+  // TODO: These values need to be re-examined
 
   // Init values 
   const initVal = {
     pid: 0,
-    isHomeChain: network === 'avax',
+    isHomeChain: ['avax', 'ganachecloud'].includes(network),
     keyAddresses: {
       govAddress: accounts[0],
       zorroControllerAddress: zorroController.address,
       zorroXChainController: zorroControllerXChain.address,
       ZORROAddress: zorro.address,
       zorroStakingVault: vaultZorro.address,
-      wantAddress: zeroAddress,
-      token0Address: zeroAddress,
+      wantAddress: defaultStablecoin,
+      token0Address: defaultStablecoin,
       token1Address: zeroAddress,
       earnedAddress: zeroAddress,
       farmContractAddress: zeroAddress,
