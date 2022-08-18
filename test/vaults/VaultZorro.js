@@ -69,7 +69,7 @@ contract('VaultZorro', async accounts => {
 
         /* Deposit (0) */
         try {
-            await instance.depositWantToken(accounts[0], 0);
+            await instance.depositWantToken(0);
         } catch (err) {
             assert.include(err.message, 'Want token deposit must be > 0');
         }
@@ -81,7 +81,7 @@ contract('VaultZorro', async accounts => {
 
         /* First deposit */
         // Deposit
-        const tx = await instance.depositWantToken(accounts[0], wantAmt);
+        const tx = await instance.depositWantToken(wantAmt);
 
         // Logs
         const { rawLogs } = tx.receipt;
@@ -110,7 +110,7 @@ contract('VaultZorro', async accounts => {
             0
         );
         // Deposit
-        await instance.depositWantToken(accounts[0], wantAmt);
+        await instance.depositWantToken(wantAmt);
 
         // Assert: returns correct shares added (based on current shares etc.)
         const sharesTotal = wantAmt; // Total shares before second deposit
@@ -121,7 +121,7 @@ contract('VaultZorro', async accounts => {
 
         /* Only Zorro controller */
         try {
-            await instance.depositWantToken(zeroAddress, 0, { from: accounts[1] });
+            await instance.depositWantToken(0, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, '!zorroController');
         }
@@ -135,7 +135,7 @@ contract('VaultZorro', async accounts => {
 
         /* Withdraw 0 */
         try {
-            await instance.withdrawWantToken(accounts[0], 0); 
+            await instance.withdrawWantToken(0); 
         } catch (err) {
             assert.include(err.message, 'want amt <= 0');
         }
@@ -143,7 +143,7 @@ contract('VaultZorro', async accounts => {
         /* Withdraw > 0 */
         
         // Withdraw
-        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+        const tx = await instance.withdrawWantToken(wantAmt); 
 
         // Get logs
         const { rawLogs } = tx.receipt;
@@ -172,7 +172,7 @@ contract('VaultZorro', async accounts => {
         /* Withdraw > wantToken */
 
         // Withdraw
-        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+        const tx = await instance.withdrawWantToken(wantAmt); 
 
         // Get logs
         const { rawLogs } = tx.receipt;

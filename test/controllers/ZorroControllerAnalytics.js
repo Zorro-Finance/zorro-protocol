@@ -205,7 +205,7 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
         await ZORToken.mint(accounts[0], amtDeposit);
         await ZORToken.approve(vault.address, amtDeposit);
         // Deposit Want token
-        await vault.depositWantToken(accounts[0], amtDeposit);
+        await vault.depositWantToken(amtDeposit);
         // Add tranche
         await instance.addTranche(
             0, //pid
@@ -244,7 +244,7 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
             // Set ZC 
             await vault.setZorroControllerAddress(accounts[1]);
             // Deposit Want token
-            await vault.depositWantToken(accounts[1], amtDeposit, { from: accounts[1] });
+            await vault.depositWantToken(amtDeposit, { from: accounts[1] });
             // Add tranche
             await instance.addTranche(
                 0, //pid

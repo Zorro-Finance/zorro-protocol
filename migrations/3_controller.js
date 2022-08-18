@@ -61,7 +61,7 @@ module.exports = async function (deployer, network, accounts) {
         },
       },
     };
-    console.log('devNets.includes(network): ', devNets.includes(network), 'priceFeeds.priceFeedZOR: ', priceFeeds.priceFeedZOR, 'zcInitVal: ', zcInitVal);
+    console.log('zc: ', 'devNets.includes(network): ', devNets.includes(network), 'priceFeeds.priceFeedZOR: ', priceFeeds.priceFeedZOR, 'zcInitVal: ', zcInitVal);
   } else {
     zcInitVal = {
       ZORRO: zorro.address,

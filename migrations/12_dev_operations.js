@@ -18,15 +18,15 @@ module.exports = async function (deployer, network, accounts) {
     const adapter = Migrations.interfaceAdapter;
     const { web3 } = adapter;
 
-    // Deployed contracts
-    const vaultZorro = await VaultZorro.deployed();
-    const zorroController = await ZorroController.deployed();
-    const zorroControllerXChain = await ZorroControllerXChain.deployed();
-    const zorro = await Zorro.deployed();
-    const vaultStargate = await VaultStargate.deployed();
-    const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
     
     if (network === 'ganachecloud') {
+        // Deployed contracts
+        const vaultZorro = await VaultZorro.deployed();
+        const zorroController = await ZorroController.deployed();
+        const zorroControllerXChain = await ZorroControllerXChain.deployed();
+        const zorro = await Zorro.deployed();
+        const vaultStargate = await VaultStargate.deployed();
+        const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
         // Prep
         const now = Math.floor((new Date).getTime() / 1000);
         const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';

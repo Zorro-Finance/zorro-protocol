@@ -235,7 +235,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         /* Deposit (0) */
         try {
-            await instance.depositWantToken(accounts[0], 0);
+            await instance.depositWantToken(0);
         } catch (err) {
             assert.include(err.message, 'Want token deposit must be > 0');
         }
@@ -247,7 +247,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         /* First deposit */
         // Deposit
-        const tx = await instance.depositWantToken(accounts[0], wantAmt);
+        const tx = await instance.depositWantToken(wantAmt);
 
         // Logs
         const { rawLogs } = tx.receipt;
@@ -282,7 +282,7 @@ contract('VaultAcryptosSingle', async accounts => {
             0
         );
         // Deposit
-        await instance.depositWantToken(accounts[0], wantAmt);
+        await instance.depositWantToken(wantAmt);
 
         // Assert: returns correct shares added (based on current shares etc.)
         const sharesTotal = wantAmt; // Total shares before second deposit
@@ -293,7 +293,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         /* Only Zorro controller */
         try {
-            await instance.depositWantToken(zeroAddress, 0, { from: accounts[1] });
+            await instance.depositWantToken(0, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, '!zorroController');
         }
@@ -308,7 +308,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         /* Withdraw 0 */
         try {
-            await instance.withdrawWantToken(accounts[0], 0); 
+            await instance.withdrawWantToken(0); 
         } catch (err) {
             assert.include(err.message, 'want amt <= 0');
         }
@@ -316,7 +316,7 @@ contract('VaultAcryptosSingle', async accounts => {
         /* Withdraw > 0 */
         
         // Withdraw
-        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+        const tx = await instance.withdrawWantToken(wantAmt); 
 
         // Get logs
         const { rawLogs } = tx.receipt;
@@ -351,7 +351,7 @@ contract('VaultAcryptosSingle', async accounts => {
         /* Withdraw > wantToken */
 
         // Withdraw
-        const tx = await instance.withdrawWantToken(accounts[0], wantAmt); 
+        const tx = await instance.withdrawWantToken(wantAmt); 
 
         // Get logs
         const { rawLogs } = tx.receipt;
@@ -506,7 +506,7 @@ contract('VaultAcryptosSingle', async accounts => {
         // Approval
         await acsVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
         // Simulate deposit
-        await instance.depositWantToken(accounts[0], wantAmt);
+        await instance.depositWantToken(wantAmt);
 
         // Unfarm
         const tx = await instance.unfarm(wantAmt);
@@ -692,6 +692,7 @@ contract('VaultAcryptosSingle', async accounts => {
             earn: 1.2e12,
             ZOR: 1050*(1e12),
             lpPoolOtherToken: 333*(1e12),
+            stablecoin: 1e12,
         };
         const slippage = 990; // 1%
         const expZOR = earnedAmt.mul(web3.utils.toBN(0.5 * rates.ZOR * slippage).div(web3.utils.toBN(1000 * rates.earn)));
@@ -741,6 +742,7 @@ contract('VaultAcryptosSingle', async accounts => {
             earn: 1.2e12,
             ZOR: 1050*(1e12),
             lpPoolOtherToken: 333*(1e12),
+            stablecoin: 1e12,
         };
         // Send some Earn token
         await acs.mint(instance.address, earnedAmt);
@@ -782,6 +784,7 @@ contract('VaultAcryptosSingle', async accounts => {
             earn: 1.2e12,
             ZOR: 1050,
             lpPoolOtherToken: 333,
+            stablecoin: 1e12,
         };
         // Send some Earn token
         await acs.mint(instance.address, earnedAmt);
