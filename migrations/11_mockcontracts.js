@@ -25,6 +25,8 @@ const MockPriceAggToken1 = artifacts.require('MockPriceAggToken1');
 const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
+const MockPriceUSDC = artifacts.require("MockPriceUSDC");
+const MockPriceBUSD = artifacts.require("MockPriceBUSD");
 // Other contracts
 // AMM
 const MockAMMFarm = artifacts.require('MockAMMFarm');
@@ -338,6 +340,8 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockPriceAggLPOtherToken);
     await deployer.deploy(MockLPPool);
     await deployer.deploy(MockLPPool1);
+    await deployer.deploy(MockPriceUSDC);
+    await deployer.deploy(MockPriceBUSD);
     
     await deployProxy(MockInvestmentVault, [accounts[0]], {deployer});
     await deployProxy(MockInvestmentVault1, [accounts[0]], {deployer});

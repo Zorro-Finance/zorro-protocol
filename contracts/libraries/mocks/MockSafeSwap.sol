@@ -469,8 +469,8 @@ contract MockBalancerVault is IBalancerVault {
         )
     {
         // Reqs
-        require(abi.encode(poolId).length >= 0); // Satisfy unused variable warning
-        require(managed >= 0 && blockNumber > 0 && assetManager != address(0));
+        // require(abi.encode(poolId).length >= 0); // Satisfy unused variable warning
+        // require(managed >= 0 && blockNumber > 0 && assetManager != address(0));
         _dummy = 0;
 
         cash = _cash[address(token)];

@@ -92,6 +92,7 @@ contract MockPriceAggEarnToken is MockAggregatorV3 {}
 contract MockPriceAggZOR is MockAggregatorV3 {}
 contract MockPriceAggLPOtherToken is MockAggregatorV3 {}
 contract MockPriceUSDC is MockAggregatorV3 {}
+contract MockPriceBUSD is MockAggregatorV3 {}
 
 /// @title MockPriceAggZORLP 
 contract MockPriceAggZORLP is AggregatorV3Interface {

@@ -17,6 +17,7 @@ const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
 const MockPriceUSDC = artifacts.require('MockPriceUSDC');
+const MockPriceBUSD = artifacts.require('MockPriceBUSD');
 
 const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(address,uint256)');
 const withdrewEventSig = web3.eth.abi.encodeEventSignature('Withdrew(address,uint256)');
@@ -77,11 +78,13 @@ const setupContracts = async (accounts) => {
     const ZORPriceFeed = await MockPriceAggZOR.deployed();
     const lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
     const stablecoinPriceFeed = await MockPriceAggLPOtherToken.deployed();
+    const BUSDPriceFeed = await MockPriceBUSD.deployed();
     await instance.setPriceFeed(0, token0PriceFeed.address);
     await instance.setPriceFeed(2, earnTokenPriceFeed.address);
     await instance.setPriceFeed(3, ZORPriceFeed.address);
     await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
     await instance.setPriceFeed(5, stablecoinPriceFeed.address);
+    await instance.setTokenBUSDPriceFeed(BUSDPriceFeed.address);
     // Swap paths
     await instance.setSwapPaths(0, [usdc.address, token0.address]);
     await instance.setSwapPaths(2, [token0.address, usdc.address]);
