@@ -204,6 +204,7 @@ contract('SafeSwapBalancer', async accounts => {
         await token0.mint(lib.address, amountIn);
 
         // Run safeSwap()
+        console.log('safeswap lib: ', lib.address, lib.safeSwap);
         const tx = await lib.safeSwap(
             vault.address,
             '0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001',

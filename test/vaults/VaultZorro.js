@@ -9,6 +9,7 @@ const MockPriceAggToken0 = artifacts.require('MockPriceAggToken0');
 const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
+const MockPriceUSDC = artifacts.require('MockPriceUSDC');
 
 const approvalEventSig = web3.eth.abi.encodeEventSignature('Approval(address,address,uint256)');
 const swappedEventSig = web3.eth.abi.encodeEventSignature('SwappedToken(address,uint256,uint256)');
@@ -38,10 +39,12 @@ const setupContracts = async (accounts) => {
     const earnTokenPriceFeed = await MockPriceAggEarnToken.deployed();
     const ZORPriceFeed = await MockPriceAggZOR.deployed();
     const lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
+    const stablecoinPriceFeed = await MockPriceAggLPOtherToken.deployed();
     await instance.setPriceFeed(0, token0PriceFeed.address);
     await instance.setPriceFeed(2, earnTokenPriceFeed.address);
     await instance.setPriceFeed(3, ZORPriceFeed.address);
     await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
+    await instance.setPriceFeed(5, stablecoinPriceFeed.address);
     // Swap paths
     await instance.setSwapPaths(0, [usdc.address, ZORToken.address]);
     await instance.setSwapPaths(2, [ZORToken.address, usdc.address]);

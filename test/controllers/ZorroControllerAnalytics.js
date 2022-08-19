@@ -212,7 +212,7 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
             accounts[0],
             {
                 contribution: amtDeposit,
-                timeMultiplier: 1,
+                timeMultiplier: 1e12,
                 rewardDebt: 0,
                 durationCommittedInWeeks: 0,
                 enteredVaultAt: 0,
@@ -228,6 +228,8 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
         );
 
         // Tests
+        console.log('amtStaked: ', amtStaked.toString());
+        console.log('amtDeposit: ', amtDeposit.toString());
         assert.isTrue(amtStaked.eq(web3.utils.toBN(amtDeposit)));
     });
 
@@ -251,7 +253,7 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
                 accounts[1],
                 {
                     contribution: amtDeposit,
-                    timeMultiplier: 1,
+                    timeMultiplier: 1e12,
                     rewardDebt: 0,
                     durationCommittedInWeeks: 0,
                     enteredVaultAt: 0,
@@ -269,6 +271,8 @@ contract('ZorroControllerAnalytics::Staked Want tokens', async accounts => {
         );
 
         // Tests
+        console.log('amtStaked: ', amtStaked.toString());
+        console.log('contribs: ', contribs.toString());
         assert.isTrue(amtStaked.eq(contribs));
     });
 });
