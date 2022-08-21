@@ -29,16 +29,17 @@ contract('SafeSwapUni', async accounts => {
         const priceTokenIn = 342e12; // Exchange rate of 342 USD per In token
         const priceTokenOut = 1e12; // Parity with USD
         const slippageFactor = 990;
+        const decimals = [18, 18];
         await token0.mint(lib.address, amountIn);
         await token0.approve(router.address, amountIn);
         // Run safeSwap()
         const tx = await lib.safeSwap(
             router.address,
             amountIn,
-            priceTokenIn,
-            priceTokenOut,
+            [priceTokenIn, priceTokenOut],
             slippageFactor,
             [token0.address, token1.address],
+            decimals,
             accounts[1],
             9999999,
         );
@@ -75,16 +76,17 @@ contract('SafeSwapUni', async accounts => {
         const priceTokenIn = 0;
         const priceTokenOut = 0;
         const slippageFactor = 990;
+        const decimals = [18, 18];
         await token0.mint(lib.address, amountIn);
         await token0.approve(router.address, amountIn);
         // Run safeSwap()
         const tx = await lib.safeSwap(
             router.address,
             amountIn,
-            priceTokenIn,
-            priceTokenOut,
+            [priceTokenIn, priceTokenOut],
             slippageFactor,
             [token0.address, token1.address],
+            decimals,
             accounts[1],
             9999999,
         );
@@ -140,6 +142,7 @@ contract('SafeSwapBalancer', async accounts => {
         const priceTokenIn = web3.utils.toBN(342e12); // Price in USD of TokenIN (times 1e12)
         const priceTokenOut = web3.utils.toBN(1e12); // Price in USD of TokenOUT (times 1e12)
         const slippageFactor = 990; // 990 = 1%
+        const decimals = [18, 18];
 
         // Mint some tokens
         await token0.mint(lib.address, amountIn);
@@ -159,7 +162,8 @@ contract('SafeSwapBalancer', async accounts => {
                 maxMarketMovementAllowed: slippageFactor,
                 path: [],
                 destination: lib.address
-            }
+            },
+            decimals
         );
         // Get emitted log results 
         const { rawLogs } = tx.receipt;
@@ -195,6 +199,7 @@ contract('SafeSwapBalancer', async accounts => {
         const balTokenOut = web3.utils.toBN(47794); // BUSD
         const token0Weight = web3.utils.toBN(3000); // ACS weight (30%)
         const token1Weight = web3.utils.toBN(1000); // BUSD weight (10%)
+        const decimals = [18, 18];
 
         // Prep Balancer vault 
         await vault.setCash(token0.address, balTokenIn);
@@ -219,7 +224,8 @@ contract('SafeSwapBalancer', async accounts => {
                 maxMarketMovementAllowed: slippageFactor,
                 path: [],
                 destination: lib.address
-            }
+            },
+            decimals
         );
         // Get emitted log results 
         const { rawLogs } = tx.receipt;

@@ -16,10 +16,10 @@ contract MockSafeSwapUni {
     function safeSwap(
         address _uniRouter,
         uint256 _amountIn,
-        uint256 _priceTokenIn,
-        uint256 _priceTokenOut,
+        uint256[] memory _priceTokens,
         uint256 _slippageFactor,
         address[] memory _path,
+        uint8[] memory _decimals,
         address _to,
         uint256 _deadline
     ) public {
@@ -31,10 +31,10 @@ contract MockSafeSwapUni {
         // Swap
         IAMMRouter02(_uniRouter).safeSwap(
             _amountIn,
-            _priceTokenIn,
-            _priceTokenOut,
+            _priceTokens,
             _slippageFactor,
             _path,
+            _decimals,
             _to,
             _deadline
         );
@@ -398,13 +398,14 @@ contract MockSafeSwapBalancer {
     function safeSwap(
         address _balancerVault,
         bytes32 _poolId,
-        SafeSwapParams memory _swapParams
+        SafeSwapParams memory _swapParams,
+        uint8[] memory _decimals
     ) public {
         IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
             _balancerVault,
             _swapParams.amountIn
         );
-        IBalancerVault(_balancerVault).safeSwap(_poolId, _swapParams);
+        IBalancerVault(_balancerVault).safeSwap(_poolId, _swapParams, _decimals);
     }
 }
 

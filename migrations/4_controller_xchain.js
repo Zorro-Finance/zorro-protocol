@@ -50,6 +50,7 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy
+  console.log('zcxc init val: ', zcxInitVal.priceFeeds);
   await deployProxy(ZorroControllerXChain, [zcxInitVal], {deployer});
 
   // Update ZorroController

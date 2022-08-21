@@ -117,7 +117,7 @@ contract('VaultStandardAMM', async accounts => {
         try {
             await instance.depositWantToken(0);
         } catch (err) {
-            assert.include(err.message, 'Want dep < 0');
+            assert.include(err.message, 'want<0');
         }
 
         // Mint some tokens
@@ -189,7 +189,7 @@ contract('VaultStandardAMM', async accounts => {
         try {
            await instance.withdrawWantToken(0); 
         } catch (err) {
-            assert.include(err.message, 'want amt <= 0');
+            assert.include(err.message, 'negWant');
         }
         
         /* Withdraw > 0 */
@@ -268,14 +268,14 @@ contract('VaultStandardAMM', async accounts => {
         try {
             await instance.exchangeUSDForWantToken(0, 990);
         } catch (err) {
-            assert.include(err.message, 'USDC deposit must be > 0');
+            assert.include(err.message, 'dep<=0');
         }
 
         /* Exchange (> balance) */
         try {
             await instance.exchangeUSDForWantToken(amountUSD, 990);
         } catch (err) {
-            assert.include(err.message, 'USDC desired exceeded bal');
+            assert.include(err.message, 'amt>bal');
         }
 
         /* Exchange (> 0) */
@@ -357,7 +357,7 @@ contract('VaultStandardAMM', async accounts => {
         try {
             await instance.exchangeWantTokenForUSD(0, 990);
         } catch (err) {
-            assert.include(err.message, 'Want amt must be > 0');
+            assert.include(err.message, 'negWant');
         }
 
         /* Exchange (> 0) */

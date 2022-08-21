@@ -5,6 +5,10 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
+import "./VaultLibrary.sol";
+
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
@@ -48,7 +52,7 @@ contract VaultZorro is VaultBase {
 
         // Swap paths
         USDCToToken0Path = _initValue.USDCToToken0Path;
-        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -66,10 +70,10 @@ contract VaultZorro is VaultBase {
 
     struct VaultZorroInit {
         uint256 pid;
-        VaultAddresses keyAddresses;
+        VaultLibrary.VaultAddresses keyAddresses;
         address[] USDCToToken0Path;
-        VaultFees fees;
-        VaultPriceFeeds priceFeeds;
+        VaultLibrary.VaultFees fees;
+        VaultLibrary.VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -126,12 +130,18 @@ contract VaultZorro is VaultBase {
         // Get balance of deposited USDC
         uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "USDC deposit must be > 0");
-        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+        require(_amountUSDC > 0, "dep<=0");
+        require(_amountUSDC <= _balUSDC, "amt>bal");
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = stablecoinPriceFeed.getExchangeRate();
+        _priceTokens[1] = token0PriceFeed.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
 
         // Increase allowance
         IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
@@ -142,10 +152,10 @@ contract VaultZorro is VaultBase {
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
-            _tokenUSDCExchangeRate,
-            _token0ExchangeRate,
+            _priceTokens,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
+            _decimals,
             address(this),
             block.timestamp.add(600)
         );
@@ -173,7 +183,7 @@ contract VaultZorro is VaultBase {
         returns (uint256)
     {
         // Preflight checks
-        require(_wantAmt > 0, "want amt <= 0");
+        require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -219,7 +229,7 @@ contract VaultZorro is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
         // Preflight checks
-        require(_amount > 0, "Want amt must be > 0");
+        require(_amount > 0, "negWant");
 
         // Safely transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -229,8 +239,14 @@ contract VaultZorro is VaultBase {
         );
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = token0PriceFeed.getExchangeRate();
+        _priceTokens[1] = stablecoinPriceFeed.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
+        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
 
         // Increase allowance
         IERC20Upgradeable(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
@@ -238,10 +254,10 @@ contract VaultZorro is VaultBase {
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
-            _token0ExchangeRate,
-            _tokenUSDCExchangeRate,
+            _priceTokens,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
+            _decimals,
             msg.sender,
             block.timestamp.add(600)
         );
@@ -277,7 +293,7 @@ contract VaultZorro is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
         // Dummy function to implement interface
     }
@@ -285,7 +301,7 @@ contract VaultZorro is VaultBase {
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
         // Dummy function to implement interface
     }
@@ -294,7 +310,7 @@ contract VaultZorro is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
         // Dummy function to implement interface
     }

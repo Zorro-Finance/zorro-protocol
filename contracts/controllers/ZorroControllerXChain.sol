@@ -86,6 +86,9 @@ contract ZorroControllerXChain is
         priceFeedLPPoolOtherToken = AggregatorV3Interface(
             _initValue.priceFeeds.priceFeedLPPoolOtherToken
         );
+        priceFeedStablecoin = AggregatorV3Interface(
+            _initValue.priceFeeds.priceFeedStablecoin
+        );
 
         // Ownable
         __Ownable_init();
@@ -113,6 +116,7 @@ contract ZorroControllerXChain is
     struct ZorroControllerXChainPriceFeedParams {
         address priceFeedZOR;
         address priceFeedLPPoolOtherToken;
+        address priceFeedStablecoin;
     }
 
     struct ZorroControllerXChainInit {

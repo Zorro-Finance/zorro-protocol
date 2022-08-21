@@ -22,6 +22,7 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "./VaultLibrary.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
@@ -80,8 +81,8 @@ contract VaultStandardAMM is VaultBase {
             .earnedToZORLPPoolOtherTokenPath;
         earnedToUSDCPath = _initValue.earnedToUSDCPath;
         // Corresponding reverse paths
-        token0ToUSDCPath = _reversePath(USDCToToken0Path);
-        token1ToUSDCPath = _reversePath(USDCToToken1Path);
+        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
+        token1ToUSDCPath = VaultLibrary.reversePath(USDCToToken1Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -113,7 +114,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultAddresses keyAddresses;
+        VaultLibrary.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] earnedToToken1Path;
@@ -121,8 +122,8 @@ contract VaultStandardAMM is VaultBase {
         address[] USDCToToken1Path;
         address[] earnedToZORLPPoolOtherTokenPath;
         address[] earnedToUSDCPath;
-        VaultFees fees;
-        VaultPriceFeeds priceFeeds;
+        VaultLibrary.VaultFees fees;
+        VaultLibrary.VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -139,7 +140,7 @@ contract VaultStandardAMM is VaultBase {
         returns (uint256 sharesAdded)
     {
         // Preflight checks
-        require(_wantAmt > 0, "Want dep < 0");
+        require(_wantAmt > 0, "want<0");
 
         // Transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -179,16 +180,28 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
+        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
+            address(this)
+        );
         // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "USDC deposit must be > 0");
-        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+        require(_amountUSDC > 0, "dep<=0");
+        require(_amountUSDC <= _balUSDC, "amt>bal");
 
+        // Determine exchange rates using price feed oracle
+        uint256[] memory _priceTokens0 = new uint256[](2);
+        _priceTokens0[0] = stablecoinPriceFeed.getExchangeRate();
+        _priceTokens0[1] = token0PriceFeed.getExchangeRate();
+        uint256[] memory _priceTokens1 = new uint256[](2);
+        _priceTokens1[0] = _priceTokens0[0];
+        _priceTokens1[1] = stablecoinPriceFeed.getExchangeRate();
 
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(token0Address).decimals();
+        uint8[] memory _decimals1 = new uint8[](2);
+        _decimals1[0] = _decimals0[0];
+        _decimals1[1] = ERC20Upgradeable(token1Address).decimals();
 
         // Increase allowance
         IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
@@ -199,10 +212,10 @@ contract VaultStandardAMM is VaultBase {
         // Swap USDC for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            _tokenUSDCExchangeRate,
-            _token0ExchangeRate,
+            _priceTokens0,
             _maxMarketMovementAllowed,
             USDCToToken0Path,
+            _decimals0,
             address(this),
             block.timestamp.add(600)
         );
@@ -210,10 +223,10 @@ contract VaultStandardAMM is VaultBase {
         // Swap USDC for token1 (if applicable)
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC.div(2),
-            _tokenUSDCExchangeRate,
-            _token1ExchangeRate,
+            _priceTokens1,
             _maxMarketMovementAllowed,
             USDCToToken1Path,
+            _decimals1,
             address(this),
             block.timestamp.add(600)
         );
@@ -283,7 +296,7 @@ contract VaultStandardAMM is VaultBase {
         returns (uint256 sharesRemoved)
     {
         // Preflight checks
-        require(_wantAmt > 0, "want amt <= 0");
+        require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -344,7 +357,7 @@ contract VaultStandardAMM is VaultBase {
         returns (uint256)
     {
         // Preflight checks
-        require(_amount > 0, "Want amt must be > 0");
+        require(_amount > 0, "negWant");
 
         // Safely transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -353,10 +366,13 @@ contract VaultStandardAMM is VaultBase {
             _amount
         );
 
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _token1ExchangeRate = token1PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        // Exchange rates
+        uint256[] memory _priceTokens0 = new uint256[](2);
+        _priceTokens0[0] = token0PriceFeed.getExchangeRate();
+        _priceTokens0[1] = stablecoinPriceFeed.getExchangeRate();
+        uint256[] memory _priceTokens1 = new uint256[](2);
+        _priceTokens1[0] = token1PriceFeed.getExchangeRate();
+        _priceTokens1[1] = _priceTokens0[1];
 
         // revert("pre exit pool");
 
@@ -371,6 +387,14 @@ contract VaultStandardAMM is VaultBase {
             address(this)
         );
 
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(token0Address).decimals();
+        _decimals0[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        uint8[] memory _decimals1 = new uint8[](2);
+        _decimals1[0] = ERC20Upgradeable(token1Address).decimals();
+        _decimals1[1] = _decimals0[1];
+
         // Increase allowance
         IERC20Upgradeable(token0Address).safeIncreaseAllowance(
             uniRouterAddress,
@@ -384,10 +408,10 @@ contract VaultStandardAMM is VaultBase {
         // Swap token0 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             token0Amt,
-            _token0ExchangeRate,
-            _tokenUSDCExchangeRate,
+            _priceTokens0,
             _maxMarketMovementAllowed,
             token0ToUSDCPath,
+            _decimals0,
             msg.sender,
             block.timestamp.add(600)
         );
@@ -395,10 +419,10 @@ contract VaultStandardAMM is VaultBase {
         // Swap token1 for USDC
         IAMMRouter02(uniRouterAddress).safeSwap(
             token1Amt,
-            _token1ExchangeRate,
-            _tokenUSDCExchangeRate,
+            _priceTokens1,
             _maxMarketMovementAllowed,
             token1ToUSDCPath,
+            _decimals1,
             msg.sender,
             block.timestamp.add(600)
         );
@@ -482,8 +506,8 @@ contract VaultStandardAMM is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        require(isFarmable, "!farmable for earn");
-        
+        require(isFarmable, "!farmable");
+
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
@@ -498,22 +522,41 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Create rates struct
-        ExchangeRates memory _rates = ExchangeRates({
-            earn: earnTokenPriceFeed.getExchangeRate(),
-            ZOR: ZORPriceFeed.getExchangeRate(),
-            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
-            stablecoin: stablecoinPriceFeed.getExchangeRate()
-        });
+        VaultLibrary.ExchangeRates memory _rates;
+        uint256[] memory _priceTokens0 = new uint256[](2);
+        uint256[] memory _priceTokens1 = new uint256[](2);
+        {
+            _rates = VaultLibrary.ExchangeRates({
+                earn: earnTokenPriceFeed.getExchangeRate(),
+                ZOR: ZORPriceFeed.getExchangeRate(),
+                lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+                stablecoin: stablecoinPriceFeed.getExchangeRate()
+            });
+            _priceTokens0[0] = _rates.earn;
+            _priceTokens0[1] = token0PriceFeed.getExchangeRate();
+            _priceTokens1[0] = _rates.earn;
+            _priceTokens1[1] = token1PriceFeed.getExchangeRate();
+        }
 
-        // Distribute fees
-        uint256 _controllerFee = _distributeFees(_earnedAmt);
+        // Calc remainder
+        uint256 _remainingAmt;
 
-        // Buyback & rev share
-        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
-            _earnedAmt,
-            _maxMarketMovementAllowed,
-            _rates
-        );
+        {
+            // Distribute fees
+            uint256 _controllerFee = _distributeFees(_earnedAmt);
+
+            // Buyback & rev share
+            (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
+                _earnedAmt,
+                _maxMarketMovementAllowed,
+                _rates
+            );
+
+            _remainingAmt = _earnedAmt
+                .sub(_controllerFee)
+                .sub(_buybackAmt)
+                .sub(_revShareAmt);
+        }
 
         // Allow the router contract to spen up to earnedAmt
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
@@ -523,17 +566,18 @@ contract VaultStandardAMM is VaultBase {
 
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
+            // Get decimal info
+            uint8[] memory _decimals0 = new uint8[](2);
+            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+            _decimals0[1] = ERC20Upgradeable(token0Address).decimals();
+
             // Swap half earned to token0
             IAMMRouter02(uniRouterAddress).safeSwap(
-                (
-                    _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
-                        _revShareAmt
-                    )
-                ).div(2),
-                _rates.earn,
-                token0PriceFeed.getExchangeRate(),
+                _remainingAmt.div(2),
+                _priceTokens0,
                 _maxMarketMovementAllowed,
                 earnedToToken0Path,
+                _decimals0,
                 address(this),
                 block.timestamp.add(600)
             );
@@ -541,17 +585,18 @@ contract VaultStandardAMM is VaultBase {
 
         // Swap Earned token to token1 if token0 is not the Earned token
         if (earnedAddress != token1Address) {
+            // Get decimal info
+            uint8[] memory _decimals1 = new uint8[](2);
+            _decimals1[0] = ERC20Upgradeable(earnedAddress).decimals();
+            _decimals1[1] = ERC20Upgradeable(token1Address).decimals();
+
             // Swap half earned to token1
             IAMMRouter02(uniRouterAddress).safeSwap(
-                (
-                    _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
-                        _revShareAmt
-                    )
-                ).div(2),
-                _rates.earn,
-                token1PriceFeed.getExchangeRate(),
+                _remainingAmt.div(2),
+                _priceTokens1,
                 _maxMarketMovementAllowed,
                 earnedToToken1Path,
+                _decimals1,
                 address(this),
                 block.timestamp.add(600)
             );
@@ -600,8 +645,26 @@ contract VaultStandardAMM is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal, exch rate info
+        uint8[] memory _decimals0 = new uint8[](2);
+        uint8[] memory _decimals1 = new uint8[](2);
+        uint256[] memory _priceTokens0 = new uint256[](2);
+        uint256[] memory _priceTokens1 = new uint256[](2);
+        {
+            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+            _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
+            _decimals1[0] = _decimals0[0];
+            _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
+
+            _priceTokens0[0] = _rates.earn;
+            _priceTokens0[1] = _rates.ZOR;
+            _priceTokens1[0] = _rates.earn;
+            _priceTokens1[1] = _rates.lpPoolOtherToken;
+        }
+
+
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -611,24 +674,31 @@ contract VaultStandardAMM is VaultBase {
         // Swap to ZOR Token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
-            _rates.earn,
-            _rates.ZOR,
+            _priceTokens0,
             _maxMarketMovementAllowed,
             earnedToZORROPath,
+            _decimals0,
             address(this),
             block.timestamp.add(600)
         );
         // Swap to Other token
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
-            _rates.earn,
-            _rates.lpPoolOtherToken,
+            _priceTokens1,
             _maxMarketMovementAllowed,
             earnedToZORLPPoolOtherTokenPath,
+            _decimals1,
             address(this),
             block.timestamp.add(600)
         );
 
+        // Add liquidity and burn
+        _addLiqAndBurn(_maxMarketMovementAllowed);
+    }
+
+    /// @notice Adds liquidity and burns the associated LP token
+    /// @param _maxMarketMovementAllowed Slippage factor (990 = 1% etc.)
+    function _addLiqAndBurn(uint256 _maxMarketMovementAllowed) internal {
         // Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
             address(this)
@@ -662,8 +732,18 @@ contract VaultStandardAMM is VaultBase {
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(ZORROAddress).decimals();
+
+        // Exchange rates
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _rates.earn;
+        _priceTokens[1] = _rates.ZOR;
+
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -673,10 +753,10 @@ contract VaultStandardAMM is VaultBase {
         // Swap to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
-            _rates.earn,
-            _rates.ZOR,
+            _priceTokens,
             _maxMarketMovementAllowed,
             earnedToZORROPath,
+            _decimals,
             zorroStakingVault,
             block.timestamp.add(600)
         );
@@ -690,8 +770,18 @@ contract VaultStandardAMM is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+
+        // Get exchange rates
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _rates.earn;
+        _priceTokens[1] = _rates.stablecoin;
+
         // Increase allowance
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -701,10 +791,10 @@ contract VaultStandardAMM is VaultBase {
         // Perform swap with Uni router
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,
-            _rates.earn,
-            _rates.stablecoin,
+            _priceTokens,
             _maxMarketMovementAllowed,
             earnedToUSDCPath,
+            _decimals,
             _destination,
             block.timestamp.add(600)
         );

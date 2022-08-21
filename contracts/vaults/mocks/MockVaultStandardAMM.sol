@@ -8,13 +8,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
+import "../VaultLibrary.sol";
+
 contract MockVaultStandardAMM is VaultStandardAMM {
     function reversePath(address[] memory _path)
         public
         pure
         returns (address[] memory)
     {
-        return _reversePath(_path);
+        return VaultLibrary.reversePath(_path);
     }
 
     function unfarm(uint256 _wantAmt) public {
@@ -25,7 +27,7 @@ contract MockVaultStandardAMM is VaultStandardAMM {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) public {
         _swapEarnedToUSDC(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
     }
@@ -33,7 +35,7 @@ contract MockVaultStandardAMM is VaultStandardAMM {
     function revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) public {
         _revShareOnChain(_amount, _maxMarketMovementAllowed, _rates);
     }
@@ -41,7 +43,7 @@ contract MockVaultStandardAMM is VaultStandardAMM {
     function buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) public {
         _buybackOnChain(_amount, _maxMarketMovementAllowed, _rates);
     }

@@ -12,6 +12,8 @@ import "../interfaces/IAcryptosVault.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "./_VaultBase.sol";
@@ -20,6 +22,7 @@ import "../interfaces/IBalancerVault.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "./VaultLibrary.sol";
 
 /// @title Vault contract for Acryptos single token strategies (e.g. for lending)
 contract VaultAcryptosSingle is VaultBase {
@@ -85,7 +88,7 @@ contract VaultAcryptosSingle is VaultBase {
         BUSDToZORROPath = _initValue.BUSDToZORROPath;
         BUSDToLPPoolOtherTokenPath = _initValue.BUSDToLPPoolOtherTokenPath;
         // Corresponding reverse paths
-        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -117,7 +120,7 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultAddresses keyAddresses;
+        VaultLibrary.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] USDCToToken0Path;
@@ -126,8 +129,8 @@ contract VaultAcryptosSingle is VaultBase {
         address[] BUSDToToken0Path;
         address[] BUSDToZORROPath;
         address[] BUSDToLPPoolOtherTokenPath;
-        VaultFees fees;
-        VaultPriceFeeds priceFeeds;
+        VaultLibrary.VaultFees fees;
+        VaultLibrary.VaultPriceFeeds priceFeeds;
         address tokenBUSDPriceFeed;
     }
 
@@ -247,12 +250,17 @@ contract VaultAcryptosSingle is VaultBase {
         // Get balance of deposited USDC
         uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
         // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "USDC deposit must be > 0");
-        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+        require(_amountUSDC > 0, "dep<=0");
+        require(_amountUSDC <= _balUSDC, "amt>bal");
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
 
         // Swap USDC for tokens
         // Increase allowance
@@ -273,7 +281,8 @@ contract VaultAcryptosSingle is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: USDCToToken0Path,
                 destination: address(this)
-            })
+            }),
+            _decimals
         );
 
         // Get new Token0 balance
@@ -303,35 +312,16 @@ contract VaultAcryptosSingle is VaultBase {
 
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @param _swapParams SafeSwapParams for swap
-    function _safeSwap(SafeSwapParams memory _swapParams) internal {
-        if (_swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS) {
-            // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-                balancerVaultAddress,
-                _swapParams.amountIn
-            );
-            // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
-            IBalancerVault(balancerVaultAddress).safeSwap(
-                balancerPool,
-                _swapParams
-            );
-        } else {
-            // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-                uniRouterAddress,
-                _swapParams.amountIn
-            );
-            // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _swapParams.amountIn,
-                _swapParams.priceToken0,
-                _swapParams.priceToken1,
-                _swapParams.maxMarketMovementAllowed,
-                _swapParams.path,
-                _swapParams.destination,
-                block.timestamp.add(600)
-            );
-        }
+    /// @param _decimals Array of decimals for amount In, amount Out
+    function _safeSwap(SafeSwapParams memory _swapParams, uint8[] memory _decimals) internal {
+        VaultLibraryAcryptosSingle.safeSwap(
+            balancerVaultAddress,
+            balancerPool,
+            uniRouterAddress,
+            _swapParams,
+            _decimals,
+            _swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS
+        );
     }
 
     /// @notice Public function for farming Want token.
@@ -379,7 +369,7 @@ contract VaultAcryptosSingle is VaultBase {
         returns (uint256 sharesRemoved)
     {
         // Preflight checks
-        require(_wantAmt > 0, "want amt <= 0");
+        require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -440,7 +430,7 @@ contract VaultAcryptosSingle is VaultBase {
         returns (uint256)
     {
         // Preflight checks
-        require(_amount > 0, "Want amt must be > 0");
+        require(_amount > 0, "negWant");
 
         // Safely transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -458,6 +448,11 @@ contract VaultAcryptosSingle is VaultBase {
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
+        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
 
         // Swap Token0 for USDC
         // Get Token0 balance
@@ -482,7 +477,8 @@ contract VaultAcryptosSingle is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: token0ToUSDCPath,
                 destination: msg.sender
-            })
+            }),
+            _decimals
         );
 
         // Calculate USDC balance
@@ -498,7 +494,7 @@ contract VaultAcryptosSingle is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        require(isFarmable, "!farmable for earn");
+        require(isFarmable, "!farmable");
 
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
@@ -516,7 +512,7 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
 
         // Create rates struct
-        ExchangeRates memory _rates = ExchangeRates({
+        VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),
             ZOR: ZORPriceFeed.getExchangeRate(),
             lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
@@ -539,7 +535,16 @@ contract VaultAcryptosSingle is VaultBase {
             .sub(_buybackAmt)
             .sub(_revShareAmt);
 
+
         // Swap Earn token for single asset token
+
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+        uint8[] memory _decimals1 = new uint8[](2);
+        _decimals1[0] = _decimals0[1];
+        _decimals1[1] = ERC20Upgradeable(token0Address).decimals();
 
         // Step 1: Earned to BUSD
         _safeSwap(
@@ -554,7 +559,8 @@ contract VaultAcryptosSingle is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: earnedToToken0Path,
                 destination: address(this)
-            })
+            }),
+            _decimals0
         );
 
         // Step 2: BUSD to Token0
@@ -574,7 +580,8 @@ contract VaultAcryptosSingle is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: BUSDToToken0Path,
                 destination: address(this)
-            })
+            }),
+            _decimals1
         );
 
         // Redeposit single asset token to get Want token
@@ -600,12 +607,23 @@ contract VaultAcryptosSingle is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
         // Self contained block to limit stack depth
         {
             // Get exchange rate
             uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+
+            // Get decimal info
+            uint8[] memory _decimals0 = new uint8[](2);
+            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+            _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+            uint8[] memory _decimals1 = new uint8[](2);
+            _decimals1[0] = _decimals0[1];
+            _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
+            uint8[] memory _decimals2 = new uint8[](2);
+            _decimals2[0] = _decimals0[1];
+            _decimals2[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
 
             // 1. Swap Earned -> BUSD
             address[] memory _dummyEarnedToBUSDPath;
@@ -621,7 +639,8 @@ contract VaultAcryptosSingle is VaultBase {
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: _dummyEarnedToBUSDPath,
                     destination: address(this)
-                })
+                }),
+                _decimals0
             );
 
             // Get BUSD bal
@@ -642,7 +661,8 @@ contract VaultAcryptosSingle is VaultBase {
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: BUSDToZORROPath,
                     destination: address(this)
-                })
+                }),
+                _decimals1
             );
 
             // 3. Swap 1/2 BUSD -> LP "other token"
@@ -658,7 +678,8 @@ contract VaultAcryptosSingle is VaultBase {
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: BUSDToLPPoolOtherTokenPath,
                     destination: address(this)
-                })
+                }),
+                _decimals2
             );
         }
 
@@ -695,10 +716,20 @@ contract VaultAcryptosSingle is VaultBase {
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
         // Get exchange rate
         uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+        // Get decimal info
+        uint8[] memory _decimals1 = new uint8[](2);
+        _decimals1[0] = _decimals0[1];
+        _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
+        
 
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
@@ -722,7 +753,8 @@ contract VaultAcryptosSingle is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: _dummyPath, // Unused
                 destination: address(this)
-            })
+            }),
+            _decimals0
         );
         // 2. Uni: BUSD -> ZOR
         uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
@@ -738,14 +770,15 @@ contract VaultAcryptosSingle is VaultBase {
                 amountIn: _balUSDC,
                 priceToken0: _tokenBUSDExchangeRate,
                 priceToken1: _rates.ZOR,
-                token0: tokenUSDCAddress,
+                token0: tokenBUSD,
                 token1: ZORROAddress,
                 token0Weight: 0,
                 token1Weight: 0,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: BUSDToZORROPath,
                 destination: zorroStakingVault
-            })
+            }),
+            _decimals1
         );
     }
 
@@ -758,56 +791,24 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        // Get exchange rate
-        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
-        
-        // Swap ACS to BUSD (Balancer)
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _earnedAmount,
-                priceToken0: _rates.earn,
-                priceToken1: _tokenBUSDExchangeRate,
-                token0: earnedAddress,
-                token1: tokenBUSD,
-                token0Weight: balancerACSWeightBasisPoints,
-                token1Weight: balancerBUSDWeightBasisPoints,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToUSDCPath, // Unused
-                destination: address(this)
-            })
-        );
-
-        // BUSD balance
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
-            address(this)
-        );
-
-        // Swap path
-        address[] memory _path = new address[](2);
-        _path[0] = tokenBUSD;
-        _path[1] = tokenUSDCAddress;
-
-        // Swap BUSD to USDC (PCS)
-        // Increase allowance
-        IERC20Upgradeable(tokenBUSD).safeIncreaseAllowance(
-            uniRouterAddress,
-            _balBUSD
-        );
-        // Swap
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _balBUSD,
-                priceToken0: _tokenBUSDExchangeRate,
-                priceToken1: _rates.stablecoin,
-                token0: tokenBUSD,
-                token1: tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _path,
-                destination: _destination
+        VaultLibraryAcryptosSingle.swapEarnedToUSDC(
+            _earnedAmount,
+            _destination,
+            _maxMarketMovementAllowed,
+            _rates,
+            VaultLibraryAcryptosSingle.SwapEarnedToUSDCParams({
+                tokenBUSDPriceFeed: tokenBUSDPriceFeed,
+                earnedAddress: earnedAddress,
+                tokenBUSD: tokenBUSD,
+                tokenUSDCAddress: tokenUSDCAddress,
+                balancerACSWeightBasisPoints: balancerACSWeightBasisPoints,
+                balancerBUSDWeightBasisPoints: balancerBUSDWeightBasisPoints,
+                earnedToUSDCPath: earnedToUSDCPath,
+                uniRouterAddress: uniRouterAddress,
+                balancerVaultAddress: balancerVaultAddress,
+                balancerPool: balancerPool
             })
         );
     }

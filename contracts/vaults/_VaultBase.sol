@@ -26,6 +26,8 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
+import "./VaultLibrary.sol";
+
 abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -120,51 +122,6 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     AggregatorV3Interface public lpPoolOtherTokenPriceFeed; // Price feed of token that is NOT ZOR in liquidity pool
     AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
     AggregatorV3Interface public stablecoinPriceFeed; // Price feed of stablecoin token (e.g. USDC)
-
-    /* Structs */
-
-    struct VaultAddresses {
-        address govAddress;
-        address zorroControllerAddress;
-        address zorroXChainController;
-        address ZORROAddress;
-        address zorroStakingVault;
-        address wantAddress;
-        address token0Address;
-        address token1Address;
-        address earnedAddress;
-        address farmContractAddress;
-        address rewardsAddress;
-        address poolAddress;
-        address uniRouterAddress;
-        address zorroLPPool;
-        address zorroLPPoolOtherToken;
-        address tokenUSDCAddress;
-    }
-
-    struct VaultFees {
-        uint256 controllerFee;
-        uint256 buyBackRate;
-        uint256 revShareRate;
-        uint256 entranceFeeFactor;
-        uint256 withdrawFeeFactor;
-    }
-
-    struct VaultPriceFeeds {
-        address token0PriceFeed;
-        address token1PriceFeed;
-        address earnTokenPriceFeed;
-        address ZORPriceFeed;
-        address lpPoolOtherTokenPriceFeed;
-        address stablecoinPriceFeed;
-    }
-
-    struct ExchangeRates {
-        uint256 earn; // Exchange rate of earn token, times 1e12
-        uint256 ZOR; // Exchange rate of ZOR token, times 1e12
-        uint256 lpPoolOtherToken; // Exchange rate of token paired with ZOR in LP pool, times 1e12
-        uint256 stablecoin; // Exchange rate of stablecoin (e.g. USDC), times 1e12
-    }
 
     /* Events */
 
@@ -393,21 +350,6 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         );
     }
 
-    /// @notice Gets the swap path in the opposite direction of a trade
-    /// @param _path The swap path to be reversed
-    /// @return _newPath An reversed path array
-    function _reversePath(address[] memory _path)
-        internal
-        pure
-        returns (address[] memory _newPath)
-    {
-        uint256 _pathLength = _path.length;
-        _newPath = new address[](_pathLength);
-        for (uint16 i = 0; i < _pathLength; ++i) {
-            _newPath[i] = _path[_path.length.sub(1).sub(i)];
-        }
-    }
-
     /* Maintenance Functions */
 
     /// @notice Pause contract
@@ -447,7 +389,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     function _buyBackAndRevShare(
         uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal virtual returns (uint256 buybackAmt, uint256 revShareAmt) {
         // Calculate buyback amount
         if (buyBackRate > 0) {
@@ -539,19 +481,19 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal virtual;
 
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal virtual;
 
     function _swapEarnedToUSDC(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal virtual;
 }

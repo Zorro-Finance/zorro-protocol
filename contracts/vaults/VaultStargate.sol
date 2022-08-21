@@ -10,6 +10,8 @@ import "../interfaces/IStargateRouter.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "./_VaultBase.sol";
@@ -19,6 +21,8 @@ import "../interfaces/IBalancerVault.sol";
 import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IStargateLPStaking.sol";
+
+import "./VaultLibrary.sol";
 
 
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
@@ -81,7 +85,7 @@ contract VaultStargate is VaultBase {
         earnedToUSDCPath = _initValue.earnedToUSDCPath;
 
         // Corresponding reverse paths
-        token0ToUSDCPath = _reversePath(USDCToToken0Path);
+        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -110,14 +114,14 @@ contract VaultStargate is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultAddresses keyAddresses;
+        VaultLibrary.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] USDCToToken0Path;
         address[] earnedToZORLPPoolOtherTokenPath;
         address[] earnedToUSDCPath;
-        VaultFees fees;
-        VaultPriceFeeds priceFeeds;
+        VaultLibrary.VaultFees fees;
+        VaultLibrary.VaultPriceFeeds priceFeeds;
         address tokenSTG;
         address stargateRouter;
         uint16 stargatePoolId;
@@ -202,15 +206,21 @@ contract VaultStargate is VaultBase {
             address(this)
         );
         // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "USDC deposit must be > 0");
-        require(_amountUSDC <= _balUSDC, "USDC desired exceeded bal");
+        require(_amountUSDC > 0, "dep<=0");
+        require(_amountUSDC <= _balUSDC, "amt>bal");
 
         // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = stablecoinPriceFeed.getExchangeRate();
+        _priceTokens[1] = token0PriceFeed.getExchangeRate();
 
         if (tokenUSDCAddress != token0Address) {
             // Only perform swaps if the token is not USDC
+
+            // Get decimal info
+            uint8[] memory _decimals = new uint8[](2);
+            _decimals[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+            _decimals[1] = ERC20Upgradeable(token0Address).decimals();
 
             // Swap USDC for tokens
             // Increase allowance
@@ -221,10 +231,10 @@ contract VaultStargate is VaultBase {
             // Single asset. Swap from USDC directly to Token0
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _amountUSDC,
-                _tokenUSDCExchangeRate,
-                _token0ExchangeRate,
+                _priceTokens,
                 _maxMarketMovementAllowed,
                 USDCToToken0Path,
+                _decimals,
                 address(this),
                 block.timestamp.add(600)
             );
@@ -310,7 +320,7 @@ contract VaultStargate is VaultBase {
         returns (uint256 sharesRemoved)
     {
         // Preflight checks
-        require(_wantAmt > 0, "want amt <= 0");
+        require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
@@ -371,7 +381,7 @@ contract VaultStargate is VaultBase {
         returns (uint256)
     {
         // Preflight checks
-        require(_amount > 0, "Want amt must be > 0");
+        require(_amount > 0, "negWant");
 
         // Safely transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
@@ -399,10 +409,16 @@ contract VaultStargate is VaultBase {
             // Only swap if the token is not USDC
 
             // Use price feed to determine exchange rates
-            uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-            uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
+            uint256[] memory _priceTokens = new uint256[](2);
+            _priceTokens[0] = token0PriceFeed.getExchangeRate();
+            _priceTokens[1] = stablecoinPriceFeed.getExchangeRate();
 
             // Swap Token0 for USDC
+
+            // Get decimal info
+            uint8[] memory _decimals = new uint8[](2);
+            _decimals[0] = ERC20Upgradeable(token0Address).decimals();
+            _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
 
             // Increase allowance
             IERC20Upgradeable(token0Address).safeIncreaseAllowance(
@@ -413,10 +429,10 @@ contract VaultStargate is VaultBase {
             // Swap Token0 -> USDC
             IAMMRouter02(uniRouterAddress).safeSwap(
                 _token0Bal,
-                _token0ExchangeRate,
-                _tokenUSDCExchangeRate,
+                _priceTokens,
                 _maxMarketMovementAllowed,
                 token0ToUSDCPath,
+                _decimals,
                 msg.sender,
                 block.timestamp.add(600)
             );
@@ -442,7 +458,7 @@ contract VaultStargate is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        require(isFarmable, "!farmable for earn");
+        require(isFarmable, "!farmable");
         
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
@@ -457,16 +473,17 @@ contract VaultStargate is VaultBase {
             address(this)
         );
 
-        // Get exchange rate from price feed
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-
         // Create rates struct
-        ExchangeRates memory _rates = ExchangeRates({
+        VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),
             ZOR: ZORPriceFeed.getExchangeRate(),
             lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
             stablecoin: stablecoinPriceFeed.getExchangeRate()
         });
+        // Other rates
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _rates.earn;
+        _priceTokens[1] = token0PriceFeed.getExchangeRate();
 
         // Distribute fees
         uint256 _controllerFee = _distributeFees(_earnedAmt);
@@ -484,6 +501,11 @@ contract VaultStargate is VaultBase {
             .sub(_buybackAmt)
             .sub(_revShareAmt);
 
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
+
         // Allow spending
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -493,10 +515,10 @@ contract VaultStargate is VaultBase {
         // Swap Earn token for single asset token (STG -> token0)
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmtNet,
-            _rates.earn,
-            _token0ExchangeRate,
+            _priceTokens,
             _maxMarketMovementAllowed,
             earnedToToken0Path,
+            _decimals,
             address(this),
             block.timestamp.add(600)
         );
@@ -532,8 +554,25 @@ contract VaultStargate is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
+        // Get decimal info
+        uint8[] memory _decimals1 = new uint8[](2);
+        _decimals1[0] = _decimals0[0];
+        _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
+
+        // Get exchange rates
+        uint256[] memory _priceTokens0 = new uint256[](2);
+        _priceTokens0[0] = _rates.earn;
+        _priceTokens0[1] = _rates.ZOR;
+        uint256[] memory _priceTokens1 = new uint256[](2);
+        _priceTokens1[0] = _rates.earn;
+        _priceTokens1[1] = _rates.lpPoolOtherToken;
+
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -543,10 +582,10 @@ contract VaultStargate is VaultBase {
         // 1. Swap 1/2 Earned -> ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
-            _rates.earn,
-            _rates.ZOR,
+            _priceTokens0,
             _maxMarketMovementAllowed,
             earnedToZORROPath,
+            _decimals0,
             address(this),
             block.timestamp.add(600)
         );
@@ -554,15 +593,22 @@ contract VaultStargate is VaultBase {
         // 2. Swap 1/2 Earned -> LP "other token"
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount.div(2),
-            _rates.earn,
-            _rates.lpPoolOtherToken,
+            _priceTokens1,
             _maxMarketMovementAllowed,
             earnedToZORLPPoolOtherTokenPath,
+            _decimals1,
             address(this),
             block.timestamp.add(600)
         );
 
-        // Enter LP pool and send received token to the burn address
+        // Add liquidity and burn
+        _addLiqAndBurn(_maxMarketMovementAllowed);
+    }
+
+    /// @notice Adds liquidity and burns the associated LP token
+    /// @param _maxMarketMovementAllowed Slippage factor (990 = 1% etc.)
+    function _addLiqAndBurn(uint256 _maxMarketMovementAllowed) internal {
+// Enter LP pool and send received token to the burn address
         uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
             address(this)
         );
@@ -595,8 +641,18 @@ contract VaultStargate is VaultBase {
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(ZORROAddress).decimals();
+
+        // Get exchange rates
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _rates.earn;
+        _priceTokens[1] = _rates.ZOR;
+
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -606,10 +662,10 @@ contract VaultStargate is VaultBase {
         // Swap Earn to ZOR
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
-            _rates.earn,
-            _rates.ZOR,
+            _priceTokens,
             _maxMarketMovementAllowed,
             earnedToZORROPath,
+            _decimals,
             zorroStakingVault,
             block.timestamp.add(600)
         );
@@ -624,8 +680,18 @@ contract VaultStargate is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates
+        VaultLibrary.ExchangeRates memory _rates
     ) internal override {
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+
+        // Get exchange rates
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _rates.earn;
+        _priceTokens[1] = _rates.stablecoin;
+
         // Increase allowance
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -635,10 +701,10 @@ contract VaultStargate is VaultBase {
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _earnedAmount,
-            _rates.earn,
-            _rates.stablecoin,
+            _priceTokens,
             _maxMarketMovementAllowed,
             earnedToUSDCPath,
+            _decimals,
             _destination,
             block.timestamp.add(600)
         );

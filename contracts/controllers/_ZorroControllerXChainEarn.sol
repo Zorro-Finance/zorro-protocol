@@ -14,6 +14,8 @@ import "../interfaces/IAMMRouter02.sol";
 
 import "../interfaces/IZorro.sol";
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
 contract ZorroControllerXChainEarn is
     IZorroControllerXChainEarn,
     ZorroControllerXChainBase
@@ -65,6 +67,7 @@ contract ZorroControllerXChainEarn is
     // Price feeds
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
+    AggregatorV3Interface public priceFeedStablecoin;
     // Rewards
     uint256 public accumulatedSlashedRewards; // Accumulated ZOR rewards that need to be minted in batch on the home chain. Should reset to zero periodically
 
@@ -93,6 +96,7 @@ contract ZorroControllerXChainEarn is
     function setPriceFeeds(address[] calldata _priceFeeds) external onlyOwner {
         priceFeedZOR = AggregatorV3Interface(_priceFeeds[0]);
         priceFeedLPPoolOtherToken = AggregatorV3Interface(_priceFeeds[1]);
+        priceFeedStablecoin = AggregatorV3Interface(_priceFeeds[2]);
     }
 
     /* Fees */
@@ -310,35 +314,51 @@ contract ZorroControllerXChainEarn is
             _amountUSDC
         );
 
-        // Determine exchange rates using price feed oracle
-        uint256 _exchangeRateZOR = priceFeedZOR.getExchangeRate();
-        uint256 _exchangeRateLPPoolOtherToken = priceFeedLPPoolOtherToken
-            .getExchangeRate();
 
-        // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        {
+            // Determine exchange rates using price feed oracle
+            uint256[] memory _priceTokens0 = new uint256[](2);
+            _priceTokens0[0] = priceFeedStablecoin.getExchangeRate();
+            _priceTokens0[1] = priceFeedZOR.getExchangeRate();
+            uint256[] memory _priceTokens1 = new uint256[](2);
+            _priceTokens1[0] = _priceTokens0[0];
+            _priceTokens1[1] = priceFeedLPPoolOtherToken.getExchangeRate();
 
-        // Swap to ZOR token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            1e12, // TODO: Globally: Make sure to use actual exch values in case it depegs
-            _exchangeRateZOR,
-            _maxMarketMovement,
-            USDCToZorroPath,
-            address(this),
-            block.timestamp.add(600)
-        );
+            // Get decimal info
+            uint8[] memory _decimals0 = new uint8[](2);
+            _decimals0[0] = ERC20Upgradeable(defaultStablecoin).decimals();
+            _decimals0[1] = ERC20Upgradeable(ZORRO).decimals();
+            uint8[] memory _decimals1 = new uint8[](2);
+            _decimals1[0] = _decimals0[0];
+            _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
 
-        // Swap to counterparty token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            1e12, // TODO: Chainlink
-            _exchangeRateLPPoolOtherToken,
-            _maxMarketMovement,
-            USDCToZorroLPPoolOtherTokenPath,
-            address(this),
-            block.timestamp.add(600)
-        );
+            // Increase allowance
+            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+
+
+            // Swap to ZOR token
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _priceTokens0,
+                _maxMarketMovement,
+                USDCToZorroPath,
+                _decimals0,
+                address(this),
+                block.timestamp.add(600)
+            );
+
+            // Swap to counterparty token
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _priceTokens1,
+                _maxMarketMovement,
+                USDCToZorroLPPoolOtherTokenPath,
+                _decimals1,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
+
 
         // Enter LP pool
         uint256 tokenZORAmt = IERC20Upgradeable(ZORRO).balanceOf(address(this));
@@ -374,8 +394,15 @@ contract ZorroControllerXChainEarn is
             _amountUSDC
         );
 
-        // Get Zorro exchange rate
-        uint256 _ZORROExchangeRate = priceFeedZOR.getExchangeRate();
+        // Determine exchange rates using price feed oracle
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = priceFeedStablecoin.getExchangeRate();
+        _priceTokens[1] = priceFeedZOR.getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
+        _decimals[1] = ERC20Upgradeable(ZORRO).decimals();
 
         // Swap to ZOR
         // Increase allowance
@@ -383,10 +410,10 @@ contract ZorroControllerXChainEarn is
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amountUSDC,
-            1e12, // TODO
-            _ZORROExchangeRate,
+            _priceTokens,
             _maxMarketMovement,
             USDCToZorroPath,
+            _decimals,
             zorroStakingVault,
             block.timestamp.add(600)
         );

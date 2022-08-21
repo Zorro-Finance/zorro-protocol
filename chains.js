@@ -34,7 +34,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     priceFeeds: {
       priceFeedZOR: zeroAdress, 
       priceFeedLPPoolOtherToken: zeroAdress,
-      stablecoinPriceFeed: zeroAdress,
+      priceFeedStablecoin: zeroAdress,
     },
     zorroLPPool: zeroAdress, // To be filled in on home chain after deployment!
     bridge: {
@@ -93,7 +93,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     priceFeeds: {
       priceFeedZOR: zeroAdress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
       priceFeedLPPoolOtherToken: '0x0A77230d17318075983913bC2145DB16C7366156', // AVAX/USD price feed
-      stablecoinPriceFeed: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
+      priceFeedStablecoin: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
     },
     zorroLPPool: zeroAdress, // To be filled in on home chain after deployment!
     bridge: {

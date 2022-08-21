@@ -17,39 +17,44 @@ library SafeSwapUni {
     /// @notice Safely swap tokens
     /// @param _uniRouter Uniswap V2 router
     /// @param _amountIn The quantity of the origin token to swap
-    /// @param _priceTokenIn Price of tokenIn in USD, times 1e12
-    /// @param _priceTokenOut Price of tokenOut in USD, times 1e12
+    /// @param _priceTokens Array of prices of tokenIn in USD, times 1e12, then tokenOut
     /// @param _slippageFactor The maximum slippage factor tolerated for this swap
     /// @param _path The path to take for the swap
+    /// @param _decimals The number of decimals for _amountIn, _amountOut
     /// @param _to The destination to send the swapped token to
     /// @param _deadline How much time to allow for the transaction
     function safeSwap(
         IAMMRouter02 _uniRouter,
         uint256 _amountIn,
-        uint256 _priceTokenIn,
-        uint256 _priceTokenOut,
+        uint256[] memory _priceTokens,
         uint256 _slippageFactor,
         address[] memory _path,
+        uint8[] memory _decimals,
         address _to,
         uint256 _deadline
     ) internal {
+        // Requirements
+        require(_decimals.length == 2, "invalid dec");
         // Calculate min amount out (account for slippage)
         uint256 _amountOut;
-        if (_priceTokenIn == 0 || _priceTokenOut == 0) {
+
+        if (_priceTokens[0] == 0 || _priceTokens[1] == 0) {
             // If no exchange rates provided, use on-chain functions provided by router (not ideal)
-            uint256[] memory amounts = _uniRouter.getAmountsOut(
+            _amountOut = _getAmountOutWithoutExchangeRates(
+                _uniRouter,
                 _amountIn,
-                _path
+                _path,
+                _slippageFactor,
+                _decimals
             );
-            _amountOut = amounts[amounts.length.sub(1)]
-                .mul(_slippageFactor)
-                .div(1000);
         } else {
-            // Calculate amountOut based on provided exchange rates
-            _amountOut = _amountIn
-                .mul(_priceTokenIn)
-                .mul(_slippageFactor)
-                .div(_priceTokenOut.mul(1000));
+            _amountOut = _getAmountOutWithExchangeRates(
+                _amountIn,
+                _priceTokens[0],
+                _priceTokens[1],
+                _slippageFactor,
+                _decimals
+            );
         }
         // Swap
         _uniRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -59,6 +64,38 @@ library SafeSwapUni {
             _to,
             _deadline
         );
+    }
+
+    /// @notice Gets amounts out using provided exchange rates
+    function _getAmountOutWithExchangeRates(
+        uint256 _amountIn,
+        uint256 _priceTokenIn,
+        uint256 _priceTokenOut,
+        uint256 _slippageFactor,
+        uint8[] memory _decimals
+    ) internal pure returns (uint256) {
+        return
+            _amountIn
+                .mul(_priceTokenIn)
+                .mul(_slippageFactor)
+                .mul(10**(_decimals[1] - _decimals[0]))
+                .div(_priceTokenOut.mul(1000));
+    }
+
+    /// @notice Gets amounts out when exchange rates are not provided (uses router)
+    function _getAmountOutWithoutExchangeRates(
+        IAMMRouter02 _uniRouter,
+        uint256 _amountIn,
+        address[] memory _path,
+        uint256 _slippageFactor,
+        uint8[] memory _decimals
+    ) internal view returns (uint256) {
+        uint256[] memory amounts = _uniRouter.getAmountsOut(_amountIn, _path);
+        return
+            amounts[amounts.length.sub(1)]
+                .mul(_slippageFactor)
+                .mul(10**(_decimals[1] - _decimals[0]))
+                .div(1000);
     }
 }
 
@@ -72,11 +109,15 @@ library SafeSwapBalancer {
     /// @param _balancerVault Acryptos/Balancer vault (contract for performing swaps)
     /// @param _poolId Address of the pool to perform swaps
     /// @param _swapParams SafeSwapParams for swap
+    /// @param _decimals The number of decimals for _amountIn, _amountOut
     function safeSwap(
         IBalancerVault _balancerVault,
         bytes32 _poolId,
-        SafeSwapParams memory _swapParams
+        SafeSwapParams memory _swapParams,
+        uint8[] memory _decimals
     ) internal {
+        // Requirements
+        require(_decimals.length == 2, "invalid dec");
         // Calculate min amount out
         uint256 _amountOut;
         if (_swapParams.priceToken0 == 0 || _swapParams.priceToken1 == 0) {
@@ -91,12 +132,15 @@ library SafeSwapBalancer {
                     )
                 )
                 .mul(_swapParams.maxMarketMovementAllowed)
+                .mul(10**(_decimals[1] - _decimals[0]))
                 .div(uint256(1000).mul(1e12));
         } else {
             // Calculate amountOut based on provided exchange rates
-            _amountOut = _swapParams.amountIn
+            _amountOut = _swapParams
+                .amountIn
                 .mul(_swapParams.priceToken0)
                 .mul(_swapParams.maxMarketMovementAllowed)
+                .mul(10**(_decimals[1] - _decimals[0]))
                 .div(_swapParams.priceToken1.mul(1000));
         }
 
