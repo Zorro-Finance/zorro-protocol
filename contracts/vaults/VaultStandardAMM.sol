@@ -442,15 +442,14 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed,
         address _recipient
     ) internal {
-        IAMMRouter02(uniRouterAddress).addLiquidity(
+        VaultLibraryStandardAMM.joinPool(
             token0Address,
             token1Address,
             _token0Amt,
             _token1Amt,
-            _token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-            _token1Amt.mul(_maxMarketMovementAllowed).div(1000),
-            _recipient,
-            block.timestamp.add(600)
+            uniRouterAddress,
+            _maxMarketMovementAllowed,
+            _recipient
         );
     }
 
@@ -463,38 +462,17 @@ contract VaultStandardAMM is VaultBase {
         uint256 _maxMarketMovementAllowed,
         address _recipient
     ) internal {
-        // Get token balances in LP pool
-        uint256 _balance0 = IERC20Upgradeable(token0Address).balanceOf(
-            poolAddress
-        );
-        uint256 _balance1 = IERC20Upgradeable(token1Address).balanceOf(
-            poolAddress
-        );
-
-        // Get total supply and calculate min amounts desired based on slippage
-        uint256 _totalSupply = IERC20Upgradeable(poolAddress).totalSupply();
-        uint256 _amount0Min = (_amountLP.mul(_balance0).div(_totalSupply))
-            .mul(_maxMarketMovementAllowed)
-            .div(1000);
-        uint256 _amount1Min = (_amountLP.mul(_balance1).div(_totalSupply))
-            .mul(_maxMarketMovementAllowed)
-            .div(1000);
-
-        // Approve
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountLP
-        );
-
-        // Remove liquidity
-        IAMMRouter02(uniRouterAddress).removeLiquidity(
-            token0Address,
-            token1Address,
+        VaultLibraryStandardAMM.exitPool(
             _amountLP,
-            _amount0Min,
-            _amount1Min,
+            _maxMarketMovementAllowed,
             _recipient,
-            block.timestamp.add(600)
+            VaultLibraryStandardAMM.ExitPoolParams({
+                token0: token0Address,
+                token1: token1Address,
+                poolAddress: poolAddress,
+                uniRouterAddress: uniRouterAddress,
+                wantAddress: wantAddress
+            })
         );
     }
 
@@ -552,10 +530,9 @@ contract VaultStandardAMM is VaultBase {
                 _rates
             );
 
-            _remainingAmt = _earnedAmt
-                .sub(_controllerFee)
-                .sub(_buybackAmt)
-                .sub(_revShareAmt);
+            _remainingAmt = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
+                    _revShareAmt
+                );
         }
 
         // Allow the router contract to spen up to earnedAmt
@@ -664,7 +641,6 @@ contract VaultStandardAMM is VaultBase {
             _priceTokens1[1] = _rates.lpPoolOtherToken;
         }
 
-
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
@@ -693,37 +669,14 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Add liquidity and burn
-        _addLiqAndBurn(_maxMarketMovementAllowed);
-    }
-
-    /// @notice Adds liquidity and burns the associated LP token
-    /// @param _maxMarketMovementAllowed Slippage factor (990 = 1% etc.)
-    function _addLiqAndBurn(uint256 _maxMarketMovementAllowed) internal {
-        // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
-            address(this)
-        );
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
-            .balanceOf(address(this));
-
-        IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            zorroTokenAmt
-        );
-        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            otherTokenAmt
-        );
-
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORROAddress,
-            zorroLPPoolOtherToken,
-            zorroTokenAmt,
-            otherTokenAmt,
-            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
+        VaultLibraryStandardAMM.addLiqAndBurn(
+            _maxMarketMovementAllowed,
+            VaultLibraryStandardAMM.AddLiqAndBurnParams({
+                zorro: ZORROAddress,
+                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
+                uniRouterAddress: uniRouterAddress,
+                burnAddress: burnAddress
+            })
         );
     }
 

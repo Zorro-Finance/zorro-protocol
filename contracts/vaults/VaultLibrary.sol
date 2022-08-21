@@ -235,3 +235,146 @@ library VaultLibraryAcryptosSingle {
         );
     }
 }
+
+library VaultLibraryStandardAMM {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
+    /// @notice Adds liquidity to the pool of this contract
+    /// @param _token0 The address of Token0
+    /// @param _token1 The address of Token1
+    /// @param _token0Amt Quantity of Token0 to add
+    /// @param _token1Amt Quantity of Token1 to add
+    /// @param _uniRouterAddress The address of the uni style router
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _recipient The recipient of the LP token
+    function joinPool(
+        address _token0,
+        address _token1,
+        uint256 _token0Amt,
+        uint256 _token1Amt,
+        address _uniRouterAddress,
+        uint256 _maxMarketMovementAllowed,
+        address _recipient
+    ) public {
+        IAMMRouter02(_uniRouterAddress).addLiquidity(
+            _token0,
+            _token1,
+            _token0Amt,
+            _token1Amt,
+            _token0Amt.mul(_maxMarketMovementAllowed).div(1000),
+            _token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            _recipient,
+            block.timestamp.add(600)
+        );
+    }
+
+    struct ExitPoolParams {
+        address token0;
+        address token1;
+        address poolAddress;
+        address uniRouterAddress;
+        address wantAddress;
+    }
+
+    /// @notice Removes liquidity from a pool and sends tokens back to this address
+    /// @param _amountLP The amount of LP (Want) tokens to remove
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _recipient The recipient of the underlying tokens at pool exit
+    function exitPool(
+        uint256 _amountLP,
+        uint256 _maxMarketMovementAllowed,
+        address _recipient,
+        ExitPoolParams memory _exitPoolParams
+    ) public {
+        // Init
+        uint256 _amount0Min;
+        uint256 _amount1Min;
+        // Get total supply and calculate min amounts desired based on slippage
+        uint256 _totalSupply = IERC20(_exitPoolParams.poolAddress).totalSupply();
+
+        {
+            _amount0Min = _calcMinAmt(_amountLP, _exitPoolParams.token0, _exitPoolParams.poolAddress, _totalSupply, _maxMarketMovementAllowed);
+            _amount1Min = _calcMinAmt(_amountLP, _exitPoolParams.token1, _exitPoolParams.poolAddress, _totalSupply, _maxMarketMovementAllowed);
+        }
+
+
+        // Approve
+        IERC20(_exitPoolParams.wantAddress).safeIncreaseAllowance(
+            _exitPoolParams.uniRouterAddress,
+            _amountLP
+        );
+
+        // Remove liquidity
+        IAMMRouter02(_exitPoolParams.uniRouterAddress).removeLiquidity(
+            _exitPoolParams.token0,
+            _exitPoolParams.token1,
+            _amountLP,
+            _amount0Min,
+            _amount1Min,
+            _recipient,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Calculates minimum amount out for exiting LP pool 
+    /// @param _amountLP LP token qty
+    /// @param _token Address of one of the tokens in the pair
+    /// @param _poolAddress Address of LP pair
+    /// @param _totalSupply Total supply of LP tokens
+    /// @param _maxMarketMovementAllowed Slippage (990 = 1% etc.)
+    function _calcMinAmt(
+        uint256 _amountLP,
+        address _token,
+        address _poolAddress,
+        uint256 _totalSupply,
+        uint256 _maxMarketMovementAllowed
+    ) internal view returns (uint256) {
+        uint256 _balance = IERC20(_token).balanceOf(_poolAddress);
+        return (_amountLP.mul(_balance).div(_totalSupply))
+                .mul(_maxMarketMovementAllowed)
+                .div(1000);
+    }
+
+    struct AddLiqAndBurnParams {
+        address zorro;
+        address zorroLPPoolOtherToken;
+        address uniRouterAddress;
+        address burnAddress;
+    }
+
+    /// @notice Adds liquidity and burns the associated LP token
+    /// @param _maxMarketMovementAllowed Slippage factor (990 = 1% etc.)
+    /// @param _params AddLiqAndBurnParams containing addresses
+    function addLiqAndBurn(
+        uint256 _maxMarketMovementAllowed,
+        AddLiqAndBurnParams memory _params
+    ) public {
+        // Enter LP pool and send received token to the burn address
+        uint256 zorroTokenAmt = IERC20(_params.zorro).balanceOf(
+            address(this)
+        );
+        uint256 otherTokenAmt = IERC20(_params.zorroLPPoolOtherToken)
+            .balanceOf(address(this));
+
+        IERC20(_params.zorro).safeIncreaseAllowance(
+            _params.uniRouterAddress,
+            zorroTokenAmt
+        );
+        IERC20(_params.zorroLPPoolOtherToken).safeIncreaseAllowance(
+            _params.uniRouterAddress,
+            otherTokenAmt
+        );
+
+        IAMMRouter02(_params.uniRouterAddress).addLiquidity(
+            _params.zorro,
+            _params.zorroLPPoolOtherToken,
+            zorroTokenAmt,
+            otherTokenAmt,
+            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
+            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
+            _params.burnAddress,
+            block.timestamp.add(600)
+        );
+    }
+}
