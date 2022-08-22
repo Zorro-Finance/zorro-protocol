@@ -14,6 +14,8 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
+import "../interfaces/IAcryptosVault.sol";
+
 library VaultLibrary {
     /* Libs */
     using SafeMathUpgradeable for uint256;
@@ -85,6 +87,7 @@ library VaultLibraryAcryptosSingle {
     using SafeSwapBalancer for IBalancerVault;
     using SafeSwapUni for IAMMRouter02;
     using SafeMathUpgradeable for uint256;
+    using PriceFeed for AggregatorV3Interface;
 
     // using PriceFeed for AggregatorV3Interface;
 
@@ -136,6 +139,194 @@ library VaultLibraryAcryptosSingle {
                 block.timestamp.add(600)
             );
         }
+    }
+
+    struct ExchangeUSDForWantParams {
+        address token0Address;
+        address tokenUSDCAddress;
+        address tokenACSAddress;
+        AggregatorV3Interface token0PriceFeed;
+        AggregatorV3Interface stablecoinPriceFeed;
+        address uniRouterAddress;
+        address balancerVaultAddress;
+        bytes32 balancerPool;
+        address zorroControllerAddress;
+        address[] USDCToToken0Path;
+        address poolAddress;
+        address wantAddress;
+    }
+
+    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @param _amountUSDC The USDC quantity to exchange (must already be deposited)
+    /// @param _params A ExchangeUSDForWantParams struct
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return uint256 Amount of Want token obtained
+    function exchangeUSDForWantToken(
+        uint256 _amountUSDC,
+        ExchangeUSDForWantParams memory _params,
+        uint256 _maxMarketMovementAllowed
+    ) public returns (uint256) {
+        // Get balance of deposited USDC
+        uint256 _balUSDC = IERC20(_params.tokenUSDCAddress).balanceOf(
+            address(this)
+        );
+        // Check that USDC was actually deposited
+        require(_amountUSDC > 0, "dep<=0");
+        require(_amountUSDC <= _balUSDC, "amt>bal");
+
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = _params
+            .stablecoinPriceFeed
+            .getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(_params.token0Address).decimals();
+
+        // Swap USDC for tokens
+        // Increase allowance
+        IERC20Upgradeable(_params.tokenUSDCAddress).safeIncreaseAllowance(
+            _params.uniRouterAddress,
+            _amountUSDC
+        );
+        // Single asset. Swap from USDC directly to Token0
+        safeSwap(
+            _params.balancerVaultAddress,
+            _params.balancerPool,
+            _params.uniRouterAddress,
+            SafeSwapParams({
+                amountIn: _amountUSDC,
+                priceToken0: _tokenUSDCExchangeRate,
+                priceToken1: _token0ExchangeRate,
+                token0: _params.tokenUSDCAddress,
+                token1: _params.token0Address,
+                token0Weight: 0,
+                token1Weight: 0,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: _params.USDCToToken0Path,
+                destination: address(this)
+            }),
+            _decimals,
+            _params.token0Address == _params.tokenACSAddress
+        );
+
+        // Get new Token0 balance
+        uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
+            address(this)
+        );
+
+        // Increase allowance
+        IERC20Upgradeable(_params.token0Address).safeIncreaseAllowance(
+            _params.poolAddress,
+            _token0Bal
+        );
+
+        // Deposit token to get Want token
+        IAcryptosVault(_params.poolAddress).deposit(_token0Bal);
+
+        // Calculate resulting want token balance
+        uint256 _wantAmt = IERC20Upgradeable(_params.wantAddress).balanceOf(
+            address(this)
+        );
+
+        // Transfer back to sender
+        IERC20Upgradeable(_params.wantAddress).safeTransfer(
+            _params.zorroControllerAddress,
+            _wantAmt
+        );
+
+        return _wantAmt;
+    }
+
+    struct ExchangeWantTokenForUSDParams {
+        address token0Address;
+        address tokenUSDCAddress;
+        address tokenACSAddress;
+        address wantAddress;
+        address poolAddress;
+        AggregatorV3Interface token0PriceFeed;
+        AggregatorV3Interface stablecoinPriceFeed;
+        address[] token0ToUSDCPath;
+        address uniRouterAddress;
+        address balancerVaultAddress;
+        bytes32 balancerPool;
+    }
+
+    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
+    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
+    /// @param _params A ExchangeWantTokenForUSDParams struct
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return uint256 Amount of USDC token obtained
+    function exchangeWantTokenForUSD(
+        uint256 _amount,
+        ExchangeWantTokenForUSDParams memory _params,
+        uint256 _maxMarketMovementAllowed
+    ) public returns (uint256) {
+        // Preflight checks
+        require(_amount > 0, "negWant");
+
+        // Safely transfer Want token from sender
+        IERC20Upgradeable(_params.wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
+        // Approve
+        IERC20Upgradeable(_params.wantAddress).safeIncreaseAllowance(
+            _params.poolAddress,
+            _amount
+        );
+
+        // Withdraw Want token to get Token0
+        IAcryptosVault(_params.poolAddress).withdraw(_amount);
+
+        // Use price feed to determine exchange rates
+        uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
+        uint256 _tokenUSDCExchangeRate = _params
+            .stablecoinPriceFeed
+            .getExchangeRate();
+
+        // Get decimal info
+        uint8[] memory _decimals = new uint8[](2);
+        _decimals[0] = ERC20Upgradeable(_params.token0Address).decimals();
+        _decimals[1] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+
+        // Swap Token0 for USDC
+        // Get Token0 balance
+        uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
+            address(this)
+        );
+        // Increase allowance
+        IERC20Upgradeable(_params.token0Address).safeIncreaseAllowance(
+            _params.uniRouterAddress,
+            _token0Bal
+        );
+        // Swap Token0 -> USDC
+        safeSwap(
+            _params.balancerVaultAddress,
+            _params.balancerPool,
+            _params.uniRouterAddress,
+            SafeSwapParams({
+                amountIn: _token0Bal,
+                priceToken0: _token0ExchangeRate,
+                priceToken1: _tokenUSDCExchangeRate,
+                token0: _params.token0Address,
+                token1: _params.tokenUSDCAddress,
+                token0Weight: 0,
+                token1Weight: 0,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: _params.token0ToUSDCPath,
+                destination: msg.sender
+            }),
+            _decimals,
+            _params.token0Address == _params.tokenACSAddress
+        );
+
+        // Calculate USDC balance
+        return IERC20(_params.tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     struct SwapEarnedToUSDCParams {
@@ -421,9 +612,8 @@ library VaultLibraryStandardAMM {
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(_params.tokenUSDCAddress).balanceOf(
-            address(this)
-        );
+        uint256 _balUSDC = IERC20Upgradeable(_params.tokenUSDCAddress)
+            .balanceOf(address(this));
         // Check that USDC was actually deposited
         require(_amountUSDC > 0, "dep<=0");
         require(_amountUSDC <= _balUSDC, "amt>bal");

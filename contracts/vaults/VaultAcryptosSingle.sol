@@ -247,73 +247,34 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20(tokenUSDCAddress).balanceOf(address(this));
-        // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "dep<=0");
-        require(_amountUSDC <= _balUSDC, "amt>bal");
-
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Swap USDC for tokens
-        // Increase allowance
-        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSDC
-        );
-        // Single asset. Swap from USDC directly to Token0
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _amountUSDC,
-                priceToken0: _tokenUSDCExchangeRate,
-                priceToken1: _token0ExchangeRate,
-                token0: tokenUSDCAddress,
-                token1: token0Address,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: USDCToToken0Path,
-                destination: address(this)
-            }),
-            _decimals
-        );
-
-        // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-
-        // Increase allowance
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(poolAddress, _token0Bal);
-
-        // Deposit token to get Want token
-        IAcryptosVault(poolAddress).deposit(_token0Bal);
-
-        // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-
-        // Transfer back to sender
-        IERC20Upgradeable(wantAddress).safeTransfer(
-            zorroControllerAddress,
-            _wantAmt
-        );
-
-        return _wantAmt;
+        return
+            VaultLibraryAcryptosSingle.exchangeUSDForWantToken(
+                _amountUSDC,
+                VaultLibraryAcryptosSingle.ExchangeUSDForWantParams({
+                    token0Address: token0Address,
+                    tokenUSDCAddress: tokenUSDCAddress,
+                    tokenACSAddress: tokenACS,
+                    token0PriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    uniRouterAddress: uniRouterAddress,
+                    balancerVaultAddress: balancerVaultAddress,
+                    balancerPool: balancerPool,
+                    zorroControllerAddress: zorroControllerAddress,
+                    USDCToToken0Path: USDCToToken0Path,
+                    poolAddress: poolAddress,
+                    wantAddress: wantAddress
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @param _swapParams SafeSwapParams for swap
     /// @param _decimals Array of decimals for amount In, amount Out
-    function _safeSwap(SafeSwapParams memory _swapParams, uint8[] memory _decimals) internal {
+    function _safeSwap(
+        SafeSwapParams memory _swapParams,
+        uint8[] memory _decimals
+    ) internal {
         VaultLibraryAcryptosSingle.safeSwap(
             balancerVaultAddress,
             balancerPool,
@@ -332,7 +293,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal virtual {
         require(isFarmable, "!farmable");
-        
+
         // Get the Want token stored on this contract
         uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
@@ -429,60 +390,24 @@ contract VaultAcryptosSingle is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Preflight checks
-        require(_amount > 0, "negWant");
-
-        // Safely transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-
-        // Approve
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(poolAddress, _amount);
-
-        // Withdraw Want token to get Token0
-        IAcryptosVault(poolAddress).withdraw(_amount);
-
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = stablecoinPriceFeed.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
-
-        // Swap Token0 for USDC
-        // Get Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-        // Increase allowance
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            _token0Bal
-        );
-        // Swap Token0 -> USDC
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _token0Bal,
-                priceToken0: _token0ExchangeRate,
-                priceToken1: _tokenUSDCExchangeRate,
-                token0: token0Address,
-                token1: tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: token0ToUSDCPath,
-                destination: msg.sender
-            }),
-            _decimals
-        );
-
-        // Calculate USDC balance
-        return IERC20(tokenUSDCAddress).balanceOf(msg.sender);
+        return
+            VaultLibraryAcryptosSingle.exchangeWantTokenForUSD(
+                _amount,
+                VaultLibraryAcryptosSingle.ExchangeWantTokenForUSDParams({
+                    token0Address: token0Address,
+                    tokenUSDCAddress: tokenUSDCAddress,
+                    tokenACSAddress: tokenACS,
+                    wantAddress: wantAddress,
+                    poolAddress: poolAddress,
+                    token0PriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    token0ToUSDCPath: token0ToUSDCPath,
+                    uniRouterAddress: uniRouterAddress,
+                    balancerVaultAddress: balancerVaultAddress,
+                    balancerPool: balancerPool
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -535,7 +460,6 @@ contract VaultAcryptosSingle is VaultBase {
             .sub(_buybackAmt)
             .sub(_revShareAmt);
 
-
         // Swap Earn token for single asset token
 
         // Get decimal info
@@ -586,9 +510,14 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Redeposit single asset token to get Want token
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
         // Allow spending
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(poolAddress, _token0Bal);
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            poolAddress,
+            _token0Bal
+        );
         // Deposit token to get Want token
         IAcryptosVault(poolAddress).deposit(_token0Bal);
 
@@ -612,7 +541,8 @@ contract VaultAcryptosSingle is VaultBase {
         // Self contained block to limit stack depth
         {
             // Get exchange rate
-            uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+            uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed
+                .getExchangeRate();
 
             // Get decimal info
             uint8[] memory _decimals0 = new uint8[](2);
@@ -729,7 +659,6 @@ contract VaultAcryptosSingle is VaultBase {
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = _decimals0[1];
         _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
-        
 
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
