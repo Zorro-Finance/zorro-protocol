@@ -9,34 +9,34 @@ import "../../tokens/mocks/MockToken.sol";
 import "../VaultLibrary.sol";
 
 contract MockVaultAcryptosSingle is VaultAcryptosSingle {
-    function unfarm(uint256 _wantAmt) public {
-        _unfarm(_wantAmt);
-    }
+    // function unfarm(uint256 _wantAmt) public {
+    //     _unfarm(_wantAmt);
+    // }
     
-    function swapEarnedToUSDC(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _swapEarnedToUSDC(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
-    }
+    // function swapEarnedToUSDC(
+    //     uint256 _earnedAmount,
+    //     address _destination,
+    //     uint256 _maxMarketMovementAllowed,
+    //     VaultLibrary.ExchangeRates memory _rates
+    // ) public {
+    //     _swapEarnedToUSDC(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
+    // }
 
-    function revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _revShareOnChain(_amount, _maxMarketMovementAllowed, _rates);
-    }
+    // function revShareOnChain(
+    //     uint256 _amount,
+    //     uint256 _maxMarketMovementAllowed,
+    //     VaultLibrary.ExchangeRates memory _rates
+    // ) public {
+    //     _revShareOnChain(_amount, _maxMarketMovementAllowed, _rates);
+    // }
 
-    function buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _buybackOnChain(_amount, _maxMarketMovementAllowed, _rates);
-    }
+    // function buybackOnChain(
+    //     uint256 _amount,
+    //     uint256 _maxMarketMovementAllowed,
+    //     VaultLibrary.ExchangeRates memory _rates
+    // ) public {
+    //     _buybackOnChain(_amount, _maxMarketMovementAllowed, _rates);
+    // }
 }
 
 contract MockAcryptosVault is IAcryptosVault, MockERC20Upgradeable {

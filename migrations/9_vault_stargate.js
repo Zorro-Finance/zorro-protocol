@@ -3,6 +3,8 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultStargate = artifacts.require("VaultStargate");
 const VaultZorro = artifacts.require("VaultZorro");
+// Libraries
+const VaultLibrary = artifacts.require('VaultLibrary');
 // Other contracts 
 const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
 const ZorroController = artifacts.require("ZorroController");
@@ -86,5 +88,16 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy master contract
-  await deployProxy(VaultStargate, [accounts[0], initVal], {deployer});
+  await deployer.link(VaultLibrary, [VaultStargate]);
+  await deployProxy(
+    VaultStargate, 
+    [
+      accounts[0], 
+      initVal,
+    ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
 };

@@ -799,7 +799,6 @@ contract VaultAcryptosSingle is VaultBase {
             _maxMarketMovementAllowed,
             _rates,
             VaultLibraryAcryptosSingle.SwapEarnedToUSDCParams({
-                tokenBUSDPriceFeed: tokenBUSDPriceFeed,
                 earnedAddress: earnedAddress,
                 tokenBUSD: tokenBUSD,
                 tokenUSDCAddress: tokenUSDCAddress,
@@ -808,7 +807,8 @@ contract VaultAcryptosSingle is VaultBase {
                 earnedToUSDCPath: earnedToUSDCPath,
                 uniRouterAddress: uniRouterAddress,
                 balancerVaultAddress: balancerVaultAddress,
-                balancerPool: balancerPool
+                balancerPool: balancerPool,
+                tokenBUSDExchangeRate: tokenBUSDPriceFeed.getExchangeRate()
             })
         );
     }

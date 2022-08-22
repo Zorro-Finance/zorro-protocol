@@ -4,6 +4,9 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const VaultStandardAMM = artifacts.require("VaultStandardAMM");
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
 const VaultZorro = artifacts.require("VaultZorro");
+// Libraries
+const VaultLibrary = artifacts.require('VaultLibrary');
+const VaultLibraryStandardAMM = artifacts.require('VaultLibraryStandardAMM');
 // Other contracts
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("zorroControllerXChain");
@@ -50,6 +53,8 @@ module.exports = async function (deployer, network, accounts) {
   }
   
   let initVal;
+
+  await deployer.deploy(VaultLibraryStandardAMM);
   
   if (['avax', 'ganachecloud'].includes(network)) {
     // Prep
@@ -128,7 +133,19 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
       },
     };
-    await deployProxy(TraderJoe_ZOR_WAVAX, [accounts[0], initVal], { deployer });
+    await deployer.link(VaultLibrary, [TraderJoe_ZOR_WAVAX]);
+    await deployer.link(VaultLibraryStandardAMM, [TraderJoe_ZOR_WAVAX]);
+    await deployProxy(
+      TraderJoe_ZOR_WAVAX, 
+      [
+        accounts[0], 
+        initVal,
+      ], { 
+        deployer,
+        unsafeAllow: [
+          'external-library-linking',
+        ],
+      });
   } else {
     initVal = {
       pid: 0,
@@ -169,7 +186,18 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
       },
     };
-    await deployProxy(VaultStandardAMM, [accounts[0], initVal], { deployer });
+    await deployer.link(VaultLibrary, [VaultStandardAMM]);
+    await deployer.link(VaultLibraryStandardAMM, [VaultStandardAMM]);
+    await deployProxy(
+      VaultStandardAMM, 
+      [
+        accounts[0], 
+        initVal,
+      ], { 
+        deployer,
+        unsafeAllow: [
+          'external-library-linking',
+        ],
+      });
   }
-
 };

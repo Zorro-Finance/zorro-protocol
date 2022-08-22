@@ -2,23 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "../libraries/SafeSwap.sol";
-
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../libraries/PriceFeed.sol";
 
 library VaultLibrary {
     /* Libs */
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     /* Structs */
     struct VaultAddresses {
@@ -83,11 +81,11 @@ library VaultLibrary {
 }
 
 library VaultLibraryAcryptosSingle {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapBalancer for IBalancerVault;
     using SafeSwapUni for IAMMRouter02;
-    using SafeMath for uint256;
-    using PriceFeed for AggregatorV3Interface;
+    using SafeMathUpgradeable for uint256;
+    // using PriceFeed for AggregatorV3Interface;
 
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @param _balancerVaultAddress Address of balancer vault
@@ -106,7 +104,7 @@ library VaultLibraryAcryptosSingle {
     ) public {
         if (_forAcryptos) {
             // Allowance
-            IERC20(_swapParams.token0).safeIncreaseAllowance(
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
                 _balancerVaultAddress,
                 _swapParams.amountIn
             );
@@ -118,7 +116,7 @@ library VaultLibraryAcryptosSingle {
             );
         } else {
             // Allowance
-            IERC20(_swapParams.token0).safeIncreaseAllowance(
+            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
                 _uniRouterAddress,
                 _swapParams.amountIn
             );
@@ -140,7 +138,6 @@ library VaultLibraryAcryptosSingle {
     }
 
     struct SwapEarnedToUSDCParams {
-        AggregatorV3Interface tokenBUSDPriceFeed;
         address earnedAddress;
         address tokenBUSD;
         address tokenUSDCAddress;
@@ -150,6 +147,7 @@ library VaultLibraryAcryptosSingle {
         address uniRouterAddress;
         address balancerVaultAddress;
         bytes32 balancerPool;
+        uint256 tokenBUSDExchangeRate;
     }
 
     /// @notice Swaps Earn token to USDC and sends to destination specified
@@ -165,16 +163,16 @@ library VaultLibraryAcryptosSingle {
         SwapEarnedToUSDCParams memory _swapEarnedToUSDCParams
     ) public {
         // Get exchange rate
-        uint256 _tokenBUSDExchangeRate = _swapEarnedToUSDCParams.tokenBUSDPriceFeed.getExchangeRate();
+        
 
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20(_swapEarnedToUSDCParams.earnedAddress).decimals();
-        _decimals0[1] = ERC20(_swapEarnedToUSDCParams.tokenBUSD).decimals();
+        _decimals0[0] = ERC20Upgradeable(_swapEarnedToUSDCParams.earnedAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD).decimals();
         // Get decimal info
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = _decimals0[1];
-        _decimals1[1] = ERC20(_swapEarnedToUSDCParams.tokenUSDCAddress).decimals();
+        _decimals1[1] = ERC20Upgradeable(_swapEarnedToUSDCParams.tokenUSDCAddress).decimals();
         
         // Swap ACS to BUSD (Balancer)
         safeSwap(
@@ -184,7 +182,7 @@ library VaultLibraryAcryptosSingle {
             SafeSwapParams({
                 amountIn: _earnedAmount,
                 priceToken0: _rates.earn,
-                priceToken1: _tokenBUSDExchangeRate,
+                priceToken1: _swapEarnedToUSDCParams.tokenBUSDExchangeRate,
                 token0: _swapEarnedToUSDCParams.earnedAddress,
                 token1: _swapEarnedToUSDCParams.tokenBUSD,
                 token0Weight: _swapEarnedToUSDCParams.balancerACSWeightBasisPoints,
@@ -198,7 +196,7 @@ library VaultLibraryAcryptosSingle {
         );
 
         // BUSD balance
-        uint256 _balBUSD = IERC20(_swapEarnedToUSDCParams.tokenBUSD).balanceOf(
+        uint256 _balBUSD = IERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD).balanceOf(
             address(this)
         );
 
@@ -209,7 +207,7 @@ library VaultLibraryAcryptosSingle {
 
         // Swap BUSD to USDC (PCS)
         // Increase allowance
-        IERC20(_swapEarnedToUSDCParams.tokenBUSD).safeIncreaseAllowance(
+        IERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD).safeIncreaseAllowance(
             _swapEarnedToUSDCParams.uniRouterAddress,
             _balBUSD
         );
@@ -220,7 +218,7 @@ library VaultLibraryAcryptosSingle {
             _swapEarnedToUSDCParams.uniRouterAddress,
             SafeSwapParams({
                 amountIn: _balBUSD,
-                priceToken0: _tokenBUSDExchangeRate,
+                priceToken0: _swapEarnedToUSDCParams.tokenBUSDExchangeRate,
                 priceToken1: _rates.stablecoin,
                 token0: _swapEarnedToUSDCParams.tokenBUSD,
                 token1: _swapEarnedToUSDCParams.tokenUSDCAddress,
@@ -237,8 +235,8 @@ library VaultLibraryAcryptosSingle {
 }
 
 library VaultLibraryStandardAMM {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /// @notice Adds liquidity to the pool of this contract
     /// @param _token0 The address of Token0
@@ -291,7 +289,7 @@ library VaultLibraryStandardAMM {
         uint256 _amount0Min;
         uint256 _amount1Min;
         // Get total supply and calculate min amounts desired based on slippage
-        uint256 _totalSupply = IERC20(_exitPoolParams.poolAddress).totalSupply();
+        uint256 _totalSupply = IERC20Upgradeable(_exitPoolParams.poolAddress).totalSupply();
 
         {
             _amount0Min = _calcMinAmt(_amountLP, _exitPoolParams.token0, _exitPoolParams.poolAddress, _totalSupply, _maxMarketMovementAllowed);
@@ -300,7 +298,7 @@ library VaultLibraryStandardAMM {
 
 
         // Approve
-        IERC20(_exitPoolParams.wantAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(_exitPoolParams.wantAddress).safeIncreaseAllowance(
             _exitPoolParams.uniRouterAddress,
             _amountLP
         );
@@ -330,7 +328,7 @@ library VaultLibraryStandardAMM {
         uint256 _totalSupply,
         uint256 _maxMarketMovementAllowed
     ) internal view returns (uint256) {
-        uint256 _balance = IERC20(_token).balanceOf(_poolAddress);
+        uint256 _balance = IERC20Upgradeable(_token).balanceOf(_poolAddress);
         return (_amountLP.mul(_balance).div(_totalSupply))
                 .mul(_maxMarketMovementAllowed)
                 .div(1000);
@@ -351,17 +349,17 @@ library VaultLibraryStandardAMM {
         AddLiqAndBurnParams memory _params
     ) public {
         // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20(_params.zorro).balanceOf(
+        uint256 zorroTokenAmt = IERC20Upgradeable(_params.zorro).balanceOf(
             address(this)
         );
-        uint256 otherTokenAmt = IERC20(_params.zorroLPPoolOtherToken)
+        uint256 otherTokenAmt = IERC20Upgradeable(_params.zorroLPPoolOtherToken)
             .balanceOf(address(this));
 
-        IERC20(_params.zorro).safeIncreaseAllowance(
+        IERC20Upgradeable(_params.zorro).safeIncreaseAllowance(
             _params.uniRouterAddress,
             zorroTokenAmt
         );
-        IERC20(_params.zorroLPPoolOtherToken).safeIncreaseAllowance(
+        IERC20Upgradeable(_params.zorroLPPoolOtherToken).safeIncreaseAllowance(
             _params.uniRouterAddress,
             otherTokenAmt
         );

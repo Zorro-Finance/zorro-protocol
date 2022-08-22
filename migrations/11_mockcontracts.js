@@ -1,6 +1,9 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const { deploy } = require('@openzeppelin/truffle-upgrades/dist/utils');
+const VaultLibrary = artifacts.require('VaultLibrary');
+const VaultLibraryAcryptosSingle = artifacts.require('VaultLibraryAcryptosSingle');
+const VaultLibraryStandardAMM = artifacts.require('VaultLibraryStandardAMM');
 // Controllers (only for testing)
 const MockZorroController = artifacts.require("MockZorroController");
 const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain");
@@ -121,7 +124,7 @@ module.exports = async function (deployer, network, accounts) {
       priceFeeds: {
         priceFeedZOR: zeroAddress,
         priceFeedLPPoolOtherToken: zeroAddress,
-        stablecoinPriceFeed: zeroAddress,
+        priceFeedStablecoin: zeroAddress,
       },
     };
     await deployProxy(MockZorroControllerXChain, [zcxInitVal], { deployer });
@@ -183,8 +186,19 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: zeroAddress,
       },
     };
-    await deployProxy(MockVaultZorro, [accounts[0], initVal0], {deployer});
-    
+    await deployer.link(VaultLibrary, [MockVaultZorro]);
+    await deployProxy(
+      MockVaultZorro,
+      [
+        accounts[0],
+        initVal0,
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
+
     // VaultAcryptosSingle
     const initVal1 = {
       pid: 0,
@@ -233,7 +247,19 @@ module.exports = async function (deployer, network, accounts) {
       },
       tokenBUSDPriceFeed: zeroAddress,
     };
-    await deployProxy(MockVaultAcryptosSingle, [accounts[0], initVal1], {deployer});
+    await deployer.link(VaultLibrary, [MockVaultAcryptosSingle]);
+    await deployer.link(VaultLibraryAcryptosSingle, [MockVaultAcryptosSingle]);
+    await deployProxy(
+      MockVaultAcryptosSingle,
+      [
+        accounts[0],
+        initVal1
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
 
     // VaultStandardAMM
     const initVal2 = {
@@ -281,8 +307,20 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: zeroAddress,
       },
     };
-    await deployProxy(MockVaultStandardAMM, [accounts[0], initVal2], {deployer});
-    
+    await deployer.link(VaultLibrary, [MockVaultStandardAMM]);
+    await deployer.link(VaultLibraryStandardAMM, [MockVaultStandardAMM]);
+    await deployProxy(
+      MockVaultStandardAMM,
+      [
+        accounts[0],
+        initVal2
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
+
     // VaultStargate
     const initVal3 = {
       pid: 0,
@@ -330,8 +368,18 @@ module.exports = async function (deployer, network, accounts) {
       stargateRouter: zeroAddress,
       stargatePoolId: 0
     };
-  
-    await deployProxy(MockVaultStargate, [accounts[0], initVal3], {deployer});
+    await deployer.link(VaultLibrary, [MockVaultStargate]);
+    await deployProxy(
+      MockVaultStargate,
+      [
+        accounts[0],
+        initVal3,
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
 
     await deployer.deploy(MockPriceAggToken0);
     await deployer.deploy(MockPriceAggToken1);
@@ -342,9 +390,29 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockLPPool1);
     await deployer.deploy(MockPriceUSDC);
     await deployer.deploy(MockPriceBUSD);
-    
-    await deployProxy(MockInvestmentVault, [accounts[0]], {deployer});
-    await deployProxy(MockInvestmentVault1, [accounts[0]], {deployer});
+
+    await deployer.link(VaultLibrary, [MockInvestmentVault]);
+    await deployProxy(
+      MockInvestmentVault,
+      [
+        accounts[0]
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
+    await deployer.link(VaultLibrary, [MockInvestmentVault1]);
+    await deployProxy(
+      MockInvestmentVault1,
+      [
+        accounts[0]
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }

@@ -3,6 +3,9 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultAcryptosSingle = artifacts.require("VaultAcryptosSingle");
 const VaultZorro = artifacts.require("VaultZorro");
+// Libraries
+const VaultLibrary = artifacts.require('VaultLibrary');
+const VaultLibraryAcryptosSingle = artifacts.require('VaultLibraryAcryptosSingle');
 // Other contracts
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
@@ -91,7 +94,21 @@ module.exports = async function (deployer, network, accounts) {
       tokenBUSDPriceFeed,
     };
     // Deploy master contract
-    await deployProxy(VaultAcryptosSingle, [accounts[0], initVal], {deployer});
+    await deployer.deploy(VaultLibraryAcryptosSingle);
+    await deployer.link(VaultLibraryAcryptosSingle, [VaultAcryptosSingle]);
+    await deployer.link(VaultLibrary, [VaultAcryptosSingle]);
+    await deployProxy(
+      VaultAcryptosSingle, 
+      [
+        accounts[0], 
+        initVal,
+      ], 
+      {
+        deployer,
+        unsafeAllow: [
+          'external-library-linking',
+        ],
+      });
   } else {
     console.log('Not on an allowed chain. Skipping...');
   }
