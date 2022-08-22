@@ -17,7 +17,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
       zeroAdress,
     ],
     rewards: {
-      blocksPerDay: 164160,
+      blocksPerDay: 43200,
       startBlock: 0,
       ZORROPerBlock: 0,
       targetTVLCaptureBasisPoints: 100,
@@ -76,7 +76,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
       '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
     ],
     rewards: {
-      blocksPerDay: 164160, // 1.9 blocks per sec
+      blocksPerDay: 43200, // 1.9 blocks per sec
       startBlock: 0,
       ZORROPerBlock: 0, // Needs to be calculated, see below
       targetTVLCaptureBasisPoints: 100, // TODO: Sascha: need input here
@@ -137,7 +137,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
       '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
     ],
     rewards: {
-      blocksPerDay: 164160, // 1.9 blocks per sec
+      blocksPerDay: 43200, // 1.9 blocks per sec
       startBlock: 0,
       ZORROPerBlock: 0, // Needs to be calculated, see below
       targetTVLCaptureBasisPoints: 100, // TODO: Sascha: need input here
