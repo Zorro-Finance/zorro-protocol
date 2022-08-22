@@ -65,7 +65,7 @@ module.exports = async function (deployer, network, accounts) {
         }
 
         // Transfer ownership of all contracts
-        const newOwner = recipient1;
+        const newOwner = recipient0;
         console.log('Setting ownership to: ', newOwner);
         console.log('zc');
         console.log('owner of zc: ', await zorroController.owner.call());

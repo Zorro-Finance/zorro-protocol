@@ -130,7 +130,7 @@ module.exports = async function (deployer, network, accounts) {
         earnTokenPriceFeed: '0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a',
         ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
-        stablecoinPriceFeed: priceFeeds.stablecoinPriceFeed,
+        stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
       },
     };
     await deployer.link(VaultLibrary, [TraderJoe_ZOR_WAVAX]);

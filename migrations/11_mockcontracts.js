@@ -14,7 +14,6 @@ const MockBUSD = artifacts.require("MockBUSD");
 const MockACS = artifacts.require("MockACS");
 const MockAMMToken0 = artifacts.require("MockAMMToken0");
 const MockAMMToken1 = artifacts.require("MockAMMToken1");
-const MockAMMToken6Dec = artifacts.require("MockAMMToken6Dec");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 // Vaults (only for testing)
 const MockVaultAcryptosSingle = artifacts.require("MockVaultAcryptosSingle");
