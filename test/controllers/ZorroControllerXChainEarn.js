@@ -8,6 +8,7 @@ const MockAMMRouter02 = artifacts.require('MockAMMRouter02');
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
+const MockPriceUSDC = artifacts.require('MockPriceUSDC');
 
 const transferredEventSig = web3.eth.abi.encodeEventSignature('Transfer(address,address,uint256)');
 const stargateSwapEventSig = web3.eth.abi.encodeEventSignature('StargateSwap(address,address,uint256)');
@@ -32,6 +33,7 @@ contract('ZorroControllerXChainEarn', async accounts => {
         ZORLPPoolOtherToken = await MockAMMOtherLPToken.deployed();
         ZORPriceFeed = await MockPriceAggZOR.deployed();
         lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
+        stablecoinPriceFeed = await MockPriceUSDC.deployed();
         // Set X Chain controller
         const lzEndpoint = web3.utils.randomHex(20);
         const publicPool = web3.utils.randomHex(20);
@@ -64,6 +66,7 @@ contract('ZorroControllerXChainEarn', async accounts => {
         await instance.setPriceFeeds([
             ZORPriceFeed.address,
             lpPoolOtherTokenPriceFeed.address,
+            stablecoinPriceFeed.address,
         ]);
         await instance.setBurnAddress(burnAddress);
         // Set SG router
