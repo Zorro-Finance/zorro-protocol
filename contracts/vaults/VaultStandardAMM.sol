@@ -179,78 +179,22 @@ contract VaultStandardAMM is VaultBase {
         uint256 _amountUSDC,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
-            address(this)
+        return VaultLibraryStandardAMM.exchangeUSDForWantToken(
+            _amountUSDC, 
+            VaultLibraryStandardAMM.SwapUSDCAddLiqParams({
+                tokenUSDCAddress: tokenUSDCAddress,
+                token0Address: token0Address,
+                token1Address: token1Address,
+                uniRouterAddress: uniRouterAddress,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                token0PriceFeed: token0PriceFeed,
+                token1PriceFeed: token1PriceFeed,
+                USDCToToken0Path: USDCToToken0Path,
+                USDCToToken1Path: USDCToToken1Path,
+                wantAddress: wantAddress
+            }),
+            _maxMarketMovementAllowed
         );
-        // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "dep<=0");
-        require(_amountUSDC <= _balUSDC, "amt>bal");
-
-        // Determine exchange rates using price feed oracle
-        uint256[] memory _priceTokens0 = new uint256[](2);
-        _priceTokens0[0] = stablecoinPriceFeed.getExchangeRate();
-        _priceTokens0[1] = token0PriceFeed.getExchangeRate();
-        uint256[] memory _priceTokens1 = new uint256[](2);
-        _priceTokens1[0] = _priceTokens0[0];
-        _priceTokens1[1] = stablecoinPriceFeed.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(token0Address).decimals();
-        uint8[] memory _decimals1 = new uint8[](2);
-        _decimals1[0] = _decimals0[0];
-        _decimals1[1] = ERC20Upgradeable(token1Address).decimals();
-
-        // Increase allowance
-        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSDC
-        );
-
-        // Swap USDC for token0
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            USDCToToken0Path,
-            _decimals0,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Swap USDC for token1 (if applicable)
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            USDCToToken1Path,
-            _decimals1,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
-        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
-            address(this)
-        );
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token0Amt
-        );
-        IERC20Upgradeable(token1Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token1Amt
-        );
-
-        _joinPool(token0Amt, token1Amt, _maxMarketMovementAllowed, msg.sender);
-
-        // Calculate resulting want token balance
-        return IERC20Upgradeable(wantAddress).balanceOf(msg.sender);
     }
 
     /// @notice Public function for farming Want token.
@@ -356,79 +300,23 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Preflight checks
-        require(_amount > 0, "negWant");
-
-        // Safely transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
+        return VaultLibraryStandardAMM.exchangeWantTokenForUSD(
+            _amount,
+            VaultLibraryStandardAMM.ExchWantToUSDParams({
+                token0PriceFeed: token0PriceFeed,
+                token1PriceFeed: token1PriceFeed,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                token0Address: token0Address,
+                token1Address: token1Address,
+                tokenUSDCAddress: tokenUSDCAddress,
+                uniRouterAddress: uniRouterAddress,
+                token0ToUSDCPath: token0ToUSDCPath,
+                token1ToUSDCPath: token1ToUSDCPath,
+                wantAddress: wantAddress,
+                poolAddress: poolAddress
+            }), 
+            _maxMarketMovementAllowed
         );
-
-        // Exchange rates
-        uint256[] memory _priceTokens0 = new uint256[](2);
-        _priceTokens0[0] = token0PriceFeed.getExchangeRate();
-        _priceTokens0[1] = stablecoinPriceFeed.getExchangeRate();
-        uint256[] memory _priceTokens1 = new uint256[](2);
-        _priceTokens1[0] = token1PriceFeed.getExchangeRate();
-        _priceTokens1[1] = _priceTokens0[1];
-
-        // revert("pre exit pool");
-
-        // Exit LP pool
-        _exitPool(_amount, _maxMarketMovementAllowed, address(this));
-
-        // Swap tokens back to USDC
-        uint256 token0Amt = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-        uint256 token1Amt = IERC20Upgradeable(token1Address).balanceOf(
-            address(this)
-        );
-
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals0[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
-        uint8[] memory _decimals1 = new uint8[](2);
-        _decimals1[0] = ERC20Upgradeable(token1Address).decimals();
-        _decimals1[1] = _decimals0[1];
-
-        // Increase allowance
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token0Amt
-        );
-        IERC20Upgradeable(token1Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            token1Amt
-        );
-
-        // Swap token0 for USDC
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            token0Amt,
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            token0ToUSDCPath,
-            _decimals0,
-            msg.sender,
-            block.timestamp.add(600)
-        );
-
-        // Swap token1 for USDC
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            token1Amt,
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            token1ToUSDCPath,
-            _decimals1,
-            msg.sender,
-            block.timestamp.add(600)
-        );
-
-        // Calculate USDC balance
-        return IERC20(tokenUSDCAddress).balanceOf(msg.sender);
     }
 
     /// @notice Adds liquidity to the pool of this contract
