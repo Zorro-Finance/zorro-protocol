@@ -78,8 +78,8 @@ library SafeSwapUni {
             _amountIn
                 .mul(_priceTokenIn)
                 .mul(_slippageFactor)
-                .mul(10**(_decimals[1] - _decimals[0]))
-                .div(_priceTokenOut.mul(1000));
+                .mul(10**_decimals[1])
+                .div(_priceTokenOut.mul(1000).mul(10**_decimals[0]));
     }
 
     /// @notice Gets amounts out when exchange rates are not provided (uses router)
@@ -94,8 +94,8 @@ library SafeSwapUni {
         return
             amounts[amounts.length.sub(1)]
                 .mul(_slippageFactor)
-                .mul(10**(_decimals[1] - _decimals[0]))
-                .div(1000);
+                .mul(10**_decimals[1])
+                .div((10**_decimals[0]).mul(1000));
     }
 }
 
@@ -132,16 +132,16 @@ library SafeSwapBalancer {
                     )
                 )
                 .mul(_swapParams.maxMarketMovementAllowed)
-                .mul(10**(_decimals[1] - _decimals[0]))
-                .div(uint256(1000).mul(1e12));
+                .mul(10**(_decimals[1]))
+                .div(uint256(1000).mul(1e12).mul(10**(_decimals[0])));
         } else {
             // Calculate amountOut based on provided exchange rates
             _amountOut = _swapParams
                 .amountIn
                 .mul(_swapParams.priceToken0)
                 .mul(_swapParams.maxMarketMovementAllowed)
-                .mul(10**(_decimals[1] - _decimals[0]))
-                .div(_swapParams.priceToken1.mul(1000));
+                .mul(10**(_decimals[1]))
+                .div((_swapParams.priceToken1).mul(1000).mul(10**_decimals[0]));
         }
 
         // Swap Earned token to token0
