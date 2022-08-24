@@ -53,7 +53,7 @@ contract ZorroController is
             .rewards
             .targetTVLCaptureBasisPoints;
         chainMultiplier = _initValue.rewards.chainMultiplier;
-        baseRewardRateBasisPoints = _initValue.rewards.chainMultiplier;
+        baseRewardRateBasisPoints = _initValue.rewards.baseRewardRateBasisPoints;
 
         // Cross chain
         chainId = _initValue.xChain.chainId;

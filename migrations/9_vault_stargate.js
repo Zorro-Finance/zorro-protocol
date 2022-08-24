@@ -1,18 +1,21 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
-const VaultStargate = artifacts.require("VaultStargate");
+const StargateUSDCOnAVAX = artifacts.require("StargateUSDCOnAVAX");
 const VaultZorro = artifacts.require("VaultZorro");
 // Libraries
 const VaultLibrary = artifacts.require('VaultLibrary');
 // Other contracts 
 const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
+const MockPriceAggSTG = artifacts.require("MockPriceAggSTG");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
+const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
 // Get key params
 const { getKeyParams, getSynthNetwork, devNets } = require('../chains');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
+const wavax = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 // TODO: This needs to be filled out in much more detail. Started but incomplete!
 module.exports = async function (deployer, network, accounts) {
@@ -21,6 +24,7 @@ module.exports = async function (deployer, network, accounts) {
   const zorroController = await ZorroController.deployed();
   const zorroControllerXChain = await ZorroControllerXChain.deployed();
   const zorro = await Zorro.deployed();
+  const tjzavax = await TraderJoe_ZOR_WAVAX.deployed();
 
   // Unpack keyParams
   const {
@@ -34,7 +38,7 @@ module.exports = async function (deployer, network, accounts) {
     bridge,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
 
-  let mockPriceAggZORLP;
+  let mockPriceAggZORLP, mockPriceAggSTG;
   
   if (devNets.includes(network)) {
     // Deploy Mock ZOR price feed if necessary
@@ -42,42 +46,66 @@ module.exports = async function (deployer, network, accounts) {
       await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
     }
     mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
+
+    // Same for STG
+    if (!MockPriceAggSTG.hasNetwork(network)) {
+      await deployer.deploy(MockPriceAggSTG, uniRouterAddress, bridge.tokenSTG, wavax, defaultStablecoin);
+    }
+    mockPriceAggSTG = await MockPriceAggSTG.deployed();
   }
 
-  // TODO: These values need to be re-examined
+  const zorroLPPool = await tjzavax.poolAddress.call();
+  const sgUSDCPool = '0x1205f31718499dBf1fCa446663B532Ef87481fe1';
+  const sgLPStaking = '0x8731d54E9D02c286767d56ac03e8037C07e01e98';
 
   // Init values 
   const initVal = {
     pid: 0,
     isHomeChain: ['avax', 'ganachecloud'].includes(network),
+    isFarmable: true,
     keyAddresses: {
       govAddress: accounts[0],
       zorroControllerAddress: zorroController.address,
       zorroXChainController: zorroControllerXChain.address,
       ZORROAddress: zorro.address,
       zorroStakingVault: vaultZorro.address,
-      wantAddress: defaultStablecoin,
+      wantAddress: sgUSDCPool,
       token0Address: defaultStablecoin,
       token1Address: zeroAddress,
-      earnedAddress: zeroAddress,
-      farmContractAddress: zeroAddress,
-      rewardsAddress: zeroAddress,
-      poolAddress: zeroAddress,
+      earnedAddress: bridge.tokenSTG,
+      farmContractAddress: sgLPStaking,
+      rewardsAddress: accounts[2],
+      poolAddress: sgUSDCPool,
       uniRouterAddress,
-      zorroLPPool: zeroAddress,
+      zorroLPPool,
       zorroLPPoolOtherToken,
       tokenUSDCAddress: defaultStablecoin,
     },
-    earnedToZORROPath: [],
-    earnedToToken0Path: [],
-    USDCToToken0Path: [],
-    earnedToZORLPPoolOtherTokenPath: [],
-    earnedToUSDCPath: [],
+    earnedToZORROPath: [
+      bridge.tokenSTG,
+      wavax,
+      zorro.address,
+    ],
+    earnedToToken0Path: [
+      bridge.tokenSTG,
+      wavax,
+      defaultStablecoin,
+    ],
+    USDCToToken0Path: [], // USDC IS token0, so no need for a path
+    earnedToZORLPPoolOtherTokenPath: [
+      bridge.tokenSTG,
+      wavax,
+    ],
+    earnedToUSDCPath: [
+      bridge.tokenSTG,
+      wavax,
+      defaultStablecoin,
+    ],
     fees: vaults.fees,
     priceFeeds: {
-      token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+      token0PriceFeed: priceFeeds.priceFeedStablecoin,
       token1PriceFeed: zeroAddress,
-      earnTokenPriceFeed: zeroAddress,
+      earnTokenPriceFeed: mockPriceAggSTG.address,
       ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
       lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
       stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
@@ -88,9 +116,9 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy master contract
-  await deployer.link(VaultLibrary, [VaultStargate]);
+  await deployer.link(VaultLibrary, [StargateUSDCOnAVAX]);
   await deployProxy(
-    VaultStargate, 
+    StargateUSDCOnAVAX, 
     [
       accounts[0], 
       initVal,

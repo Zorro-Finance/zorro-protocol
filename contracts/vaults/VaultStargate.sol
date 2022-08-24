@@ -710,3 +710,5 @@ contract VaultStargate is VaultBase {
         );
     }
 }
+
+contract StargateUSDCOnAVAX is VaultStargate {}

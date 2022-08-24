@@ -58,7 +58,7 @@ module.exports = async function (deployer, network, accounts) {
         token1Address: zeroAddress, // not needed; use zero address
         earnedAddress: zeroAddress, // not needed; use zero address
         farmContractAddress: zeroAddress, // not needed; use zero address
-        rewardsAddress: zeroAddress, // not needed; use zero address
+        rewardsAddress: accounts[2], // not needed; use zero address
         poolAddress: zeroAddress, // not needed; use zero address
         uniRouterAddress,
         zorroLPPool: zeroAddress, // needs to be filled in with appropriate value later!

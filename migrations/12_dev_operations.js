@@ -5,7 +5,7 @@ const { getKeyParams, getSynthNetwork } = require('../chains');
 const Migrations = artifacts.require("Migrations");
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
 const VaultZorro = artifacts.require("VaultZorro");
-const VaultStargate = artifacts.require("VaultStargate");
+const StargateUSDCOnAVAX = artifacts.require("StargateUSDCOnAVAX");
 const IJoeRouter02 = artifacts.require("IJoeRouter02");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
@@ -25,7 +25,7 @@ module.exports = async function (deployer, network, accounts) {
         const zorroController = await ZorroController.deployed();
         const zorroControllerXChain = await ZorroControllerXChain.deployed();
         const zorro = await Zorro.deployed();
-        const vaultStargate = await VaultStargate.deployed();
+        const sgVault = await StargateUSDCOnAVAX.deployed();
         const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
         // Prep
         const now = Math.floor((new Date).getTime() / 1000);
@@ -36,7 +36,9 @@ module.exports = async function (deployer, network, accounts) {
         const recipient1 = '0xC5faECaA3d71EF9Ec13cDA5eFfc9ba5C53a823Fe';
 
         // Iterate
-        for (let recipient of [recipient0, recipient1]) {
+        const recipients = [recipient0, recipient1];
+        console.log('Distributing tokens to recipients: ', recipients)
+        for (let recipient of recipients) {
             // Transfer AVAX to designated wallets
             const value = web3.utils.toWei('1000', 'ether');
             await web3.eth.sendTransaction({from: accounts[0], to: recipient, value});
@@ -45,6 +47,7 @@ module.exports = async function (deployer, network, accounts) {
             await zorro.setZorroController(accounts[0]);
             await zorro.mint(recipient, web3.utils.toWei('100', 'ether'));
             await zorro.setZorroController(zorroController.address);
+            console.log('minted ZOR');
 
             // Swap USDC to designated wallets
             const router = await IJoeRouter02.at('0x60aE616a2155Ee3d9A68541Ba4544862310933d4');
@@ -55,6 +58,7 @@ module.exports = async function (deployer, network, accounts) {
                 now + 300,
                 {value: web3.utils.toWei('1000', 'ether')}
             );
+            console.log('swapped USDC');
 
             // Send some JLP token
             const factory = await IUniswapV2Factory.at('0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10');
@@ -62,6 +66,7 @@ module.exports = async function (deployer, network, accounts) {
             const jlp = await IERC20.at(pairAddress);
             const jlpBal = await jlp.balanceOf(accounts[0]);
             await jlp.transfer(recipient, jlpBal.mul(web3.utils.toBN(3)).div(web3.utils.toBN(10)));
+            console.log('Sent JLP');
         }
 
         // Transfer ownership of all contracts
@@ -74,9 +79,9 @@ module.exports = async function (deployer, network, accounts) {
         console.log('zsv', await vaultZorro.owner.call(), await vaultZorro.govAddress.call());
         await vaultZorro.transferOwnership(newOwner);
         await vaultZorro.setGov(newOwner);
-        console.log('VaultStargate', await vaultStargate.owner.call(), await vaultZorro.govAddress.call());
-        await vaultStargate.transferOwnership(newOwner);
-        await vaultStargate.setGov(newOwner);
+        console.log('VaultStargate', await sgVault.owner.call(), await vaultZorro.govAddress.call());
+        await sgVault.transferOwnership(newOwner);
+        await sgVault.setGov(newOwner);
         console.log('VaultZorAvax', await vaultZorroAvax.owner.call(), await vaultZorroAvax.govAddress.call());
         await vaultZorroAvax.transferOwnership(newOwner);
         await vaultZorroAvax.setGov(newOwner);

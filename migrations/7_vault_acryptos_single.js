@@ -67,7 +67,7 @@ module.exports = async function (deployer, network, accounts) {
         token1Address: zeroAddress,
         earnedAddress: zeroAddress,
         farmContractAddress: zeroAddress,
-        rewardsAddress: zeroAddress,
+        rewardsAddress: accounts[2],
         poolAddress: zeroAddress,
         uniRouterAddress,
         zorroLPPool: zeroAddress,
