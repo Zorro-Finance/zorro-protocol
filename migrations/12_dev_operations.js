@@ -12,6 +12,7 @@ const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
 const IERC20 = artifacts.require("IERC20");
 const IUniswapV2Factory = artifacts.require("IUniswapV2Factory");
+const IStargateRouter = artifacts.require("IStargateRouter");
 
 module.exports = async function (deployer, network, accounts) {
     // Web3
@@ -36,7 +37,7 @@ module.exports = async function (deployer, network, accounts) {
         const recipient1 = '0xC5faECaA3d71EF9Ec13cDA5eFfc9ba5C53a823Fe';
 
         // Iterate
-        const recipients = [recipient0, recipient1];
+        const recipients = [recipient0, recipient1, accounts[0]];
         console.log('Distributing tokens to recipients: ', recipients)
         for (let recipient of recipients) {
             // Transfer AVAX to designated wallets
@@ -67,10 +68,16 @@ module.exports = async function (deployer, network, accounts) {
             const jlpBal = await jlp.balanceOf(accounts[0]);
             await jlp.transfer(recipient, jlpBal.mul(web3.utils.toBN(3)).div(web3.utils.toBN(10)));
             console.log('Sent JLP');
+
+            // Send some SG LP token
+            const sgRouter = await IStargateRouter.at('0x45A01E4e04F14f7A4a6702c74187c5F6222033cd');
+            const tokenUSDC = await IERC20.at(usdc);
+            await tokenUSDC.approve(sgRouter.address, '500000000');
+            await sgRouter.addLiquidity(1, '500000000', recipient);
         }
 
         // Transfer ownership of all contracts
-        const newOwner = recipient0;
+        const newOwner = recipient1;
         console.log('Setting ownership to: ', newOwner);
         console.log('zc');
         console.log('owner of zc: ', await zorroController.owner.call());

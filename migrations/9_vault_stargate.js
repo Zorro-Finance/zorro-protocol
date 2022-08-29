@@ -83,22 +83,22 @@ module.exports = async function (deployer, network, accounts) {
     },
     earnedToZORROPath: [
       bridge.tokenSTG,
+      defaultStablecoin,
       wavax,
       zorro.address,
     ],
     earnedToToken0Path: [
       bridge.tokenSTG,
-      wavax,
       defaultStablecoin,
     ],
     USDCToToken0Path: [], // USDC IS token0, so no need for a path
     earnedToZORLPPoolOtherTokenPath: [
       bridge.tokenSTG,
+      defaultStablecoin,
       wavax,
     ],
     earnedToUSDCPath: [
       bridge.tokenSTG,
-      wavax,
       defaultStablecoin,
     ],
     fees: vaults.fees,

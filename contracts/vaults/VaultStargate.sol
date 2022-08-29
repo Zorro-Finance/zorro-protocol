@@ -292,7 +292,7 @@ contract VaultStargate is VaultBase {
 
         // Deposit the Want tokens in the Farm contract
         IStargateLPStaking(farmContractAddress).deposit(
-            stargatePoolId,
+            pid,
             wantAmt
         );
     }
@@ -302,7 +302,7 @@ contract VaultStargate is VaultBase {
     function _unfarm(uint256 _wantAmt) internal {
         // Withdraw the Want tokens from the Farm contract
         IStargateLPStaking(farmContractAddress).withdraw(
-            stargatePoolId,
+            pid,
             _wantAmt
         );
     }
