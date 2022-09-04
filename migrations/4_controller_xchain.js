@@ -3,7 +3,6 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Controller
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const ZorroController = artifacts.require("ZorroController");
-const PoolPublic = artifacts.require("PoolPublic");
 // Token
 const Zorro = artifacts.require('Zorro');
 // Get key params

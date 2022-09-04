@@ -46,6 +46,7 @@ module.exports = async function (deployer, network, accounts) {
 
   const deployableNetworks = [
     'bsc',
+    'bscfork',
     ...devNets,
   ];
   // TODO: This needs to be filled out in much more detail. Started but incomplete!
@@ -84,10 +85,10 @@ module.exports = async function (deployer, network, accounts) {
       BUSDToLPPoolOtherTokenPath: [],
       fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
-        token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+        token0PriceFeed: zeroAddress, 
+        token1PriceFeed: zeroAddress, // Single token
+        earnTokenPriceFeed: zeroAddress, // ACS
+        ZORPriceFeed: zeroAddress, // ZOR
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
         stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
       },

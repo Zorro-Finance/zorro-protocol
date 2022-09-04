@@ -186,7 +186,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
 });
 
 const devNets = [
-  'ganachecloud',
+  'avaxfork',
   'ganachecli',
   'default',
   'development',
@@ -202,7 +202,7 @@ exports.devNets = devNets;
 exports.homeNetworks = homeNetworks;
 
 exports.getSynthNetwork = (network) => {
-  if (network === 'ganachecloud') {
+  if (network === 'avaxfork') {
     return 'avax';
   }
 

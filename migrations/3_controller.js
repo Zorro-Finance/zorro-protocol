@@ -39,7 +39,7 @@ module.exports = async function (deployer, network, accounts) {
 
   let zcInitVal;
 
-  if (['avax', 'ganachecloud'].includes(network)) {
+  if (['avax', 'avaxfork'].includes(network)) {
     // Prep init values
     const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
     zcInitVal = {

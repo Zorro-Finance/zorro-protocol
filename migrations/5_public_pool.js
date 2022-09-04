@@ -33,7 +33,7 @@ module.exports = async function (deployer, network, accounts) {
   }
 
   // For dev net, mint some ZOR to the public pool
-  if (network === 'ganachecloud') {
+  if (network === 'avaxfork') {
     // Get existing contracts
     const zorro = await Zorro.deployed();
     const zorroController = await ZorroController.deployed();

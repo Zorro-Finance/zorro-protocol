@@ -46,7 +46,7 @@ module.exports = {
      port: 8545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
-    ganachecloud: {
+    avaxfork: {
       url: process.env.GANACHE_CLOUD_URL,
       network_id: 43114,
     },

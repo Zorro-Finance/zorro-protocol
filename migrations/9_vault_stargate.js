@@ -61,7 +61,7 @@ module.exports = async function (deployer, network, accounts) {
   // Init values 
   const initVal = {
     pid: 0,
-    isHomeChain: ['avax', 'ganachecloud'].includes(network),
+    isHomeChain: ['avax', 'avaxfork'].includes(network),
     isFarmable: true,
     keyAddresses: {
       govAddress: accounts[0],

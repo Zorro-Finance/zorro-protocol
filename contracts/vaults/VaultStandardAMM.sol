@@ -643,3 +643,4 @@ contract VaultStandardAMM is VaultBase {
 }
 
 contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {}
+contract TraderJoe_WAVAX_USDC is VaultStandardAMM {}

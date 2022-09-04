@@ -3,6 +3,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
 const VaultStandardAMM = artifacts.require("VaultStandardAMM");
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
+const TraderJoe_WAVAX_USDC = artifacts.require("TraderJoe_WAVAX_USDC");
 const VaultZorro = artifacts.require("VaultZorro");
 // Libraries
 const VaultLibrary = artifacts.require('VaultLibrary');
@@ -56,7 +57,7 @@ module.exports = async function (deployer, network, accounts) {
 
   await deployer.deploy(VaultLibraryStandardAMM);
   
-  if (['avax', 'ganachecloud'].includes(network)) {
+  if (['avax', 'avaxfork'].includes(network)) {
     // Prep
     const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
     const tokenJoe = '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd';
@@ -67,7 +68,7 @@ module.exports = async function (deployer, network, accounts) {
     // Get pair address 
     const pairAddr = await iUniswapV2Factory.getPair.call(zorro.address, wavax);
     // Add liquidity for devnet
-    if (network === 'ganachecloud') {
+    if (network === 'avaxfork') {
       // Prep
       const amt = web3.utils.toWei('1000', 'ether');
       const now = Math.floor((new Date).getTime() / 1000);
@@ -133,6 +134,7 @@ module.exports = async function (deployer, network, accounts) {
         stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
       },
     };
+    // TraderJoe_ZOR_WAVAX
     await deployer.link(VaultLibrary, [TraderJoe_ZOR_WAVAX]);
     await deployer.link(VaultLibraryStandardAMM, [TraderJoe_ZOR_WAVAX]);
     await deployProxy(
@@ -140,6 +142,46 @@ module.exports = async function (deployer, network, accounts) {
       [
         accounts[0], 
         initVal,
+      ], { 
+        deployer,
+        unsafeAllow: [
+          'external-library-linking',
+        ],
+      });
+    // TraderJoe_WAVAX_USDC
+    await deployer.link(VaultLibrary, [TraderJoe_WAVAX_USDC]);
+    await deployer.link(VaultLibraryStandardAMM, [TraderJoe_WAVAX_USDC]);
+    await deployProxy(
+      TraderJoe_WAVAX_USDC, 
+      [
+        accounts[0], 
+        {
+          ...initVal,
+          ...{
+            pid: 50,
+            isFarmable: true,
+            keyAddresses: {
+              ...initVal.keyAddresses,
+              ...{
+                wantAddress: '0xf4003F4efBE8691B60249E6afbD307aBE7758adb',
+                token0Address: wavax,
+                token1Address: defaultStablecoin,
+                poolAddress: '0xf4003F4efBE8691B60249E6afbD307aBE7758adb',
+              },
+            },
+            earnedToToken0Path: [tokenJoe, wavax, ],
+            earnedToToken1Path: [tokenJoe, wavax, defaultStablecoin],
+            USDCToToken0Path: [defaultStablecoin, wavax, ],
+            USDCToToken1Path: [], // same token
+            priceFeeds: {
+              ...initVal.priceFeeds,
+              ...{
+                token0PriceFeed: '0x0A77230d17318075983913bC2145DB16C7366156',
+                token1PriceFeed: priceFeeds.priceFeedStablecoin,
+              },
+            },
+          },
+        },
       ], { 
         deployer,
         unsafeAllow: [
