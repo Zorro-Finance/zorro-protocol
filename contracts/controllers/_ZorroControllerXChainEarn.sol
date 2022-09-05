@@ -347,16 +347,18 @@ contract ZorroControllerXChainEarn is
                 block.timestamp.add(600)
             );
 
-            // Swap to counterparty token
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
-                _priceTokens1,
-                _maxMarketMovement,
-                USDCToZorroLPPoolOtherTokenPath,
-                _decimals1,
-                address(this),
-                block.timestamp.add(600)
-            );
+            // Swap to counterparty token (if not USDC)
+            if (zorroLPPoolOtherToken != defaultStablecoin) {
+                IAMMRouter02(uniRouterAddress).safeSwap(
+                    _amountUSDC.div(2),
+                    _priceTokens1,
+                    _maxMarketMovement,
+                    USDCToZorroLPPoolOtherTokenPath,
+                    _decimals1,
+                    address(this),
+                    block.timestamp.add(600)
+                );
+            }
         }
 
 

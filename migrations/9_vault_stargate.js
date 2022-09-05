@@ -24,7 +24,10 @@ module.exports = async function (deployer, network, accounts) {
   const zorroController = await ZorroController.deployed();
   const zorroControllerXChain = await ZorroControllerXChain.deployed();
   const zorro = await Zorro.deployed();
-  const tjzavax = await TraderJoe_ZOR_WAVAX.deployed();
+  let tjzavax;
+  if (TraderJoe_ZOR_WAVAX.hasNetwork(network)) {
+    tjzavax = await TraderJoe_ZOR_WAVAX.deployed();
+  }
 
   // Unpack keyParams
   const {
@@ -54,7 +57,7 @@ module.exports = async function (deployer, network, accounts) {
     mockPriceAggSTG = await MockPriceAggSTG.deployed();
   }
 
-  const zorroLPPool = await tjzavax.poolAddress.call();
+  const zorroLPPool = tjzavax ? await tjzavax.poolAddress.call() : zeroAddress;
   const sgUSDCPool = '0x1205f31718499dBf1fCa446663B532Ef87481fe1';
   const sgLPStaking = '0x8731d54E9D02c286767d56ac03e8037C07e01e98';
 

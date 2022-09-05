@@ -536,25 +536,29 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Swap to ZOR Token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            earnedToZORROPath,
-            _decimals0,
-            address(this),
-            block.timestamp.add(600)
-        );
+        if (earnedAddress != ZORROAddress) {
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amount.div(2),
+                _priceTokens0,
+                _maxMarketMovementAllowed,
+                earnedToZORROPath,
+                _decimals0,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
         // Swap to Other token
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            earnedToZORLPPoolOtherTokenPath,
-            _decimals1,
-            address(this),
-            block.timestamp.add(600)
-        );
+        if (earnedAddress != zorroLPPoolOtherToken) {
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amount.div(2),
+                _priceTokens1,
+                _maxMarketMovementAllowed,
+                earnedToZORLPPoolOtherTokenPath,
+                _decimals1,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
 
         // Add liquidity and burn
         VaultLibraryStandardAMM.addLiqAndBurn(
@@ -592,15 +596,17 @@ contract VaultStandardAMM is VaultBase {
         );
 
         // Swap to ZOR
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            earnedToZORROPath,
-            _decimals,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
+        if (earnedAddress != ZORROAddress) {
+            IAMMRouter02(uniRouterAddress).safeSwap(
+                _amount,
+                _priceTokens,
+                _maxMarketMovementAllowed,
+                earnedToZORROPath,
+                _decimals,
+                zorroStakingVault,
+                block.timestamp.add(600)
+            );
+        }
     }
 
     /// @notice Swaps Earn token to USDC and sends to destination specified

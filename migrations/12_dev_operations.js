@@ -4,6 +4,7 @@ const { getKeyParams, getSynthNetwork } = require('../chains');
 // Contracts
 const Migrations = artifacts.require("Migrations");
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
+const TraderJoe_WAVAX_USDC = artifacts.require("TraderJoe_WAVAX_USDC");
 const VaultZorro = artifacts.require("VaultZorro");
 const StargateUSDCOnAVAX = artifacts.require("StargateUSDCOnAVAX");
 const IJoeRouter02 = artifacts.require("IJoeRouter02");
@@ -28,6 +29,7 @@ module.exports = async function (deployer, network, accounts) {
         const zorro = await Zorro.deployed();
         const sgVault = await StargateUSDCOnAVAX.deployed();
         const vaultZorroAvax = await TraderJoe_ZOR_WAVAX.deployed();
+        const vaultAvaxUSDC = await TraderJoe_WAVAX_USDC.deployed();
         // Prep
         const now = Math.floor((new Date).getTime() / 1000);
         const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
@@ -93,5 +95,8 @@ module.exports = async function (deployer, network, accounts) {
         console.log('VaultZorAvax', await vaultZorroAvax.owner.call(), await vaultZorroAvax.govAddress.call());
         await vaultZorroAvax.transferOwnership(newOwner);
         await vaultZorroAvax.setGov(newOwner);
+        console.log('VaultAvaxUSDC', await vaultAvaxUSDC.owner.call(), await vaultAvaxUSDC.govAddress.call());
+        await vaultAvaxUSDC.transferOwnership(newOwner);
+        await vaultAvaxUSDC.setGov(newOwner);
     }
 };

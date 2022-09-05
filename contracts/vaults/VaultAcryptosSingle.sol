@@ -492,21 +492,24 @@ contract VaultAcryptosSingle is VaultBase {
             address(this)
         );
 
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _balBUSD,
-                priceToken0: _tokenBUSDExchangeRate,
-                priceToken1: _token0ExchangeRate,
-                token0: tokenBUSD,
-                token1: token0Address,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: BUSDToToken0Path,
-                destination: address(this)
-            }),
-            _decimals1
-        );
+        // Swap if token0 is not BUSD
+        if (token0Address != tokenBUSD) {
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _balBUSD,
+                    priceToken0: _tokenBUSDExchangeRate,
+                    priceToken1: _token0ExchangeRate,
+                    token0: tokenBUSD,
+                    token1: token0Address,
+                    token0Weight: 0,
+                    token1Weight: 0,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: BUSDToToken0Path,
+                    destination: address(this)
+                }),
+                _decimals1
+            );
+        }
 
         // Redeposit single asset token to get Want token
         // Get new Token0 balance
@@ -596,21 +599,23 @@ contract VaultAcryptosSingle is VaultBase {
             );
 
             // 3. Swap 1/2 BUSD -> LP "other token"
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _balBUSD.div(2),
-                    priceToken0: _tokenBUSDExchangeRate,
-                    priceToken1: _rates.lpPoolOtherToken,
-                    token0: tokenBUSD,
-                    token1: zorroLPPoolOtherToken,
-                    token0Weight: 0,
-                    token1Weight: 0,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: BUSDToLPPoolOtherTokenPath,
-                    destination: address(this)
-                }),
-                _decimals2
-            );
+            if (zorroLPPoolOtherToken != tokenBUSD) {
+                _safeSwap(
+                    SafeSwapParams({
+                        amountIn: _balBUSD.div(2),
+                        priceToken0: _tokenBUSDExchangeRate,
+                        priceToken1: _rates.lpPoolOtherToken,
+                        token0: tokenBUSD,
+                        token1: zorroLPPoolOtherToken,
+                        token0Weight: 0,
+                        token1Weight: 0,
+                        maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                        path: BUSDToLPPoolOtherTokenPath,
+                        destination: address(this)
+                    }),
+                    _decimals2
+                );
+            }
         }
 
         // Enter LP pool and send received token to the burn address

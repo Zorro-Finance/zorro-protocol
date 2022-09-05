@@ -53,7 +53,7 @@ module.exports = async function (deployer, network, accounts) {
 
   if (deployableNetworks.includes(network)) {
     // Init values 
-    // TODO: Create for each chain
+    // TODO: Create for each chain. Also, should use specific name of contract, not generic. E.g. for 'bsc/bscfork', should be AcryptosBNB or whatever
     const initVal = {
       pid: vaults.pid, 
       isHomeChain: false,
@@ -63,19 +63,19 @@ module.exports = async function (deployer, network, accounts) {
         zorroXChainController: zorroControllerXChain.address,
         ZORROAddress: zorro.address,
         zorroStakingVault: vaultZorro.address,
-        wantAddress: zeroAddress,
-        token0Address: zeroAddress,
+        wantAddress: zeroAddress, // FILL
+        token0Address: zeroAddress, // FILL
         token1Address: zeroAddress,
-        earnedAddress: zeroAddress,
-        farmContractAddress: zeroAddress,
+        earnedAddress: zeroAddress, // FILL - ACS
+        farmContractAddress: zeroAddress, // FILL - Acryptos Masterchef
         rewardsAddress: accounts[2],
-        poolAddress: zeroAddress,
+        poolAddress: zeroAddress, // FILL
         uniRouterAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken,
         tokenUSDCAddress: defaultStablecoin,
       },
-      earnedToZORROPath: [],
+      earnedToZORROPath: [], 
       earnedToToken0Path: [],
       USDCToToken0Path: [],
       earnedToZORLPPoolOtherTokenPath: [],

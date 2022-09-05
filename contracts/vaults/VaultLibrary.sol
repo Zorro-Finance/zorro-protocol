@@ -192,25 +192,27 @@ library VaultLibraryAcryptosSingle {
             _amountUSDC
         );
         // Single asset. Swap from USDC directly to Token0
-        safeSwap(
-            _params.balancerVaultAddress,
-            _params.balancerPool,
-            _params.uniRouterAddress,
-            SafeSwapParams({
-                amountIn: _amountUSDC,
-                priceToken0: _tokenUSDCExchangeRate,
-                priceToken1: _token0ExchangeRate,
-                token0: _params.tokenUSDCAddress,
-                token1: _params.token0Address,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _params.USDCToToken0Path,
-                destination: address(this)
-            }),
-            _decimals,
-            _params.token0Address == _params.tokenACSAddress
-        );
+        if (_params.token0Address != _params.tokenUSDCAddress) {
+            safeSwap(
+                _params.balancerVaultAddress,
+                _params.balancerPool,
+                _params.uniRouterAddress,
+                SafeSwapParams({
+                    amountIn: _amountUSDC,
+                    priceToken0: _tokenUSDCExchangeRate,
+                    priceToken1: _token0ExchangeRate,
+                    token0: _params.tokenUSDCAddress,
+                    token1: _params.token0Address,
+                    token0Weight: 0,
+                    token1Weight: 0,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.USDCToToken0Path,
+                    destination: address(this)
+                }),
+                _decimals,
+                _params.token0Address == _params.tokenACSAddress
+            );
+        }
 
         // Get new Token0 balance
         uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
@@ -305,25 +307,27 @@ library VaultLibraryAcryptosSingle {
             _token0Bal
         );
         // Swap Token0 -> USDC
-        safeSwap(
-            _params.balancerVaultAddress,
-            _params.balancerPool,
-            _params.uniRouterAddress,
-            SafeSwapParams({
-                amountIn: _token0Bal,
-                priceToken0: _token0ExchangeRate,
-                priceToken1: _tokenUSDCExchangeRate,
-                token0: _params.token0Address,
-                token1: _params.tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _params.token0ToUSDCPath,
-                destination: msg.sender
-            }),
-            _decimals,
-            _params.token0Address == _params.tokenACSAddress
-        );
+        if (_params.token0Address != _params.tokenUSDCAddress) {
+            safeSwap(
+                _params.balancerVaultAddress,
+                _params.balancerPool,
+                _params.uniRouterAddress,
+                SafeSwapParams({
+                    amountIn: _token0Bal,
+                    priceToken0: _token0ExchangeRate,
+                    priceToken1: _tokenUSDCExchangeRate,
+                    token0: _params.token0Address,
+                    token1: _params.tokenUSDCAddress,
+                    token0Weight: 0,
+                    token1Weight: 0,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.token0ToUSDCPath,
+                    destination: msg.sender
+                }),
+                _decimals,
+                _params.token0Address == _params.tokenACSAddress
+            );
+        }
 
         // Calculate USDC balance
         return IERC20(_params.tokenUSDCAddress).balanceOf(msg.sender);
@@ -641,26 +645,30 @@ library VaultLibraryStandardAMM {
         );
 
         // Swap USDC for token0
-        IAMMRouter02(_params.uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            _params.USDCToToken0Path,
-            _decimals0,
-            address(this),
-            block.timestamp.add(600)
-        );
+        if (_params.token0Address != _params.tokenUSDCAddress) {
+            IAMMRouter02(_params.uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _priceTokens0,
+                _maxMarketMovementAllowed,
+                _params.USDCToToken0Path,
+                _decimals0,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
 
         // Swap USDC for token1 (if applicable)
-        IAMMRouter02(_params.uniRouterAddress).safeSwap(
-            _amountUSDC.div(2),
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            _params.USDCToToken1Path,
-            _decimals1,
-            address(this),
-            block.timestamp.add(600)
-        );
+        if (_params.token1Address != _params.tokenUSDCAddress) {
+            IAMMRouter02(_params.uniRouterAddress).safeSwap(
+                _amountUSDC.div(2),
+                _priceTokens1,
+                _maxMarketMovementAllowed,
+                _params.USDCToToken1Path,
+                _decimals1,
+                address(this),
+                block.timestamp.add(600)
+            );
+        }
 
         // Deposit token0, token1 into LP pool to get Want token (i.e. LP token)
         uint256 _token0Amt = IERC20Upgradeable(_params.token0Address).balanceOf(
@@ -793,25 +801,29 @@ library VaultLibraryStandardAMM {
         _priceTokens1[1] = _priceTokens0[1];
 
         // Swap token0 for USDC
-        IAMMRouter02(_params.uniRouterAddress).safeSwap(
-            _token0Amt,
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            _params.token0ToUSDCPath,
-            _decimals0,
-            msg.sender,
-            block.timestamp.add(600)
-        );
+        if (_params.token0Address != _params.tokenUSDCAddress) {
+            IAMMRouter02(_params.uniRouterAddress).safeSwap(
+                _token0Amt,
+                _priceTokens0,
+                _maxMarketMovementAllowed,
+                _params.token0ToUSDCPath,
+                _decimals0,
+                msg.sender,
+                block.timestamp.add(600)
+            );
+        }
 
         // Swap token1 for USDC
-        IAMMRouter02(_params.uniRouterAddress).safeSwap(
-            _token1Amt,
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            _params.token1ToUSDCPath,
-            _decimals1,
-            msg.sender,
-            block.timestamp.add(600)
-        );
+        if (_params.token1Address != _params.tokenUSDCAddress) {
+            IAMMRouter02(_params.uniRouterAddress).safeSwap(
+                _token1Amt,
+                _priceTokens1,
+                _maxMarketMovementAllowed,
+                _params.token1ToUSDCPath,
+                _decimals1,
+                msg.sender,
+                block.timestamp.add(600)
+            );
+        }
     }
 }
