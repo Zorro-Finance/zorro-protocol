@@ -63,13 +63,13 @@ module.exports = async function (deployer, network, accounts) {
         zorroXChainController: zorroControllerXChain.address,
         ZORROAddress: zorro.address,
         zorroStakingVault: vaultZorro.address,
-        wantAddress: zeroAddress, // FILL
-        token0Address: zeroAddress, // FILL
+        wantAddress: '0x0E3E97653fE81D771a250b03AF2b5cf294a6dE62', // FILL
+        token0Address: '0x7083609fCE4d1d8Dc0C979AAb8c869Ea2C873402', // FILL
         token1Address: zeroAddress,
-        earnedAddress: zeroAddress, // FILL - ACS
-        farmContractAddress: zeroAddress, // FILL - Acryptos Masterchef
+        earnedAddress: '0x4197C6EF3879a08cD51e5560da5064B773aa1d29', // FILL - ACS
+        farmContractAddress: '0xeaE1425d8ed46554BF56968960e2E567B49D0BED', // FILL - Acryptos Masterchef
         rewardsAddress: accounts[2],
-        poolAddress: zeroAddress, // FILL
+        poolAddress: '0x0E3E97653fE81D771a250b03AF2b5cf294a6dE62', // FILL
         uniRouterAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken,

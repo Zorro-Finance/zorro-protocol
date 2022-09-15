@@ -50,6 +50,10 @@ module.exports = {
       url: process.env.GANACHE_CLOUD_URL,
       network_id: 43114,
     },
+    bscfork: {
+      url: process.env.GANACHE_CLOUD_URL,
+      network_id: 56,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port

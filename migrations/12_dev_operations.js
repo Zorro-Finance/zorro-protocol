@@ -72,11 +72,11 @@ module.exports = async function (deployer, network, accounts) {
             console.log('Sent JLP');
 
             // Send some SG LP token
-            const sgRouter = await IStargateRouter.at('0x45A01E4e04F14f7A4a6702c74187c5F6222033cd');
-            const tokenUSDC = await IERC20.at(usdc);
-            console.log('usdc balance: ', (await tokenUSDC.balanceOf.call(recipient)).toString());
-            await tokenUSDC.approve(sgRouter.address, '500000000');
-            await sgRouter.addLiquidity(1, '500000000', recipient);
+            // const sgRouter = await IStargateRouter.at('0x45A01E4e04F14f7A4a6702c74187c5F6222033cd');
+            // const tokenUSDC = await IERC20.at(usdc);
+            // console.log('usdc balance: ', (await tokenUSDC.balanceOf.call(recipient)).toString());
+            // await tokenUSDC.approve(sgRouter.address, '500000000');
+            // await sgRouter.addLiquidity(1, '500000000', recipient);
         }
 
         // Transfer ownership of all contracts
@@ -98,5 +98,9 @@ module.exports = async function (deployer, network, accounts) {
         console.log('VaultAvaxUSDC', await vaultAvaxUSDC.owner.call(), await vaultAvaxUSDC.govAddress.call());
         await vaultAvaxUSDC.transferOwnership(newOwner);
         await vaultAvaxUSDC.setGov(newOwner);
+    }
+
+    if (network === 'bscfork') {
+        // TODO
     }
 };

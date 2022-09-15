@@ -121,23 +121,19 @@ exports.getKeyParams = (accounts, zorroToken) => ({
       },
     },
   },
-  // TODO: The BSC node was just a copy of avax. Values must be changed before proper bsc migration
   bsc: {
-    defaultStablecoin: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
-    uniRouterAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
-    uniFactoryAddress: '0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10',
-    uniPoolAddress: '0xf4003f4efbe8691b60249e6afbd307abe7758adb', // WAVAX/USDC
-    zorroLPPoolOtherToken: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', // WAVAX
+    defaultStablecoin: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+    uniRouterAddress: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+    uniFactoryAddress: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
+    uniPoolAddress: zeroAdress,
+    zorroLPPoolOtherToken: zeroAdress,
     USDCToZorroPath: [
-      zeroAdress,
+      '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
       zorroToken,
     ],
-    USDCToZorroLPPoolOtherTokenPath: [
-      '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
-      '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
-    ],
+    USDCToZorroLPPoolOtherTokenPath: [],
     rewards: {
-      blocksPerDay: 43200, // 1.9 blocks per sec
+      blocksPerDay: 28800, // 3 secs per block
       startBlock: 0,
       ZORROPerBlock: 0, // Needs to be calculated, see below
       targetTVLCaptureBasisPoints: 100, // TODO: Sascha: need input here
@@ -153,22 +149,22 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     },
     priceFeeds: {
       priceFeedZOR: zeroAdress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
-      priceFeedLPPoolOtherToken: '0x0A77230d17318075983913bC2145DB16C7366156', // AVAX/USD price feed
-      priceFeedStablecoin: '0x51597f405303C4377E36123cBc172b13269EA163',
+      priceFeedLPPoolOtherToken: zeroAdress,
+      priceFeedStablecoin: zeroAdress, // TODO: BUSD or USDC?
     },
-    zorroLPPool: zeroAdress, // To be filled in on home chain after deployment!
+    zorroLPPool: zeroAdress,
     bridge: {
-      chainId: 0,
+      chainId: 1,
       homeChainId: 0,
-      ZorroChainIDs: [0],
-      controllerContracts: [zeroAdress], // To be filled in on each chain
-      LZChainIDs: [6],
-      stargateDestPoolIds: ['0x1205f31718499dBf1fCa446663B532Ef87481fe1'],
-      stargateRouter: '0x45A01E4e04F14f7A4a6702c74187c5F6222033cd',
+      ZorroChainIDs: [1],
+      controllerContracts: [zeroAdress], // To be filled in on each chain // TODO: Need to adjust for BSC, AVAX
+      LZChainIDs: [2],
+      stargateDestPoolIds: [],
+      stargateRouter: '0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8',
       layerZeroEndpoint: '0x3c2269811836af69497E5F486A85D7316753cf62',
-      stargateSwapPoolId: '0x1205f31718499dBf1fCa446663B532Ef87481fe1',
-      stargatePoolId: 1,
-      tokenSTG: '0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590',
+      stargateSwapPoolId: '0x98a5737749490856b401DB5Dc27F522fC314A4e1', // BUSD not USDC
+      stargatePoolId: 5, // TODO: This is BUSD not USDC
+      tokenSTG: '0xB0D502E938ed5f4df2E681fE6E419ff29631d62b',
     },
     vaults: {
       pid: 0, // needs to be re-set to appropriate value, if applicable
@@ -187,6 +183,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
 
 const devNets = [
   'avaxfork',
+  'bscfork',
   'ganachecli',
   'default',
   'development',
@@ -204,6 +201,10 @@ exports.homeNetworks = homeNetworks;
 exports.getSynthNetwork = (network) => {
   if (network === 'avaxfork') {
     return 'avax';
+  }
+
+  if (network === 'bscfork') {
+    return 'bsc';
   }
 
   if (devNets.includes(network)) {
