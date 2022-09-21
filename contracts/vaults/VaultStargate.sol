@@ -473,6 +473,9 @@ contract VaultStargate is VaultBase {
             address(this)
         );
 
+        // Require pending rewards in order to continue
+        require(_earnedAmt > 0, "0earn");
+
         // Create rates struct
         VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),

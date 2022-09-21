@@ -511,10 +511,10 @@ contract ZorroControllerInvestment is
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         if (_pendingRewards > 0) {
             // If pending rewards payable, pay them out
-            (uint256 _rewardsDue, uint256 _slashedRewards) = _getAdjustedRewards(
-                _tranche,
-                _pendingRewards
-            );
+            (
+                uint256 _rewardsDue,
+                uint256 _slashedRewards
+            ) = _getAdjustedRewards(_tranche, _pendingRewards);
 
             if (_xChainRepatriation) {
                 // Update rewardsDueXChain
@@ -571,10 +571,18 @@ contract ZorroControllerInvestment is
                 _foreignAccount
             );
 
+            // Get vault
+            IVault _vault = IVault(poolInfo[_pid].vault);
+
+            // Get staked want tokens
+            uint256 _stakedWantAmt = _tranche
+                .contribution
+                .mul(1e12)
+                .mul(_vault.wantLockedTotal())
+                .div(_tranche.timeMultiplier.mul(_vault.sharesTotal()));
+
             // Withdraw the want token for this account
-            IVault(poolInfo[_pid].vault).withdrawWantToken(
-                _getOrigSharesDeposited(_tranche.contribution, _tranche.timeMultiplier)
-            );
+            _vault.withdrawWantToken(_stakedWantAmt);
 
             // Update shares safely
             _pool.totalTrancheContributions = _pool
@@ -729,7 +737,10 @@ contract ZorroControllerInvestment is
 
         // Burn xchain ZOR rewards due before repatriating, if applicable. (They will be minted on opposite chain)
         if (_rewardsDueXChain > 0) {
-            IERC20Upgradeable(ZORRO).safeTransfer(burnAddress, _rewardsDueXChain);
+            IERC20Upgradeable(ZORRO).safeTransfer(
+                burnAddress,
+                _rewardsDueXChain
+            );
         }
     }
 
@@ -922,15 +933,5 @@ contract ZorroControllerInvestment is
         uint256 _timeMultiplier
     ) internal pure returns (uint256) {
         return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
-    }
-
-    /// @notice Extracts the original shares deposited by user, accounting for the time multiplier
-    /// @param _contribution The tranche contribution
-    /// @param _timeMultiplier The time multiplier factor (including 1e12 factor)
-    function _getOrigSharesDeposited(
-        uint256 _contribution,
-        uint256 _timeMultiplier
-    ) internal pure returns (uint256) {
-        return _contribution.mul(1e12).div(_timeMultiplier);
     }
 }
