@@ -432,6 +432,9 @@ contract VaultAcryptosSingle is VaultBase {
         // Get the balance of the Earned token on this contract (ACS, etc.)
         uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
+        // Require pending rewards in order to continue
+        require(_earnedAmt > 0, "0earn");
+
         // Get exchange rate from price feed
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
         uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();

@@ -387,6 +387,9 @@ contract VaultStandardAMM is VaultBase {
             address(this)
         );
 
+        // Require pending rewards in order to continue
+        require(_earnedAmt > 0, "0earn");
+
         // Create rates struct
         VaultLibrary.ExchangeRates memory _rates;
         uint256[] memory _priceTokens0 = new uint256[](2);
