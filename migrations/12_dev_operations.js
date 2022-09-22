@@ -42,8 +42,10 @@ module.exports = async function (deployer, network, accounts) {
         const recipients = [recipient0, recipient1, accounts[0]];
         console.log('Distributing tokens to recipients: ', recipients)
         for (let recipient of recipients) {
+            console.log('Current recipient: ', recipient);
+
             // Transfer AVAX to designated wallets
-            const value = web3.utils.toWei('1000', 'ether');
+            const value = web3.utils.toWei('100000', 'ether');
             await web3.eth.sendTransaction({from: accounts[0], to: recipient, value});
     
             // Mint ZOR to designated wallets
@@ -59,7 +61,7 @@ module.exports = async function (deployer, network, accounts) {
                 [wavax, usdc],
                 recipient,
                 now + 300,
-                {value: web3.utils.toWei('1000', 'ether')}
+                {value}
             );
             console.log('swapped USDC');
 
