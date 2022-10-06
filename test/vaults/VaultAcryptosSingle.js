@@ -1,14 +1,13 @@
-const MockVaultAcryptosSingle = artifacts.require('MockVaultAcryptosSingle');
+const MockVaultAlpaca = artifacts.require('MockVaultAlpaca');
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 
-const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
-const MockAcryptosVault = artifacts.require('MockAcryptosVault');
-const MockBalancerVault = artifacts.require('MockBalancerVault');
+const MockAlpacaFarm = artifacts.require('MockAlpacaFarm');
+const MockAlpacaVault = artifacts.require('MockAlpacaVault');
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const MockAMMRouter02 = artifacts.require('MockAMMRouter02');
 const MockUSDC = artifacts.require('MockUSDC');
 const MockBUSD = artifacts.require('MockBUSD');
-const MockACS = artifacts.require('MockACS');
+const MockAlpaca = artifacts.require('MockAlpaca');
 const MockZorroToken = artifacts.require("MockZorroToken");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 const MockAMMToken0 = artifacts.require('MockAMMToken0');
@@ -38,36 +37,31 @@ const setupContracts = async (accounts) => {
     const busd = await MockBUSD.deployed();
     // Tokens
     const token0 = await MockAMMToken0.deployed();
-    const acs = await MockACS.deployed();
+    const alpaca = await MockAlpaca.deployed();
     const ZORToken = await MockZorroToken.deployed();
     const ZORLPPoolOtherToken = await MockAMMOtherLPToken.deployed();
     // LP
-    const acsVault = await MockAcryptosVault.deployed();
-    await acsVault.setToken0Address(token0.address);
-    await acsVault.setBurnAddress(accounts[4]);
-    // Swaps
-    const balancerVault = await MockBalancerVault.deployed();
-    await balancerVault.setBurnAddress(accounts[4]);
+    const alpacaVault = await MockAlpacaVault.deployed();
+    await alpacaVault.setToken0Address(token0.address);
+    await alpacaVault.setBurnAddress(accounts[4]);
     // Farm contract
-    const farmContract = await MockAcryptosFarm.deployed();
-    await farmContract.setWantAddress(acsVault.address);
+    const farmContract = await MockAlpacaFarm.deployed();
+    await farmContract.setWantAddress(alpacaVault.address);
     await farmContract.setBurnAddress(accounts[4]);
     // Vault
     const zorroStakingVault = await MockVaultZorro.deployed();
-    const instance = await MockVaultAcryptosSingle.deployed();
-    await instance.setWantAddress(acsVault.address);
-    await instance.setPoolAddress(acsVault.address); // IAcryptosVault (for entering strategy)
-    await instance.setBalancerVaultAddress(balancerVault.address); // IBalancerVault (router for swaps)
-    await instance.setFarmContractAddress(farmContract.address); // IAcryptosFarm (for farming want token)
+    const instance = await MockVaultAlpaca.deployed();
+    await instance.setWantAddress(alpacaVault.address);
+    await instance.setPoolAddress(alpacaVault.address); // IAlpacaVault (for entering strategy)
+    await instance.setFarmContractAddress(farmContract.address); // IFairLaunch (for farming want token)
     await instance.setZorroStakingVault(zorroStakingVault.address);
-    await instance.setEarnedAddress(acs.address);
+    await instance.setEarnedAddress(alpaca.address);
     await instance.setRewardsAddress(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(token0.address);
-    await instance.setTokenUSDCAddress(usdc.address);
+    await instance.setDefaultStablecoin(usdc.address);
     await instance.setBUSD(busd.address);
-    await instance.setACS(acs.address);
     await instance.setZORROAddress(ZORToken.address);
     await instance.setZorroLPPoolOtherToken(ZORLPPoolOtherToken.address);
     // Set controller
@@ -88,49 +82,32 @@ const setupContracts = async (accounts) => {
     // Swap paths
     await instance.setSwapPaths(0, [usdc.address, token0.address]);
     await instance.setSwapPaths(2, [token0.address, usdc.address]);
-    await instance.setSwapPaths(4, [acs.address, token0.address]);
-    await instance.setSwapPaths(6, [acs.address, ZORToken.address]);
-    await instance.setSwapPaths(7, [acs.address, ZORLPPoolOtherToken.address]);
-    await instance.setSwapPaths(8, [acs.address, usdc.address]);
+    await instance.setSwapPaths(4, [alpaca.address, token0.address]);
+    await instance.setSwapPaths(6, [alpaca.address, ZORToken.address]);
+    await instance.setSwapPaths(7, [alpaca.address, ZORLPPoolOtherToken.address]);
+    await instance.setSwapPaths(8, [alpaca.address, usdc.address]);
     await instance.setBUSDSwapPaths(0, [busd.address, token0.address]);
     await instance.setBUSDSwapPaths(1, [busd.address, ZORToken.address]);
     await instance.setBUSDSwapPaths(2, [busd.address, ZORLPPoolOtherToken.address]);
 
     return {
         instance,
-        acsVault,
+        alpacaVault,
         farmContract,
         usdc,
         busd,
-        acs,
+        alpaca,
         token0,
         ZORToken,
         zorroStakingVault,
     };
 };
 
-contract('VaultAcryptosSingle', async accounts => {
+contract('VaultAlpaca', async accounts => {
     let instance;
 
     before(async () => {
-        instance = await MockVaultAcryptosSingle.deployed();
-    });
-
-    it('sets Balancer pool weights', async () => {
-        // Normal
-        const acsWeight = 7000;
-        const busdWeight = 7000;
-        await instance.setBalancerWeights(acsWeight, busdWeight);
-
-        assert.equal(await instance.balancerACSWeightBasisPoints.call(), acsWeight);
-        assert.equal(await instance.balancerBUSDWeightBasisPoints.call(), busdWeight);
-
-        // Only by owner
-        try {
-            await instance.setBalancerWeights(0, 0, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
+        instance = await MockVaultAlpaca.deployed();
     });
 
     it('sets BUSD swap paths', async () => {
@@ -182,57 +159,15 @@ contract('VaultAcryptosSingle', async accounts => {
             assert.include(err.message, 'caller is not the owner');
         }
     });
-
-    it('sets ACS', async () => {
-        // Set
-        const ACS = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setACS(ACS);
-        assert.equal(await instance.tokenACS.call(), ACS);
-
-        // Only by owner
-        try {
-            await instance.setACS(ACS, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-
-    it('sets Balancer Pool', async () => {
-        // Set
-        const balancerPool = web3.utils.randomHex(32);
-        await instance.setBalancerPool(balancerPool);
-        assert.equal(await instance.balancerPool.call(), balancerPool);
-
-        // Only by owner
-        try {
-            await instance.setBalancerPool(balancerPool, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-
-    it('sets Balancer Vault', async () => {
-        // Set
-        const balancerVaultAddress = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setBalancerVaultAddress(balancerVaultAddress);
-        assert.equal(await instance.balancerVaultAddress.call(), balancerVaultAddress);
-
-        // Only by owner
-        try {
-            await instance.setBalancerVaultAddress(balancerVaultAddress, { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpacaVault;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
+        alpacaVault = setupObj.alpacaVault;
     });
 
     it('deposits Want token', async () => {
@@ -247,9 +182,9 @@ contract('VaultAcryptosSingle', async accounts => {
         }
 
         // Mint some tokens
-        await acsVault.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await alpacaVault.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await acsVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await alpacaVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
 
         /* First deposit */
         // Deposit
@@ -377,13 +312,13 @@ contract('VaultAcryptosSingle', async accounts => {
     });
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault, usdc;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpacaVault, usdc;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
+        alpacaVault = setupObj.alpacaVault;
         usdc = setupObj.usdc;
     });
 
@@ -407,7 +342,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         /* Exchange (> 0) */
         // Record Want bal pre exchange
-        const preExchangeWantBal = await acsVault.balanceOf.call(accounts[0]);
+        const preExchangeWantBal = await alpacaVault.balanceOf.call(accounts[0]);
         // Transfer USDC
         await usdc.mint(accounts[0], amountUSD);
         await usdc.transfer(instance.address, amountUSD);
@@ -438,7 +373,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
 
         // Assert: Want token obtained
-        const postExchangeWantBal = await acsVault.balanceOf.call(accounts[0]);
+        const postExchangeWantBal = await alpacaVault.balanceOf.call(accounts[0]);
         const expLiquidity = web3.utils.toBN(web3.utils.toWei('1', 'ether'));
         assert.isTrue(postExchangeWantBal.sub(preExchangeWantBal).eq(expLiquidity))
 
@@ -454,19 +389,19 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpacaVault;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
+        alpacaVault = setupObj.alpacaVault;
     });
 
     it('farms Want token', async () => {
         // Mint tokens
         const wantAmt = web3.utils.toBN(web3.utils.toWei('0.628', 'ether'));
-        await acsVault.mint(instance.address, wantAmt);
+        await alpacaVault.mint(instance.address, wantAmt);
         // Farm
         const tx = await instance.farm();
         const { rawLogs } = tx.receipt;
@@ -494,13 +429,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpacaVault;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
+        alpacaVault = setupObj.alpacaVault;
     });
 
     it('unfarms Earn token', async () => {
@@ -508,9 +443,9 @@ contract('VaultAcryptosSingle', async accounts => {
         const wantAmt = web3.utils.toBN(1e17);
         
         // Mint some tokens
-        await acsVault.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
+        await alpacaVault.mint(accounts[0], wantAmt.mul(web3.utils.toBN('2')).toString());
         // Approval
-        await acsVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
+        await alpacaVault.approve(instance.address, wantAmt.mul(web3.utils.toBN('2')).toString());
         // Simulate deposit
         await instance.depositWantToken(wantAmt);
 
@@ -533,13 +468,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acsVault, usdc;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpacaVault, usdc;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acsVault = setupObj.acsVault;
+        alpacaVault = setupObj.alpacaVault;
         usdc = setupObj.usdc;
     });
 
@@ -547,9 +482,9 @@ contract('VaultAcryptosSingle', async accounts => {
         /* Prep */
         // Transfer Want token
         const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
-        await acsVault.mint(accounts[0], wantAmt);
-        // Allow VaultAcryptosSingle to spend want token
-        await acsVault.approve(instance.address, wantAmt);
+        await alpacaVault.mint(accounts[0], wantAmt);
+        // Allow VaultAlpaca to spend want token
+        await alpacaVault.approve(instance.address, wantAmt);
 
         /* Exchange (0) */
         try {
@@ -562,7 +497,7 @@ contract('VaultAcryptosSingle', async accounts => {
 
         // Vars
         const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
-        const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in MockVaultAcryptosSingle.sol
+        const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in MockVaultAlpaca.sol
         const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
 
         // Exchange
@@ -595,13 +530,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acs;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpaca;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acs = setupObj.acs;
+        alpaca = setupObj.alpaca;
 
         // Fees
         await instance.setFeeSettings(
@@ -617,7 +552,7 @@ contract('VaultAcryptosSingle', async accounts => {
         /* Prep */
         const earnedAmt = web3.utils.toBN(web3.utils.toWei('3', 'ether'));
         // Mint some Earn token to this contract
-        await acs.mint(instance.address, earnedAmt);
+        await alpaca.mint(instance.address, earnedAmt);
 
         /* Expectations */
         const controllerFeeAmt = earnedAmt.mul(web3.utils.toBN(300)).div(web3.utils.toBN(10000));
@@ -682,13 +617,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acs;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpaca;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acs = setupObj.acs;
+        alpaca = setupObj.alpaca;
     });
 
     it('buys back Earn token, adds liquidity, and burns LP', async () => {
@@ -704,7 +639,7 @@ contract('VaultAcryptosSingle', async accounts => {
         const expZOR = earnedAmt.mul(web3.utils.toBN(0.5 * rates.ZOR * slippage).div(web3.utils.toBN(1000 * rates.earn)));
         const expLPOther = earnedAmt.mul(web3.utils.toBN(0.5 * rates.lpPoolOtherToken * slippage).div(web3.utils.toBN(1000 * rates.earn)));
         // Send some Earn token
-        await acs.mint(instance.address, earnedAmt);
+        await alpaca.mint(instance.address, earnedAmt);
 
         /* Buyback */
         // Buyback
@@ -731,13 +666,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acs, zorroStakingVault;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpaca, zorroStakingVault;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acs = setupObj.acs;
+        alpaca = setupObj.alpaca;
         zorroStakingVault = setupObj.zorroStakingVault;
     });
 
@@ -751,7 +686,7 @@ contract('VaultAcryptosSingle', async accounts => {
             stablecoin: 1e12,
         };
         // Send some Earn token
-        await acs.mint(instance.address, earnedAmt);
+        await alpaca.mint(instance.address, earnedAmt);
 
         /* RevShare */
         // RevShare
@@ -774,13 +709,13 @@ contract('VaultAcryptosSingle', async accounts => {
 
 });
 
-contract('VaultAcryptosSingle', async accounts => {
-    let instance, acs;
+contract('VaultAlpaca', async accounts => {
+    let instance, alpaca;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
-        acs = setupObj.acs;
+        alpaca = setupObj.alpaca;
     });
 
     it('swaps Earn token to USD', async () => {
@@ -793,7 +728,7 @@ contract('VaultAcryptosSingle', async accounts => {
             stablecoin: 1e12,
         };
         // Send some Earn token
-        await acs.mint(instance.address, earnedAmt);
+        await alpaca.mint(instance.address, earnedAmt);
 
         /* SwapEarnedToUSDC */
         // Swap

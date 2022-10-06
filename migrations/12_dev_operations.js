@@ -75,9 +75,9 @@ module.exports = async function (deployer, network, accounts) {
 
             // Send some SG LP token
             // const sgRouter = await IStargateRouter.at('0x45A01E4e04F14f7A4a6702c74187c5F6222033cd');
-            // const tokenUSDC = await IERC20.at(usdc);
-            // console.log('usdc balance: ', (await tokenUSDC.balanceOf.call(recipient)).toString());
-            // await tokenUSDC.approve(sgRouter.address, '500000000');
+            // const defaultStablecoin = await IERC20.at(usdc);
+            // console.log('usdc balance: ', (await defaultStablecoin.balanceOf.call(recipient)).toString());
+            // await defaultStablecoin.approve(sgRouter.address, '500000000');
             // await sgRouter.addLiquidity(1, '500000000', recipient);
         }
 

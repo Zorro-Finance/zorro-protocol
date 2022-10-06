@@ -79,12 +79,12 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     address public token1Address; // Address of second token in pair if applicable
     address public earnedAddress; // Address of token that rewards are denominated in from farmContractAddress contract (e.g. CAKE token for Pancakeswap)
     address public farmContractAddress; // Address of farm, e.g.: MasterChef (Pancakeswap) or MasterApe (Apeswap) contract
-    address public tokenUSDCAddress; // USDC token address
+    address public defaultStablecoin; // usually USDC token address
     // Other addresses
     address public burnAddress; // Address to send funds to, to burn them
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
-    address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair, AcryptosVault)
+    address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair)
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     // Zorro LP pool
     address public zorroLPPool; // Main pool for Zorro liquidity
@@ -105,15 +105,15 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
     uint256 public sharesTotal; // Total shares for this Vault
     // Swap routes
-    address[] public USDCToToken0Path;
-    address[] public USDCToToken1Path;
-    address[] public token0ToUSDCPath;
-    address[] public token1ToUSDCPath;
+    address[] public stablecoinToToken0Path;
+    address[] public stablecoinToToken1Path;
+    address[] public token0ToStablecoinPath;
+    address[] public token1ToStablecoinPath;
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
     address[] public earnedToZORROPath;
     address[] public earnedToZORLPPoolOtherTokenPath;
-    address[] public earnedToUSDCPath;
+    address[] public earnedToStablecoinPath;
 
     // Price feeds
     AggregatorV3Interface public token0PriceFeed; // Token0 price feed
@@ -180,8 +180,8 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         earnedAddress = _earnedAddress;
     }
 
-    function setTokenUSDCAddress(address _tokenUSDCAddress) public onlyOwner {
-        tokenUSDCAddress = _tokenUSDCAddress;
+    function setDefaultStablecoin(address _defaultStablecoin) public onlyOwner {
+        defaultStablecoin = _defaultStablecoin;
     }
 
     function setRewardsAddress(address _rewardsAddress) public onlyOwner {
@@ -257,13 +257,13 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         onlyOwner
     {
         if (_idx == 0) {
-            USDCToToken0Path = _path;
+            stablecoinToToken0Path = _path;
         } else if (_idx == 1) {
-            USDCToToken1Path = _path;
+            stablecoinToToken1Path = _path;
         } else if (_idx == 2) {
-            token0ToUSDCPath = _path;
+            token0ToStablecoinPath = _path;
         } else if (_idx == 3) {
-            token1ToUSDCPath = _path;
+            token1ToStablecoinPath = _path;
         } else if (_idx == 4) {
             earnedToToken0Path = _path;
         } else if (_idx == 5) {
@@ -273,7 +273,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         } else if (_idx == 7) {
             earnedToZORLPPoolOtherTokenPath = _path;
         } else if (_idx == 8) {
-            earnedToUSDCPath = _path;
+            earnedToStablecoinPath = _path;
         } else {
             revert("unsupported feed idx");
         }
@@ -411,8 +411,8 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         } else {
             // Otherwise, contact controller, to make cross chain call
 
-            // Swap to Earn to USDC and send to zorro controller contract
-            _swapEarnedToUSDC(
+            // Swap to Earn to USD and send to zorro controller contract
+            _swapEarnedToUSD(
                 buybackAmt.add(revShareAmt),
                 zorroControllerAddress,
                 _maxMarketMovementAllowed,
@@ -490,7 +490,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         VaultLibrary.ExchangeRates memory _rates
     ) internal virtual;
 
-    function _swapEarnedToUSDC(
+    function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,

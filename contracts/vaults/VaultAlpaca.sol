@@ -6,10 +6,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../interfaces/IAMMFarm.sol";
 
-import "../interfaces/IAcryptosFarm.sol";
-
-import "../interfaces/IAcryptosVault.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -18,28 +14,25 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "./_VaultBase.sol";
 
-import "../interfaces/IBalancerVault.sol";
-
 import "../libraries/PriceFeed.sol";
 
 import "./VaultLibrary.sol";
 
-/// @title Vault contract for Acryptos single token strategies (e.g. for lending)
-contract VaultAcryptosSingle is VaultBase {
+/// @title Vault contract for Alpaca strategies
+contract VaultAlpaca is VaultBase {
     /* Libraries */
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapBalancer for IBalancerVault;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
     /// @notice Upgradeable constructor
-    /// @param _initValue A VaultAcryptosSingleInit struct containing all init values
+    /// @param _initValue A VaultAlpacaInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
     function initialize(
         address _timelockOwner,
-        VaultAcryptosSingleInit memory _initValue
+        VaultAlpacaInit memory _initValue
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
@@ -62,13 +55,7 @@ contract VaultAcryptosSingle is VaultBase {
         uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
-        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
-        tokenBUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
-        balancerPool = 0x894ed9026de37afd9cce1e6c0be7d6b510e3ffe5000100000000000000000001;
-        balancerVaultAddress = 0xa82f327BBbF0667356D2935C6532d164b06cEced;
-        tokenACS = 0x4197C6EF3879a08cD51e5560da5064B773aa1d29;
-        balancerACSWeightBasisPoints = 30;
-        balancerBUSDWeightBasisPoints = 10;
+        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -80,15 +67,15 @@ contract VaultAcryptosSingle is VaultBase {
         // Swap paths
         earnedToZORROPath = _initValue.earnedToZORROPath;
         earnedToToken0Path = _initValue.earnedToToken0Path;
-        USDCToToken0Path = _initValue.USDCToToken0Path;
+        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
         earnedToZORLPPoolOtherTokenPath = _initValue
             .earnedToZORLPPoolOtherTokenPath;
-        earnedToUSDCPath = _initValue.earnedToUSDCPath;
-        BUSDToToken0Path = _initValue.BUSDToToken0Path;
-        BUSDToZORROPath = _initValue.BUSDToZORROPath;
-        BUSDToLPPoolOtherTokenPath = _initValue.BUSDToLPPoolOtherTokenPath;
+        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
+        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
+        stablecoinToZORROPath = _initValue.stablecoinToZORROPath;
+        stablecoinToLPPoolOtherTokenPath = _initValue.stablecoinToLPPoolOtherTokenPath;
         // Corresponding reverse paths
-        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
+        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -106,9 +93,6 @@ contract VaultAcryptosSingle is VaultBase {
         stablecoinPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.stablecoinPriceFeed
         );
-        tokenBUSDPriceFeed = AggregatorV3Interface(
-            _initValue.tokenBUSDPriceFeed
-        );
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -116,81 +100,42 @@ contract VaultAcryptosSingle is VaultBase {
 
     /* Structs */
 
-    struct VaultAcryptosSingleInit {
+    struct VaultAlpacaInit {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
         VaultLibrary.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
-        address[] USDCToToken0Path;
+        address[] stablecoinToToken0Path;
         address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToUSDCPath;
-        address[] BUSDToToken0Path;
-        address[] BUSDToZORROPath;
-        address[] BUSDToLPPoolOtherTokenPath;
+        address[] earnedToStablecoinPath;
+        address[] stablecoinToZORROPath;
+        address[] stablecoinToLPPoolOtherTokenPath;
         VaultLibrary.VaultFees fees;
         VaultLibrary.VaultPriceFeeds priceFeeds;
-        address tokenBUSDPriceFeed;
     }
 
     /* State */
 
-    uint256 public balancerACSWeightBasisPoints; // Relative weight of ACS token in balancer pool
-    uint256 public balancerBUSDWeightBasisPoints; // Relative weight of BUSD token in balancer pool
-    address[] public BUSDToToken0Path; // Swap path from BUSD to Token0 (PCS)
-    address[] public BUSDToZORROPath; // Swap path from BUSD to ZOR (PCS)
-    address[] public BUSDToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
-    address public tokenBUSD;
-    address public tokenACS;
-    bytes32 public balancerPool; // The Acryptos ACSI.finance pool ID for swapping Earned token to BUSD tokens.
-    address public balancerVaultAddress; // Address of Balancer/ACSI.finance Vault for swaps etc.
-    AggregatorV3Interface public tokenBUSDPriceFeed; // BUSD Chainlink price feed
+    address[] public stablecoinToZORROPath; // Swap path from BUSD to ZOR (PCS)
+    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
 
     /* Setters */
 
-    function setBalancerWeights(uint256 _acsWeight, uint256 _busdWeight)
-        external
-        onlyOwner
-    {
-        balancerACSWeightBasisPoints = _acsWeight;
-        balancerBUSDWeightBasisPoints = _busdWeight;
-    }
-
-    function setBUSDSwapPaths(uint8 _idx, address[] calldata _path)
+    function setStablecoinSwapPaths(uint8 _idx, address[] calldata _path)
         external
         onlyOwner
     {
         if (_idx == 0) {
-            BUSDToToken0Path = _path;
+            stablecoinToToken0Path = _path;
         } else if (_idx == 1) {
-            BUSDToZORROPath = _path;
+            stablecoinToZORROPath = _path;
         } else if (_idx == 2) {
-            BUSDToLPPoolOtherTokenPath = _path;
+            stablecoinToLPPoolOtherTokenPath = _path;
         } else {
             revert("unsupported idx swap path");
         }
-    }
-
-    function setBUSD(address _token) external onlyOwner {
-        tokenBUSD = _token;
-    }
-
-    function setACS(address _token) external onlyOwner {
-        tokenACS = _token;
-    }
-
-    function setBalancerPool(bytes32 _pool) external onlyOwner {
-        balancerPool = _pool;
-    }
-
-    function setBalancerVaultAddress(address _vault) external onlyOwner {
-        balancerVaultAddress = _vault;
-    }
-
-    // TODO: Write test for this one
-    function setTokenBUSDPriceFeed(address _priceFeed) external onlyOwner {
-        tokenBUSDPriceFeed = AggregatorV3Interface(_priceFeed);
     }
 
     /* Investment Actions */
@@ -240,27 +185,24 @@ contract VaultAcryptosSingle is VaultBase {
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _amountUSDC The USDC quantity to exchange (must already be deposited)
+    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         return
-            VaultLibraryAcryptosSingle.exchangeUSDForWantToken(
-                _amountUSDC,
-                VaultLibraryAcryptosSingle.ExchangeUSDForWantParams({
+            VaultLibraryAlpaca.exchangeUSDForWantToken(
+                _amountUSD,
+                VaultLibraryAlpaca.ExchangeUSDForWantParams({
                     token0Address: token0Address,
-                    tokenUSDCAddress: tokenUSDCAddress,
-                    tokenACSAddress: tokenACS,
+                    stablecoin: defaultStablecoin,
+                    tokenZorroAddress: ZORROAddress,
                     token0PriceFeed: token0PriceFeed,
                     stablecoinPriceFeed: stablecoinPriceFeed,
                     uniRouterAddress: uniRouterAddress,
-                    balancerVaultAddress: balancerVaultAddress,
-                    balancerPool: balancerPool,
-                    zorroControllerAddress: zorroControllerAddress,
-                    USDCToToken0Path: USDCToToken0Path,
+                    stablecoinToToken0Path: stablecoinToToken0Path,
                     poolAddress: poolAddress,
                     wantAddress: wantAddress
                 }),
@@ -275,13 +217,10 @@ contract VaultAcryptosSingle is VaultBase {
         SafeSwapParams memory _swapParams,
         uint8[] memory _decimals
     ) internal {
-        VaultLibraryAcryptosSingle.safeSwap(
-            balancerVaultAddress,
-            balancerPool,
+        VaultLibraryAlpaca.safeSwap(
             uniRouterAddress,
             _swapParams,
-            _decimals,
-            _swapParams.token0 == tokenACS || _swapParams.token1 == tokenACS
+            _decimals
         );
     }
 
@@ -295,26 +234,26 @@ contract VaultAcryptosSingle is VaultBase {
         require(isFarmable, "!farmable");
 
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
         );
         // Increment the total Want tokens locked into this contract
-        wantLockedTotal = wantLockedTotal.add(wantAmt);
+        wantLockedTotal = wantLockedTotal.add(_wantAmt);
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             farmContractAddress,
-            wantAmt
+            _wantAmt
         );
 
         // Deposit the Want tokens in the Farm contract
-        IAcryptosFarm(farmContractAddress).deposit(wantAddress, wantAmt);
+        IFairLaunch(farmContractAddress).deposit(address(this), pid, _wantAmt);
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal {
         // Withdraw the Want tokens from the Farm contract
-        IAcryptosFarm(farmContractAddress).withdraw(wantAddress, _wantAmt);
+        IFairLaunch(farmContractAddress).withdraw(address(this), pid, _wantAmt);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -378,7 +317,7 @@ contract VaultAcryptosSingle is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USDC token obtained
+    /// @return uint256 Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
@@ -391,20 +330,17 @@ contract VaultAcryptosSingle is VaultBase {
         returns (uint256)
     {
         return
-            VaultLibraryAcryptosSingle.exchangeWantTokenForUSD(
+            VaultLibraryAlpaca.exchangeWantTokenForUSD(
                 _amount,
-                VaultLibraryAcryptosSingle.ExchangeWantTokenForUSDParams({
+                VaultLibraryAlpaca.ExchangeWantTokenForUSDParams({
                     token0Address: token0Address,
-                    tokenUSDCAddress: tokenUSDCAddress,
-                    tokenACSAddress: tokenACS,
+                    stablecoin: defaultStablecoin,
                     wantAddress: wantAddress,
                     poolAddress: poolAddress,
                     token0PriceFeed: token0PriceFeed,
                     stablecoinPriceFeed: stablecoinPriceFeed,
-                    token0ToUSDCPath: token0ToUSDCPath,
-                    uniRouterAddress: uniRouterAddress,
-                    balancerVaultAddress: balancerVaultAddress,
-                    balancerPool: balancerPool
+                    token0ToStablecoinPath: token0ToStablecoinPath,
+                    uniRouterAddress: uniRouterAddress
                 }),
                 _maxMarketMovementAllowed
             );
@@ -429,7 +365,7 @@ contract VaultAcryptosSingle is VaultBase {
         // Harvest farm tokens
         _unfarm(0);
 
-        // Get the balance of the Earned token on this contract (ACS, etc.)
+        // Get the balance of the Earned token on this contract
         uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
 
         // Require pending rewards in order to continue
@@ -437,7 +373,7 @@ contract VaultAcryptosSingle is VaultBase {
 
         // Get exchange rate from price feed
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
+        uint256 _stablecoinExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Create rates struct
         VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
@@ -468,46 +404,22 @@ contract VaultAcryptosSingle is VaultBase {
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
         _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+        _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = _decimals0[1];
         _decimals1[1] = ERC20Upgradeable(token0Address).decimals();
 
-        // Step 1: Earned to BUSD
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _earnedAmtNet,
-                priceToken0: _rates.earn,
-                priceToken1: _tokenBUSDExchangeRate,
-                token0: earnedAddress,
-                token1: tokenBUSD,
-                token0Weight: balancerACSWeightBasisPoints,
-                token1Weight: balancerBUSDWeightBasisPoints,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToToken0Path,
-                destination: address(this)
-            }),
-            _decimals0
-        );
-
-        // Step 2: BUSD to Token0
-        uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
-            address(this)
-        );
-
-        // Swap if token0 is not BUSD
-        if (token0Address != tokenBUSD) {
+        // Swap earn to token0 if token0 is not earn
+        if (token0Address != earnedAddress) {
             _safeSwap(
                 SafeSwapParams({
-                    amountIn: _balBUSD,
-                    priceToken0: _tokenBUSDExchangeRate,
+                    amountIn: _earnedAmtNet,
+                    priceToken0: _rates.earn,
                     priceToken1: _token0ExchangeRate,
-                    token0: tokenBUSD,
+                    token0: earnedAddress,
                     token1: token0Address,
-                    token0Weight: 0,
-                    token1Weight: 0,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: BUSDToToken0Path,
+                    path: earnedToToken0Path,
                     destination: address(this)
                 }),
                 _decimals1
@@ -525,7 +437,7 @@ contract VaultAcryptosSingle is VaultBase {
             _token0Bal
         );
         // Deposit token to get Want token
-        IAcryptosVault(poolAddress).deposit(_token0Bal);
+        IAlpacaVault(poolAddress).deposit(_token0Bal);
 
         // This vault is only for single asset deposits, so farm that token and exit
         // Update the last earn block
@@ -547,13 +459,13 @@ contract VaultAcryptosSingle is VaultBase {
         // Self contained block to limit stack depth
         {
             // Get exchange rate
-            uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed
+            uint256 _stablecoinExchangeRate = stablecoinPriceFeed
                 .getExchangeRate();
 
             // Get decimal info
             uint8[] memory _decimals0 = new uint8[](2);
             _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+            _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
             uint8[] memory _decimals1 = new uint8[](2);
             _decimals1[0] = _decimals0[1];
             _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
@@ -567,20 +479,18 @@ contract VaultAcryptosSingle is VaultBase {
                 SafeSwapParams({
                     amountIn: _amount,
                     priceToken0: _rates.earn,
-                    priceToken1: _tokenBUSDExchangeRate,
+                    priceToken1: _stablecoinExchangeRate,
                     token0: earnedAddress,
-                    token1: tokenBUSD,
-                    token0Weight: balancerACSWeightBasisPoints,
-                    token1Weight: balancerBUSDWeightBasisPoints,
+                    token1: defaultStablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _dummyEarnedToBUSDPath,
+                    path: earnedToStablecoinPath,
                     destination: address(this)
                 }),
                 _decimals0
             );
 
             // Get BUSD bal
-            uint256 _balBUSD = IERC20Upgradeable(tokenBUSD).balanceOf(
+            uint256 _balBUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
                 address(this)
             );
 
@@ -588,32 +498,28 @@ contract VaultAcryptosSingle is VaultBase {
             _safeSwap(
                 SafeSwapParams({
                     amountIn: _balBUSD.div(2),
-                    priceToken0: _tokenBUSDExchangeRate,
+                    priceToken0: _stablecoinExchangeRate,
                     priceToken1: _rates.ZOR,
-                    token0: tokenBUSD,
+                    token0: defaultStablecoin,
                     token1: ZORROAddress,
-                    token0Weight: 0,
-                    token1Weight: 0,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: BUSDToZORROPath,
+                    path: stablecoinToZORROPath,
                     destination: address(this)
                 }),
                 _decimals1
             );
 
             // 3. Swap 1/2 BUSD -> LP "other token"
-            if (zorroLPPoolOtherToken != tokenBUSD) {
+            if (zorroLPPoolOtherToken != defaultStablecoin) {
                 _safeSwap(
                     SafeSwapParams({
                         amountIn: _balBUSD.div(2),
-                        priceToken0: _tokenBUSDExchangeRate,
+                        priceToken0: _stablecoinExchangeRate,
                         priceToken1: _rates.lpPoolOtherToken,
-                        token0: tokenBUSD,
+                        token0: defaultStablecoin,
                         token1: zorroLPPoolOtherToken,
-                        token0Weight: 0,
-                        token1Weight: 0,
                         maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                        path: BUSDToLPPoolOtherTokenPath,
+                        path: stablecoinToLPPoolOtherTokenPath,
                         destination: address(this)
                     }),
                     _decimals2
@@ -656,13 +562,10 @@ contract VaultAcryptosSingle is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        // Get exchange rate
-        uint256 _tokenBUSDExchangeRate = tokenBUSDPriceFeed.getExchangeRate();
-
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
         _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(tokenBUSD).decimals();
+        _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
         // Get decimal info
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = _decimals0[1];
@@ -674,7 +577,7 @@ contract VaultAcryptosSingle is VaultBase {
             _amount
         );
 
-        // Swap Earn to USDC
+        // Swap Earn to USD
         // Require two step swap (Balancer + Uni)
         // 1. Balancer: Earn -> BUSD
         address[] memory _dummyPath;
@@ -682,70 +585,61 @@ contract VaultAcryptosSingle is VaultBase {
             SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: _rates.earn,
-                priceToken1: _tokenBUSDExchangeRate,
+                priceToken1: _rates.stablecoin,
                 token0: earnedAddress,
-                token1: tokenBUSD,
-                token0Weight: balancerACSWeightBasisPoints,
-                token1Weight: balancerBUSDWeightBasisPoints,
+                token1: defaultStablecoin,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _dummyPath, // Unused
+                path: earnedToStablecoinPath,
                 destination: address(this)
             }),
             _decimals0
         );
         // 2. Uni: BUSD -> ZOR
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(
+        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(
             address(this)
         );
         // Increase allowance
-        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
             _balUSDC
         );
         _safeSwap(
             SafeSwapParams({
                 amountIn: _balUSDC,
-                priceToken0: _tokenBUSDExchangeRate,
+                priceToken0: _rates.stablecoin,
                 priceToken1: _rates.ZOR,
-                token0: tokenBUSD,
+                token0: defaultStablecoin,
                 token1: ZORROAddress,
-                token0Weight: 0,
-                token1Weight: 0,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: BUSDToZORROPath,
+                path: stablecoinToZORROPath,
                 destination: zorroStakingVault
             }),
             _decimals1
         );
     }
 
-    /// @notice Swaps Earn token to USDC and sends to destination specified
+    /// @notice Swaps Earn token to USD and sends to destination specified
     /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USDC to
+    /// @param _destination Address to send swapped USD to
     /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
     /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _swapEarnedToUSDC(
+    function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryAcryptosSingle.swapEarnedToUSDC(
+        VaultLibraryAlpaca.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
             _rates,
-            VaultLibraryAcryptosSingle.SwapEarnedToUSDCParams({
+            VaultLibraryAlpaca.SwapEarnedToUSDParams({
                 earnedAddress: earnedAddress,
-                tokenBUSD: tokenBUSD,
-                tokenUSDCAddress: tokenUSDCAddress,
-                balancerACSWeightBasisPoints: balancerACSWeightBasisPoints,
-                balancerBUSDWeightBasisPoints: balancerBUSDWeightBasisPoints,
-                earnedToUSDCPath: earnedToUSDCPath,
+                stablecoin: defaultStablecoin,
+                earnedToStablecoinPath: earnedToStablecoinPath,
                 uniRouterAddress: uniRouterAddress,
-                balancerVaultAddress: balancerVaultAddress,
-                balancerPool: balancerPool,
-                tokenBUSDExchangeRate: tokenBUSDPriceFeed.getExchangeRate()
+                stablecoinExchangeRate: _rates.stablecoin
             })
         );
     }

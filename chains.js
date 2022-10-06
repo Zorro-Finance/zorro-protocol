@@ -150,7 +150,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     priceFeeds: {
       priceFeedZOR: zeroAdress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
       priceFeedLPPoolOtherToken: zeroAdress,
-      priceFeedStablecoin: zeroAdress, // TODO: BUSD or USDC?
+      priceFeedStablecoin: '0x9331b55D9830EF609A2aBCfAc0FBCE050A52fdEa', // BUSD
     },
     zorroLPPool: zeroAdress,
     bridge: {
@@ -163,7 +163,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
       stargateRouter: '0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8',
       layerZeroEndpoint: '0x3c2269811836af69497E5F486A85D7316753cf62',
       stargateSwapPoolId: '0x98a5737749490856b401DB5Dc27F522fC314A4e1', // BUSD not USDC
-      stargatePoolId: 5, // TODO: This is BUSD not USDC
+      stargatePoolId: 5,
       tokenSTG: '0xB0D502E938ed5f4df2E681fE6E419ff29631d62b',
     },
     vaults: {
@@ -177,7 +177,6 @@ exports.getKeyParams = (accounts, zorroToken) => ({
         withdrawFeeFactor: 10000,
       },
     },
-    tokenBUSDPriceFeed: '0x9331b55D9830EF609A2aBCfAc0FBCE050A52fdEa',
   },
 });
 

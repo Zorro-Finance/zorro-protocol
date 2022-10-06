@@ -56,7 +56,7 @@ const setupContracts = async (accounts) => {
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(token0.address);
     await instance.setToken1Address(token1.address);
-    await instance.setTokenUSDCAddress(usdc.address);
+    await instance.setDefaultStablecoin(usdc.address);
     await instance.setZORROAddress(ZORToken.address);
     await instance.setZorroLPPoolOtherToken(ZORLPPoolOtherToken.address);
     // Set controller

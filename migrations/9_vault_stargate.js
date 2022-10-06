@@ -82,7 +82,7 @@ module.exports = async function (deployer, network, accounts) {
       uniRouterAddress,
       zorroLPPool,
       zorroLPPoolOtherToken,
-      tokenUSDCAddress: defaultStablecoin,
+      defaultStablecoin,
     },
     earnedToZORROPath: [
       bridge.tokenSTG,

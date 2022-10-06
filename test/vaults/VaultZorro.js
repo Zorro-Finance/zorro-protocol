@@ -30,7 +30,7 @@ const setupContracts = async (accounts) => {
     await instance.setRewardsAddress(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
-    await instance.setTokenUSDCAddress(usdc.address);
+    await instance.setDefaultStablecoin(usdc.address);
     await instance.setZORROAddress(ZORToken.address);
     // Set controller
     await instance.setZorroControllerAddress(accounts[0]);
@@ -278,7 +278,7 @@ contract('VaultZorro', async accounts => {
         // Transfer Want token
         const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
         await ZORToken.mint(accounts[0], wantAmt);
-        // Allow VaultAcryptosSingle to spend want token
+        // Allow vault to spend want token
         await ZORToken.approve(instance.address, wantAmt);
 
         /* Exchange (0) */

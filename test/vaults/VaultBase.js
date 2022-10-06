@@ -73,13 +73,13 @@ contract('MockVaultStandardAMM', async accounts => {
     it('set token USDC address', async () => {
         // Normal
         const USDC = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setTokenUSDCAddress(USDC);
+        await instance.setDefaultStablecoin(USDC);
 
-        assert.equal(web3.utils.toChecksumAddress(await instance.tokenUSDCAddress.call()), USDC);
+        assert.equal(web3.utils.toChecksumAddress(await instance.defaultStablecoin.call()), USDC);
 
         // Only by owner
         try {
-            await instance.setTokenUSDCAddress(USDC, { from: accounts[1] });
+            await instance.setDefaultStablecoin(USDC, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }

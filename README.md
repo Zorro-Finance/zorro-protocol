@@ -136,7 +136,7 @@ Thus, a Vault subclass inheriting from the `VaultBase` contract and conforming t
 pool/protocol added to Zorro. Examples of Vaults (each corresponding to a pool/protocol type) that are already deployed can 
 be seen in the contracts/vaults folder here: 
 
-* `VaultAcryptosSingle`
+* `VaultStargate`
 * `VaultStandardAMM`
 * `VaultZorro` << Zorro's staking vault!
 

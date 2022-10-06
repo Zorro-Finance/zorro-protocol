@@ -53,15 +53,15 @@ const setupContracts = async (accounts) => {
     const instance = await MockVaultStargate.deployed();
     await instance.setWantAddress(lpPool.address);
     await instance.setStargateRouter(stargateRouter.address);
-    await instance.setPoolAddress(lpPool.address); // IAcryptosVault (for entering strategy)
-    await instance.setFarmContractAddress(farmContract.address); // IAcryptosFarm (for farming want token)
+    await instance.setPoolAddress(lpPool.address);
+    await instance.setFarmContractAddress(farmContract.address); 
     await instance.setZorroStakingVault(zorroStakingVault.address);
     await instance.setEarnedAddress(stg.address);
     await instance.setRewardsAddress(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(usdc.address);
-    await instance.setTokenUSDCAddress(usdc.address);
+    await instance.setDefaultStablecoin(usdc.address);
     await instance.setTokenSTG(stg.address);
     await instance.setZORROAddress(ZORToken.address);
     await instance.setZorroLPPoolOtherToken(ZORLPPoolOtherToken.address);
@@ -444,7 +444,7 @@ contract('VaultStargate', async accounts => {
         // Transfer Want token
         const wantAmt = web3.utils.toBN(web3.utils.toWei('5', 'ether'));
         await lpPool.mint(accounts[0], wantAmt);
-        // Allow VaultAcryptosSingle to spend want token
+        // Allow vault to spend want token
         await lpPool.approve(instance.address, wantAmt);
 
         /* Exchange (0) */
@@ -458,7 +458,7 @@ contract('VaultStargate', async accounts => {
 
         // Vars
         const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
-        const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in MockVaultAcryptosSingle.sol
+        const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in Vault contract
         const expUSDC = expToken0.add(USDCPreExch); // Assumes 1:1 exch rate, no slippage
 
         // Exchange

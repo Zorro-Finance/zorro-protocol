@@ -81,14 +81,14 @@ contract MockInvestmentVault is VaultBase {
     using SafeMathUpgradeable for uint256;
 
     event DepositedWant(uint256 indexed _wantAmt);
-    event ExchangedUSDCForWant(
-        uint256 indexed _amountUSDC,
+    event ExchangedUSDForWant(
+        uint256 indexed _amountUSD,
         uint256 indexed _amountWant
     );
     event WithdrewWant(uint256 indexed _wantAmt);
-    event ExchangedWantForUSDC(
+    event ExchangedWantForUSD(
         uint256 indexed _amountWant,
-        uint256 indexed _amountUSDC
+        uint256 indexed _amountUSD
     );
 
     function depositWantToken(uint256 _wantAmt)
@@ -115,21 +115,21 @@ contract MockInvestmentVault is VaultBase {
     }
 
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         require(_maxMarketMovementAllowed > 0, "slippage cannot be infinite");
 
-        IERC20Upgradeable(tokenUSDCAddress).safeTransfer(
+        IERC20Upgradeable(defaultStablecoin).safeTransfer(
             burnAddress,
-            _amountUSDC
+            _amountUSD
         );
         // Assume 1:1 exch rate
-        MockERC20Upgradeable(wantAddress).mint(msg.sender, _amountUSDC);
+        MockERC20Upgradeable(wantAddress).mint(msg.sender, _amountUSD);
 
-        emit ExchangedUSDCForWant(_amountUSDC, _amountUSDC);
+        emit ExchangedUSDForWant(_amountUSD, _amountUSD);
 
-        return _amountUSDC;
+        return _amountUSD;
     }
 
     function withdrawWantToken(uint256 _wantAmt)
@@ -165,9 +165,9 @@ contract MockInvestmentVault is VaultBase {
         // Requirements
         require(_maxMarketMovementAllowed > 0, "cannot have infinite slippage");
         // Assume 1:1 exch rate
-        MockERC20Upgradeable(tokenUSDCAddress).mint(msg.sender, _amount);
+        MockERC20Upgradeable(defaultStablecoin).mint(msg.sender, _amount);
 
-        emit ExchangedWantForUSDC(_amount, _amount);
+        emit ExchangedWantForUSD(_amount, _amount);
 
         return _amount;
     }
@@ -186,7 +186,7 @@ contract MockInvestmentVault is VaultBase {
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {}
 
-    function _swapEarnedToUSDC(
+    function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,

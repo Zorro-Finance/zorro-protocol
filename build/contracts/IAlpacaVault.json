@@ -1,0 +1,876 @@
+{
+  "contractName": "IAlpacaVault",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "totalToken",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountToken",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "share",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "targetedToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "requestFunds",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amountToken\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"targetedToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"requestFunds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"share\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"deposit(uint256)\":{\"notice\":\"Add more ERC20 to the bank. Hope to get some good returns.\"},\"requestFunds(address,uint256)\":{\"notice\":\"Request funds from user through Vault\"},\"token()\":{\"notice\":\"Underlying token address\"},\"totalToken()\":{\"notice\":\"Return the total ERC20 entitled to the token holders. Be careful of unaccrued interests.\"},\"withdraw(uint256)\":{\"notice\":\"Withdraw ERC20 from the bank by burning the share tokens.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/IAlpacaVault.sol\":\"IAlpacaVault\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/interfaces/IAlpacaVault.sol\":{\"keccak256\":\"0xabcbe1bf75a6a076a4c895f72562bb94e2dc082699bbc5b4e7cde1148667ad57\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6d96ad7765a52458ca06c56d90fdbc667ee581cc913562ac32008dd4d762dbcf\",\"dweb:/ipfs/QmbBK7B9KsFPu9hPVDMvPBM5um1TivCYH6AwtmPKrASgCG\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "// SPDX-License-Identifier: MIT\n/**\n  ∩~~~~∩ \n  ξ ･×･ ξ \n  ξ　~　ξ \n  ξ　　 ξ \n  ξ　　 “~～~～〇 \n  ξ　　　　　　 ξ \n  ξ ξ ξ~～~ξ ξ ξ \n　 ξ_ξξ_ξ　ξ_ξξ_ξ\nAlpaca Fin Corporation\n*/\n\npragma solidity >= 0.6.6;\n\ninterface IAlpacaVault {\n  /// @notice Return the total ERC20 entitled to the token holders. Be careful of unaccrued interests.\n  function totalToken() external view returns (uint256);\n\n  /// @notice Add more ERC20 to the bank. Hope to get some good returns.\n  function deposit(uint256 amountToken) external payable;\n\n  /// @notice Withdraw ERC20 from the bank by burning the share tokens.\n  function withdraw(uint256 share) external;\n\n  /// @notice Request funds from user through Vault\n  function requestFunds(address targetedToken, uint256 amount) external;\n\n  /// @notice Underlying token address\n  function token() external view returns (address);\n}\n",
+  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/IAlpacaVault.sol",
+  "ast": {
+    "absolutePath": "project:/contracts/interfaces/IAlpacaVault.sol",
+    "exportedSymbols": {
+      "IAlpacaVault": [
+        12330
+      ]
+    },
+    "id": 12331,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 12297,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.6",
+          ".6"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "232:25:46"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IAlpacaVault",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 12330,
+        "linearizedBaseContracts": [
+          12330
+        ],
+        "name": "IAlpacaVault",
+        "nameLocation": "269:12:46",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "documentation": {
+              "id": 12298,
+              "nodeType": "StructuredDocumentation",
+              "src": "286:100:46",
+              "text": "@notice Return the total ERC20 entitled to the token holders. Be careful of unaccrued interests."
+            },
+            "functionSelector": "626be567",
+            "id": 12303,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "totalToken",
+            "nameLocation": "398:10:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12299,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "408:2:46"
+            },
+            "returnParameters": {
+              "id": 12302,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12301,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12303,
+                  "src": "434:7:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12300,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "434:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "433:9:46"
+            },
+            "scope": 12330,
+            "src": "389:54:46",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12304,
+              "nodeType": "StructuredDocumentation",
+              "src": "447:70:46",
+              "text": "@notice Add more ERC20 to the bank. Hope to get some good returns."
+            },
+            "functionSelector": "b6b55f25",
+            "id": 12309,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "deposit",
+            "nameLocation": "529:7:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12307,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12306,
+                  "mutability": "mutable",
+                  "name": "amountToken",
+                  "nameLocation": "545:11:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12309,
+                  "src": "537:19:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12305,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "537:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "536:21:46"
+            },
+            "returnParameters": {
+              "id": 12308,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "574:0:46"
+            },
+            "scope": 12330,
+            "src": "520:55:46",
+            "stateMutability": "payable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12310,
+              "nodeType": "StructuredDocumentation",
+              "src": "579:69:46",
+              "text": "@notice Withdraw ERC20 from the bank by burning the share tokens."
+            },
+            "functionSelector": "2e1a7d4d",
+            "id": 12315,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "withdraw",
+            "nameLocation": "660:8:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12313,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12312,
+                  "mutability": "mutable",
+                  "name": "share",
+                  "nameLocation": "677:5:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12315,
+                  "src": "669:13:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12311,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "669:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "668:15:46"
+            },
+            "returnParameters": {
+              "id": 12314,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "692:0:46"
+            },
+            "scope": 12330,
+            "src": "651:42:46",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12316,
+              "nodeType": "StructuredDocumentation",
+              "src": "697:49:46",
+              "text": "@notice Request funds from user through Vault"
+            },
+            "functionSelector": "494666b6",
+            "id": 12323,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "requestFunds",
+            "nameLocation": "758:12:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12321,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12318,
+                  "mutability": "mutable",
+                  "name": "targetedToken",
+                  "nameLocation": "779:13:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12323,
+                  "src": "771:21:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 12317,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "771:7:46",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 12320,
+                  "mutability": "mutable",
+                  "name": "amount",
+                  "nameLocation": "802:6:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12323,
+                  "src": "794:14:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12319,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "794:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "770:39:46"
+            },
+            "returnParameters": {
+              "id": 12322,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "818:0:46"
+            },
+            "scope": 12330,
+            "src": "749:70:46",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12324,
+              "nodeType": "StructuredDocumentation",
+              "src": "823:36:46",
+              "text": "@notice Underlying token address"
+            },
+            "functionSelector": "fc0c546a",
+            "id": 12329,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "token",
+            "nameLocation": "871:5:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12325,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "876:2:46"
+            },
+            "returnParameters": {
+              "id": 12328,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12327,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12329,
+                  "src": "902:7:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 12326,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "902:7:46",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "901:9:46"
+            },
+            "scope": 12330,
+            "src": "862:49:46",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 12331,
+        "src": "259:654:46",
+        "usedErrors": []
+      }
+    ],
+    "src": "232:682:46"
+  },
+  "legacyAST": {
+    "absolutePath": "project:/contracts/interfaces/IAlpacaVault.sol",
+    "exportedSymbols": {
+      "IAlpacaVault": [
+        12330
+      ]
+    },
+    "id": 12331,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 12297,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.6",
+          ".6"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "232:25:46"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IAlpacaVault",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 12330,
+        "linearizedBaseContracts": [
+          12330
+        ],
+        "name": "IAlpacaVault",
+        "nameLocation": "269:12:46",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "documentation": {
+              "id": 12298,
+              "nodeType": "StructuredDocumentation",
+              "src": "286:100:46",
+              "text": "@notice Return the total ERC20 entitled to the token holders. Be careful of unaccrued interests."
+            },
+            "functionSelector": "626be567",
+            "id": 12303,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "totalToken",
+            "nameLocation": "398:10:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12299,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "408:2:46"
+            },
+            "returnParameters": {
+              "id": 12302,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12301,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12303,
+                  "src": "434:7:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12300,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "434:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "433:9:46"
+            },
+            "scope": 12330,
+            "src": "389:54:46",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12304,
+              "nodeType": "StructuredDocumentation",
+              "src": "447:70:46",
+              "text": "@notice Add more ERC20 to the bank. Hope to get some good returns."
+            },
+            "functionSelector": "b6b55f25",
+            "id": 12309,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "deposit",
+            "nameLocation": "529:7:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12307,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12306,
+                  "mutability": "mutable",
+                  "name": "amountToken",
+                  "nameLocation": "545:11:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12309,
+                  "src": "537:19:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12305,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "537:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "536:21:46"
+            },
+            "returnParameters": {
+              "id": 12308,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "574:0:46"
+            },
+            "scope": 12330,
+            "src": "520:55:46",
+            "stateMutability": "payable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12310,
+              "nodeType": "StructuredDocumentation",
+              "src": "579:69:46",
+              "text": "@notice Withdraw ERC20 from the bank by burning the share tokens."
+            },
+            "functionSelector": "2e1a7d4d",
+            "id": 12315,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "withdraw",
+            "nameLocation": "660:8:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12313,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12312,
+                  "mutability": "mutable",
+                  "name": "share",
+                  "nameLocation": "677:5:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12315,
+                  "src": "669:13:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12311,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "669:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "668:15:46"
+            },
+            "returnParameters": {
+              "id": 12314,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "692:0:46"
+            },
+            "scope": 12330,
+            "src": "651:42:46",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12316,
+              "nodeType": "StructuredDocumentation",
+              "src": "697:49:46",
+              "text": "@notice Request funds from user through Vault"
+            },
+            "functionSelector": "494666b6",
+            "id": 12323,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "requestFunds",
+            "nameLocation": "758:12:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12321,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12318,
+                  "mutability": "mutable",
+                  "name": "targetedToken",
+                  "nameLocation": "779:13:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12323,
+                  "src": "771:21:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 12317,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "771:7:46",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 12320,
+                  "mutability": "mutable",
+                  "name": "amount",
+                  "nameLocation": "802:6:46",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12323,
+                  "src": "794:14:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 12319,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "794:7:46",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "770:39:46"
+            },
+            "returnParameters": {
+              "id": 12322,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "818:0:46"
+            },
+            "scope": 12330,
+            "src": "749:70:46",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 12324,
+              "nodeType": "StructuredDocumentation",
+              "src": "823:36:46",
+              "text": "@notice Underlying token address"
+            },
+            "functionSelector": "fc0c546a",
+            "id": 12329,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "token",
+            "nameLocation": "871:5:46",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 12325,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "876:2:46"
+            },
+            "returnParameters": {
+              "id": 12328,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 12327,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12329,
+                  "src": "902:7:46",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 12326,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "902:7:46",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "901:9:46"
+            },
+            "scope": 12330,
+            "src": "862:49:46",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 12331,
+        "src": "259:654:46",
+        "usedErrors": []
+      }
+    ],
+    "src": "232:682:46"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.8.10+commit.fc410830.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.4.4",
+  "updatedAt": "2022-10-06T12:57:21.209Z",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "deposit(uint256)": {
+        "notice": "Add more ERC20 to the bank. Hope to get some good returns."
+      },
+      "requestFunds(address,uint256)": {
+        "notice": "Request funds from user through Vault"
+      },
+      "token()": {
+        "notice": "Underlying token address"
+      },
+      "totalToken()": {
+        "notice": "Return the total ERC20 entitled to the token holders. Be careful of unaccrued interests."
+      },
+      "withdraw(uint256)": {
+        "notice": "Withdraw ERC20 from the bank by burning the share tokens."
+      }
+    },
+    "version": 1
+  }
+}

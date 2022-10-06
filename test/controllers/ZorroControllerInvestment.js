@@ -32,12 +32,12 @@ const setupObj = async (accounts) => {
     await vault.setZorroControllerAddress(instance.address);
     await vault.setWantAddress(lpPool.address);
     await vault.setBurnAddress(accounts[4]);
-    await vault.setTokenUSDCAddress(usdc.address);
+    await vault.setDefaultStablecoin(usdc.address);
 
     await vault1.setZorroControllerAddress(instance.address);
     await vault1.setWantAddress(lpPool1.address);
     await vault1.setBurnAddress(accounts[4]);
-    await vault1.setTokenUSDCAddress(usdc.address);
+    await vault1.setDefaultStablecoin(usdc.address);
 
     // Config
     await instance.setXChainParams(

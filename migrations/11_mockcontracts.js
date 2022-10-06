@@ -2,7 +2,8 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const { deploy } = require('@openzeppelin/truffle-upgrades/dist/utils');
 const VaultLibrary = artifacts.require('VaultLibrary');
-const VaultLibraryAcryptosSingle = artifacts.require('VaultLibraryAcryptosSingle');
+// TODO: Replace with Alpaca
+const VaultLibraryAlpaca = artifacts.require('VaultLibraryAlpaca');
 const VaultLibraryStandardAMM = artifacts.require('VaultLibraryStandardAMM');
 // Controllers (only for testing)
 const MockZorroController = artifacts.require("MockZorroController");
@@ -16,7 +17,7 @@ const MockAMMToken0 = artifacts.require("MockAMMToken0");
 const MockAMMToken1 = artifacts.require("MockAMMToken1");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
 // Vaults (only for testing)
-const MockVaultAcryptosSingle = artifacts.require("MockVaultAcryptosSingle");
+const MockVaultAlpaca = artifacts.require("MockVaultAlpaca");
 const MockVaultStandardAMM = artifacts.require("MockVaultStandardAMM");
 const MockVaultStargate = artifacts.require("MockVaultStargate");
 const MockVaultZorro = artifacts.require("MockVaultZorro");
@@ -35,9 +36,9 @@ const MockPriceBUSD = artifacts.require("MockPriceBUSD");
 const MockAMMFarm = artifacts.require('MockAMMFarm');
 const MockLPPool = artifacts.require('MockLPPool');
 const MockLPPool1 = artifacts.require('MockLPPool1');
-// Acryptos
-const MockAcryptosFarm = artifacts.require('MockAcryptosFarm');
-const MockAcryptosVault = artifacts.require('MockAcryptosVault');
+// Alpaca
+const MockAlpacaFarm = artifacts.require('MockAlpacaFarm');
+const MockAlpacaVault = artifacts.require('MockAlpacaVault');
 // Stargate
 const MockStargateRouter = artifacts.require('MockStargateRouter');
 const MockStargatePool = artifacts.require('MockStargatePool');
@@ -139,8 +140,8 @@ module.exports = async function (deployer, network, accounts) {
 
     // Other contracts
     await deployer.deploy(MockAMMFarm);
-    await deployer.deploy(MockAcryptosFarm);
-    await deployer.deploy(MockAcryptosVault);
+    await deployer.deploy(MockAlpacaFarm);
+    await deployer.deploy(MockAlpacaVault);
     await deployer.deploy(MockStargateRouter);
     await deployer.deploy(MockStargatePool);
     await deployer.deploy(MockStargateLPStaking);
@@ -167,7 +168,7 @@ module.exports = async function (deployer, network, accounts) {
         uniRouterAddress: zeroAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken: zeroAddress,
-        tokenUSDCAddress: zeroAddress,
+        defaultStablecoin: zeroAddress,
       },
       USDCToToken0Path: [],
       fees: {
@@ -199,7 +200,7 @@ module.exports = async function (deployer, network, accounts) {
       ],
     });
 
-    // VaultAcryptosSingle
+    // VaultAlpaca
     const initVal1 = {
       pid: 0,
       isHomeChain: true,
@@ -220,16 +221,13 @@ module.exports = async function (deployer, network, accounts) {
         uniRouterAddress: zeroAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken: zeroAddress,
-        tokenUSDCAddress: zeroAddress,
+        defaultStablecoin: zeroAddress,
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],
       USDCToToken0Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
       earnedToUSDCPath: [],
-      BUSDToToken0Path: [],
-      BUSDToZORROPath: [],
-      BUSDToLPPoolOtherTokenPath: [],
       fees: {
         controllerFee: 0,
         buyBackRate: 0,
@@ -245,12 +243,11 @@ module.exports = async function (deployer, network, accounts) {
         lpPoolOtherTokenPriceFeed: zeroAddress,
         stablecoinPriceFeed: zeroAddress,
       },
-      tokenBUSDPriceFeed: zeroAddress,
     };
-    await deployer.link(VaultLibrary, [MockVaultAcryptosSingle]);
-    await deployer.link(VaultLibraryAcryptosSingle, [MockVaultAcryptosSingle]);
+    await deployer.link(VaultLibrary, [MockVaultAlpaca]);
+    await deployer.link(VaultLibraryAlpaca, [MockVaultAlpaca]);
     await deployProxy(
-      MockVaultAcryptosSingle,
+      MockVaultAlpaca,
       [
         accounts[0],
         initVal1
@@ -282,7 +279,7 @@ module.exports = async function (deployer, network, accounts) {
         uniRouterAddress: zeroAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken: zeroAddress,
-        tokenUSDCAddress: zeroAddress,
+        defaultStablecoin: zeroAddress,
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],
@@ -342,7 +339,7 @@ module.exports = async function (deployer, network, accounts) {
         uniRouterAddress: zeroAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken: zeroAddress,
-        tokenUSDCAddress: zeroAddress,
+        defaultStablecoin: zeroAddress,
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],

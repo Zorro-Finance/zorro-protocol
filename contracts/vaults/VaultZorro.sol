@@ -41,7 +41,7 @@ contract VaultZorro is VaultBase {
         token0Address = _initValue.keyAddresses.token0Address;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
         uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
-        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
+        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -51,8 +51,8 @@ contract VaultZorro is VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        USDCToToken0Path = _initValue.USDCToToken0Path;
-        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
+        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
+        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -71,7 +71,7 @@ contract VaultZorro is VaultBase {
     struct VaultZorroInit {
         uint256 pid;
         VaultLibrary.VaultAddresses keyAddresses;
-        address[] USDCToToken0Path;
+        address[] stablecoinToToken0Path;
         VaultLibrary.VaultFees fees;
         VaultLibrary.VaultPriceFeeds priceFeeds;
     }
@@ -120,18 +120,18 @@ contract VaultZorro is VaultBase {
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _amountUSDC The USDC quantity to exchange
+    /// @param _amountUSD The USD quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(tokenUSDCAddress).balanceOf(address(this));
-        // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "dep<=0");
-        require(_amountUSDC <= _balUSDC, "amt>bal");
+        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
+        // Check that USD was actually deposited
+        require(_amountUSD > 0, "dep<=0");
+        require(_amountUSD <= _balUSD, "amt>bal");
 
         // Use price feed to determine exchange rates
         uint256[] memory _priceTokens = new uint256[](2);
@@ -140,21 +140,21 @@ contract VaultZorro is VaultBase {
 
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
         _decimals[1] = ERC20Upgradeable(token0Address).decimals();
 
         // Increase allowance
-        IERC20Upgradeable(tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
-            _amountUSDC
+            _amountUSD
         );
 
-        // Swap USDC for token0
+        // Swap USD for token0
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC,
+            _amountUSD,
             _priceTokens,
             _maxMarketMovementAllowed,
-            USDCToToken0Path,
+            stablecoinToToken0Path,
             _decimals,
             address(this),
             block.timestamp.add(600)
@@ -223,7 +223,7 @@ contract VaultZorro is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
-    /// @return uint256 Amount of USDC token obtained
+    /// @return uint256 Amount of  token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
@@ -246,23 +246,23 @@ contract VaultZorro is VaultBase {
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
         _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
 
         // Increase allowance
         IERC20Upgradeable(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
 
-        // Swap token0 for USDC
+        // Swap token0 for USD
         IAMMRouter02(uniRouterAddress).safeSwap(
             _amount,
             _priceTokens,
             _maxMarketMovementAllowed,
-            token0ToUSDCPath,
+            token0ToStablecoinPath,
             _decimals,
             msg.sender,
             block.timestamp.add(600)
         );
 
-        return IERC20Upgradeable(tokenUSDCAddress).balanceOf(msg.sender);
+        return IERC20Upgradeable(defaultStablecoin).balanceOf(msg.sender);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -306,7 +306,7 @@ contract VaultZorro is VaultBase {
         // Dummy function to implement interface
     }
 
-    function _swapEarnedToUSDC(
+    function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,

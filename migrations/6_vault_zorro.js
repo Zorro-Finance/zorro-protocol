@@ -63,7 +63,7 @@ module.exports = async function (deployer, network, accounts) {
         uniRouterAddress,
         zorroLPPool: zeroAddress, // needs to be filled in with appropriate value later!
         zorroLPPoolOtherToken,
-        tokenUSDCAddress: defaultStablecoin,
+        defaultStablecoin,
       },
       USDCToToken0Path: [defaultStablecoin, wavax, zorro.address],
       fees: vaults.fees,

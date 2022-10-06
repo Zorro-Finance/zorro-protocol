@@ -14,7 +14,9 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "../interfaces/IAcryptosVault.sol";
+import "../interfaces/IAlpacaFairLaunch.sol";
+
+import "../interfaces/IAlpacaVault.sol";
 
 library VaultLibrary {
     /* Libs */
@@ -37,7 +39,7 @@ library VaultLibrary {
         address uniRouterAddress;
         address zorroLPPool;
         address zorroLPPoolOtherToken;
-        address tokenUSDCAddress;
+        address defaultStablecoin;
     }
 
     struct VaultFees {
@@ -82,135 +84,74 @@ library VaultLibrary {
     }
 }
 
-library VaultLibraryAcryptosSingle {
+library VaultLibraryAlpaca {
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapBalancer for IBalancerVault;
     using SafeSwapUni for IAMMRouter02;
     using SafeMathUpgradeable for uint256;
     using PriceFeed for AggregatorV3Interface;
 
-    // using PriceFeed for AggregatorV3Interface;
-
-    /// @notice Safely swaps tokens using the most suitable protocol based on token
-    /// @param _balancerVaultAddress Address of balancer vault
-    /// @param _balancerPoolAddress Address of balancer pool
-    /// @param _uniRouterAddress Address of IAMM router
-    /// @param _swapParams SafeSwapParams for swap
-    /// @param _decimals Array of decimals for amount In, amount Out
-    /// @param _forAcryptos Whether one of the tokens is the ACS token
-    function safeSwap(
-        address _balancerVaultAddress,
-        bytes32 _balancerPoolAddress,
-        address _uniRouterAddress,
-        SafeSwapParams memory _swapParams,
-        uint8[] memory _decimals,
-        bool _forAcryptos
-    ) public {
-        if (_forAcryptos) {
-            // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-                _balancerVaultAddress,
-                _swapParams.amountIn
-            );
-            // If it's for the Acryptos tokens, swap on ACS Finance (Balancer clone) (Better liquidity for these tokens only)
-            IBalancerVault(_balancerVaultAddress).safeSwap(
-                _balancerPoolAddress,
-                _swapParams,
-                _decimals
-            );
-        } else {
-            // Allowance
-            IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-                _uniRouterAddress,
-                _swapParams.amountIn
-            );
-            // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
-            // Determine exchange rates using price feed oracle
-            uint256[] memory _priceTokens = new uint256[](2);
-            _priceTokens[0] = _swapParams.priceToken0;
-            _priceTokens[1] = _swapParams.priceToken1;
-            IAMMRouter02(_uniRouterAddress).safeSwap(
-                _swapParams.amountIn,
-                _priceTokens,
-                _swapParams.maxMarketMovementAllowed,
-                _swapParams.path,
-                _decimals,
-                _swapParams.destination,
-                block.timestamp.add(600)
-            );
-        }
-    }
-
     struct ExchangeUSDForWantParams {
         address token0Address;
-        address tokenUSDCAddress;
-        address tokenACSAddress;
+        address stablecoin;
+        address tokenZorroAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
         address uniRouterAddress;
-        address balancerVaultAddress;
-        bytes32 balancerPool;
-        address zorroControllerAddress;
-        address[] USDCToToken0Path;
+        address[] stablecoinToToken0Path;
         address poolAddress;
         address wantAddress;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token
-    /// @param _amountUSDC The USDC quantity to exchange (must already be deposited)
+    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
-        // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20(_params.tokenUSDCAddress).balanceOf(
+        // Get balance of deposited BUSD
+        uint256 _balBUSD = IERC20Upgradeable(_params.stablecoin).balanceOf(
             address(this)
         );
-        // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "dep<=0");
-        require(_amountUSDC <= _balUSDC, "amt>bal");
+        // Check that USD was actually deposited
+        require(_amountUSD > 0, "dep<=0");
+        require(_amountUSD <= _balBUSD, "amt>bal");
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = _params
+        uint256 _stablecoinExchangeRate = _params
             .stablecoinPriceFeed
             .getExchangeRate();
 
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+        _decimals[0] = ERC20Upgradeable(_params.stablecoin).decimals();
         _decimals[1] = ERC20Upgradeable(_params.token0Address).decimals();
 
-        // Swap USDC for tokens
+        // Swap USD for token0
         // Increase allowance
-        IERC20Upgradeable(_params.tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(_params.stablecoin).safeIncreaseAllowance(
             _params.uniRouterAddress,
-            _amountUSDC
+            _amountUSD
         );
-        // Single asset. Swap from USDC directly to Token0
-        if (_params.token0Address != _params.tokenUSDCAddress) {
+        // Single asset. Swap from USD directly to Token0
+        if (_params.token0Address != _params.stablecoin) {
             safeSwap(
-                _params.balancerVaultAddress,
-                _params.balancerPool,
                 _params.uniRouterAddress,
                 SafeSwapParams({
-                    amountIn: _amountUSDC,
-                    priceToken0: _tokenUSDCExchangeRate,
+                    amountIn: _amountUSD,
+                    priceToken0: _stablecoinExchangeRate,
                     priceToken1: _token0ExchangeRate,
-                    token0: _params.tokenUSDCAddress,
+                    token0: _params.stablecoin,
                     token1: _params.token0Address,
-                    token0Weight: 0,
-                    token1Weight: 0,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.USDCToToken0Path,
+                    path: _params.stablecoinToToken0Path,
                     destination: address(this)
                 }),
-                _decimals,
-                _params.token0Address == _params.tokenACSAddress
+                _decimals
             );
         }
 
@@ -226,7 +167,7 @@ library VaultLibraryAcryptosSingle {
         );
 
         // Deposit token to get Want token
-        IAcryptosVault(_params.poolAddress).deposit(_token0Bal);
+        IAlpacaVault(_params.poolAddress).deposit(_token0Bal);
 
         // Calculate resulting want token balance
         uint256 _wantAmt = IERC20Upgradeable(_params.wantAddress).balanceOf(
@@ -235,7 +176,7 @@ library VaultLibraryAcryptosSingle {
 
         // Transfer back to sender
         IERC20Upgradeable(_params.wantAddress).safeTransfer(
-            _params.zorroControllerAddress,
+            msg.sender,
             _wantAmt
         );
 
@@ -244,23 +185,20 @@ library VaultLibraryAcryptosSingle {
 
     struct ExchangeWantTokenForUSDParams {
         address token0Address;
-        address tokenUSDCAddress;
-        address tokenACSAddress;
+        address stablecoin;
         address wantAddress;
         address poolAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
-        address[] token0ToUSDCPath;
+        address[] token0ToStablecoinPath;
         address uniRouterAddress;
-        address balancerVaultAddress;
-        bytes32 balancerPool;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _params A ExchangeWantTokenForUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USDC token obtained
+    /// @return uint256 Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         ExchangeWantTokenForUSDParams memory _params,
@@ -283,20 +221,20 @@ library VaultLibraryAcryptosSingle {
         );
 
         // Withdraw Want token to get Token0
-        IAcryptosVault(_params.poolAddress).withdraw(_amount);
+        IAlpacaVault(_params.poolAddress).withdraw(_amount);
 
         // Use price feed to determine exchange rates
         uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
-        uint256 _tokenUSDCExchangeRate = _params
+        uint256 _stablecoinExchangeRate = _params
             .stablecoinPriceFeed
             .getExchangeRate();
 
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
         _decimals[0] = ERC20Upgradeable(_params.token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(_params.stablecoin).decimals();
 
-        // Swap Token0 for USDC
+        // Swap Token0 for BUSD
         // Get Token0 balance
         uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
             address(this)
@@ -306,131 +244,107 @@ library VaultLibraryAcryptosSingle {
             _params.uniRouterAddress,
             _token0Bal
         );
-        // Swap Token0 -> USDC
-        if (_params.token0Address != _params.tokenUSDCAddress) {
+        // Swap Token0 -> BUSD
+        if (_params.token0Address != _params.stablecoin) {
             safeSwap(
-                _params.balancerVaultAddress,
-                _params.balancerPool,
                 _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _token0Bal,
                     priceToken0: _token0ExchangeRate,
-                    priceToken1: _tokenUSDCExchangeRate,
+                    priceToken1: _stablecoinExchangeRate,
                     token0: _params.token0Address,
-                    token1: _params.tokenUSDCAddress,
-                    token0Weight: 0,
-                    token1Weight: 0,
+                    token1: _params.stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.token0ToUSDCPath,
+                    path: _params.token0ToStablecoinPath,
                     destination: msg.sender
                 }),
-                _decimals,
-                _params.token0Address == _params.tokenACSAddress
+                _decimals
             );
         }
 
         // Calculate USDC balance
-        return IERC20(_params.tokenUSDCAddress).balanceOf(msg.sender);
+        return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
     }
 
-    struct SwapEarnedToUSDCParams {
+    struct SwapEarnedToUSDParams {
         address earnedAddress;
-        address tokenBUSD;
-        address tokenUSDCAddress;
-        uint256 balancerACSWeightBasisPoints;
-        uint256 balancerBUSDWeightBasisPoints;
-        address[] earnedToUSDCPath;
+        address stablecoin;
+        address[] earnedToStablecoinPath;
         address uniRouterAddress;
-        address balancerVaultAddress;
-        bytes32 balancerPool;
-        uint256 tokenBUSDExchangeRate;
+        uint256 stablecoinExchangeRate;
     }
 
-    /// @notice Swaps Earn token to USDC and sends to destination specified
+    /// @notice Swaps Earn token to USD and sends to destination specified
     /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USDC to
+    /// @param _destination Address to send swapped USD to
     /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
     /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function swapEarnedToUSDC(
+    function swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates,
-        SwapEarnedToUSDCParams memory _swapEarnedToUSDCParams
+        SwapEarnedToUSDParams memory _swapEarnedToUSDParams
     ) public {
         // Get exchange rate
 
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(_swapEarnedToUSDCParams.earnedAddress)
+        _decimals0[0] = ERC20Upgradeable(_swapEarnedToUSDParams.earnedAddress)
             .decimals();
-        _decimals0[1] = ERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD)
+        _decimals0[1] = ERC20Upgradeable(_swapEarnedToUSDParams.stablecoin)
             .decimals();
-        // Get decimal info
         uint8[] memory _decimals1 = new uint8[](2);
+        // TODO: decimals1 unused?
         _decimals1[0] = _decimals0[1];
         _decimals1[1] = ERC20Upgradeable(
-            _swapEarnedToUSDCParams.tokenUSDCAddress
+            _swapEarnedToUSDParams.stablecoin
         ).decimals();
 
-        // Swap ACS to BUSD (Balancer)
+        // Swap ALPACA to BUSD
         safeSwap(
-            _swapEarnedToUSDCParams.balancerVaultAddress,
-            _swapEarnedToUSDCParams.balancerPool,
-            _swapEarnedToUSDCParams.uniRouterAddress,
+            _swapEarnedToUSDParams.uniRouterAddress,
             SafeSwapParams({
                 amountIn: _earnedAmount,
                 priceToken0: _rates.earn,
-                priceToken1: _swapEarnedToUSDCParams.tokenBUSDExchangeRate,
-                token0: _swapEarnedToUSDCParams.earnedAddress,
-                token1: _swapEarnedToUSDCParams.tokenBUSD,
-                token0Weight: _swapEarnedToUSDCParams
-                    .balancerACSWeightBasisPoints,
-                token1Weight: _swapEarnedToUSDCParams
-                    .balancerBUSDWeightBasisPoints,
+                priceToken1: _swapEarnedToUSDParams.stablecoinExchangeRate,
+                token0: _swapEarnedToUSDParams.earnedAddress,
+                token1: _swapEarnedToUSDParams.stablecoin,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _swapEarnedToUSDCParams.earnedToUSDCPath, // Unused
-                destination: address(this)
-            }),
-            _decimals0,
-            true
-        );
-
-        // BUSD balance
-        uint256 _balBUSD = IERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD)
-            .balanceOf(address(this));
-
-        // Swap path
-        address[] memory _path = new address[](2);
-        _path[0] = _swapEarnedToUSDCParams.tokenBUSD;
-        _path[1] = _swapEarnedToUSDCParams.tokenUSDCAddress;
-
-        // Swap BUSD to USDC (PCS)
-        // Increase allowance
-        IERC20Upgradeable(_swapEarnedToUSDCParams.tokenBUSD)
-            .safeIncreaseAllowance(
-                _swapEarnedToUSDCParams.uniRouterAddress,
-                _balBUSD
-            );
-        // Swap
-        safeSwap(
-            _swapEarnedToUSDCParams.balancerVaultAddress,
-            _swapEarnedToUSDCParams.balancerPool,
-            _swapEarnedToUSDCParams.uniRouterAddress,
-            SafeSwapParams({
-                amountIn: _balBUSD,
-                priceToken0: _swapEarnedToUSDCParams.tokenBUSDExchangeRate,
-                priceToken1: _rates.stablecoin,
-                token0: _swapEarnedToUSDCParams.tokenBUSD,
-                token1: _swapEarnedToUSDCParams.tokenUSDCAddress,
-                token0Weight: 0,
-                token1Weight: 0,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _path,
+                path: _swapEarnedToUSDParams.earnedToStablecoinPath,
                 destination: _destination
             }),
-            _decimals1,
-            false
+            _decimals0
+        );
+    }
+
+    /// @notice Safely swaps tokens using the most suitable protocol based on token
+    /// @param _uniRouterAddress Address of IAMM router
+    /// @param _swapParams SafeSwapParams for swap
+    /// @param _decimals Array of decimals for amount In, amount Out
+    function safeSwap(
+        address _uniRouterAddress,
+        SafeSwapParams memory _swapParams,
+        uint8[] memory _decimals
+    ) public {
+        // Allowance
+        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
+            _uniRouterAddress,
+            _swapParams.amountIn
+        );
+        // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
+        // Determine exchange rates using price feed oracle
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _swapParams.priceToken0;
+        _priceTokens[1] = _swapParams.priceToken1;
+        IAMMRouter02(_uniRouterAddress).safeSwap(
+            _swapParams.amountIn,
+            _priceTokens,
+            _swapParams.maxMarketMovementAllowed,
+            _swapParams.path,
+            _decimals,
+            _swapParams.destination,
+            block.timestamp.add(600)
         );
     }
 }
@@ -592,35 +506,35 @@ library VaultLibraryStandardAMM {
         );
     }
 
-    struct SwapUSDCAddLiqParams {
-        address tokenUSDCAddress;
+    struct SwapUSDAddLiqParams {
+        address stablecoin;
         address token0Address;
         address token1Address;
         address uniRouterAddress;
         AggregatorV3Interface stablecoinPriceFeed;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface token1PriceFeed;
-        address[] USDCToToken0Path;
-        address[] USDCToToken1Path;
+        address[] stablecoinToToken0Path;
+        address[] stablecoinToToken1Path;
         address wantAddress;
     }
 
     /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender
-    /// @param _amountUSDC The amount of USDC to exchange for Want token (must already be deposited on this contract)
-    /// @param _params A SwapUSDCAddLiqParams struct
+    /// @param _amountUSD The amount of USD to exchange for Want token (must already be deposited on this contract)
+    /// @param _params A SwapUSDAddLiqParams struct
     /// @param _maxMarketMovementAllowed Slippage (990 = 1% etc.)
     /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
-        SwapUSDCAddLiqParams memory _params,
+        uint256 _amountUSD,
+        SwapUSDAddLiqParams memory _params,
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
         // Get balance of deposited USDC
-        uint256 _balUSDC = IERC20Upgradeable(_params.tokenUSDCAddress)
+        uint256 _balUSD = IERC20Upgradeable(_params.stablecoin)
             .balanceOf(address(this));
         // Check that USDC was actually deposited
-        require(_amountUSDC > 0, "dep<=0");
-        require(_amountUSDC <= _balUSDC, "amt>bal");
+        require(_amountUSD > 0, "dep<=0");
+        require(_amountUSD <= _balUSD, "amt>bal");
 
         // Determine exchange rates using price feed oracle
         uint256[] memory _priceTokens0 = new uint256[](2);
@@ -632,25 +546,25 @@ library VaultLibraryStandardAMM {
 
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+        _decimals0[0] = ERC20Upgradeable(_params.stablecoin).decimals();
         _decimals0[1] = ERC20Upgradeable(_params.token0Address).decimals();
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = _decimals0[0];
         _decimals1[1] = ERC20Upgradeable(_params.token1Address).decimals();
 
         // Increase allowance
-        IERC20Upgradeable(_params.tokenUSDCAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(_params.stablecoin).safeIncreaseAllowance(
             _params.uniRouterAddress,
-            _amountUSDC
+            _amountUSD
         );
 
         // Swap USDC for token0
-        if (_params.token0Address != _params.tokenUSDCAddress) {
+        if (_params.token0Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
+                _amountUSD.div(2),
                 _priceTokens0,
                 _maxMarketMovementAllowed,
-                _params.USDCToToken0Path,
+                _params.stablecoinToToken0Path,
                 _decimals0,
                 address(this),
                 block.timestamp.add(600)
@@ -658,12 +572,12 @@ library VaultLibraryStandardAMM {
         }
 
         // Swap USDC for token1 (if applicable)
-        if (_params.token1Address != _params.tokenUSDCAddress) {
+        if (_params.token1Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
+                _amountUSD.div(2),
                 _priceTokens1,
                 _maxMarketMovementAllowed,
-                _params.USDCToToken1Path,
+                _params.stablecoinToToken1Path,
                 _decimals1,
                 address(this),
                 block.timestamp.add(600)
@@ -707,10 +621,10 @@ library VaultLibraryStandardAMM {
         AggregatorV3Interface stablecoinPriceFeed;
         address token0Address;
         address token1Address;
-        address tokenUSDCAddress;
+        address stablecoin;
         address uniRouterAddress;
-        address[] token0ToUSDCPath;
-        address[] token1ToUSDCPath;
+        address[] token0ToStablecoinPath;
+        address[] token1ToStablecoinPath;
         address wantAddress;
         address poolAddress;
     }
@@ -765,7 +679,7 @@ library VaultLibraryStandardAMM {
         );
 
         // Calculate USDC balance
-        return IERC20(_params.tokenUSDCAddress).balanceOf(msg.sender);
+        return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
     }
 
     function _swapTokensForUSDC(
@@ -787,7 +701,7 @@ library VaultLibraryStandardAMM {
         // Get decimal info
         uint8[] memory _decimals0 = new uint8[](2);
         _decimals0[0] = ERC20Upgradeable(_params.token0Address).decimals();
-        _decimals0[1] = ERC20Upgradeable(_params.tokenUSDCAddress).decimals();
+        _decimals0[1] = ERC20Upgradeable(_params.stablecoin).decimals();
         uint8[] memory _decimals1 = new uint8[](2);
         _decimals1[0] = ERC20Upgradeable(_params.token1Address).decimals();
         _decimals1[1] = _decimals0[1];
@@ -801,12 +715,12 @@ library VaultLibraryStandardAMM {
         _priceTokens1[1] = _priceTokens0[1];
 
         // Swap token0 for USDC
-        if (_params.token0Address != _params.tokenUSDCAddress) {
+        if (_params.token0Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _token0Amt,
                 _priceTokens0,
                 _maxMarketMovementAllowed,
-                _params.token0ToUSDCPath,
+                _params.token0ToStablecoinPath,  
                 _decimals0,
                 msg.sender,
                 block.timestamp.add(600)
@@ -814,12 +728,12 @@ library VaultLibraryStandardAMM {
         }
 
         // Swap token1 for USDC
-        if (_params.token1Address != _params.tokenUSDCAddress) {
+        if (_params.token1Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _token1Amt,
                 _priceTokens1,
                 _maxMarketMovementAllowed,
-                _params.token1ToUSDCPath,
+                _params.token1ToStablecoinPath,
                 _decimals1,
                 msg.sender,
                 block.timestamp.add(600)

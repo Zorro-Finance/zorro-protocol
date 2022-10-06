@@ -62,7 +62,7 @@ contract VaultStandardAMM is VaultBase {
         uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
-        tokenUSDCAddress = _initValue.keyAddresses.tokenUSDCAddress;
+        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -75,14 +75,14 @@ contract VaultStandardAMM is VaultBase {
         earnedToZORROPath = _initValue.earnedToZORROPath;
         earnedToToken0Path = _initValue.earnedToToken0Path;
         earnedToToken1Path = _initValue.earnedToToken1Path;
-        USDCToToken0Path = _initValue.USDCToToken0Path;
-        USDCToToken1Path = _initValue.USDCToToken1Path;
+        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
+        stablecoinToToken1Path = _initValue.stablecoinToToken1Path;
         earnedToZORLPPoolOtherTokenPath = _initValue
             .earnedToZORLPPoolOtherTokenPath;
-        earnedToUSDCPath = _initValue.earnedToUSDCPath;
+        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
         // Corresponding reverse paths
-        token0ToUSDCPath = VaultLibrary.reversePath(USDCToToken0Path);
-        token1ToUSDCPath = VaultLibrary.reversePath(USDCToToken1Path);
+        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
+        token1ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken1Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -118,10 +118,10 @@ contract VaultStandardAMM is VaultBase {
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] earnedToToken1Path;
-        address[] USDCToToken0Path;
-        address[] USDCToToken1Path;
+        address[] stablecoinToToken0Path;
+        address[] stablecoinToToken1Path;
         address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToUSDCPath;
+        address[] earnedToStablecoinPath;
         VaultLibrary.VaultFees fees;
         VaultLibrary.VaultPriceFeeds priceFeeds;
     }
@@ -171,26 +171,26 @@ contract VaultStandardAMM is VaultBase {
         }
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender
-    /// @param _amountUSDC The amount of USDC to exchange for Want token (must already be deposited on this contract)
+    /// @notice Performs necessary operations to convert USD into Want token and transfer back to sender
+    /// @param _amountUSD The amount of USD to exchange for Want token (must already be deposited on this contract)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         return VaultLibraryStandardAMM.exchangeUSDForWantToken(
-            _amountUSDC, 
-            VaultLibraryStandardAMM.SwapUSDCAddLiqParams({
-                tokenUSDCAddress: tokenUSDCAddress,
+            _amountUSD, 
+            VaultLibraryStandardAMM.SwapUSDAddLiqParams({
+                stablecoin: defaultStablecoin,
                 token0Address: token0Address,
                 token1Address: token1Address,
                 uniRouterAddress: uniRouterAddress,
                 stablecoinPriceFeed: stablecoinPriceFeed,
                 token0PriceFeed: token0PriceFeed,
                 token1PriceFeed: token1PriceFeed,
-                USDCToToken0Path: USDCToToken0Path,
-                USDCToToken1Path: USDCToToken1Path,
+                stablecoinToToken0Path: stablecoinToToken0Path,
+                stablecoinToToken1Path: stablecoinToToken1Path,
                 wantAddress: wantAddress
             }),
             _maxMarketMovementAllowed
@@ -288,7 +288,7 @@ contract VaultStandardAMM is VaultBase {
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
     /// @param _amount The Want token quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USDC token obtained
+    /// @return uint256 Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
@@ -308,10 +308,10 @@ contract VaultStandardAMM is VaultBase {
                 stablecoinPriceFeed: stablecoinPriceFeed,
                 token0Address: token0Address,
                 token1Address: token1Address,
-                tokenUSDCAddress: tokenUSDCAddress,
+                stablecoin: defaultStablecoin,
                 uniRouterAddress: uniRouterAddress,
-                token0ToUSDCPath: token0ToUSDCPath,
-                token1ToUSDCPath: token1ToUSDCPath,
+                token0ToStablecoinPath: token0ToStablecoinPath,
+                token1ToStablecoinPath: token1ToStablecoinPath,
                 wantAddress: wantAddress,
                 poolAddress: poolAddress
             }), 
@@ -612,11 +612,11 @@ contract VaultStandardAMM is VaultBase {
         }
     }
 
-    /// @notice Swaps Earn token to USDC and sends to destination specified
+    /// @notice Swaps Earn token to USD and sends to destination specified
     /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USDC to
+    /// @param _destination Address to send swapped USD to
     /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    function _swapEarnedToUSDC(
+    function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
@@ -625,7 +625,7 @@ contract VaultStandardAMM is VaultBase {
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
         _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(tokenUSDCAddress).decimals();
+        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
 
         // Get exchange rates
         uint256[] memory _priceTokens = new uint256[](2);
@@ -643,7 +643,7 @@ contract VaultStandardAMM is VaultBase {
             _earnedAmount,
             _priceTokens,
             _maxMarketMovementAllowed,
-            earnedToUSDCPath,
+            earnedToStablecoinPath,
             _decimals,
             _destination,
             block.timestamp.add(600)

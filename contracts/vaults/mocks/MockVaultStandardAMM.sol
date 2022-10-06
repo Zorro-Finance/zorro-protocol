@@ -23,13 +23,13 @@ contract MockVaultStandardAMM is VaultStandardAMM {
         _unfarm(_wantAmt);
     }
 
-    function swapEarnedToUSDC(
+    function swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) public {
-        _swapEarnedToUSDC(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
+        _swapEarnedToUSD(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
     }
 
     function revShareOnChain(
