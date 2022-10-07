@@ -591,9 +591,9 @@ contract('VaultStandardAMM', async accounts => {
         // Send some Earn token
         await farmContract.mint(instance.address, earnedAmt);
 
-        /* SwapEarnedToUSDC */
+        /* SwapEarnedToUSD */
         // Swap
-        const tx = await instance.swapEarnedToUSDC(
+        const tx = await instance.swapEarnedToUSD(
             earnedAmt,
             accounts[2],
             990,

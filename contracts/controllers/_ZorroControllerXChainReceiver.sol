@@ -77,7 +77,7 @@ contract ZorroControllerXChainReceiver is
                 );
 
             // Call receiving function for cross chain deposits
-            // Replace _valueUSDC to account for any slippage during bridging
+            // Replace _valueUSD to account for any slippage during bridging
             _receiveXChainDepositRequest(
                 _pid,
                 amountLD,
@@ -111,8 +111,8 @@ contract ZorroControllerXChainReceiver is
             // Decode params from payload
             (
                 uint256 _remoteChainId,
-                uint256 _amountUSDCBuyback,
-                uint256 _amountUSDCRevShare,
+                uint256 _amountUSDBuyback,
+                uint256 _amountUSDRevShare,
                 uint256 _accSlashedRewards,
                 uint256 _maxMarketMovement
             ) = abi.decode(
@@ -122,8 +122,8 @@ contract ZorroControllerXChainReceiver is
             // Forward request to distribution function
             _receiveXChainDistributionRequest(
                 _remoteChainId,
-                _amountUSDCBuyback,
-                _amountUSDCRevShare,
+                _amountUSDBuyback,
+                _amountUSDRevShare,
                 _accSlashedRewards,
                 _maxMarketMovement
             );
@@ -160,7 +160,7 @@ contract ZorroControllerXChainReceiver is
                 );
 
             // Call receiving function for cross chain withdrawals
-            // Replace _valueUSDC to account for any slippage during bridging
+            // Replace _valueUSD to account for any slippage during bridging
             _receiveXChainWithdrawalRequest(
                 _originChainId,
                 _originAccount,

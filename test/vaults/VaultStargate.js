@@ -687,9 +687,9 @@ contract('VaultStargate', async accounts => {
         // Send some Earn token
         await stg.mint(instance.address, earnedAmt);
 
-        /* SwapEarnedToUSDC */
+        /* SwapEarnedToUSD */
         // Swap
-        const tx = await instance.swapEarnedToUSDC(
+        const tx = await instance.swapEarnedToUSD(
             earnedAmt,
             accounts[2],
             990,

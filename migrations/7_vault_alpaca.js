@@ -29,8 +29,8 @@ module.exports = async function (deployer, network, accounts) {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    USDCToZorroPath,
-    USDCToZorroLPPoolOtherTokenPath,
+    stablecoinToZorroPath,
+    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
     tokenBUSDPriceFeed,
@@ -59,6 +59,7 @@ module.exports = async function (deployer, network, accounts) {
     const initVal = {
       pid: vaults.pid, 
       isHomeChain: false,
+      isFarmable: false,
       keyAddresses: {
         govAddress: accounts[0],
         zorroControllerAddress: zorroController.address,
@@ -79,22 +80,20 @@ module.exports = async function (deployer, network, accounts) {
       },
       earnedToZORROPath: [], 
       earnedToToken0Path: [],
-      USDCToToken0Path: [],
+      stablecoinToToken0Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
-      earnedToUSDCPath: [],
-      BUSDToToken0Path: [],
-      BUSDToZORROPath: [],
-      BUSDToLPPoolOtherTokenPath: [],
+      earnedToStablecoinPath: [],
+      stablecoinToZORROPath: [],
+      stablecoinToLPPoolOtherTokenPath: [],
       fees: vaults.fees,
       priceFeeds: {
         token0PriceFeed: zeroAddress, 
         token1PriceFeed: zeroAddress, // Single token
-        earnTokenPriceFeed: zeroAddress, // ACS
+        earnTokenPriceFeed: zeroAddress, // Alpaca
         ZORPriceFeed: zeroAddress, // ZOR
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
         stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
-      },
-      tokenBUSDPriceFeed,
+      }
     };
     // Deploy master contract
     await deployer.deploy(VaultLibraryAlpaca);

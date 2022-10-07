@@ -102,7 +102,7 @@ library VaultLibraryAlpaca {
         address wantAddress;
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
@@ -262,7 +262,7 @@ library VaultLibraryAlpaca {
             );
         }
 
-        // Calculate USDC balance
+        // Calculate USD balance
         return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
     }
 
@@ -519,7 +519,7 @@ library VaultLibraryStandardAMM {
         address wantAddress;
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token and transfer back to sender
+    /// @notice Performs necessary operations to convert USD into Want token and transfer back to sender
     /// @param _amountUSD The amount of USD to exchange for Want token (must already be deposited on this contract)
     /// @param _params A SwapUSDAddLiqParams struct
     /// @param _maxMarketMovementAllowed Slippage (990 = 1% etc.)
@@ -529,10 +529,10 @@ library VaultLibraryStandardAMM {
         SwapUSDAddLiqParams memory _params,
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
-        // Get balance of deposited USDC
+        // Get balance of deposited USD
         uint256 _balUSD = IERC20Upgradeable(_params.stablecoin)
             .balanceOf(address(this));
-        // Check that USDC was actually deposited
+        // Check that USD was actually deposited
         require(_amountUSD > 0, "dep<=0");
         require(_amountUSD <= _balUSD, "amt>bal");
 
@@ -558,7 +558,7 @@ library VaultLibraryStandardAMM {
             _amountUSD
         );
 
-        // Swap USDC for token0
+        // Swap USD for token0
         if (_params.token0Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _amountUSD.div(2),
@@ -571,7 +571,7 @@ library VaultLibraryStandardAMM {
             );
         }
 
-        // Swap USDC for token1 (if applicable)
+        // Swap USD for token1 (if applicable)
         if (_params.token1Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _amountUSD.div(2),
@@ -633,7 +633,7 @@ library VaultLibraryStandardAMM {
     /// @param _amount The Want token quantity to exchange
     /// @param _params ExchWantToUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USDC token obtained
+    /// @return uint256 Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         ExchWantToUSDParams memory _params,
@@ -663,7 +663,7 @@ library VaultLibraryStandardAMM {
             })
         );
 
-        // Swap tokens back to USDC
+        // Swap tokens back to USD
         uint256 _token0Amt = IERC20Upgradeable(_params.token0Address).balanceOf(
             address(this)
         );
@@ -671,18 +671,18 @@ library VaultLibraryStandardAMM {
             address(this)
         );
 
-        _swapTokensForUSDC(
+        _swapTokensForUSD(
             _token0Amt,
             _token1Amt,
             _params,
             _maxMarketMovementAllowed
         );
 
-        // Calculate USDC balance
+        // Calculate USD balance
         return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
     }
 
-    function _swapTokensForUSDC(
+    function _swapTokensForUSD(
         uint256 _token0Amt,
         uint256 _token1Amt,
         ExchWantToUSDParams memory _params,
@@ -714,7 +714,7 @@ library VaultLibraryStandardAMM {
         _priceTokens1[0] = _params.token1PriceFeed.getExchangeRate();
         _priceTokens1[1] = _priceTokens0[1];
 
-        // Swap token0 for USDC
+        // Swap token0 for USD
         if (_params.token0Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _token0Amt,
@@ -727,7 +727,7 @@ library VaultLibraryStandardAMM {
             );
         }
 
-        // Swap token1 for USDC
+        // Swap token1 for USD
         if (_params.token1Address != _params.stablecoin) {
             IAMMRouter02(_params.uniRouterAddress).safeSwap(
                 _token1Amt,

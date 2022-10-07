@@ -13,7 +13,7 @@ interface IVault {
 
     // Deposits
     function exchangeUSDForWantToken(
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) external returns (uint256);
 

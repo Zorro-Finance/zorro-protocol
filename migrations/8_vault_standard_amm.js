@@ -37,8 +37,8 @@ module.exports = async function (deployer, network, accounts) {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    USDCToZorroPath,
-    USDCToZorroLPPoolOtherTokenPath,
+    stablecoinToZorroPath,
+    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
@@ -120,10 +120,10 @@ module.exports = async function (deployer, network, accounts) {
       earnedToZORROPath: [tokenJoe, wavax, zorro.address],
       earnedToToken0Path: [tokenJoe, wavax, zorro.address],
       earnedToToken1Path: [tokenJoe, wavax],
-      USDCToToken0Path: [defaultStablecoin, wavax, zorro.address],
-      USDCToToken1Path: [defaultStablecoin, wavax],
+      stablecoinToToken0Path: [defaultStablecoin, wavax, zorro.address],
+      stablecoinToToken1Path: [defaultStablecoin, wavax],
       earnedToZORLPPoolOtherTokenPath: [tokenJoe, wavax],
-      earnedToUSDCPath: [tokenJoe, defaultStablecoin],
+      earnedToStablecoinPath: [tokenJoe, defaultStablecoin],
       fees: vaults.fees,
       priceFeeds: {
         token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
@@ -171,8 +171,8 @@ module.exports = async function (deployer, network, accounts) {
             },
             earnedToToken0Path: [tokenJoe, wavax, ],
             earnedToToken1Path: [tokenJoe, wavax, defaultStablecoin],
-            USDCToToken0Path: [defaultStablecoin, wavax, ],
-            USDCToToken1Path: [], // same token
+            stablecoinToToken0Path: [defaultStablecoin, wavax, ],
+            stablecoinToToken1Path: [], // same token
             priceFeeds: {
               ...initVal.priceFeeds,
               ...{
@@ -214,10 +214,10 @@ module.exports = async function (deployer, network, accounts) {
       earnedToZORROPath: [],
       earnedToToken0Path: [],
       earnedToToken1Path: [],
-      USDCToToken0Path: [],
-      USDCToToken1Path: [],
+      stablecoinToToken0Path: [],
+      stablecoinToToken1Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
-      earnedToUSDCPath: [],
+      earnedToStablecoinPath: [],
       fees: vaults.fees,
       priceFeeds: {
         token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,

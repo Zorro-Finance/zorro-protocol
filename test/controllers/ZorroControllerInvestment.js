@@ -154,12 +154,12 @@ contract('ZorroController', async accounts => {
         // Normal
         const USDC = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         const ZOR = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setUSDCToZORPath([USDC, ZOR]);
-        assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroPath.call(0)), USDC);
-        assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroPath.call(1)), ZOR);
+        await instance.setStablecoinToZORPath([USDC, ZOR]);
+        assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroPath.call(0)), USDC);
+        assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroPath.call(1)), ZOR);
         // Only by owner
         try {
-            await instance.setUSDCToZORPath([], { from: accounts[1] });
+            await instance.setStablecoinToZORPath([], { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }
@@ -169,12 +169,12 @@ contract('ZorroController', async accounts => {
         // Normal
         const USDC = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         const zorLPPoolOtherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setUSDCToZorroLPPoolOtherTokenPath([USDC, zorLPPoolOtherToken]);
-        assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroLPPoolOtherTokenPath.call(0)), USDC);
-        assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroLPPoolOtherTokenPath.call(1)), zorLPPoolOtherToken);
+        await instance.setStablecoinToZorroLPPoolOtherTokenPath([USDC, zorLPPoolOtherToken]);
+        assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroLPPoolOtherTokenPath.call(0)), USDC);
+        assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroLPPoolOtherTokenPath.call(1)), zorLPPoolOtherToken);
         // Only by owner
         try {
-            await instance.setUSDCToZorroLPPoolOtherTokenPath([], { from: accounts[1] });
+            await instance.setStablecoinToZorroLPPoolOtherTokenPath([], { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }

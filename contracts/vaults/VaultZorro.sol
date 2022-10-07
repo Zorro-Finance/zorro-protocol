@@ -119,7 +119,7 @@ contract VaultZorro is VaultBase {
         return sharesAdded;
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
@@ -127,7 +127,7 @@ contract VaultZorro is VaultBase {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Get balance of deposited USDC
+        // Get balance of deposited USD
         uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
         // Check that USD was actually deposited
         require(_amountUSD > 0, "dep<=0");

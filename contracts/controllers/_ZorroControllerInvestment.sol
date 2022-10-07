@@ -47,8 +47,8 @@ contract ZorroControllerInvestment is
     address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
     // Swaps
     address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
-    address[] public USDCToZorroPath; // The path to swap USDC to ZOR
-    address[] public USDCToZorroLPPoolOtherTokenPath; // The router path from USDC to the primary Zorro LP pool, Token 0
+    address[] public stablecoinToZorroPath; // The path to swap USD to ZOR
+    address[] public stablecoinToZorroLPPoolOtherTokenPath; // The router path from USD to the primary Zorro LP pool, Token 0
     // Oracles
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
@@ -88,19 +88,19 @@ contract ZorroControllerInvestment is
         uniRouterAddress = _uniV2Router;
     }
 
-    /// @notice Setter: Set path for token swap from USDC to ZOR
+    /// @notice Setter: Set path for token swap from USD to ZOR
     /// @param _path Swap path
-    function setUSDCToZORPath(address[] memory _path) external onlyOwner {
-        USDCToZorroPath = _path;
+    function setStablecoinToZORPath(address[] memory _path) external onlyOwner {
+        stablecoinToZorroPath = _path;
     }
 
-    /// @notice Setter: Set path for token swap from USDC to counterparty token in ZOR LP pool
+    /// @notice Setter: Set path for token swap from USD to counterparty token in ZOR LP pool
     /// @param _path Swap path
-    function setUSDCToZorroLPPoolOtherTokenPath(address[] memory _path)
+    function setStablecoinToZorroLPPoolOtherTokenPath(address[] memory _path)
         external
         onlyOwner
     {
-        USDCToZorroLPPoolOtherTokenPath = _path;
+        stablecoinToZorroLPPoolOtherTokenPath = _path;
     }
 
     /// @notice Setter: Chainlink price feeds
@@ -310,12 +310,12 @@ contract ZorroControllerInvestment is
 
     /// @notice Deposits funds in a full service manner (performs autoswaps and obtains Want tokens)
     /// @param _pid index of pool to deposit into
-    /// @param _valueUSDC value in USDC (in ether units) to deposit
+    /// @param _valueUSD value in USD (in ether units) to deposit
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     function depositFullService(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement
     ) public nonReentrant {
@@ -326,7 +326,7 @@ contract ZorroControllerInvestment is
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             vaultAddr,
-            _valueUSDC
+            _valueUSD
         );
 
         // Run core full deposit
@@ -334,7 +334,7 @@ contract ZorroControllerInvestment is
             _pid,
             msg.sender,
             "",
-            _valueUSDC,
+            _valueUSD,
             _weeksCommitted,
             block.timestamp,
             _maxMarketMovement
@@ -345,7 +345,7 @@ contract ZorroControllerInvestment is
     /// @param _pid index of pool to deposit into
     /// @param _account address of user on-chain
     /// @param _foreignAccount the cross chain wallet that initiated this call, if applicable.
-    /// @param _valueUSDC value in USDC (in ether units) to deposit
+    /// @param _valueUSD value in USD (in ether units) to deposit
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _vaultEnteredAt date that the vault was entered at
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
@@ -353,7 +353,7 @@ contract ZorroControllerInvestment is
         uint256 _pid,
         address _account,
         bytes memory _foreignAccount,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
@@ -365,7 +365,7 @@ contract ZorroControllerInvestment is
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             vaultAddr,
-            _valueUSDC
+            _valueUSD
         );
 
         // Make deposit full service call
@@ -373,7 +373,7 @@ contract ZorroControllerInvestment is
             _pid,
             _account,
             _foreignAccount,
-            _valueUSDC,
+            _valueUSD,
             _weeksCommitted,
             _vaultEnteredAt,
             _maxMarketMovement
@@ -385,7 +385,7 @@ contract ZorroControllerInvestment is
     /// @param _pid index of pool to deposit into
     /// @param _account address of user on-chain
     /// @param _foreignAccount the cross chain wallet that initiated this call, if applicable.
-    /// @param _valueUSDC value in USDC (in ether units) to deposit
+    /// @param _valueUSD value in USD (in ether units) to deposit
     /// @param _weeksCommitted how many weeks to commit to the Pool (can be 0 or any uint)
     /// @param _vaultEnteredAt date that the vault was entered at
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
@@ -393,7 +393,7 @@ contract ZorroControllerInvestment is
         uint256 _pid,
         address _account,
         bytes memory _foreignAccount,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
@@ -401,9 +401,9 @@ contract ZorroControllerInvestment is
         // Get Pool, Vault contract
         address vaultAddr = poolInfo[_pid].vault;
 
-        // Exchange USDC for Want token in the Vault contract
+        // Exchange USD for Want token in the Vault contract
         uint256 _wantAmt = IVault(vaultAddr).exchangeUSDForWantToken(
-            _valueUSDC,
+            _valueUSD,
             _maxMarketMovement
         );
 
@@ -663,12 +663,12 @@ contract ZorroControllerInvestment is
         }
     }
 
-    /// @notice Withdraws funds from a pool and converts the Want token into USDC
+    /// @notice Withdraws funds from a pool and converts the Want token into USD
     /// @param _pid index of pool to deposit into
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @return Amount (in USDC) returned
+    /// @return Amount (in USD) returned
     function withdrawalFullService(
         uint256 _pid,
         uint256 _trancheId,
@@ -676,7 +676,7 @@ contract ZorroControllerInvestment is
         uint256 _maxMarketMovement
     ) public nonReentrant returns (uint256) {
         // Withdraw Want token
-        (uint256 _amountUSDC, ) = _withdrawalFullService(
+        (uint256 _amountUSD, ) = _withdrawalFullService(
             msg.sender,
             "",
             _pid,
@@ -686,13 +686,13 @@ contract ZorroControllerInvestment is
             false
         );
 
-        // Send USDC funds back to sender
+        // Send USD funds back to sender
         IERC20Upgradeable(defaultStablecoin).safeTransfer(
             msg.sender,
-            _amountUSDC
+            _amountUSD
         );
 
-        return _amountUSDC;
+        return _amountUSD;
     }
 
     /// @notice Full service withdrawal to be called from authorized cross chain endpoint
@@ -702,7 +702,7 @@ contract ZorroControllerInvestment is
     /// @param _trancheId index of tranche
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
-    /// @return _amountUSDC Amount of USDC withdrawn
+    /// @return _amountUSD Amount of USD withdrawn
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
     function withdrawalFullServiceFromXChain(
         address _account,
@@ -714,10 +714,10 @@ contract ZorroControllerInvestment is
     )
         public
         onlyZorroXChain
-        returns (uint256 _amountUSDC, uint256 _rewardsDueXChain)
+        returns (uint256 _amountUSD, uint256 _rewardsDueXChain)
     {
         // Call withdrawal function on chain
-        (_amountUSDC, _rewardsDueXChain) = _withdrawalFullService(
+        (_amountUSD, _rewardsDueXChain) = _withdrawalFullService(
             _account,
             _foreignAccount,
             _pid,
@@ -727,11 +727,11 @@ contract ZorroControllerInvestment is
             true
         );
 
-        // Transfer USDC balance obtained to caller
-        if (_amountUSDC > 0) {
+        // Transfer USD balance obtained to caller
+        if (_amountUSD > 0) {
             IERC20Upgradeable(defaultStablecoin).safeTransfer(
                 msg.sender,
-                _amountUSDC
+                _amountUSD
             );
         }
 
@@ -744,7 +744,7 @@ contract ZorroControllerInvestment is
         }
     }
 
-    /// @notice Private function for withdrawing funds from a pool and converting the Want token into USDC
+    /// @notice Private function for withdrawing funds from a pool and converting the Want token into USD
     /// @param _account address of wallet on-chain
     /// @param _foreignAccount address of wallet cross-chain (that originally made this deposit)
     /// @param _pid index of pool to deposit into
@@ -752,7 +752,7 @@ contract ZorroControllerInvestment is
     /// @param _harvestOnly If true, will only harvest Zorro tokens but not do a withdrawal
     /// @param _maxMarketMovement factor to account for max market movement/slippage. The definition varies by Vault, so consult the associated Vault contract for info
     /// @param _xChainRepatriation Intended for repatriation to another chain
-    /// @return _amountUSDC Amount of USDC withdrawn
+    /// @return _amountUSD Amount of USD withdrawn
     /// @return _rewardsDueXChain Amount of ZOR rewards due to the origin (cross chain) user
     function _withdrawalFullService(
         address _account,
@@ -762,7 +762,7 @@ contract ZorroControllerInvestment is
         bool _harvestOnly,
         uint256 _maxMarketMovement,
         bool _xChainRepatriation
-    ) internal returns (uint256 _amountUSDC, uint256 _rewardsDueXChain) {
+    ) internal returns (uint256 _amountUSD, uint256 _rewardsDueXChain) {
         // Get Vault contract
         address _vaultAddr = poolInfo[_pid].vault;
 
@@ -783,7 +783,7 @@ contract ZorroControllerInvestment is
         );
 
         // Exchange Want for USD
-        _amountUSDC = IVault(_vaultAddr).exchangeWantTokenForUSD(
+        _amountUSD = IVault(_vaultAddr).exchangeWantTokenForUSD(
             _res.wantAmt,
             _maxMarketMovement
         );
@@ -811,7 +811,7 @@ contract ZorroControllerInvestment is
         ].enteredVaultAt;
 
         // Withdraw
-        (uint256 withdrawnUSDC, ) = _withdrawalFullService(
+        (uint256 withdrawnUSD, ) = _withdrawalFullService(
             msg.sender,
             "",
             _fromPid,
@@ -824,7 +824,7 @@ contract ZorroControllerInvestment is
         // Transfer funds to vault
         IERC20Upgradeable(defaultStablecoin).safeTransfer(
             poolInfo[_toPid].vault,
-            withdrawnUSDC
+            withdrawnUSD
         );
 
         // Redeposit
@@ -832,7 +832,7 @@ contract ZorroControllerInvestment is
             _toPid,
             msg.sender,
             "",
-            withdrawnUSDC,
+            withdrawnUSD,
             weeksCommitted,
             enteredVaultAt,
             _maxMarketMovement

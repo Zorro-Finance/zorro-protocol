@@ -36,7 +36,7 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
         uint256 _chainId,
         bytes memory _dstContract,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _destWallet
@@ -45,7 +45,7 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _destWallet
@@ -53,7 +53,7 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
 
     function receiveXChainDepositRequest(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _originAccount,
@@ -70,30 +70,30 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
     function setUniRouterAddress(address _contract) external;
 
     function setSwapPaths(
-        address[] calldata _USDCToZorroPath,
-        address[] calldata _USDCToZorroLPPoolOtherTokenPath
+        address[] calldata _stablecoinToZorroPath,
+        address[] calldata _stablecoinToZorroLPPoolOtherTokenPath
     ) external;
 
     function setPriceFeeds(address[] calldata _priceFeeds) external;
 
     function checkXChainDistributeEarningsFee(
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) external view returns (uint256);
 
     function sendXChainDistributeEarningsRequest(
         uint256 _pid,
-        uint256 _buybackAmountUSDC,
-        uint256 _revShareAmountUSDC,
+        uint256 _buybackAmountUSD,
+        uint256 _revShareAmountUSD,
         uint256 _maxMarketMovement
     ) external payable;
 
     function receiveXChainDistributionRequest(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) external;

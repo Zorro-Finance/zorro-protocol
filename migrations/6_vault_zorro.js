@@ -27,8 +27,8 @@ module.exports = async function (deployer, network, accounts) {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    USDCToZorroPath,
-    USDCToZorroLPPoolOtherTokenPath,
+    stablecoinToZorroPath,
+    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
   } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
@@ -65,7 +65,7 @@ module.exports = async function (deployer, network, accounts) {
         zorroLPPoolOtherToken,
         defaultStablecoin,
       },
-      USDCToToken0Path: [defaultStablecoin, wavax, zorro.address],
+      stablecoinToToken0Path: [defaultStablecoin, wavax, zorro.address],
       fees: vaults.fees,
       priceFeeds: {
         token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,

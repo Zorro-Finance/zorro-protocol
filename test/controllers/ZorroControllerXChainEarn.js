@@ -105,8 +105,8 @@ contract('ZorroControllerXChainEarn', async accounts => {
             type: 'function',
             inputs: [
                 {type: 'uint256', name: '_remoteChainId'},
-                {type: 'uint256', name: '_amountUSDCBuyback'},
-                {type: 'uint256', name: '_amountUSDCRevShare'},
+                {type: 'uint256', name: '_amountUSDBuyback'},
+                {type: 'uint256', name: '_amountUSDRevShare'},
                 {type: 'uint256', name: '_accSlashedRewards'},
                 {type: 'uint256', name: '_maxMarketMovement'},
             ],
@@ -319,11 +319,11 @@ contract('ZorroControllerXChainEarn setters', async accounts => {
          const ZOR = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
          const otherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
          await instance.setSwapPaths([USDC, AVAX, ZOR], [USDC, otherToken]);
-         assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroPath.call(0)), USDC);
-         assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroPath.call(1)), AVAX);
-         assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroPath.call(2)), ZOR);
-         assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroLPPoolOtherTokenPath.call(0)), USDC);
-         assert.equal(web3.utils.toChecksumAddress(await instance.USDCToZorroLPPoolOtherTokenPath.call(1)), otherToken);
+         assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroPath.call(0)), USDC);
+         assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroPath.call(1)), AVAX);
+         assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroPath.call(2)), ZOR);
+         assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroLPPoolOtherTokenPath.call(0)), USDC);
+         assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZorroLPPoolOtherTokenPath.call(1)), otherToken);
          // Only by owner
          try {
              await instance.setSwapPaths([], [], { from: accounts[1] });

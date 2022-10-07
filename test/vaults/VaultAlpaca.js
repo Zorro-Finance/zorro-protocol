@@ -5,7 +5,6 @@ const MockAlpacaFarm = artifacts.require('MockAlpacaFarm');
 const MockAlpacaVault = artifacts.require('MockAlpacaVault');
 const MockVaultZorro = artifacts.require("MockVaultZorro");
 const MockAMMRouter02 = artifacts.require('MockAMMRouter02');
-const MockUSDC = artifacts.require('MockUSDC');
 const MockBUSD = artifacts.require('MockBUSD');
 const MockAlpaca = artifacts.require('MockAlpaca');
 const MockZorroToken = artifacts.require("MockZorroToken");
@@ -15,7 +14,6 @@ const MockPriceAggToken0 = artifacts.require('MockPriceAggToken0');
 const MockPriceAggEarnToken = artifacts.require('MockPriceAggEarnToken');
 const MockPriceAggZOR = artifacts.require('MockPriceAggZOR');
 const MockPriceAggLPOtherToken = artifacts.require('MockPriceAggLPOtherToken');
-const MockPriceUSDC = artifacts.require('MockPriceUSDC');
 const MockPriceBUSD = artifacts.require('MockPriceBUSD');
 
 const depositedEventSig = web3.eth.abi.encodeEventSignature('Deposited(address,uint256)');
@@ -32,8 +30,7 @@ const setupContracts = async (accounts) => {
     // Router
     const router = await MockAMMRouter02.deployed();
     await router.setBurnAddress(accounts[4]);
-    // USDC
-    const usdc = await MockUSDC.deployed();
+    // USD
     const busd = await MockBUSD.deployed();
     // Tokens
     const token0 = await MockAMMToken0.deployed();
@@ -60,8 +57,7 @@ const setupContracts = async (accounts) => {
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(token0.address);
-    await instance.setDefaultStablecoin(usdc.address);
-    await instance.setBUSD(busd.address);
+    await instance.setDefaultStablecoin(busd.address);
     await instance.setZORROAddress(ZORToken.address);
     await instance.setZorroLPPoolOtherToken(ZORLPPoolOtherToken.address);
     // Set controller
@@ -71,30 +67,28 @@ const setupContracts = async (accounts) => {
     const earnTokenPriceFeed = await MockPriceAggEarnToken.deployed();
     const ZORPriceFeed = await MockPriceAggZOR.deployed();
     const lpPoolOtherTokenPriceFeed = await MockPriceAggLPOtherToken.deployed();
-    const stablecoinPriceFeed = await MockPriceAggLPOtherToken.deployed();
+    // const stablecoinPriceFeed = await MockPriceAggLPOtherToken.deployed();
     const BUSDPriceFeed = await MockPriceBUSD.deployed();
     await instance.setPriceFeed(0, token0PriceFeed.address);
     await instance.setPriceFeed(2, earnTokenPriceFeed.address);
     await instance.setPriceFeed(3, ZORPriceFeed.address);
     await instance.setPriceFeed(4, lpPoolOtherTokenPriceFeed.address);
-    await instance.setPriceFeed(5, stablecoinPriceFeed.address);
-    await instance.setTokenBUSDPriceFeed(BUSDPriceFeed.address);
+    await instance.setPriceFeed(5, BUSDPriceFeed.address);
     // Swap paths
-    await instance.setSwapPaths(0, [usdc.address, token0.address]);
-    await instance.setSwapPaths(2, [token0.address, usdc.address]);
+    await instance.setSwapPaths(0, [busd.address, token0.address]);
+    await instance.setSwapPaths(2, [token0.address, busd.address]);
     await instance.setSwapPaths(4, [alpaca.address, token0.address]);
     await instance.setSwapPaths(6, [alpaca.address, ZORToken.address]);
     await instance.setSwapPaths(7, [alpaca.address, ZORLPPoolOtherToken.address]);
-    await instance.setSwapPaths(8, [alpaca.address, usdc.address]);
-    await instance.setBUSDSwapPaths(0, [busd.address, token0.address]);
-    await instance.setBUSDSwapPaths(1, [busd.address, ZORToken.address]);
-    await instance.setBUSDSwapPaths(2, [busd.address, ZORLPPoolOtherToken.address]);
+    await instance.setSwapPaths(8, [alpaca.address, busd.address]);
+    await instance.setStablecoinSwapPaths(0, [busd.address, token0.address]);
+    await instance.setStablecoinSwapPaths(1, [busd.address, ZORToken.address]);
+    await instance.setStablecoinSwapPaths(2, [busd.address, ZORLPPoolOtherToken.address]);
 
     return {
         instance,
         alpacaVault,
         farmContract,
-        usdc,
         busd,
         alpaca,
         token0,
@@ -118,43 +112,29 @@ contract('VaultAlpaca', async accounts => {
         const otherToken = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         const ZOR = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
         let path;
-        // Set BUSDToToken0Path
+        // Set stablecoinToToken0Path
         path = [BUSD, AVAX, token0];
-        await instance.setBUSDSwapPaths(0, path);
+        await instance.setStablecoinSwapPaths(0, path);
         for (let i=0; i < 3; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToToken0Path.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToToken0Path.call(i)), path[i]);
         }
-        // Set BUSDToZORROPath
+        // Set stablecoinToZORROPath
         path = [BUSD, token0, ZOR];
-        await instance.setBUSDSwapPaths(1, path);
+        await instance.setStablecoinSwapPaths(1, path);
         for (let i=0; i < 3; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToZORROPath.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToZORROPath.call(i)), path[i]);
         }
-        // Set BUSDToLPPoolOtherTokenPath
+        // Set stablecoinToLPPoolOtherTokenPath
         path = [BUSD, token0, otherToken];
-        await instance.setBUSDSwapPaths(2, path);
+        await instance.setStablecoinSwapPaths(2, path);
         for (let i=0; i < 3; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.BUSDToLPPoolOtherTokenPath.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToLPPoolOtherTokenPath.call(i)), path[i]);
         }
 
 
         // Only by owner
         try {
-            await instance.setBUSDSwapPaths(0, [], { from: accounts[1] });
-        } catch (err) {
-            assert.include(err.message, 'caller is not the owner');
-        }
-    });
-
-    it('sets BUSD', async () => {
-        // Set
-        const BUSD = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setBUSD(BUSD);
-        assert.equal(await instance.tokenBUSD.call(), BUSD);
-
-        // Only by owner
-        try {
-            await instance.setBUSD(BUSD, { from: accounts[1] });
+            await instance.setStablecoinSwapPaths(0, [], { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }
@@ -313,13 +293,13 @@ contract('VaultAlpaca', async accounts => {
 });
 
 contract('VaultAlpaca', async accounts => {
-    let instance, alpacaVault, usdc;
+    let instance, alpacaVault, busd;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         alpacaVault = setupObj.alpacaVault;
-        usdc = setupObj.usdc;
+        busd = setupObj.busd;
     });
 
     it('exchanges USD for Want token', async () => {
@@ -343,9 +323,9 @@ contract('VaultAlpaca', async accounts => {
         /* Exchange (> 0) */
         // Record Want bal pre exchange
         const preExchangeWantBal = await alpacaVault.balanceOf.call(accounts[0]);
-        // Transfer USDC
-        await usdc.mint(accounts[0], amountUSD);
-        await usdc.transfer(instance.address, amountUSD);
+        // Transfer USD
+        await busd.mint(accounts[0], amountUSD);
+        await busd.transfer(instance.address, amountUSD);
         // Exchange
         const tx = await instance.exchangeUSDForWantToken(amountUSD, 990);
 
@@ -379,8 +359,8 @@ contract('VaultAlpaca', async accounts => {
 
         /* Only Zorro Controller */
         try {
-            await usdc.mint(accounts[0], amountUSD);
-            await usdc.transfer(instance.address, amountUSD);
+            await busd.mint(accounts[0], amountUSD);
+            await busd.transfer(instance.address, amountUSD);
             await instance.exchangeUSDForWantToken(amountUSD, 990);
         } catch (err) {
             assert.include(err.message, '!zorroController');
@@ -469,13 +449,13 @@ contract('VaultAlpaca', async accounts => {
 });
 
 contract('VaultAlpaca', async accounts => {
-    let instance, alpacaVault, usdc;
+    let instance, alpacaVault, busd;
 
     before(async () => {
         const setupObj = await setupContracts(accounts);
         instance = setupObj.instance;
         alpacaVault = setupObj.alpacaVault;
-        usdc = setupObj.usdc;
+        busd = setupObj.busd;
     });
 
     it('exchanges Want token for USD', async () => {
@@ -496,9 +476,9 @@ contract('VaultAlpaca', async accounts => {
         /* Exchange (> 0) */
 
         // Vars
-        const USDCPreExch = await usdc.balanceOf.call(accounts[0]);
+        const USDPreExch = await busd.balanceOf.call(accounts[0]);
         const expToken0 = web3.utils.toBN(web3.utils.toWei('2', 'ether')); // Hard coded amount in MockVaultAlpaca.sol
-        const expUSDC = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDCPreExch); // Assumes 1:1 exch rate
+        const expUSD = (expToken0.mul(web3.utils.toBN(990)).div(web3.utils.toBN(1000))).add(USDPreExch); // Assumes 1:1 exch rate
 
         // Exchange
         const tx = await instance.exchangeWantTokenForUSD(wantAmt, 990);
@@ -517,8 +497,8 @@ contract('VaultAlpaca', async accounts => {
         // Assert: Liquidity removed  (event: RemovedLiquidity for token0, no more Want bal)
         assert.isNotNull(removedLiq);
 
-        // Assert: USDC obtained (check Bal)
-        assert.isTrue((await usdc.balanceOf.call(accounts[0])).eq(expUSDC));
+        // Assert: USD obtained (check Bal)
+        assert.isTrue((await busd.balanceOf.call(accounts[0])).eq(expUSD));
 
         /* Only Zorro Controller */
         try {
@@ -730,9 +710,9 @@ contract('VaultAlpaca', async accounts => {
         // Send some Earn token
         await alpaca.mint(instance.address, earnedAmt);
 
-        /* SwapEarnedToUSDC */
+        /* SwapEarnedToUSD */
         // Swap
-        const tx = await instance.swapEarnedToUSDC(
+        const tx = await instance.swapEarnedToUSD(
             earnedAmt,
             accounts[2],
             990,

@@ -8,11 +8,11 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     uniFactoryAddress: zeroAdress,
     uniPoolAddress: zeroAdress,
     zorroLPPoolOtherToken: zeroAdress,
-    USDCToZorroPath: [
+    stablecoinToZorroPath: [
       zeroAdress,
       zorroToken,
     ],
-    USDCToZorroLPPoolOtherTokenPath: [
+    stablecoinToZorroLPPoolOtherTokenPath: [
       zeroAdress,
       zeroAdress,
     ],
@@ -67,11 +67,11 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     uniFactoryAddress: '0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10',
     uniPoolAddress: '0xf4003f4efbe8691b60249e6afbd307abe7758adb', // WAVAX/USDC
     zorroLPPoolOtherToken: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', // WAVAX
-    USDCToZorroPath: [
+    stablecoinToZorroPath: [
       zeroAdress,
       zorroToken,
     ],
-    USDCToZorroLPPoolOtherTokenPath: [
+    stablecoinToZorroLPPoolOtherTokenPath: [
       '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
       '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
     ],
@@ -127,11 +127,11 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     uniFactoryAddress: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
     uniPoolAddress: zeroAdress,
     zorroLPPoolOtherToken: zeroAdress,
-    USDCToZorroPath: [
+    stablecoinToZorroPath: [
       '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
       zorroToken,
     ],
-    USDCToZorroLPPoolOtherTokenPath: [],
+    stablecoinToZorroLPPoolOtherTokenPath: [],
     rewards: {
       blocksPerDay: 28800, // 3 secs per block
       startBlock: 0,

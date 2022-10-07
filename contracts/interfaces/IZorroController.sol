@@ -71,9 +71,9 @@ interface IZorroControllerInvestment is IZorroControllerBase {
 
     function setUniRouter(address _uniV2Router) external;
 
-    function setUSDCToZORPath(address[] memory _path) external;
+    function setStablecoinToZORPath(address[] memory _path) external;
 
-    function setUSDCToZorroLPPoolOtherTokenPath(address[] memory _path)
+    function setStablecoinToZorroLPPoolOtherTokenPath(address[] memory _path)
         external;
 
     function setPriceFeeds(
@@ -91,7 +91,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
 
     function depositFullService(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement
     ) external;
@@ -100,7 +100,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         uint256 _pid,
         address _account,
         bytes memory _foreignAccount,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement
@@ -129,7 +129,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     )
         external
         returns (
-            uint256 _amountUSDC,
+            uint256 _amountUSD,
             uint256 _rewardsDueXChain
         );
 

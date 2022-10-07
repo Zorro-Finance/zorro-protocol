@@ -63,9 +63,9 @@ contract ZorroController is
         zorroXChainEndpoint = _initValue.xChain.zorroXChainEndpoint;
 
         // Investment
-        USDCToZorroPath = _initValue.USDCToZorroPath;
-        USDCToZorroLPPoolOtherTokenPath = _initValue
-            .USDCToZorroLPPoolOtherTokenPath;
+        stablecoinToZorroPath = _initValue.stablecoinToZorroPath;
+        stablecoinToZorroLPPoolOtherTokenPath = _initValue
+            .stablecoinToZorroLPPoolOtherTokenPath;
 
         // Price feeds
         priceFeedZOR = AggregatorV3Interface(
@@ -111,8 +111,8 @@ contract ZorroController is
         address zorroStakingVault;
         address zorroLPPool;
         address uniRouterAddress;
-        address[] USDCToZorroPath;
-        address[] USDCToZorroLPPoolOtherTokenPath;
+        address[] stablecoinToZorroPath;
+        address[] stablecoinToZorroLPPoolOtherTokenPath;
         ZorroControllerRewards rewards;
         ZorroControllerXChainParams xChain;
         ZorroControllerPriceFeeds priceFeeds;

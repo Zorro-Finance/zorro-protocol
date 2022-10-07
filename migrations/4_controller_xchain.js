@@ -19,8 +19,8 @@ module.exports = async function (deployer, network, accounts) {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    USDCToZorroPath,
-    USDCToZorroLPPoolOtherTokenPath,
+    stablecoinToZorroPath,
+    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     bridge,
   } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
@@ -42,8 +42,8 @@ module.exports = async function (deployer, network, accounts) {
       },
     },
     swaps: {
-      USDCToZorroPath,
-      USDCToZorroLPPoolOtherTokenPath,
+      stablecoinToZorroPath,
+      stablecoinToZorroLPPoolOtherTokenPath,
     },
     priceFeeds,
   };

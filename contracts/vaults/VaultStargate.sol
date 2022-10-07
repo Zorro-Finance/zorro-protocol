@@ -465,7 +465,7 @@ contract VaultStargate is VaultBase {
         // Harvest farm tokens
         _unfarm(0);
 
-        // Get the balance of the Earned token on this contract (ACS, etc.)
+        // Get the balance of the Earned token on this contract (Alpaca, etc.)
         uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
             address(this)
         );

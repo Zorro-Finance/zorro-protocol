@@ -22,7 +22,7 @@ contract ZorroControllerXChainDeposit is
     /// @param _chainId The Zorro Chain ID (not the LayerZero one)
     /// @param _dstContract The destination contract address on the remote chain
     /// @param _pid The pool ID on the remote chain
-    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _valueUSD The amount of USD to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _destWallet A valid address on the remote chain that can claim ownership
@@ -31,7 +31,7 @@ contract ZorroControllerXChainDeposit is
         uint256 _chainId,
         bytes memory _dstContract,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _destWallet
@@ -43,7 +43,7 @@ contract ZorroControllerXChainDeposit is
         bytes memory _payload = _encodeXChainDepositPayload(
             _chainId,
             _pid,
-            _valueUSDC,
+            _valueUSD,
             _weeksCommitted,
             _maxMarketMovement,
             msg.sender,
@@ -67,7 +67,7 @@ contract ZorroControllerXChainDeposit is
     /// @notice Encodes payload for making cross chan deposit
     /// @param _destChainId Destination Zorro Chain ID
     /// @param _pid Pool ID on remote chain
-    /// @param _valueUSDC Amount in USDC to deposit
+    /// @param _valueUSD Amount in USD to deposit
     /// @param _weeksCommitted Number of weeks to commit deposit for in vault
     /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
     /// @param _originWallet Wallet address on origin chain that will be depositing funds cross chain.
@@ -76,7 +76,7 @@ contract ZorroControllerXChainDeposit is
     function _encodeXChainDepositPayload(
         uint256 _destChainId,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         address _originWallet,
@@ -90,7 +90,7 @@ contract ZorroControllerXChainDeposit is
             // Calculate abi encoded bytes for input args
             bytes memory _inputs = abi.encode(
                 _pid,
-                _valueUSDC,
+                _valueUSD,
                 _weeksCommitted,
                 _maxMarketMovement,
                 abi.encodePacked(_originWallet), // Convert address to bytes
@@ -105,18 +105,18 @@ contract ZorroControllerXChainDeposit is
 
     /* Sending */
 
-    /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USDC)
+    /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USD)
     /// @dev Requires appropriate fee to be paid via msg.value (use checkXChainDepositFee() above)
     /// @param _zorroChainId The Zorro Chain ID (not the LayerZero one)
     /// @param _pid The pool ID on the remote chain
-    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _valueUSD The amount of  to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _destWallet A valid address on the remote chain that can claim ownership
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _destWallet
@@ -124,15 +124,15 @@ contract ZorroControllerXChainDeposit is
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
 
-        // Transfer USDC into this contract
+        // Transfer USD into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
-            _valueUSDC
+            _valueUSD
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(
+        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
             address(this)
         );
 
@@ -140,7 +140,7 @@ contract ZorroControllerXChainDeposit is
         bytes memory _payload = _encodeXChainDepositPayload(
             _zorroChainId,
             _pid,
-            _balUSDC,
+            _balUSD,
             _weeksCommitted,
             _maxMarketMovement,
             msg.sender,
@@ -154,7 +154,7 @@ contract ZorroControllerXChainDeposit is
         _callStargateSwap(
             StargateSwapPayload({
                 chainId: _zorroChainId,
-                qty: _balUSDC,
+                qty: _balUSD,
                 dstContract: _dstContract,
                 payload: _payload,
                 maxMarketMovement: _maxMarketMovement
@@ -168,7 +168,7 @@ contract ZorroControllerXChainDeposit is
     /// @dev Should never ever be actually called.
     function receiveXChainDepositRequest(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _originAccount,
@@ -180,7 +180,7 @@ contract ZorroControllerXChainDeposit is
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDepositRequest(
             _pid,
-            _valueUSDC,
+            _valueUSD,
             _weeksCommitted,
             block.timestamp,
             _maxMarketMovement,
@@ -192,14 +192,14 @@ contract ZorroControllerXChainDeposit is
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
     /// @param _pid The pool ID on the remote chain
-    /// @param _valueUSDC The amount of USDC to deposit
+    /// @param _valueUSD The amount of USD to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _originAccount The address on the origin chain to associate the deposit with (mandatory)
     /// @param _destAccount The address on the current chain to additionally associate the deposit with (allows on-chain withdrawals of the deposit) (if not provided, will truncate origin address to uint160 i.e. Solidity address type)
     function _receiveXChainDepositRequest(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement,
@@ -209,7 +209,7 @@ contract ZorroControllerXChainDeposit is
         // Approve spending
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             currentChainController,
-            _valueUSDC
+            _valueUSD
         );
         
         // Call deposit function
@@ -218,7 +218,7 @@ contract ZorroControllerXChainDeposit is
                 _pid,
                 _destAccount,
                 _originAccount,
-                _valueUSDC,
+                _valueUSD,
                 _weeksCommitted,
                 _vaultEnteredAt,
                 _maxMarketMovement

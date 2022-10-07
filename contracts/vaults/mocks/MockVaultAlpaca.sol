@@ -17,7 +17,7 @@ contract MockVaultAlpaca is VaultAlpaca {
         _unfarm(_wantAmt);
     }
 
-    function swapEarnedToUSDC(
+    function swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,

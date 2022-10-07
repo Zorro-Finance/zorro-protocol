@@ -240,7 +240,7 @@ contract ZorroControllerXChainWithdraw is
     /// @param _pid Pool ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriate funds shall go to
-    /// @param _amountUSDC Amount withdrawn, to be repatriated
+    /// @param _amountUSD Amount withdrawn, to be repatriated
     /// @param _rewardsDue ZOR rewards due to the recipient
     /// @param _maxMarketMovementAllowed Acceptable slippage (950 = 5%, 990 = 1%, etc.)
     function _sendXChainRepatriationRequest(
@@ -248,7 +248,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _rewardsDue,
         uint256 _maxMarketMovementAllowed
     ) internal {
@@ -267,7 +267,7 @@ contract ZorroControllerXChainWithdraw is
         _callStargateSwap(
             StargateSwapPayload({
                 chainId: _originChainId,
-                qty: _amountUSDC,
+                qty: _amountUSD,
                 dstContract: _dstContract,
                 payload: _payload,
                 maxMarketMovement: _maxMarketMovementAllowed
@@ -332,11 +332,11 @@ contract ZorroControllerXChainWithdraw is
                     _maxMarketMovement
                 );
 
-        // Get USDC bal
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        // Get USD bal
+        uint256 _balUSD = IERC20(defaultStablecoin).balanceOf(address(this));
 
         // Only proceed if there is something to withdraw
-        require(_balUSDC > 0, "Nothing to withdraw");
+        require(_balUSD > 0, "Nothing to withdraw");
 
         // Repatriate funds
         _sendXChainRepatriationRequest(
@@ -344,7 +344,7 @@ contract ZorroControllerXChainWithdraw is
             _pid,
             _trancheId,
             _originAccount,
-            _balUSDC,
+            _balUSD,
             _rewardsDue,
             _maxMarketMovement
         );

@@ -278,32 +278,32 @@ contract('MockVaultStandardAMM', async accounts => {
 
         let path;
 
-        // USDCToToken0Path
+        // stablecoinToToken0Path
         path = [USDC, AVAX, token0];
         await instance.setSwapPaths(0, path);
         for (let i=0; i < path.length; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.USDCToToken0Path.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToToken0Path.call(i)), path[i]);
         }
 
-        // USDCToToken1Path
+        // stablecoinToToken1Path
         path = [USDC, AVAX, token1];
         await instance.setSwapPaths(1, path);
         for (let i=0; i < path.length; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.USDCToToken1Path.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.stablecoinToToken1Path.call(i)), path[i]);
         }
 
-        // token0ToUSDCPath
+        // token0ToStablecoinPath
         path = [token0, AVAX, USDC];
         await instance.setSwapPaths(2, path);
         for (let i=0; i < path.length; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.token0ToUSDCPath.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.token0ToStablecoinPath.call(i)), path[i]);
         }
 
-        // token1ToUSDCPath
+        // token1ToStablecoinPath
         path = [token0, AVAX, USDC];
         await instance.setSwapPaths(3, path);
         for (let i=0; i < path.length; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.token1ToUSDCPath.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.token1ToStablecoinPath.call(i)), path[i]);
         }
 
         // earnedToToken0Path
@@ -334,11 +334,11 @@ contract('MockVaultStandardAMM', async accounts => {
             assert.equal(web3.utils.toChecksumAddress(await instance.earnedToZORLPPoolOtherTokenPath.call(i)), path[i]);
         }
 
-        // earnedToUSDCPath
+        // earnedToStablecoinPath
         path = [earned, USDC];
         await instance.setSwapPaths(8, path);
         for (let i=0; i < path.length; i++) {
-            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToUSDCPath.call(i)), path[i]);
+            assert.equal(web3.utils.toChecksumAddress(await instance.earnedToStablecoinPath.call(i)), path[i]);
         }
 
         // Only by owner

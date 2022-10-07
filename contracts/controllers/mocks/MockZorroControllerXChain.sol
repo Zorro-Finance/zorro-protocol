@@ -9,7 +9,7 @@ import "../../interfaces/ILayerZeroEndpoint.sol";
 contract MockZorroControllerXChain is ZorroControllerXChain {
     event ReceiveXChainDepositReq(
         uint256 indexed _pid,
-        uint256 indexed _valueUSDC,
+        uint256 indexed _valueUSD,
         address indexed _destAccount
     );
 
@@ -19,8 +19,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     );
 
     event ReceiveXChainDistributionReq(
-        uint256 indexed _amountUSDCBuyback,
-        uint256 indexed _amountUSDCRevShare,
+        uint256 indexed _amountUSDBuyback,
+        uint256 indexed _amountUSDRevShare,
         uint256 indexed _accSlashedRewards
     );
 
@@ -33,7 +33,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     function encodeXChainDepositPayload(
         uint256 _chainId,
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         address _originWallet,
@@ -43,7 +43,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _encodeXChainDepositPayload(
                 _chainId,
                 _pid,
-                _valueUSDC,
+                _valueUSD,
                 _weeksCommitted,
                 _maxMarketMovement,
                 _originWallet,
@@ -53,7 +53,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function mockReceiveXChainDepositRequest(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
         bytes memory _originAccount,
@@ -61,7 +61,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     ) public {
         _receiveXChainDepositRequest(
             _pid,
-            _valueUSDC,
+            _valueUSD,
             _weeksCommitted,
             block.timestamp,
             _maxMarketMovement,
@@ -72,7 +72,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function _receiveXChainDepositRequest(
         uint256 _pid,
-        uint256 _valueUSDC,
+        uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
         uint256 _maxMarketMovement,
@@ -85,7 +85,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_maxMarketMovement > 0);
         require(_originAccount.length >= 0);
         // TODO: Consider making this an actual event like for repatriation, instead of one just for test
-        emit ReceiveXChainDepositReq(_pid, _valueUSDC, _destAccount);
+        emit ReceiveXChainDepositReq(_pid, _valueUSD, _destAccount);
     }
 
     function mockReceiveXChainRepatriationRequest(
@@ -124,15 +124,15 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function mockReceiveXChainDistributionRequest(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) public {
         _receiveXChainDistributionRequest(
             _remoteChainId,
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
             _accSlashedRewards,
             _maxMarketMovement
         );
@@ -140,8 +140,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function _receiveXChainDistributionRequest(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal override {
@@ -150,8 +150,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_maxMarketMovement > 0);
 
         emit ReceiveXChainDistributionReq(
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
             _accSlashedRewards
         );
     }
@@ -233,7 +233,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 _pid,
         uint256 _trancheId,
         bytes memory _originRecipient,
-        uint256 _amountUSDC,
+        uint256 _amountUSD,
         uint256 _rewardsDue,
         uint256 _maxMarketMovementAllowed
     ) public payable {
@@ -242,7 +242,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _pid,
             _trancheId,
             _originRecipient,
-            _amountUSDC,
+            _amountUSD,
             _rewardsDue,
             _maxMarketMovementAllowed
         );
@@ -250,31 +250,31 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function encodeXChainDistributeEarningsPayload(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) public pure returns (bytes memory) {
         return
             _encodeXChainDistributeEarningsPayload(
                 _remoteChainId,
-                _amountUSDCBuyback,
-                _amountUSDCRevShare,
+                _amountUSDBuyback,
+                _amountUSDRevShare,
                 _accSlashedRewards,
                 _maxMarketMovement
             );
     }
 
-    function buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+    function buybackOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
         public
     {
-        _buybackOnChain(_amountUSDC, _maxMarketMovement);
+        _buybackOnChain(_amountUSD, _maxMarketMovement);
     }
 
-    function revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+    function revShareOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
         public
     {
-        _revShareOnChain(_amountUSDC, _maxMarketMovement);
+        _revShareOnChain(_amountUSD, _maxMarketMovement);
     }
 
     function awardSlashedRewardsToStakers(uint256 _slashedZORRewards)

@@ -184,7 +184,7 @@ contract VaultAlpaca is VaultBase {
         }
     }
 
-    /// @notice Performs necessary operations to convert USDC into Want token
+    /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return uint256 Amount of Want token obtained
@@ -578,9 +578,7 @@ contract VaultAlpaca is VaultBase {
         );
 
         // Swap Earn to USD
-        // Require two step swap (Balancer + Uni)
-        // 1. Balancer: Earn -> BUSD
-        address[] memory _dummyPath;
+        // 1. Router: Earn -> BUSD
         _safeSwap(
             SafeSwapParams({
                 amountIn: _amount,
@@ -595,17 +593,17 @@ contract VaultAlpaca is VaultBase {
             _decimals0
         );
         // 2. Uni: BUSD -> ZOR
-        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(
+        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
             address(this)
         );
         // Increase allowance
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
-            _balUSDC
+            _balUSD
         );
         _safeSwap(
             SafeSwapParams({
-                amountIn: _balUSDC,
+                amountIn: _balUSD,
                 priceToken0: _rates.stablecoin,
                 priceToken1: _rates.ZOR,
                 token0: defaultStablecoin,

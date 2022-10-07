@@ -75,10 +75,10 @@ contract ZorroControllerXChain is
         zorroStakingVault = _initValue.zorroStakingVault;
         uniRouterAddress = _initValue.uniRouterAddress;
         // Swaps
-        USDCToZorroPath = _initValue.swaps.USDCToZorroPath;
-        USDCToZorroLPPoolOtherTokenPath = _initValue
+        stablecoinToZorroPath = _initValue.swaps.stablecoinToZorroPath;
+        stablecoinToZorroLPPoolOtherTokenPath = _initValue
             .swaps
-            .USDCToZorroLPPoolOtherTokenPath;
+            .stablecoinToZorroLPPoolOtherTokenPath;
         // Price feed
         priceFeedZOR = AggregatorV3Interface(
             _initValue.priceFeeds.priceFeedZOR
@@ -97,8 +97,8 @@ contract ZorroControllerXChain is
     /* Structs */
 
     struct ZorroControllerXChainSwapParams {
-        address[] USDCToZorroPath;
-        address[] USDCToZorroLPPoolOtherTokenPath;
+        address[] stablecoinToZorroPath;
+        address[] stablecoinToZorroLPPoolOtherTokenPath;
     }
 
     struct ZorroControllerXChainBridgeParams {

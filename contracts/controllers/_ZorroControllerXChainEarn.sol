@@ -48,8 +48,8 @@ contract ZorroControllerXChainEarn is
 
     event XChainDistributeEarnings(
         uint256 indexed _remoteChainId,
-        uint256 indexed _buybackAmountUSDC,
-        uint256 indexed _revShareAmountUSDC
+        uint256 indexed _buybackAmountUSD,
+        uint256 indexed _revShareAmountUSD
     );
 
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
@@ -62,8 +62,8 @@ contract ZorroControllerXChainEarn is
     address public zorroStakingVault;
     address public uniRouterAddress;
     // Paths
-    address[] public USDCToZorroPath;
-    address[] public USDCToZorroLPPoolOtherTokenPath;
+    address[] public stablecoinToZorroPath;
+    address[] public stablecoinToZorroLPPoolOtherTokenPath;
     // Price feeds
     AggregatorV3Interface public priceFeedZOR;
     AggregatorV3Interface public priceFeedLPPoolOtherToken;
@@ -86,11 +86,11 @@ contract ZorroControllerXChainEarn is
     }
 
     function setSwapPaths(
-        address[] calldata _USDCToZorroPath,
-        address[] calldata _USDCToZorroLPPoolOtherTokenPath
+        address[] calldata _stablecoinToZorroPath,
+        address[] calldata _stablecoinToZorroLPPoolOtherTokenPath
     ) external onlyOwner {
-        USDCToZorroPath = _USDCToZorroPath;
-        USDCToZorroLPPoolOtherTokenPath = _USDCToZorroLPPoolOtherTokenPath;
+        stablecoinToZorroPath = _stablecoinToZorroPath;
+        stablecoinToZorroLPPoolOtherTokenPath = _stablecoinToZorroLPPoolOtherTokenPath;
     }
 
     function setPriceFeeds(address[] calldata _priceFeeds) external onlyOwner {
@@ -102,14 +102,14 @@ contract ZorroControllerXChainEarn is
     /* Fees */
 
     /// @notice Checks to see how much a cross chain earnings distribution will cost
-    /// @param _amountUSDCBuyback Amount of USDC to buy back
-    /// @param _amountUSDCRevShare Amount of USDC to rev share with ZOR single staking vault
+    /// @param _amountUSDBuyback Amount of USD to buy back
+    /// @param _amountUSDRevShare Amount of USD to rev share with ZOR single staking vault
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @return uint256 Quantity of native token as fees
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
     function checkXChainDistributeEarningsFee(
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) external view returns (uint256) {
@@ -119,8 +119,8 @@ contract ZorroControllerXChainEarn is
         // Get payload
         bytes memory _payload = _encodeXChainDistributeEarningsPayload(
             chainId,
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
             _accSlashedRewards,
             _maxMarketMovement
         );
@@ -142,15 +142,15 @@ contract ZorroControllerXChainEarn is
 
     /// @notice Encodes payload for making cross chan earnings distribution request
     /// @param _remoteChainId Zorro chain ID of the chain making the distribution request
-    /// @param _amountUSDCBuyback Amount in USDC to buy back
-    /// @param _amountUSDCRevShare Amount in USDC to rev share with ZOR staking vault
+    /// @param _amountUSDBuyback Amount in USD to buy back
+    /// @param _amountUSDRevShare Amount in USD to rev share with ZOR staking vault
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
     /// @return bytes ABI encoded payload
     function _encodeXChainDistributeEarningsPayload(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal pure returns (bytes memory) {
@@ -159,8 +159,8 @@ contract ZorroControllerXChainEarn is
         // Calculate abi encoded bytes for input args
         bytes memory _inputs = abi.encode(
             _remoteChainId,
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
             _accSlashedRewards,
             _maxMarketMovement
         );
@@ -172,36 +172,36 @@ contract ZorroControllerXChainEarn is
 
     /// @notice Sends a request back to the home chain to distribute earnings
     /// @param _pid Pool ID
-    /// @param _buybackAmountUSDC Amount in USDC to buy back
-    /// @param _revShareAmountUSDC Amount in USDC to revshare w/ ZOR single staking vault
+    /// @param _buybackAmountUSD Amount in USD to buy back
+    /// @param _revShareAmountUSD Amount in USD to revshare w/ ZOR single staking vault
     /// @param _maxMarketMovement Acceptable slippage (950 = 5%, 990 = 1% etc.)
     function sendXChainDistributeEarningsRequest(
         uint256 _pid,
-        uint256 _buybackAmountUSDC,
-        uint256 _revShareAmountUSDC,
+        uint256 _buybackAmountUSD,
+        uint256 _revShareAmountUSD,
         uint256 _maxMarketMovement
     ) public payable nonReentrant onlyRegisteredVault(_pid) {
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
 
-        // Calculate total USDC to transfer
-        uint256 _totalUSDC = _buybackAmountUSDC.add(_revShareAmountUSDC);
+        // Calculate total USD to transfer
+        uint256 _totalUSD = _buybackAmountUSD.add(_revShareAmountUSD);
 
-        // Allow this contract to spend USDC
+        // Allow this contract to spend USD
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             address(this),
-            _totalUSDC
+            _totalUSD
         );
 
-        // Transfer USDC into this contract
+        // Transfer USD into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,
             address(this),
-            _totalUSDC
+            _totalUSD
         );
 
         // Check balances
-        uint256 _balUSDC = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
 
         // Get accumulated ZOR rewards and set value
         uint256 _slashedRewards = _removeSlashedRewards();
@@ -209,8 +209,8 @@ contract ZorroControllerXChainEarn is
         // Generate payload
         bytes memory _payload = _encodeXChainDistributeEarningsPayload(
             chainId,
-            _buybackAmountUSDC,
-            _revShareAmountUSDC,
+            _buybackAmountUSD,
+            _revShareAmountUSD,
             _slashedRewards,
             _maxMarketMovement
         );
@@ -222,7 +222,7 @@ contract ZorroControllerXChainEarn is
         _callStargateSwap(
             StargateSwapPayload({
                 chainId: homeChainId,
-                qty: _balUSDC,
+                qty: _balUSD,
                 dstContract: _dstContract,
                 payload: _payload,
                 maxMarketMovement: _maxMarketMovement
@@ -236,8 +236,8 @@ contract ZorroControllerXChainEarn is
     /// @dev Should never ever be actually called.
     function receiveXChainDistributionRequest(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) public {
@@ -247,8 +247,8 @@ contract ZorroControllerXChainEarn is
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDistributionRequest(
             _remoteChainId,
-            _amountUSDCBuyback,
-            _amountUSDCRevShare,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
             _accSlashedRewards,
             _maxMarketMovement
         );
@@ -256,34 +256,34 @@ contract ZorroControllerXChainEarn is
 
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
     /// @param _remoteChainId The Zorro chain ID of the chain that this request originated from
-    /// @param _amountUSDCBuyback The amount in USDC that should be minted for LP + burn
-    /// @param _amountUSDCRevShare The amount in USDC that should be minted for revenue sharing with ZOR stakers
+    /// @param _amountUSDBuyback The amount in USD that should be minted for LP + burn
+    /// @param _amountUSDRevShare The amount in USD that should be minted for revenue sharing with ZOR stakers
     /// @param _accSlashedRewards Accumulated slashed rewards on chain
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
     function _receiveXChainDistributionRequest(
         uint256 _remoteChainId,
-        uint256 _amountUSDCBuyback,
-        uint256 _amountUSDCRevShare,
+        uint256 _amountUSDBuyback,
+        uint256 _amountUSDRevShare,
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal virtual onlyHomeChain {
-        // Total USDC to perform operations
-        uint256 _totalUSDC = _amountUSDCBuyback.add(_amountUSDCRevShare);
+        // Total USD to perform operations
+        uint256 _totalUSD = _amountUSDBuyback.add(_amountUSDRevShare);
 
-        // Determine new USDC balances
-        uint256 _balUSDC = IERC20(defaultStablecoin).balanceOf(address(this));
+        // Determine new USD balances
+        uint256 _balUSD = IERC20(defaultStablecoin).balanceOf(address(this));
 
         /* Buyback */
         // (Account for slippage)
-        uint256 _buybackAmount = _balUSDC.mul(_amountUSDCBuyback).div(
-            _totalUSDC
+        uint256 _buybackAmount = _balUSD.mul(_amountUSDBuyback).div(
+            _totalUSD
         );
         _buybackOnChain(_buybackAmount, _maxMarketMovement);
 
         /* Rev share */
         // (Account for slippage)
-        uint256 _revShareAmount = _balUSDC.mul(_amountUSDCRevShare).div(
-            _totalUSDC
+        uint256 _revShareAmount = _balUSD.mul(_amountUSDRevShare).div(
+            _totalUSD
         );
         _revShareOnChain(_revShareAmount, _maxMarketMovement);
 
@@ -303,15 +303,15 @@ contract ZorroControllerXChainEarn is
     /* Fees */
 
     /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
-    /// @param _amountUSDC Amount of USDC to add as liquidity
+    /// @param _amountUSD Amount of USD to add as liquidity
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _buybackOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+    function _buybackOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
         internal
     {
         // Authorize spending beforehand
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
-            _amountUSDC
+            _amountUSD
         );
 
 
@@ -333,27 +333,27 @@ contract ZorroControllerXChainEarn is
             _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
 
             // Increase allowance
-            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSD);
 
 
             // Swap to ZOR token
             IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSDC.div(2),
+                _amountUSD.div(2),
                 _priceTokens0,
                 _maxMarketMovement,
-                USDCToZorroPath,
+                stablecoinToZorroPath,
                 _decimals0,
                 address(this),
                 block.timestamp.add(600)
             );
 
-            // Swap to counterparty token (if not USDC)
+            // Swap to counterparty token (if not USD)
             if (zorroLPPoolOtherToken != defaultStablecoin) {
                 IAMMRouter02(uniRouterAddress).safeSwap(
-                    _amountUSDC.div(2),
+                    _amountUSD.div(2),
                     _priceTokens1,
                     _maxMarketMovement,
-                    USDCToZorroLPPoolOtherTokenPath,
+                    stablecoinToZorroLPPoolOtherTokenPath,
                     _decimals1,
                     address(this),
                     block.timestamp.add(600)
@@ -385,15 +385,15 @@ contract ZorroControllerXChainEarn is
     }
 
     /// @notice Pays the ZOR single staking pool the revenue share amount specified
-    /// @param _amountUSDC Amount of USDC to send as ZOR revenue share
+    /// @param _amountUSD Amount of USD to send as ZOR revenue share
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _revShareOnChain(uint256 _amountUSDC, uint256 _maxMarketMovement)
+    function _revShareOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
         internal
     {
         // Authorize spending beforehand
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             uniRouterAddress,
-            _amountUSDC
+            _amountUSD
         );
 
         // Determine exchange rates using price feed oracle
@@ -408,13 +408,13 @@ contract ZorroControllerXChainEarn is
 
         // Swap to ZOR
         // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSDC);
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSD);
         // Swap
         IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSDC,
+            _amountUSD,
             _priceTokens,
             _maxMarketMovement,
-            USDCToZorroPath,
+            stablecoinToZorroPath,
             _decimals,
             zorroStakingVault,
             block.timestamp.add(600)

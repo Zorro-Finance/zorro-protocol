@@ -12,7 +12,7 @@ const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain")
 const MockZorroToken = artifacts.require("MockZorroToken");
 const MockUSDC = artifacts.require("MockUSDC");
 const MockBUSD = artifacts.require("MockBUSD");
-const MockACS = artifacts.require("MockACS");
+const MockAlpaca = artifacts.require("MockAlpaca");
 const MockAMMToken0 = artifacts.require("MockAMMToken0");
 const MockAMMToken1 = artifacts.require("MockAMMToken1");
 const MockAMMOtherLPToken = artifacts.require("MockAMMOtherLPToken");
@@ -72,8 +72,8 @@ module.exports = async function (deployer, network, accounts) {
       zorroStakingVault: zeroAddress,
       zorroLPPool: zeroAddress,
       uniRouterAddress: zeroAddress,
-      USDCToZorroPath: [],
-      USDCToZorroLPPoolOtherTokenPath: [],
+      stablecoinToZorroPath: [],
+      stablecoinToZorroLPPoolOtherTokenPath: [],
       rewards: {
         blocksPerDay: 0,
         startBlock: 0,
@@ -119,8 +119,8 @@ module.exports = async function (deployer, network, accounts) {
         stargateSwapPoolId: zeroAddress,
       },
       swaps: {
-        USDCToZorroPath: [],
-        USDCToZorroLPPoolOtherTokenPath: [],
+        stablecoinToZorroPath: [],
+        stablecoinToZorroLPPoolOtherTokenPath: [],
       },
       priceFeeds: {
         priceFeedZOR: zeroAddress,
@@ -133,7 +133,7 @@ module.exports = async function (deployer, network, accounts) {
     // Tokens
     await deployer.deploy(MockUSDC);
     await deployer.deploy(MockBUSD);
-    await deployer.deploy(MockACS);
+    await deployer.deploy(MockAlpaca);
     await deployer.deploy(MockAMMToken0);
     await deployer.deploy(MockAMMToken1);
     await deployer.deploy(MockAMMOtherLPToken);
@@ -170,7 +170,7 @@ module.exports = async function (deployer, network, accounts) {
         zorroLPPoolOtherToken: zeroAddress,
         defaultStablecoin: zeroAddress,
       },
-      USDCToToken0Path: [],
+      stablecoinToToken0Path: [],
       fees: {
         controllerFee: 0,
         buyBackRate: 0,
@@ -225,9 +225,11 @@ module.exports = async function (deployer, network, accounts) {
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],
-      USDCToToken0Path: [],
+      stablecoinToToken0Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
-      earnedToUSDCPath: [],
+      earnedToStablecoinPath: [],
+      stablecoinToZORROPath: [],
+      stablecoinToLPPoolOtherTokenPath: [],
       fees: {
         controllerFee: 0,
         buyBackRate: 0,
@@ -284,10 +286,10 @@ module.exports = async function (deployer, network, accounts) {
       earnedToZORROPath: [],
       earnedToToken0Path: [],
       earnedToToken1Path: [],
-      USDCToToken0Path: [],
-      USDCToToken1Path: [],
+      stablecoinToToken0Path: [],
+      stablecoinToToken1Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
-      earnedToUSDCPath: [],
+      earnedToStablecoinPath: [],
       fees: {
         controllerFee: 0,
         buyBackRate: 0,
@@ -343,9 +345,9 @@ module.exports = async function (deployer, network, accounts) {
       },
       earnedToZORROPath: [],
       earnedToToken0Path: [],
-      USDCToToken0Path: [],
+      stablecoinToToken0Path: [],
       earnedToZORLPPoolOtherTokenPath: [],
-      earnedToUSDCPath: [],
+      earnedToStablecoinPath: [],
       fees: {
         controllerFee: 0,
         buyBackRate: 0,
