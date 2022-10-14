@@ -373,7 +373,6 @@ contract VaultAlpaca is VaultBase {
 
         // Get exchange rate from price feed
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
-        uint256 _stablecoinExchangeRate = stablecoinPriceFeed.getExchangeRate();
 
         // Create rates struct
         VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
@@ -474,7 +473,6 @@ contract VaultAlpaca is VaultBase {
             _decimals2[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
 
             // 1. Swap Earned -> BUSD
-            address[] memory _dummyEarnedToBUSDPath;
             _safeSwap(
                 SafeSwapParams({
                     amountIn: _amount,
