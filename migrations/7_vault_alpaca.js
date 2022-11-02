@@ -1,5 +1,3 @@
-// TODO: Replace this with Alpaca version
-
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Vaults
@@ -55,7 +53,7 @@ module.exports = async function (deployer, network, accounts) {
 
   if (deployableNetworks.includes(network)) {
     // Init values 
-    // TODO: Create for each chain. Also, should use specific name of contract, not generic. E.g. for 'bsc/bscfork', should be AcryptosBNB or whatever
+    // TODO: Create for each chain. Also, should use specific name of contract, not generic. E.g. for 'bsc/bscfork', should be AlpacaBTCB or whatever
     const initVal = {
       pid: vaults.pid, 
       isHomeChain: false,
