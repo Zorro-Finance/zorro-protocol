@@ -13,4 +13,5 @@ interface ICErc20Interface {
     // function sweepToken(EIP20NonStandardInterface token) external;
     function borrowBalanceCurrent(address account) external returns (uint);
     function balanceOfUnderlying(address owner) external returns (uint);
+    function getCash() external view returns (uint);
 }

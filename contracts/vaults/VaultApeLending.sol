@@ -18,6 +18,10 @@ import "./VaultLibrary.sol";
 
 import "../interfaces/ApeLending/ICErc20Interface.sol";
 
+import "../interfaces/ApeLending/IRainMaker.sol";
+
+import "../interfaces/ApeLending/IUnitroller.sol";
+
 import "./VaultLendingLibrary.sol";
 
 /// @title Vault contract for ApeLending leveraged lending strategies
@@ -44,7 +48,6 @@ contract VaultApeLending is VaultBase {
         // Vault config
         pid = _initValue.pid;
         isHomeChain = _initValue.isHomeChain;
-        isFarmable = _initValue.isFarmable;
 
         // Lending params
         targetBorrowLimit = _initValue.targetBorrowLimit;
@@ -67,6 +70,7 @@ contract VaultApeLending is VaultBase {
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
+        comptrollerAddress = _initValue.comptrollerAddress;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -129,15 +133,16 @@ contract VaultApeLending is VaultBase {
         address[] stablecoinToLPPoolOtherTokenPath;
         VaultLibrary.VaultFees fees;
         VaultLibrary.VaultPriceFeeds priceFeeds;
+        address comptrollerAddress;
     }
 
     /* State */
 
     address[] public stablecoinToZORROPath; // Swap path from BUSD to ZOR (PCS)
     address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
-    uint256 public depositedBalance; // Cache of this strategy's deposit held in Venus
     uint256 public targetBorrowLimit; // Max borrow rate % (1e18 = 100%)
     uint256 public targetBorrowLimitHysteresis; // +/- envelope (1% = 1e16)
+    address public comptrollerAddress; // Unitroller address
 
     /* Setters */
 
@@ -154,6 +159,18 @@ contract VaultApeLending is VaultBase {
         } else {
             revert("unsupported idx swap path");
         }
+    }
+
+    function setTargetBorrowLimit(uint256 _tbl) external onlyOwner {
+        targetBorrowLimit = _tbl;
+    }
+
+    function setTargetBorrowLimitHysteresis(uint256 _tblh) external onlyOwner {
+        targetBorrowLimitHysteresis = _tblh;
+    }
+
+    function setComptrollerAddress(address _comptroller) external onlyOwner {
+        comptrollerAddress = _comptroller;
     }
 
     /*
@@ -331,8 +348,7 @@ contract VaultApeLending is VaultBase {
     }
 
     function collateralFactor() public view returns (uint256) {
-        (, uint256 _collateralFactor, ) = IUnitroller(comptrollerAddress)
-            .markets(poolAddress);
+        (,uint256 _collateralFactor,,,,) = IUnitroller(comptrollerAddress).markets(poolAddress);
         return _collateralFactor;
     }
 
@@ -348,6 +364,7 @@ contract VaultApeLending is VaultBase {
             VaultLibraryApeLending.exchangeUSDForWantToken(
                 _amountUSD,
                 VaultLibraryApeLending.ExchangeUSDForWantParams({
+                    token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: ZORROAddress,
                     token0PriceFeed: token0PriceFeed,
@@ -753,7 +770,7 @@ contract VaultApeLending is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryAlp.swapEarnedToUSD(
+        VaultLibraryApeLending.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
@@ -766,6 +783,11 @@ contract VaultApeLending is VaultBase {
                 stablecoinExchangeRate: _rates.stablecoin
             })
         );
+    }
+
+    /// @notice Public function for farming Want token.
+    function farm() public nonReentrant {
+        // Do nothing - Only for implementing interface
     }
 }
 
