@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../interfaces/IAMMFarm.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -18,13 +16,26 @@ import "../libraries/PriceFeed.sol";
 
 import "./VaultLibrary.sol";
 
-/// @title Vault contract for Alpaca strategies
-contract VaultAlpaca is VaultBase {
+import "../interfaces/ApeLending/ICErc20Interface.sol";
+
+import "../interfaces/ApeLending/IRainMaker.sol";
+
+import "../interfaces/ApeLending/IUnitroller.sol";
+
+import "./VaultLendingLibrary.sol";
+
+/// @title Vault contract for ApeLending leveraged lending strategies
+contract VaultApeLending is VaultBase {
     /* Libraries */
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
+
+    /* Constants */
+    uint256 public constant BORROW_RATE_MAX = 1e12; // Max borrow ratio of collateral. 1e12 = 100%, 1e10 = 1% etc.
+    uint256 public constant BORROW_DEPTH_MAX = 20; // Max number of iterations of supply/borrow
+    uint256 public constant MIN_LEVERAGE_AMOUNT = 1e12; // Min qty of tokens to leverage
 
     /* Constructor */
     /// @notice Upgradeable constructor
@@ -32,12 +43,15 @@ contract VaultAlpaca is VaultBase {
     /// @param _timelockOwner The designated timelock controller address to act as owner
     function initialize(
         address _timelockOwner,
-        VaultAlpacaInit memory _initValue
+        VaultApeLendingInit memory _initValue
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
         isHomeChain = _initValue.isHomeChain;
-        isFarmable = _initValue.isFarmable;
+
+        // Lending params
+        targetBorrowLimit = _initValue.targetBorrowLimit;
+        targetBorrowLimitHysteresis = _initValue.targetBorrowLimitHysteresis;
 
         // Addresses
         govAddress = _initValue.keyAddresses.govAddress;
@@ -56,6 +70,7 @@ contract VaultAlpaca is VaultBase {
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
+        comptrollerAddress = _initValue.comptrollerAddress;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -73,9 +88,12 @@ contract VaultAlpaca is VaultBase {
         earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
         stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
         stablecoinToZORROPath = _initValue.stablecoinToZORROPath;
-        stablecoinToLPPoolOtherTokenPath = _initValue.stablecoinToLPPoolOtherTokenPath;
+        stablecoinToLPPoolOtherTokenPath = _initValue
+            .stablecoinToLPPoolOtherTokenPath;
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
+        token0ToStablecoinPath = VaultLibrary.reversePath(
+            stablecoinToToken0Path
+        );
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -100,11 +118,12 @@ contract VaultAlpaca is VaultBase {
 
     /* Structs */
 
-    struct VaultAlpacaInit {
+    struct VaultApeLendingInit {
         uint256 pid;
         bool isHomeChain;
-        bool isFarmable;
         VaultLibrary.VaultAddresses keyAddresses;
+        uint256 targetBorrowLimit;
+        uint256 targetBorrowLimitHysteresis;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] stablecoinToToken0Path;
@@ -114,12 +133,16 @@ contract VaultAlpaca is VaultBase {
         address[] stablecoinToLPPoolOtherTokenPath;
         VaultLibrary.VaultFees fees;
         VaultLibrary.VaultPriceFeeds priceFeeds;
+        address comptrollerAddress;
     }
 
     /* State */
 
     address[] public stablecoinToZORROPath; // Swap path from BUSD to ZOR (PCS)
     address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
+    uint256 public targetBorrowLimit; // Max borrow rate % (1e18 = 100%)
+    uint256 public targetBorrowLimitHysteresis; // +/- envelope (1% = 1e16)
+    address public comptrollerAddress; // Unitroller address
 
     /* Setters */
 
@@ -138,10 +161,32 @@ contract VaultAlpaca is VaultBase {
         }
     }
 
+    function setTargetBorrowLimit(uint256 _tbl) external onlyOwner {
+        targetBorrowLimit = _tbl;
+    }
+
+    function setTargetBorrowLimitHysteresis(uint256 _tblh) external onlyOwner {
+        targetBorrowLimitHysteresis = _tblh;
+    }
+
+    function setComptrollerAddress(address _comptroller) external onlyOwner {
+        comptrollerAddress = _comptroller;
+    }
+
+    /*
+    TODO - what to do about different format for lending
+    - Auto revert on depositWantToken() because it's not safe to use this function for lending vault
+    - Consider putting an intermediary class for lending vaults and extract above, as well as common vars
+    -  Separate VaultLibrary for lending vaults
+    - Consider having depositUnderlyingToken() function
+    - Is it right to be accounting for shares using WANT token, or should it be something else?
+    - OR just consider want token to be the underlying this time. 
+    */
+
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
-    /// @param _wantAmt amount of Want token to deposit/stake
+    /// @param _wantAmt amount of underlying token to deposit/stake
     /// @return sharesAdded uint256 Number of shares added
     function depositWantToken(uint256 _wantAmt)
         public
@@ -162,6 +207,12 @@ contract VaultAlpaca is VaultBase {
             _wantAmt
         );
 
+        // Supply the underlying token
+        _supplyWant();
+
+        // Leverage up to target leverage (using supply-borrow)
+        _rebalance(0);
+
         // Set sharesAdded to the Want token amount specified
         sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
@@ -176,12 +227,129 @@ contract VaultAlpaca is VaultBase {
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
 
-        // Farm the want token if applicable. Otherwise increment want locked
-        if (isFarmable) {
-            _farm();
+        // Increment want token locked qty. NOTE, no farming takes place here, as the lending protocol automatically takes care of it
+        wantLockedTotal = wantLockedTotal.add(_wantAmt);
+    }
+
+    /// @notice Supplies underlying token to Pool (vToken contract)
+    function _supplyWant() internal whenNotPaused {
+        // Get underlying balance
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        // Allow spending of underlying token by Pool (VToken contract)
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            poolAddress,
+            _wantBal
+        );
+        // Supply underlying token
+        ICErc20Interface(poolAddress).mint(_wantBal);
+    }
+
+    /// @notice Maintains target leverage amount, within tolerance
+    /// @param _withdrawAmt The amount of tokens to deleverage for withdrawal
+    function _rebalance(uint256 _withdrawAmt) internal {
+        /* Init */
+
+        // Be initial supply balance of underlying.
+        uint256 _ox = ICErc20Interface(poolAddress).balanceOfUnderlying(
+            address(this)
+        );
+        // If no supply, nothing to do so exit.
+        if (_ox == 0) return;
+
+        // If withdrawal greater than balance of underlying, cap it (account for rounding)
+        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+        // Adjusted supply = init supply - amt to withdraw
+        uint256 _x = _ox.sub(_withdrawAmt);
+        // Calc init borrow balance
+        uint256 _y = ICErc20Interface(poolAddress).borrowBalanceCurrent(
+            address(this)
+        );
+        // Get collateral factor from protocol
+        uint256 _c = collateralFactor();
+        // Target leverage
+        uint256 _L = _c.mul(targetBorrowLimit).div(1e18);
+        // Current leverage = borrow / supply
+        uint256 _currentL = _y.mul(1e18).div(_x);
+        // Liquidity (of underlying) available in the pool overall
+        uint256 _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
+
+        /* Leverage targeting */
+
+        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
+            // If BELOW leverage target and below hysteresis envelope
+
+            // Calculate incremental amount to borrow:
+            // (Target lev % * curr supply - curr borrowed)/(1 - Target lev %)
+            uint256 _dy = _L.mul(_x).div(1e18).sub(_y).mul(1e18).div(
+                uint256(1e18).sub(_L)
+            );
+
+            // Cap incremental borrow to init supply * collateral fact % - curr borrowed
+            uint256 _max_dy = _ox.mul(_c).div(1e18).sub(_y);
+            if (_dy > _max_dy) _dy = _max_dy;
+            // Also cap to max liq available
+            if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
+
+            // Borrow incremental amount
+            ICErc20Interface(poolAddress).borrow(_dy);
+
+            // Supply the amount borrowed
+            _supplyWant();
         } else {
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
+            // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
+            while (
+                _currentL > _L &&
+                _currentL.sub(_L) > targetBorrowLimitHysteresis
+            ) {
+                // Calculate incremental amount to borrow:
+                // (Curr borrowed - (Target lev % * Curr supply)) / (1 - Target lev %)
+                uint256 _dy = _y.sub(_L.mul(_x).div(1e18)).mul(1e18).div(
+                    uint256(1e18).sub(_L)
+                );
+                // Cap incremental borrow-repay to init supply - (curr borrowed / collateral fact %)
+                uint256 _max_dy = _ox.sub(_y.mul(1e18).div(_c));
+                if (_dy > _max_dy) _dy = _max_dy;
+                // Also cap to max liq available
+                if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
+
+                // Redeem underlying increment. Return val must be 0 (success)
+                require(
+                    ICErc20Interface(poolAddress).redeemUnderlying(_dy) == 0,
+                    "rebal fail"
+                );
+
+                // Decrement supply bal by amount repaid
+                _ox = _ox.sub(_dy);
+                // Cap withdrawal amount to new supply (account for rounding)
+                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+                // Adjusted supply decremented by withdrawal amount
+                _x = _ox.sub(_withdrawAmt);
+
+                // Cap incremental borrow-repay to total amount borrowed
+                if (_dy > _y) _dy = _y;
+                // Allow pool to spend underlying
+                IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+                    poolAddress,
+                    _dy
+                );
+                // Repay borrowed amount (increment)
+                ICErc20Interface(poolAddress).repayBorrow(_dy);
+                // Decrement total amount borrowed
+                _y = _y.sub(_dy);
+
+                // Update current leverage (borrowed / supplied)
+                _currentL = _y.mul(1e18).div(_x);
+                // Update current liquidity of underlying pool
+                _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
+            }
         }
+    }
+
+    function collateralFactor() public view returns (uint256) {
+        (,uint256 _collateralFactor,,,,) = IUnitroller(comptrollerAddress).markets(poolAddress);
+        return _collateralFactor;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token
@@ -193,9 +361,9 @@ contract VaultAlpaca is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         return
-            VaultLibraryAlpaca.exchangeUSDForWantToken(
+            VaultLibraryApeLending.exchangeUSDForWantToken(
                 _amountUSD,
-                VaultLibraryAlpaca.ExchangeUSDForWantParams({
+                VaultLibraryApeLending.ExchangeUSDForWantParams({
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: ZORROAddress,
@@ -203,8 +371,7 @@ contract VaultAlpaca is VaultBase {
                     stablecoinPriceFeed: stablecoinPriceFeed,
                     uniRouterAddress: uniRouterAddress,
                     stablecoinToToken0Path: stablecoinToToken0Path,
-                    poolAddress: poolAddress,
-                    wantAddress: wantAddress
+                    poolAddress: poolAddress
                 }),
                 _maxMarketMovementAllowed
             );
@@ -217,43 +384,7 @@ contract VaultAlpaca is VaultBase {
         SafeSwapParams memory _swapParams,
         uint8[] memory _decimals
     ) internal {
-        VaultLibraryAlpaca.safeSwap(
-            uniRouterAddress,
-            _swapParams,
-            _decimals
-        );
-    }
-
-    /// @notice Public function for farming Want token.
-    function farm() public virtual nonReentrant {
-        _farm();
-    }
-
-    /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
-    function _farm() internal virtual {
-        require(isFarmable, "!farmable");
-
-        // Get the Want token stored on this contract
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        // Increment the total Want tokens locked into this contract
-        wantLockedTotal = wantLockedTotal.add(_wantAmt);
-        // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            farmContractAddress,
-            _wantAmt
-        );
-
-        // Deposit the Want tokens in the Farm contract
-        IFairLaunch(farmContractAddress).deposit(address(this), pid, _wantAmt);
-    }
-
-    /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
-    /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal {
-        // Withdraw the Want tokens from the Farm contract
-        IFairLaunch(farmContractAddress).withdraw(address(this), pid, _wantAmt);
+        VaultLibraryAlpaca.safeSwap(uniRouterAddress, _swapParams, _decimals);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -271,6 +402,19 @@ contract VaultAlpaca is VaultBase {
         // Preflight checks
         require(_wantAmt > 0, "negWant");
 
+        // Get balance of underlying on this contract
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+
+        // If amount to withdraw is gt balance, delever by appropriate amount
+        if (_wantAmt > _wantBal) {
+            // Delever the incremental amount needed and reassign _wantAmt
+            _wantAmt = _withdrawSome(_wantAmt.sub(_wantBal));
+            // Add back the existing balance and reassign _wantAmt
+            _wantAmt = _wantAmt.add(_wantBal);
+        }
+
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
         sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
         // Safety: cap the shares to the total number of shares
@@ -287,18 +431,8 @@ contract VaultAlpaca is VaultBase {
             );
         }
 
-        // Unfarm Want token if applicable
-        if (isFarmable) {
-            _unfarm(_wantAmt);
-        }
+        // NOTE: No unfarming necessary for lending protocols
 
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
-        }
         // Safety: cap _wantAmt at the total quantity of Want tokens locked
         if (wantLockedTotal < _wantAmt) {
             _wantAmt = wantLockedTotal;
@@ -312,6 +446,20 @@ contract VaultAlpaca is VaultBase {
             zorroControllerAddress,
             _wantAmt
         );
+    }
+
+    /// @notice TODO
+    function _withdrawSome(uint256 _amount) internal returns (uint256) {
+        _rebalance(_amount);
+        uint256 _balance = ICErc20Interface(poolAddress).balanceOfUnderlying(
+            address(this)
+        );
+        if (_amount > _balance) _amount = _balance;
+        require(
+            ICErc20Interface(poolAddress).redeemUnderlying(_amount) == 0,
+            "_withdrawSome: redeem failed"
+        );
+        return _amount;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -330,12 +478,11 @@ contract VaultAlpaca is VaultBase {
         returns (uint256)
     {
         return
-            VaultLibraryAlpaca.exchangeWantTokenForUSD(
+            VaultLibraryApeLending.exchangeWantTokenForUSD(
                 _amount,
-                VaultLibraryAlpaca.ExchangeWantTokenForUSDParams({
+                VaultLibraryApeLending.ExchangeWantTokenForUSDParams({
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
-                    wantAddress: wantAddress,
                     poolAddress: poolAddress,
                     token0PriceFeed: token0PriceFeed,
                     stablecoinPriceFeed: stablecoinPriceFeed,
@@ -355,15 +502,13 @@ contract VaultAlpaca is VaultBase {
         nonReentrant
         whenNotPaused
     {
-        require(isFarmable, "!farmable");
-
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
         }
 
-        // Harvest farm tokens
-        _unfarm(0);
+        // Claim any outstanding farm rewards
+        IRainMaker(farmContractAddress).claimComp(address(this));
 
         // Get the balance of the Earned token on this contract
         uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
@@ -435,14 +580,14 @@ contract VaultAlpaca is VaultBase {
             poolAddress,
             _token0Bal
         );
-        // Deposit token to get Want token
-        IAlpacaVault(poolAddress).deposit(_token0Bal);
+        // Re-supply
+        _supplyWant();
+        // Re-lever
+        _rebalance(0);
 
         // This vault is only for single asset deposits, so farm that token and exit
         // Update the last earn block
         lastEarnBlock = block.number;
-        // Farm LP token
-        _farm();
     }
 
     /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
@@ -625,12 +770,12 @@ contract VaultAlpaca is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryAlpaca.swapEarnedToUSD(
+        VaultLibraryApeLending.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
             _rates,
-            VaultLibraryAlpaca.SwapEarnedToUSDParams({
+            VaultLibraryApeLending.SwapEarnedToUSDParams({
                 earnedAddress: earnedAddress,
                 stablecoin: defaultStablecoin,
                 earnedToStablecoinPath: earnedToStablecoinPath,
@@ -639,6 +784,11 @@ contract VaultAlpaca is VaultBase {
             })
         );
     }
+
+    /// @notice Public function for farming Want token.
+    function farm() public nonReentrant {
+        // Do nothing - Only for implementing interface
+    }
 }
 
-contract VaultAlpacaLeveragedBTCB is VaultAlpaca {}
+contract VaultApeLendingETH is VaultApeLending {}

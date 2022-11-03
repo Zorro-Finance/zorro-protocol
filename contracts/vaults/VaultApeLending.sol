@@ -32,11 +32,6 @@ contract VaultApeLending is VaultBase {
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
-    /* Constants */
-    uint256 public constant BORROW_RATE_MAX = 1e12; // Max borrow ratio of collateral. 1e12 = 100%, 1e10 = 1% etc.
-    uint256 public constant BORROW_DEPTH_MAX = 20; // Max number of iterations of supply/borrow
-    uint256 public constant MIN_LEVERAGE_AMOUNT = 1e12; // Min qty of tokens to leverage
-
     /* Constructor */
     /// @notice Upgradeable constructor
     /// @param _initValue A VaultAlpacaInit struct containing all init values
@@ -172,16 +167,6 @@ contract VaultApeLending is VaultBase {
     function setComptrollerAddress(address _comptroller) external onlyOwner {
         comptrollerAddress = _comptroller;
     }
-
-    /*
-    TODO - what to do about different format for lending
-    - Auto revert on depositWantToken() because it's not safe to use this function for lending vault
-    - Consider putting an intermediary class for lending vaults and extract above, as well as common vars
-    -  Separate VaultLibrary for lending vaults
-    - Consider having depositUnderlyingToken() function
-    - Is it right to be accounting for shares using WANT token, or should it be something else?
-    - OR just consider want token to be the underlying this time. 
-    */
 
     /* Investment Actions */
 
