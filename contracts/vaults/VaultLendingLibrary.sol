@@ -36,7 +36,8 @@ library VaultLibraryApeLending {
         address[] stablecoinToToken0Path;
         address poolAddress;
     }
-
+    // TODO: Because these xchange... methods are the same for every lending protocol, extract them to a more 
+    // TODO generic library (VaultLibraryLending or equiv)
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
@@ -74,7 +75,7 @@ library VaultLibraryApeLending {
         );
         // Single asset. Swap from USD directly to Token0
         if (_params.token0Address != _params.stablecoin) {
-            safeSwap(
+            VaultLibrary.safeSwap(
                 _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _amountUSD,
@@ -153,7 +154,7 @@ library VaultLibraryApeLending {
         );
         // Swap Token0 -> BUSD
         if (_params.token0Address != _params.stablecoin) {
-            safeSwap(
+            VaultLibrary.safeSwap(
                 _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _amount,
@@ -209,7 +210,7 @@ library VaultLibraryApeLending {
         ).decimals();
 
         // Swap BANANA to BUSD
-        safeSwap(
+        VaultLibrary.safeSwap(
             _swapEarnedToUSDParams.uniRouterAddress,
             SafeSwapParams({
                 amountIn: _earnedAmount,
@@ -222,36 +223,6 @@ library VaultLibraryApeLending {
                 destination: _destination
             }),
             _decimals0
-        );
-    }
-
-    /// @notice Safely swaps tokens using the most suitable protocol based on token
-    /// @param _uniRouterAddress Address of IAMM router
-    /// @param _swapParams SafeSwapParams for swap
-    /// @param _decimals Array of decimals for amount In, amount Out
-    function safeSwap(
-        address _uniRouterAddress,
-        SafeSwapParams memory _swapParams,
-        uint8[] memory _decimals
-    ) public {
-        // Allowance
-        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-            _uniRouterAddress,
-            _swapParams.amountIn
-        );
-        // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
-        // Determine exchange rates using price feed oracle
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _swapParams.priceToken0;
-        _priceTokens[1] = _swapParams.priceToken1;
-        IAMMRouter02(_uniRouterAddress).safeSwap(
-            _swapParams.amountIn,
-            _priceTokens,
-            _swapParams.maxMarketMovementAllowed,
-            _swapParams.path,
-            _decimals,
-            _swapParams.destination,
-            block.timestamp.add(600)
         );
     }
 }

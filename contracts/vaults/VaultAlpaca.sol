@@ -18,6 +18,8 @@ import "../libraries/PriceFeed.sol";
 
 import "./VaultLibrary.sol";
 
+// TODO: Do we still have the same issue whereby the want token can fluctuate in quantity over the duration of the investment?
+
 /// @title Vault contract for Alpaca strategies
 contract VaultAlpaca is VaultBase {
     /* Libraries */
@@ -217,7 +219,7 @@ contract VaultAlpaca is VaultBase {
         SafeSwapParams memory _swapParams,
         uint8[] memory _decimals
     ) internal {
-        VaultLibraryAlpaca.safeSwap(
+        VaultLibrary.safeSwap(
             uniRouterAddress,
             _swapParams,
             _decimals
@@ -625,12 +627,12 @@ contract VaultAlpaca is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryAlpaca.swapEarnedToUSD(
+        VaultLibrary.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
             _rates,
-            VaultLibraryAlpaca.SwapEarnedToUSDParams({
+            VaultLibrary.SwapEarnedToUSDParams({
                 earnedAddress: earnedAddress,
                 stablecoin: defaultStablecoin,
                 earnedToStablecoinPath: earnedToStablecoinPath,

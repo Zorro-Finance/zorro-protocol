@@ -123,6 +123,9 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
     AggregatorV3Interface public stablecoinPriceFeed; // Price feed of stablecoin token (e.g. USDC)
 
+    // Other
+    uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden)
+
     /* Events */
 
     event SetSettings(
@@ -348,6 +351,10 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
             _buyBackRate,
             _revShareRate
         );
+    }
+
+    function setMaxMarketMovementAllowed(uint256 _slippageNumerator) external onlyOwner {
+        maxMarketMovementAllowed = _slippageNumerator;
     }
 
     /* Maintenance Functions */

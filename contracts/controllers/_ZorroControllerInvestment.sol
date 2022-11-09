@@ -575,6 +575,9 @@ contract ZorroControllerInvestment is
             IVault _vault = IVault(poolInfo[_pid].vault);
 
             // Get staked want tokens
+            // TODO: This MUST be based on shares and NOT want tokens,
+            // Because the quantity of want owed to the user will likely increase 
+            // over time..... << END TODO
             uint256 _stakedWantAmt = _tranche
                 .contribution
                 .mul(1e12)

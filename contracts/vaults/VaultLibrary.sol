@@ -18,9 +18,13 @@ import "../interfaces/IAlpacaFairLaunch.sol";
 
 import "../interfaces/IAlpacaVault.sol";
 
+import "../interfaces/IAMMRouter02.sol";
+
 library VaultLibrary {
     /* Libs */
     using SafeMathUpgradeable for uint256;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeSwapUni for IAMMRouter02;
 
     /* Structs */
     struct VaultAddresses {
@@ -66,6 +70,14 @@ library VaultLibrary {
         uint256 stablecoin; // Exchange rate of stablecoin (e.g. USDC), times 1e12
     }
 
+    struct SwapEarnedToUSDParams {
+        address earnedAddress;
+        address stablecoin;
+        address[] earnedToStablecoinPath;
+        address uniRouterAddress;
+        uint256 stablecoinExchangeRate;
+    }
+
     /* Utilities */
 
     /// @notice Gets the swap path in the opposite direction of a trade
@@ -81,6 +93,74 @@ library VaultLibrary {
         for (uint16 i = 0; i < _pathLength; ++i) {
             _newPath[i] = _path[_path.length.sub(1).sub(i)];
         }
+    }
+
+    /// @notice Safely swaps tokens using the most suitable protocol based on token
+    /// @param _uniRouterAddress Address of IAMM router
+    /// @param _swapParams SafeSwapParams for swap
+    /// @param _decimals Array of decimals for amount In, amount Out
+    function safeSwap(
+        address _uniRouterAddress,
+        SafeSwapParams memory _swapParams,
+        uint8[] memory _decimals
+    ) public {
+        // Allowance
+        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
+            _uniRouterAddress,
+            _swapParams.amountIn
+        );
+        // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
+        // Determine exchange rates using price feed oracle
+        uint256[] memory _priceTokens = new uint256[](2);
+        _priceTokens[0] = _swapParams.priceToken0;
+        _priceTokens[1] = _swapParams.priceToken1;
+        IAMMRouter02(_uniRouterAddress).safeSwap(
+            _swapParams.amountIn,
+            _priceTokens,
+            _swapParams.maxMarketMovementAllowed,
+            _swapParams.path,
+            _decimals,
+            _swapParams.destination,
+            block.timestamp.add(600)
+        );
+    }
+
+    /// @notice Swaps Earn token to USD and sends to destination specified
+    /// @param _earnedAmount Quantity of Earned tokens
+    /// @param _destination Address to send swapped USD to
+    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
+    /// @param _rates ExchangeRates struct with realtime rates information for swaps
+    function swapEarnedToUSD(
+        uint256 _earnedAmount,
+        address _destination,
+        uint256 _maxMarketMovementAllowed,
+        VaultLibrary.ExchangeRates memory _rates,
+        SwapEarnedToUSDParams memory _swapEarnedToUSDParams
+    ) public {
+        // Get exchange rate
+
+        // Get decimal info
+        uint8[] memory _decimals0 = new uint8[](2);
+        _decimals0[0] = ERC20Upgradeable(_swapEarnedToUSDParams.earnedAddress)
+            .decimals();
+        _decimals0[1] = ERC20Upgradeable(_swapEarnedToUSDParams.stablecoin)
+            .decimals();
+
+        // Swap earn to USD
+        safeSwap(
+            _swapEarnedToUSDParams.uniRouterAddress,
+            SafeSwapParams({
+                amountIn: _earnedAmount,
+                priceToken0: _rates.earn,
+                priceToken1: _swapEarnedToUSDParams.stablecoinExchangeRate,
+                token0: _swapEarnedToUSDParams.earnedAddress,
+                token1: _swapEarnedToUSDParams.stablecoin,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: _swapEarnedToUSDParams.earnedToStablecoinPath,
+                destination: _destination
+            }),
+            _decimals0
+        );
     }
 }
 
@@ -139,7 +219,7 @@ library VaultLibraryAlpaca {
         );
         // Single asset. Swap from USD directly to Token0
         if (_params.token0Address != _params.stablecoin) {
-            safeSwap(
+            VaultLibrary.safeSwap(
                 _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _amountUSD,
@@ -246,7 +326,7 @@ library VaultLibraryAlpaca {
         );
         // Swap Token0 -> BUSD
         if (_params.token0Address != _params.stablecoin) {
-            safeSwap(
+            VaultLibrary.safeSwap(
                 _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _token0Bal,
@@ -264,88 +344,6 @@ library VaultLibraryAlpaca {
 
         // Calculate USD balance
         return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
-    }
-
-    struct SwapEarnedToUSDParams {
-        address earnedAddress;
-        address stablecoin;
-        address[] earnedToStablecoinPath;
-        address uniRouterAddress;
-        uint256 stablecoinExchangeRate;
-    }
-
-    /// @notice Swaps Earn token to USD and sends to destination specified
-    /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USD to
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates,
-        SwapEarnedToUSDParams memory _swapEarnedToUSDParams
-    ) public {
-        // Get exchange rate
-
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(_swapEarnedToUSDParams.earnedAddress)
-            .decimals();
-        _decimals0[1] = ERC20Upgradeable(_swapEarnedToUSDParams.stablecoin)
-            .decimals();
-        uint8[] memory _decimals1 = new uint8[](2);
-        // TODO: decimals1 unused?
-        _decimals1[0] = _decimals0[1];
-        _decimals1[1] = ERC20Upgradeable(
-            _swapEarnedToUSDParams.stablecoin
-        ).decimals();
-
-        // Swap ALPACA to BUSD
-        safeSwap(
-            _swapEarnedToUSDParams.uniRouterAddress,
-            SafeSwapParams({
-                amountIn: _earnedAmount,
-                priceToken0: _rates.earn,
-                priceToken1: _swapEarnedToUSDParams.stablecoinExchangeRate,
-                token0: _swapEarnedToUSDParams.earnedAddress,
-                token1: _swapEarnedToUSDParams.stablecoin,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _swapEarnedToUSDParams.earnedToStablecoinPath,
-                destination: _destination
-            }),
-            _decimals0
-        );
-    }
-
-    /// @notice Safely swaps tokens using the most suitable protocol based on token
-    /// @param _uniRouterAddress Address of IAMM router
-    /// @param _swapParams SafeSwapParams for swap
-    /// @param _decimals Array of decimals for amount In, amount Out
-    function safeSwap(
-        address _uniRouterAddress,
-        SafeSwapParams memory _swapParams,
-        uint8[] memory _decimals
-    ) public {
-        // Allowance
-        IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
-            _uniRouterAddress,
-            _swapParams.amountIn
-        );
-        // Otherwise, swap on normal Pancakeswap (or Uniswap clone) for simplicity & liquidity
-        // Determine exchange rates using price feed oracle
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _swapParams.priceToken0;
-        _priceTokens[1] = _swapParams.priceToken1;
-        IAMMRouter02(_uniRouterAddress).safeSwap(
-            _swapParams.amountIn,
-            _priceTokens,
-            _swapParams.maxMarketMovementAllowed,
-            _swapParams.path,
-            _decimals,
-            _swapParams.destination,
-            block.timestamp.add(600)
-        );
     }
 }
 

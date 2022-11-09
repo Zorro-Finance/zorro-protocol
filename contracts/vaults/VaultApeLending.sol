@@ -34,7 +34,7 @@ contract VaultApeLending is VaultBase {
 
     /* Constructor */
     /// @notice Upgradeable constructor
-    /// @param _initValue A VaultAlpacaInit struct containing all init values
+    /// @param _initValue A VaultApeLendingInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
     function initialize(
         address _timelockOwner,
@@ -185,6 +185,9 @@ contract VaultApeLending is VaultBase {
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
+        // Calc balances
+        
+
         // Transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
@@ -192,149 +195,31 @@ contract VaultApeLending is VaultBase {
             _wantAmt
         );
 
-        // Supply the underlying token
-        _supplyWant();
-
-        // Leverage up to target leverage (using supply-borrow)
-        _rebalance(0);
-
         // Set sharesAdded to the Want token amount specified
         sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
-        if (wantLockedTotal > 0 && sharesTotal > 0) {
+        if (_wantTokenLockedAdj() > 0 && sharesTotal > 0) {
             sharesAdded = _wantAmt
                 .mul(sharesTotal)
                 .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
+                .div(_wantTokenLockedAdj())
                 .div(entranceFeeFactorMax);
         }
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
 
-        // Increment want token locked qty. NOTE, no farming takes place here, as the lending protocol automatically takes care of it
-        wantLockedTotal = wantLockedTotal.add(_wantAmt);
+        // Farm (leverage)
+        _farm();
     }
 
-    /// @notice Supplies underlying token to Pool (vToken contract)
-    function _supplyWant() internal whenNotPaused {
-        // Get underlying balance
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        // Allow spending of underlying token by Pool (VToken contract)
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            poolAddress,
-            _wantBal
-        );
-        // Supply underlying token
-        ICErc20Interface(poolAddress).mint(_wantBal);
-    }
-
-    /// @notice Maintains target leverage amount, within tolerance
-    /// @param _withdrawAmt The amount of tokens to deleverage for withdrawal
-    function _rebalance(uint256 _withdrawAmt) internal {
-        /* Init */
-
-        // Be initial supply balance of underlying.
-        uint256 _ox = ICErc20Interface(poolAddress).balanceOfUnderlying(
-            address(this)
-        );
-        // If no supply, nothing to do so exit.
-        if (_ox == 0) return;
-
-        // If withdrawal greater than balance of underlying, cap it (account for rounding)
-        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
-        // Adjusted supply = init supply - amt to withdraw
-        uint256 _x = _ox.sub(_withdrawAmt);
-        // Calc init borrow balance
-        uint256 _y = ICErc20Interface(poolAddress).borrowBalanceCurrent(
-            address(this)
-        );
-        // Get collateral factor from protocol
-        uint256 _c = collateralFactor();
-        // Target leverage
-        uint256 _L = _c.mul(targetBorrowLimit).div(1e18);
-        // Current leverage = borrow / supply
-        uint256 _currentL = _y.mul(1e18).div(_x);
-        // Liquidity (of underlying) available in the pool overall
-        uint256 _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
-
-        /* Leverage targeting */
-
-        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
-            // If BELOW leverage target and below hysteresis envelope
-
-            // Calculate incremental amount to borrow:
-            // (Target lev % * curr supply - curr borrowed)/(1 - Target lev %)
-            uint256 _dy = _L.mul(_x).div(1e18).sub(_y).mul(1e18).div(
-                uint256(1e18).sub(_L)
-            );
-
-            // Cap incremental borrow to init supply * collateral fact % - curr borrowed
-            uint256 _max_dy = _ox.mul(_c).div(1e18).sub(_y);
-            if (_dy > _max_dy) _dy = _max_dy;
-            // Also cap to max liq available
-            if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
-
-            // Borrow incremental amount
-            ICErc20Interface(poolAddress).borrow(_dy);
-
-            // Supply the amount borrowed
-            _supplyWant();
-        } else {
-            // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
-            while (
-                _currentL > _L &&
-                _currentL.sub(_L) > targetBorrowLimitHysteresis
-            ) {
-                // Calculate incremental amount to borrow:
-                // (Curr borrowed - (Target lev % * Curr supply)) / (1 - Target lev %)
-                uint256 _dy = _y.sub(_L.mul(_x).div(1e18)).mul(1e18).div(
-                    uint256(1e18).sub(_L)
-                );
-                // Cap incremental borrow-repay to init supply - (curr borrowed / collateral fact %)
-                uint256 _max_dy = _ox.sub(_y.mul(1e18).div(_c));
-                if (_dy > _max_dy) _dy = _max_dy;
-                // Also cap to max liq available
-                if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
-
-                // Redeem underlying increment. Return val must be 0 (success)
-                require(
-                    ICErc20Interface(poolAddress).redeemUnderlying(_dy) == 0,
-                    "rebal fail"
-                );
-
-                // Decrement supply bal by amount repaid
-                _ox = _ox.sub(_dy);
-                // Cap withdrawal amount to new supply (account for rounding)
-                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
-                // Adjusted supply decremented by withdrawal amount
-                _x = _ox.sub(_withdrawAmt);
-
-                // Cap incremental borrow-repay to total amount borrowed
-                if (_dy > _y) _dy = _y;
-                // Allow pool to spend underlying
-                IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-                    poolAddress,
-                    _dy
-                );
-                // Repay borrowed amount (increment)
-                ICErc20Interface(poolAddress).repayBorrow(_dy);
-                // Decrement total amount borrowed
-                _y = _y.sub(_dy);
-
-                // Update current leverage (borrowed / supplied)
-                _currentL = _y.mul(1e18).div(_x);
-                // Update current liquidity of underlying pool
-                _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
-            }
-        }
-    }
-
-    function collateralFactor() public view returns (uint256) {
-        (,uint256 _collateralFactor,,,,) = IUnitroller(comptrollerAddress).markets(poolAddress);
-        return _collateralFactor;
+    /// @notice Calc want token locked, accounting for leveraged supply/borrow
+    /// @return amtLocked The adjusted wantLockedTotal quantity
+    function _wantTokenLockedAdj() internal returns (uint256 amtLocked) {
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 _supplyBal = ICErc20Interface(poolAddress).balanceOfUnderlying(address(this));
+        uint256 _borrowBal = ICErc20Interface(poolAddress).borrowBalanceCurrent(address(this));
+        amtLocked = _wantBal.add(_supplyBal).sub(_borrowBal);
     }
 
     /// @notice Performs necessary operations to convert USD into Want token
@@ -362,6 +247,7 @@ contract VaultApeLending is VaultBase {
             );
     }
 
+    // TODO: Consider abstracting all instances of this (in every vault to VaultBase contract)
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @param _swapParams SafeSwapParams for swap
     /// @param _decimals Array of decimals for amount In, amount Out
@@ -369,7 +255,7 @@ contract VaultApeLending is VaultBase {
         SafeSwapParams memory _swapParams,
         uint8[] memory _decimals
     ) internal {
-        VaultLibraryAlpaca.safeSwap(uniRouterAddress, _swapParams, _decimals);
+        VaultLibrary.safeSwap(uniRouterAddress, _swapParams, _decimals);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -387,6 +273,16 @@ contract VaultApeLending is VaultBase {
         // Preflight checks
         require(_wantAmt > 0, "negWant");
 
+        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
+        sharesRemoved = _wantAmt.mul(sharesTotal).div(_wantTokenLockedAdj());
+        // Safety: cap the shares to the total number of shares
+        if (sharesRemoved > sharesTotal) {
+            sharesRemoved = sharesTotal;
+        }
+        // Decrement the total shares by the sharesRemoved
+        sharesTotal = sharesTotal.sub(sharesRemoved);
+
+
         // Get balance of underlying on this contract
         uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
@@ -399,15 +295,15 @@ contract VaultApeLending is VaultBase {
             // Add back the existing balance and reassign _wantAmt
             _wantAmt = _wantAmt.add(_wantBal);
         }
-
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
-        // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
+        // Recalc balance 
+        _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        // Safety: Cap want amount to new balance (after delevering some), as a last resort
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
         }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
@@ -416,21 +312,15 @@ contract VaultApeLending is VaultBase {
             );
         }
 
-        // NOTE: No unfarming necessary for lending protocols
-
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
-
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
             _wantAmt
         );
+        
+        // Rebalance
+        _supplyWant();
+        _rebalance(0);
     }
 
     /// @notice TODO
@@ -755,12 +645,12 @@ contract VaultApeLending is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryApeLending.swapEarnedToUSD(
+        VaultLibrary.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
             _rates,
-            VaultLibraryApeLending.SwapEarnedToUSDParams({
+            VaultLibrary.SwapEarnedToUSDParams({
                 earnedAddress: earnedAddress,
                 stablecoin: defaultStablecoin,
                 earnedToStablecoinPath: earnedToStablecoinPath,
@@ -772,7 +662,139 @@ contract VaultApeLending is VaultBase {
 
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {
-        // Do nothing - Only for implementing interface
+        _farm();
+    }
+
+    /// @notice Function for farming want token
+    function _farm() internal {
+        // Supply the underlying token
+        _supplyWant();
+
+        // Leverage up to target leverage (using supply-borrow)
+        _rebalance(0);
+    }
+
+    /// @notice Supplies underlying token to Pool (vToken contract)
+    function _supplyWant() internal whenNotPaused {
+        // Get underlying balance
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        // Allow spending of underlying token by Pool (VToken contract)
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            poolAddress,
+            _wantBal
+        );
+        // Supply underlying token
+        ICErc20Interface(poolAddress).mint(_wantBal);
+    }
+
+    /// @notice Maintains target leverage amount, within tolerance
+    /// @param _withdrawAmt The amount of tokens to deleverage for withdrawal
+    function _rebalance(uint256 _withdrawAmt) internal {
+        /* Init */
+
+        // Be initial supply balance of underlying.
+        uint256 _ox = ICErc20Interface(poolAddress).balanceOfUnderlying(
+            address(this)
+        );
+        // If no supply, nothing to do so exit.
+        if (_ox == 0) return;
+
+        // If withdrawal greater than balance of underlying, cap it (account for rounding)
+        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+        // Adjusted supply = init supply - amt to withdraw
+        uint256 _x = _ox.sub(_withdrawAmt);
+        // Calc init borrow balance
+        uint256 _y = ICErc20Interface(poolAddress).borrowBalanceCurrent(
+            address(this)
+        );
+        // Get collateral factor from protocol
+        uint256 _c = collateralFactor();
+        // Target leverage
+        uint256 _L = _c.mul(targetBorrowLimit).div(1e18);
+        // Current leverage = borrow / supply
+        uint256 _currentL = _y.mul(1e18).div(_x);
+        // Liquidity (of underlying) available in the pool overall
+        uint256 _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
+
+        /* Leverage targeting */
+
+        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
+            // If BELOW leverage target and below hysteresis envelope
+
+            // Calculate incremental amount to borrow:
+            // (Target lev % * curr supply - curr borrowed)/(1 - Target lev %)
+            uint256 _dy = _L.mul(_x).div(1e18).sub(_y).mul(1e18).div(
+                uint256(1e18).sub(_L)
+            );
+
+            // Cap incremental borrow to init supply * collateral fact % - curr borrowed
+            uint256 _max_dy = _ox.mul(_c).div(1e18).sub(_y);
+            if (_dy > _max_dy) _dy = _max_dy;
+            // Also cap to max liq available
+            if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
+
+            // Borrow incremental amount
+            ICErc20Interface(poolAddress).borrow(_dy);
+
+            // Supply the amount borrowed
+            _supplyWant();
+        } else {
+            // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
+            while (
+                _currentL > _L &&
+                _currentL.sub(_L) > targetBorrowLimitHysteresis
+            ) {
+                // Calculate incremental amount to borrow:
+                // (Curr borrowed - (Target lev % * Curr supply)) / (1 - Target lev %)
+                uint256 _dy = _y.sub(_L.mul(_x).div(1e18)).mul(1e18).div(
+                    uint256(1e18).sub(_L)
+                );
+                // Cap incremental borrow-repay to init supply - (curr borrowed / collateral fact %)
+                uint256 _max_dy = _ox.sub(_y.mul(1e18).div(_c));
+                if (_dy > _max_dy) _dy = _max_dy;
+                // Also cap to max liq available
+                if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
+
+                // Redeem underlying increment. Return val must be 0 (success)
+                require(
+                    ICErc20Interface(poolAddress).redeemUnderlying(_dy) == 0,
+                    "rebal fail"
+                );
+
+                // Decrement supply bal by amount repaid
+                _ox = _ox.sub(_dy);
+                // Cap withdrawal amount to new supply (account for rounding)
+                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+                // Adjusted supply decremented by withdrawal amount
+                _x = _ox.sub(_withdrawAmt);
+
+                // Cap incremental borrow-repay to total amount borrowed
+                if (_dy > _y) _dy = _y;
+                // Allow pool to spend underlying
+                IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+                    poolAddress,
+                    _dy
+                );
+                // Repay borrowed amount (increment)
+                ICErc20Interface(poolAddress).repayBorrow(_dy);
+                // Decrement total amount borrowed
+                _y = _y.sub(_dy);
+
+                // Update current leverage (borrowed / supplied)
+                _currentL = _y.mul(1e18).div(_x);
+                // Update current liquidity of underlying pool
+                _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
+            }
+        }
+    }
+
+    /// @notice Gets loan collateral factor from lending protocol
+    /// @return collFactor The collateral factor %. TODO: Specify denominator (1e18?) Check against consuming logic. 
+    function collateralFactor() public view returns (uint256 collFactor) {
+        (,uint256 _collateralFactor,,,,) = IUnitroller(comptrollerAddress).markets(poolAddress);
+        return _collateralFactor;
     }
 }
 

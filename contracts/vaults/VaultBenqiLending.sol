@@ -38,7 +38,7 @@ contract VaultBenqiLending is VaultBase {
     /// @param _timelockOwner The designated timelock controller address to act as owner
     function initialize(
         address _timelockOwner,
-        VaultApeLendingInit memory _initValue
+        VaultBenqiLendingInit memory _initValue
     ) public initializer {
         // Vault config
         pid = _initValue.pid;
@@ -113,7 +113,7 @@ contract VaultBenqiLending is VaultBase {
 
     /* Structs */
 
-    struct VaultApeLendingInit {
+    struct VaultBenqiLendingInit {
         uint256 pid;
         bool isHomeChain;
         VaultLibrary.VaultAddresses keyAddresses;
@@ -369,7 +369,7 @@ contract VaultBenqiLending is VaultBase {
         SafeSwapParams memory _swapParams,
         uint8[] memory _decimals
     ) internal {
-        VaultLibraryAlpaca.safeSwap(uniRouterAddress, _swapParams, _decimals);
+        VaultLibrary.safeSwap(uniRouterAddress, _swapParams, _decimals);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -755,12 +755,12 @@ contract VaultBenqiLending is VaultBase {
         uint256 _maxMarketMovementAllowed,
         VaultLibrary.ExchangeRates memory _rates
     ) internal override {
-        VaultLibraryApeLending.swapEarnedToUSD(
+        VaultLibrary.swapEarnedToUSD(
             _earnedAmount,
             _destination,
             _maxMarketMovementAllowed,
             _rates,
-            VaultLibraryApeLending.SwapEarnedToUSDParams({
+            VaultLibrary.SwapEarnedToUSDParams({
                 earnedAddress: earnedAddress,
                 stablecoin: defaultStablecoin,
                 earnedToStablecoinPath: earnedToStablecoinPath,
