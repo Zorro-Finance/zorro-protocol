@@ -59,6 +59,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
         liquidStakeToken = _initValue.liquidStakeToken;
+        liquidStakingPool = _initValue.liquidStakingPool;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -116,6 +117,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         bool isFarmable;
         VaultLibrary.VaultAddresses keyAddresses;
         address liquidStakeToken;
+        address liquidStakingPool;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] stablecoinToToken0Path;
@@ -144,6 +146,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
     address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
     address[] public liquidStakeToToken0Path; // Swap path from sAVAX to wAVAX
     address public liquidStakeToken; // Synth token for liquid staking (e.g. sAvax)
+    address public liquidStakingPool; // Liquid staking pool (can sometimes be the same as liquidStakeToken)
     AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sAVAX
 
     /* Setters */

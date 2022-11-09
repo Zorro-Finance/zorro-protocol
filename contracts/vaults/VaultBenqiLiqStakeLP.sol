@@ -265,4 +265,4 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
     }
 }
 
-contract VaultBenqiAaveLiqStakeAVAX is VaultBaseLiqStakeLP {}
+contract VaultBenqiAVAXLiqStakeLP is VaultBenqiLiqStakeLP {}

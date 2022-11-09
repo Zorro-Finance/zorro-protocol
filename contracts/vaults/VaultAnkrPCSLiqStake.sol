@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/Benqi/IStakedAvax.sol";
+import "../interfaces/Ankr/IBinancePool_R1.sol";
 
 import "../interfaces/IWETH.sol";
 
@@ -19,32 +19,39 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     /* Investment Actions */
 
     /// @notice Deposits liquid stake on Benqi protocol
-    /// @param _amount The amount of AVAX to liquid stake
+    /// @dev NOTE: 1. liquidStakeToken must be aBNBc (cert not bond) 2. Min 0.502 BNB
+    /// @param _amount The amount of BNB to liquid stake
     function _liquidStake(uint256 _amount) internal override whenNotPaused {
-        // Unwrap AVAX
+        // Preflight checks
+        require(_amount >= 0.5 ether, "minLiqStake");
+
+        // Unwrap BNB
         IWETH(token0Address).withdraw(_amount);
 
-        // Get native AVAX balance
+        // Get native BNB balance
         uint256 _bal = address(this).balance;
 
         // Require balance to be > amount
         require(_bal > _amount, "insufficientLiqStakeBal");
 
+        // Get relayer fee
+        uint256 _relayerFee = IBinancePool_R1(liquidStakingPool).getRelayerFee();
+
         // Call deposit func
-        IStakedAvax(liquidStakeToken).submit{value: _amount}();
+        IBinancePool_R1(liquidStakingPool).stakeAndClaimCerts{value: _amount.add(_relayerFee)}();
     }
 
     /// @notice Withdraws liquid stake on Benqi protocol
-    /// @param _amount The amount of AVAX to unstake
+    /// @param _amount The amount of BNB to unstake
     function _liquidUnstake(uint256 _amount) internal override whenNotPaused {
-        // Exchange sAVAX for WAVAX
+        // Exchange aBNBc for WBNB
 
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
         _decimals[0] = ERC20Upgradeable(liquidStakeToken).decimals();
         _decimals[1] = ERC20Upgradeable(token0Address).decimals();
 
-        // Swap sAvax to wAVAX
+        // Swap aBNBc to wBNB
         _safeSwap(
             SafeSwapParams({
                 amountIn: _amount,
@@ -68,7 +75,7 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Swap USD for Avax
+        // Swap USD for BNB
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
         _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
@@ -91,18 +98,18 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
             );
         }
 
-        // Get Avax balance
+        // Get BNB balance
         uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
 
-        // Stake AVAX (liquid staking)
+        // Stake BNB (liquid staking)
         _liquidStake(_token0Bal);
 
-        // Get bal of sAVAX
+        // Get bal of aBNBc
         uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
             address(this)
         );
 
-        // Add liquidity to sAVAX-AVAX pool
+        // Add liquidity to aBNBc-BNB pool
         _addLiquidity(_synthTokenBal);
 
         // Return bal of want tokens (same as Token0)
@@ -124,15 +131,15 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         whenNotPaused
         returns (uint256 returnedUSD)
     {
-        // Exit LP pool and get back sAvax
+        // Exit LP pool and get back aBNBc
         _removeLiquidity(_amount);
 
-        // Swap sAvax for Avax (token0)
+        // Swap aBNBc for BNB (token0)
         uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(address(this));
         _liquidUnstake(_synthTokenBal);
 
-        // Swap AVAX to USD
-        // Calc Avax bal
+        // Swap BNB to USD
+        // Calc BNB bal
         uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
         // Get decimal info
         uint8[] memory _decimals = new uint8[](2);
@@ -265,4 +272,4 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     }
 }
 
-contract VaultBenqiAaveLiqStakeAVAX is VaultBaseLiqStakeLP {}
+contract VaultAnkrBNBLiqStakeLP is VaultAnkrLiqStakeLP {}
