@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/Benqi/IStakedAvax.sol";
-
-import "../interfaces/IWETH.sol";
-
 import "./_VaultBaseLiqStakeLP.sol";
+
+import "./libraries/VaultLiqStakeLPLibrary.sol";
+
+import "./libraries/VaultBenqiLiqStakeLPLibrary.sol";
 
 /// @title Vault contract for Benqi liquid staking + LP strategy
 contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
@@ -21,31 +21,14 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
     /// @notice Deposits liquid stake on Benqi protocol
     /// @param _amount The amount of AVAX to liquid stake
     function _liquidStake(uint256 _amount) internal override whenNotPaused {
-        // Unwrap AVAX
-        IWETH(token0Address).withdraw(_amount);
-
-        // Get native AVAX balance
-        uint256 _bal = address(this).balance;
-
-        // Require balance to be > amount
-        require(_bal > _amount, "insufficientLiqStakeBal");
-
-        // Call deposit func
-        IStakedAvax(liquidStakeToken).submit{value: _amount}();
+        VaultBenqiLiqStakeLPLibrary.liquidStake(_amount, token0Address, liquidStakeToken);
     }
 
     /// @notice Withdraws liquid stake on Benqi protocol
     /// @param _amount The amount of AVAX to unstake
     function _liquidUnstake(uint256 _amount) internal override whenNotPaused {
-        // Exchange sAVAX for WAVAX
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(liquidStakeToken).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Swap sAvax to wAVAX
-        _safeSwap(
+        VaultBenqiLiqStakeLPLibrary.liquidUnstake(
+            uniRouterAddress,
             SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: liquidStakeTokenPriceFeed.getExchangeRate(),
@@ -55,8 +38,26 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
                 maxMarketMovementAllowed: maxMarketMovementAllowed,
                 path: liquidStakeToToken0Path,
                 destination: address(this)
-            }),
-            _decimals
+            })
+        );
+    }
+
+    /* Functions */
+    /// @notice Supplies sAVAX token to AMM
+    /// @param _amount Quantity of sAVAX (synth token) to swap and add as a liquidty
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function _addLiquidity(uint256 _amount, uint256 _maxMarketMovementAllowed) internal {
+        VaultLiqStakeLPLibrary.addLiquidity(
+            _amount, 
+            VaultLiqStakeLPLibrary.AddLiquidityParams({
+                uniRouterAddress: uniRouterAddress,
+                token0Address: token0Address,
+                liquidStakeToken: liquidStakeToken,
+                liquidStakeToToken0Path: liquidStakeToToken0Path,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed
+            })
         );
     }
 
@@ -68,45 +69,23 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Swap USD for Avax
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Swap usd to token0 if token0 is not usd
-        if (token0Address != defaultStablecoin) {
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amountUSD,
-                    priceToken0: token0PriceFeed.getExchangeRate(),
-                    priceToken1: stablecoinPriceFeed.getExchangeRate(),
-                    token0: defaultStablecoin,
-                    token1: token0Address,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: stablecoinToToken0Path,
-                    destination: address(this)
-                }),
-                _decimals
-            );
-        }
-
-        // Get Avax balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-
-        // Stake AVAX (liquid staking)
-        _liquidStake(_token0Bal);
-
-        // Get bal of sAVAX
-        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
-            address(this)
+        return VaultBenqiLiqStakeLPLibrary.exchangeUSDForWantToken(
+            _amountUSD, 
+            VaultBenqiLiqStakeLPLibrary.ExchangeUSDForWantParams({
+                token0Address: token0Address,
+                stablecoin: defaultStablecoin,
+                liquidStakeToken: liquidStakeToken,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                uniRouterAddress: uniRouterAddress,
+                stablecoinToToken0Path: stablecoinToToken0Path,
+                liquidStakeToToken0Path: liquidStakeToToken0Path,
+                poolAddress: poolAddress,
+                wantAddress: wantAddress
+            }), 
+            _maxMarketMovementAllowed
         );
-
-        // Add liquidity to sAVAX-AVAX pool
-        _addLiquidity(_synthTokenBal);
-
-        // Return bal of want tokens (same as Token0)
-        return IERC20Upgradeable(wantAddress).balanceOf(address(this));
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -124,38 +103,23 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
         whenNotPaused
         returns (uint256 returnedUSD)
     {
-        // Exit LP pool and get back sAvax
-        _removeLiquidity(_amount);
-
-        // Swap sAvax for Avax (token0)
-        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(address(this));
-        _liquidUnstake(_synthTokenBal);
-
-        // Swap AVAX to USD
-        // Calc Avax bal
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-        // Swap
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _token0Bal,
-                priceToken0: token0PriceFeed.getExchangeRate(),
-                priceToken1: stablecoinPriceFeed.getExchangeRate(),
-                token0: token0Address,
-                token1: defaultStablecoin,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: token0ToStablecoinPath,
-                destination: address(this)
-            }),
-            _decimals
+        return VaultBenqiLiqStakeLPLibrary.exchangeWantTokenForUSD(
+            _amount, 
+            VaultBenqiLiqStakeLPLibrary.ExchangeWantTokenForUSDParams({
+                token0Address: token0Address,
+                stablecoin: defaultStablecoin,
+                wantAddress: wantAddress,
+                poolAddress: poolAddress,
+                liquidStakeToken: liquidStakeToken,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                liquidStakeToToken0Path: liquidStakeToToken0Path, 
+                token0ToStablecoinPath: token0ToStablecoinPath, 
+                uniRouterAddress: uniRouterAddress
+            }), 
+            _maxMarketMovementAllowed
         );
-        
-        // Return USD amount
-        returnedUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
-        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, returnedUSD);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -254,7 +218,7 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
 
             // Add liquidity
             uint256 _synthTokenAmt = IERC20Upgradeable(liquidStakeToken).balanceOf(address(this));
-            _addLiquidity(_synthTokenAmt);
+            _addLiquidity(_synthTokenAmt, _maxMarketMovementAllowed);
         }
 
         // Update last earned block

@@ -8,10 +8,12 @@ import "../interfaces/IWETH.sol";
 
 import "./_VaultBaseLiqStakeLP.sol";
 
+import "./libraries/VaultAnkrLiqStakeLPLibrary.sol";
+
 /// @title Vault contract for Ankr liquid staking + LP strategy
 contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     /* Libraries */
-    using SafeERC20Upgradeable for IERC20Upgradeable; 
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
     using SafeMathUpgradeable for uint256;
     using SafeSwapUni for IAMMRouter02;
@@ -22,37 +24,19 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     /// @dev NOTE: 1. liquidStakeToken must be aBNBc (cert not bond) 2. Min 0.502 BNB
     /// @param _amount The amount of BNB to liquid stake
     function _liquidStake(uint256 _amount) internal override whenNotPaused {
-        // Preflight checks
-        require(_amount >= 0.5 ether, "minLiqStake");
-
-        // Unwrap BNB
-        IWETH(token0Address).withdraw(_amount);
-
-        // Get native BNB balance
-        uint256 _bal = address(this).balance;
-
-        // Require balance to be > amount
-        require(_bal > _amount, "insufficientLiqStakeBal");
-
-        // Get relayer fee
-        uint256 _relayerFee = IBinancePool_R1(liquidStakingPool).getRelayerFee();
-
-        // Call deposit func
-        IBinancePool_R1(liquidStakingPool).stakeAndClaimCerts{value: _amount.add(_relayerFee)}();
+        VaultAnkrLiqStakeLPLibrary.liquidStake(
+            _amount,
+            token0Address,
+            liquidStakeToken,
+            liquidStakingPool
+        );
     }
 
     /// @notice Withdraws liquid stake on Benqi protocol
     /// @param _amount The amount of BNB to unstake
     function _liquidUnstake(uint256 _amount) internal override whenNotPaused {
-        // Exchange aBNBc for WBNB
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(liquidStakeToken).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Swap aBNBc to wBNB
-        _safeSwap(
+        VaultAnkrLiqStakeLPLibrary.liquidUnstake(
+            uniRouterAddress,
             SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: liquidStakeTokenPriceFeed.getExchangeRate(),
@@ -62,8 +46,25 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
                 maxMarketMovementAllowed: maxMarketMovementAllowed,
                 path: liquidStakeToToken0Path,
                 destination: address(this)
-            }),
-            _decimals
+            })
+        );
+    }
+
+    /// @notice Supplies sAVAX token to AMM
+    /// @param _amount Quantity of sAVAX (synth token) to swap and add as a liquidty
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function _addLiquidity(uint256 _amount, uint256 _maxMarketMovementAllowed) internal {
+        VaultLiqStakeLPLibrary.addLiquidity(
+            _amount, 
+            VaultLiqStakeLPLibrary.AddLiquidityParams({
+                uniRouterAddress: uniRouterAddress,
+                token0Address: token0Address,
+                liquidStakeToken: liquidStakeToken,
+                liquidStakeToToken0Path: liquidStakeToToken0Path,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed
+            })
         );
     }
 
@@ -75,45 +76,24 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Swap USD for BNB
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Swap usd to token0 if token0 is not usd
-        if (token0Address != defaultStablecoin) {
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amountUSD,
-                    priceToken0: token0PriceFeed.getExchangeRate(),
-                    priceToken1: stablecoinPriceFeed.getExchangeRate(),
-                    token0: defaultStablecoin,
-                    token1: token0Address,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: stablecoinToToken0Path,
-                    destination: address(this)
-                }),
-                _decimals
-            );
-        }
-
-        // Get BNB balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-
-        // Stake BNB (liquid staking)
-        _liquidStake(_token0Bal);
-
-        // Get bal of aBNBc
-        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
-            address(this)
+        return VaultAnkrLiqStakeLPLibrary.exchangeUSDForWantToken(
+            _amountUSD, 
+            VaultAnkrLiqStakeLPLibrary.ExchangeUSDForWantParams({
+                token0Address: token0Address,
+                stablecoin: defaultStablecoin,
+                liquidStakeToken: liquidStakeToken,
+                liquidStakePool: liquidStakingPool,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                uniRouterAddress: uniRouterAddress,
+                stablecoinToToken0Path: stablecoinToToken0Path,
+                liquidStakeToToken0Path: liquidStakeToToken0Path,
+                poolAddress: poolAddress,
+                wantAddress: wantAddress
+            }), 
+            _maxMarketMovementAllowed
         );
-
-        // Add liquidity to aBNBc-BNB pool
-        _addLiquidity(_synthTokenBal);
-
-        // Return bal of want tokens (same as Token0)
-        return IERC20Upgradeable(wantAddress).balanceOf(address(this));
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -131,38 +111,23 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         whenNotPaused
         returns (uint256 returnedUSD)
     {
-        // Exit LP pool and get back aBNBc
-        _removeLiquidity(_amount);
-
-        // Swap aBNBc for BNB (token0)
-        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(address(this));
-        _liquidUnstake(_synthTokenBal);
-
-        // Swap BNB to USD
-        // Calc BNB bal
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-        // Swap
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _token0Bal,
-                priceToken0: token0PriceFeed.getExchangeRate(),
-                priceToken1: stablecoinPriceFeed.getExchangeRate(),
-                token0: token0Address,
-                token1: defaultStablecoin,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: token0ToStablecoinPath,
-                destination: address(this)
-            }),
-            _decimals
+        return VaultAnkrLiqStakeLPLibrary.exchangeWantTokenForUSD(
+            _amount, 
+            VaultAnkrLiqStakeLPLibrary.ExchangeWantTokenForUSDParams({
+                token0Address: token0Address,
+                stablecoin: defaultStablecoin,
+                wantAddress: wantAddress,
+                poolAddress: poolAddress,
+                liquidStakeToken: liquidStakeToken,
+                token0PriceFeed: token0PriceFeed,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                stablecoinPriceFeed: stablecoinPriceFeed,
+                liquidStakeToToken0Path: liquidStakeToToken0Path, 
+                token0ToStablecoinPath: token0ToStablecoinPath, 
+                uniRouterAddress: uniRouterAddress
+            }), 
+            _maxMarketMovementAllowed
         );
-        
-        // Return USD amount
-        returnedUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
-        IERC20Upgradeable(defaultStablecoin).safeTransfer(msg.sender, returnedUSD);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -183,7 +148,9 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         _unfarm(0);
 
         // Get the balance of the Earned token on this contract
-        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
+        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
+            address(this)
+        );
 
         // Require pending rewards in order to continue
         require(_earnedAmt > 0, "0earn");
@@ -253,15 +220,16 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _token0Amt = IERC20Upgradeable(token0Address).balanceOf(
             address(this)
         );
-    
+
         // Provided that token0 is > 0, re-deposit
-        if (_token0Amt > 0) {            
+        if (_token0Amt > 0) {
             // Stake
             _liquidStake(_token0Amt);
 
             // Add liquidity
-            uint256 _synthTokenAmt = IERC20Upgradeable(liquidStakeToken).balanceOf(address(this));
-            _addLiquidity(_synthTokenAmt);
+            uint256 _synthTokenAmt = IERC20Upgradeable(liquidStakeToken)
+                .balanceOf(address(this));
+            _addLiquidity(_synthTokenAmt, _maxMarketMovementAllowed);
         }
 
         // Update last earned block
