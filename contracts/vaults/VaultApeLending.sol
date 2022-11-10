@@ -793,7 +793,7 @@ contract VaultApeLending is VaultBase {
     /// @notice Gets loan collateral factor from lending protocol
     /// @return collFactor The collateral factor %. TODO: Specify denominator (1e18?) Check against consuming logic. 
     function collateralFactor() public view returns (uint256 collFactor) {
-        (,uint256 _collateralFactor,,,,) = IUnitroller(comptrollerAddress).markets(poolAddress);
+        (,uint256 _collateralFactor,,,,) = IUnitrollerApeLending(comptrollerAddress).markets(poolAddress);
         return _collateralFactor;
     }
 }

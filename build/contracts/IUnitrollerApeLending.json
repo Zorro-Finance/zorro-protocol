@@ -1,5 +1,5 @@
 {
-  "contractName": "IUnitroller",
+  "contractName": "IUnitrollerApeLending",
   "abi": [
     {
       "inputs": [
@@ -22,34 +22,31 @@
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "isQied",
-          "type": "bool"
+          "internalType": "uint256",
+          "name": "liquidationFactorMantissa",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "liquidationIncentiveMantissa",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "activeCollateralUSDCap",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "activeCollateralCTokenUsage",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
       "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "rewardType",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address payable",
-          "name": "holder",
-          "type": "address"
-        }
-      ],
-      "name": "claimReward",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address payable\",\"name\":\"holder\",\"type\":\"address\"}],\"name\":\"claimReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"markets\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"isListed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"collateralFactorMantissa\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isQied\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Benqi/IUnitroller.sol\":\"IUnitroller\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/interfaces/Benqi/IUnitroller.sol\":{\"keccak256\":\"0x95a387b4f367a34de3bc0f106d104cd8e641cc69448b41eea09e6b8e00205a9e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://795e5750912f202c9827eed924b274c6bdbec4b42cccebc21eedecb5fc07d38e\",\"dweb:/ipfs/QmeJMM4XJs441JG9vBuF69XWe1TuppTy9thhWzBNbwrNtm\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"markets\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"isListed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"collateralFactorMantissa\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"liquidationFactorMantissa\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"liquidationIncentiveMantissa\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"activeCollateralUSDCap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"activeCollateralCTokenUsage\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/ApeLending/IUnitroller.sol\":\"IUnitrollerApeLending\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/interfaces/ApeLending/IUnitroller.sol\":{\"keccak256\":\"0x03f1bc9fe78d680d8aceaa72446eabbc140953f1bad72100aeaa5bf7515e515b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://52ed046c3fe52d8e40eed125d14b9c3f710c9769eaae7ea0aeb254bc95fcca8a\",\"dweb:/ipfs/Qmc1rv6seH9Uu6h4Mi6ABzsHAMyDVxGdhLqyZJdMzw45Bm\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -57,67 +54,67 @@
   "deployedGeneratedSources": [],
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity >0.5.17;\n\ninterface IUnitroller {\n    function markets ( address ) external view returns ( bool isListed, uint256 collateralFactorMantissa, bool isQied);\n    function claimReward(uint8 rewardType, address payable holder) external;\n}",
-  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/Benqi/IUnitroller.sol",
+  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity >0.5.16;\n\ninterface IUnitrollerApeLending {\n    function markets ( address ) external view returns ( bool isListed, uint256 collateralFactorMantissa, uint256 liquidationFactorMantissa, uint256 liquidationIncentiveMantissa, uint256 activeCollateralUSDCap, uint256 activeCollateralCTokenUsage);\n}",
+  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/ApeLending/IUnitroller.sol",
   "ast": {
-    "absolutePath": "project:/contracts/interfaces/Benqi/IUnitroller.sol",
+    "absolutePath": "project:/contracts/interfaces/ApeLending/IUnitroller.sol",
     "exportedSymbols": {
-      "IUnitroller": [
-        12143
+      "IUnitrollerApeLending": [
+        11931
       ]
     },
-    "id": 12144,
+    "id": 11932,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 12124,
+        "id": 11913,
         "literals": [
           "solidity",
           ">",
           "0.5",
-          ".17"
+          ".16"
         ],
         "nodeType": "PragmaDirective",
-        "src": "33:24:49"
+        "src": "33:24:45"
       },
       {
         "abstract": false,
         "baseContracts": [],
-        "canonicalName": "IUnitroller",
+        "canonicalName": "IUnitrollerApeLending",
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 12143,
+        "id": 11931,
         "linearizedBaseContracts": [
-          12143
+          11931
         ],
-        "name": "IUnitroller",
-        "nameLocation": "69:11:49",
+        "name": "IUnitrollerApeLending",
+        "nameLocation": "69:21:45",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "functionSelector": "8e8f294b",
-            "id": 12135,
+            "id": 11930,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "markets",
-            "nameLocation": "96:7:49",
+            "nameLocation": "106:7:45",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 12127,
+              "id": 11916,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12126,
+                  "id": 11915,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "106:7:49",
+                  "scope": 11930,
+                  "src": "116:7:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -125,10 +122,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12125,
+                    "id": 11914,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "106:7:49",
+                    "src": "116:7:45",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -138,21 +135,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "104:11:49"
+              "src": "114:11:45"
             },
             "returnParameters": {
-              "id": 12134,
+              "id": 11929,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12129,
+                  "id": 11918,
                   "mutability": "mutable",
                   "name": "isListed",
-                  "nameLocation": "145:8:49",
+                  "nameLocation": "155:8:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "140:13:49",
+                  "scope": 11930,
+                  "src": "150:13:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -160,10 +157,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 12128,
+                    "id": 11917,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "140:4:49",
+                    "src": "150:4:45",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -173,13 +170,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 12131,
+                  "id": 11920,
                   "mutability": "mutable",
                   "name": "collateralFactorMantissa",
-                  "nameLocation": "163:24:49",
+                  "nameLocation": "173:24:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "155:32:49",
+                  "scope": 11930,
+                  "src": "165:32:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -187,10 +184,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12130,
+                    "id": 11919,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "155:7:49",
+                    "src": "165:7:45",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -200,190 +197,188 @@
                 },
                 {
                   "constant": false,
-                  "id": 12133,
+                  "id": 11922,
                   "mutability": "mutable",
-                  "name": "isQied",
-                  "nameLocation": "194:6:49",
+                  "name": "liquidationFactorMantissa",
+                  "nameLocation": "207:25:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "189:11:49",
+                  "scope": 11930,
+                  "src": "199:33:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_bool",
-                    "typeString": "bool"
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12132,
-                    "name": "bool",
+                    "id": 11921,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "189:4:49",
+                    "src": "199:7:45",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_bool",
-                      "typeString": "bool"
-                    }
-                  },
-                  "visibility": "internal"
-                }
-              ],
-              "src": "138:63:49"
-            },
-            "scope": 12143,
-            "src": "87:115:49",
-            "stateMutability": "view",
-            "virtual": false,
-            "visibility": "external"
-          },
-          {
-            "functionSelector": "0952c563",
-            "id": 12142,
-            "implemented": false,
-            "kind": "function",
-            "modifiers": [],
-            "name": "claimReward",
-            "nameLocation": "216:11:49",
-            "nodeType": "FunctionDefinition",
-            "parameters": {
-              "id": 12140,
-              "nodeType": "ParameterList",
-              "parameters": [
-                {
-                  "constant": false,
-                  "id": 12137,
-                  "mutability": "mutable",
-                  "name": "rewardType",
-                  "nameLocation": "234:10:49",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 12142,
-                  "src": "228:16:49",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint8",
-                    "typeString": "uint8"
-                  },
-                  "typeName": {
-                    "id": 12136,
-                    "name": "uint8",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "228:5:49",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint8",
-                      "typeString": "uint8"
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
                     }
                   },
                   "visibility": "internal"
                 },
                 {
                   "constant": false,
-                  "id": 12139,
+                  "id": 11924,
                   "mutability": "mutable",
-                  "name": "holder",
-                  "nameLocation": "262:6:49",
+                  "name": "liquidationIncentiveMantissa",
+                  "nameLocation": "242:28:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12142,
-                  "src": "246:22:49",
+                  "scope": 11930,
+                  "src": "234:36:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_address_payable",
-                    "typeString": "address payable"
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12138,
-                    "name": "address",
+                    "id": 11923,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "246:15:49",
-                    "stateMutability": "payable",
+                    "src": "234:7:45",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_address_payable",
-                      "typeString": "address payable"
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 11926,
+                  "mutability": "mutable",
+                  "name": "activeCollateralUSDCap",
+                  "nameLocation": "280:22:45",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 11930,
+                  "src": "272:30:45",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 11925,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "272:7:45",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 11928,
+                  "mutability": "mutable",
+                  "name": "activeCollateralCTokenUsage",
+                  "nameLocation": "312:27:45",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 11930,
+                  "src": "304:35:45",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 11927,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "304:7:45",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
                     }
                   },
                   "visibility": "internal"
                 }
               ],
-              "src": "227:42:49"
+              "src": "148:192:45"
             },
-            "returnParameters": {
-              "id": 12141,
-              "nodeType": "ParameterList",
-              "parameters": [],
-              "src": "278:0:49"
-            },
-            "scope": 12143,
-            "src": "207:72:49",
-            "stateMutability": "nonpayable",
+            "scope": 11931,
+            "src": "97:244:45",
+            "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 12144,
-        "src": "59:222:49",
+        "scope": 11932,
+        "src": "59:284:45",
         "usedErrors": []
       }
     ],
-    "src": "33:248:49"
+    "src": "33:310:45"
   },
   "legacyAST": {
-    "absolutePath": "project:/contracts/interfaces/Benqi/IUnitroller.sol",
+    "absolutePath": "project:/contracts/interfaces/ApeLending/IUnitroller.sol",
     "exportedSymbols": {
-      "IUnitroller": [
-        12143
+      "IUnitrollerApeLending": [
+        11931
       ]
     },
-    "id": 12144,
+    "id": 11932,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 12124,
+        "id": 11913,
         "literals": [
           "solidity",
           ">",
           "0.5",
-          ".17"
+          ".16"
         ],
         "nodeType": "PragmaDirective",
-        "src": "33:24:49"
+        "src": "33:24:45"
       },
       {
         "abstract": false,
         "baseContracts": [],
-        "canonicalName": "IUnitroller",
+        "canonicalName": "IUnitrollerApeLending",
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 12143,
+        "id": 11931,
         "linearizedBaseContracts": [
-          12143
+          11931
         ],
-        "name": "IUnitroller",
-        "nameLocation": "69:11:49",
+        "name": "IUnitrollerApeLending",
+        "nameLocation": "69:21:45",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "functionSelector": "8e8f294b",
-            "id": 12135,
+            "id": 11930,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "markets",
-            "nameLocation": "96:7:49",
+            "nameLocation": "106:7:45",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 12127,
+              "id": 11916,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12126,
+                  "id": 11915,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "106:7:49",
+                  "scope": 11930,
+                  "src": "116:7:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -391,10 +386,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12125,
+                    "id": 11914,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "106:7:49",
+                    "src": "116:7:45",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -404,21 +399,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "104:11:49"
+              "src": "114:11:45"
             },
             "returnParameters": {
-              "id": 12134,
+              "id": 11929,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12129,
+                  "id": 11918,
                   "mutability": "mutable",
                   "name": "isListed",
-                  "nameLocation": "145:8:49",
+                  "nameLocation": "155:8:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "140:13:49",
+                  "scope": 11930,
+                  "src": "150:13:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -426,10 +421,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 12128,
+                    "id": 11917,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "140:4:49",
+                    "src": "150:4:45",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -439,13 +434,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 12131,
+                  "id": 11920,
                   "mutability": "mutable",
                   "name": "collateralFactorMantissa",
-                  "nameLocation": "163:24:49",
+                  "nameLocation": "173:24:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "155:32:49",
+                  "scope": 11930,
+                  "src": "165:32:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -453,10 +448,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12130,
+                    "id": 11919,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "155:7:49",
+                    "src": "165:7:45",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -466,130 +461,128 @@
                 },
                 {
                   "constant": false,
-                  "id": 12133,
+                  "id": 11922,
                   "mutability": "mutable",
-                  "name": "isQied",
-                  "nameLocation": "194:6:49",
+                  "name": "liquidationFactorMantissa",
+                  "nameLocation": "207:25:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12135,
-                  "src": "189:11:49",
+                  "scope": 11930,
+                  "src": "199:33:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_bool",
-                    "typeString": "bool"
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12132,
-                    "name": "bool",
+                    "id": 11921,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "189:4:49",
+                    "src": "199:7:45",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_bool",
-                      "typeString": "bool"
-                    }
-                  },
-                  "visibility": "internal"
-                }
-              ],
-              "src": "138:63:49"
-            },
-            "scope": 12143,
-            "src": "87:115:49",
-            "stateMutability": "view",
-            "virtual": false,
-            "visibility": "external"
-          },
-          {
-            "functionSelector": "0952c563",
-            "id": 12142,
-            "implemented": false,
-            "kind": "function",
-            "modifiers": [],
-            "name": "claimReward",
-            "nameLocation": "216:11:49",
-            "nodeType": "FunctionDefinition",
-            "parameters": {
-              "id": 12140,
-              "nodeType": "ParameterList",
-              "parameters": [
-                {
-                  "constant": false,
-                  "id": 12137,
-                  "mutability": "mutable",
-                  "name": "rewardType",
-                  "nameLocation": "234:10:49",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 12142,
-                  "src": "228:16:49",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint8",
-                    "typeString": "uint8"
-                  },
-                  "typeName": {
-                    "id": 12136,
-                    "name": "uint8",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "228:5:49",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint8",
-                      "typeString": "uint8"
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
                     }
                   },
                   "visibility": "internal"
                 },
                 {
                   "constant": false,
-                  "id": 12139,
+                  "id": 11924,
                   "mutability": "mutable",
-                  "name": "holder",
-                  "nameLocation": "262:6:49",
+                  "name": "liquidationIncentiveMantissa",
+                  "nameLocation": "242:28:45",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12142,
-                  "src": "246:22:49",
+                  "scope": 11930,
+                  "src": "234:36:45",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_address_payable",
-                    "typeString": "address payable"
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 12138,
-                    "name": "address",
+                    "id": 11923,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "246:15:49",
-                    "stateMutability": "payable",
+                    "src": "234:7:45",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_address_payable",
-                      "typeString": "address payable"
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 11926,
+                  "mutability": "mutable",
+                  "name": "activeCollateralUSDCap",
+                  "nameLocation": "280:22:45",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 11930,
+                  "src": "272:30:45",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 11925,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "272:7:45",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 11928,
+                  "mutability": "mutable",
+                  "name": "activeCollateralCTokenUsage",
+                  "nameLocation": "312:27:45",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 11930,
+                  "src": "304:35:45",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 11927,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "304:7:45",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
                     }
                   },
                   "visibility": "internal"
                 }
               ],
-              "src": "227:42:49"
+              "src": "148:192:45"
             },
-            "returnParameters": {
-              "id": 12141,
-              "nodeType": "ParameterList",
-              "parameters": [],
-              "src": "278:0:49"
-            },
-            "scope": 12143,
-            "src": "207:72:49",
-            "stateMutability": "nonpayable",
+            "scope": 11931,
+            "src": "97:244:45",
+            "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 12144,
-        "src": "59:222:49",
+        "scope": 11932,
+        "src": "59:284:45",
         "usedErrors": []
       }
     ],
-    "src": "33:248:49"
+    "src": "33:310:45"
   },
   "compiler": {
     "name": "solc",
@@ -597,7 +590,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-11-10T01:27:38.986Z",
+  "updatedAt": "2022-11-10T01:45:43.648Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

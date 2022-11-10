@@ -56,6 +56,7 @@ contract MockAlpacaVault is IAlpacaVault, MockERC20Upgradeable {
 
     address public token0;
     address public burnAddress;
+    uint256 private _dummy;
 
     function setToken0Address(address _token) public {
         token0 = _token;
@@ -66,6 +67,7 @@ contract MockAlpacaVault is IAlpacaVault, MockERC20Upgradeable {
     }
 
     function totalToken() external view returns (uint256) {
+        require(_dummy>=0);
         return 0;
     }
 
@@ -94,6 +96,7 @@ contract MockAlpacaVault is IAlpacaVault, MockERC20Upgradeable {
     function requestFunds(address targetedToken, uint256 amount) external {}
 
     function token() external view returns (address) {
+        require(_dummy>=0);
         return address(0);
     }
 }
@@ -106,6 +109,7 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
 
     address public burnAddress;
     address public wantToken;
+    uint256 private _dummy;
 
     function setWantAddress(address _wantToken) public {
         wantToken = _wantToken;
@@ -116,6 +120,7 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
     }
 
     function poolLength() external view returns (uint256) {
+        require(_dummy>=0);
         return 0;
     }
 
@@ -136,6 +141,9 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
         view
         returns (uint256)
     {
+        require(_dummy>=0);
+        require(_pid>=0);
+        require(_user != address(0));
         return 0;
     }
 
@@ -146,6 +154,8 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
         uint256 _pid,
         uint256 _amount
     ) public {
+        require(_for != address(0));
+        require(_pid>=0);
         IERC20Upgradeable(wantToken).safeTransferFrom(
             msg.sender,
             burnAddress,
@@ -159,6 +169,7 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
         uint256 _pid,
         uint256 _amount
     ) public {
+        require(_pid>=0);
         IMockERC20Upgradeable(wantToken).mint(_for, _amount);
         emit Withdrew(wantToken, _amount);
     }
@@ -168,6 +179,8 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
   function harvest(uint256 _pid) external {}
 
   function getFairLaunchPoolId() external returns (uint256) {
+    require(_dummy>=0);
+    _dummy = 1;
     return 0;
   }
 
@@ -181,10 +194,13 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
       uint256,
       uint256
     ) {
+        require(_pid>=0);
+        require(_dummy>=0);
         return (address(0), 0, 0, 0, 0);
     }
 
   function alpaca() external returns (address) {
+    _dummy = 1;
     return address(0);
   }
 
@@ -197,6 +213,9 @@ contract MockAlpacaFarm is IFairLaunch, MockERC20Upgradeable {
       uint256,
       address
     ) {
+        require(_dummy>=0);
+        require(_pid>=0);
+        require(_user != address(0));
         return (0, 0, 0, address(0));
     }
 

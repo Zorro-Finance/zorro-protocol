@@ -333,7 +333,7 @@ contract VaultBenqiLending is VaultBase {
     }
 
     function collateralFactor() public view returns (uint256) {
-        (,uint256 _collateralFactor,) = IUnitroller(comptrollerAddress).markets(poolAddress);
+        (,uint256 _collateralFactor,) = IUnitrollerBenqi(comptrollerAddress).markets(poolAddress);
         return _collateralFactor;
     }
 
