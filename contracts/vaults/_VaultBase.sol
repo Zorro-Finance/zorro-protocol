@@ -26,7 +26,7 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "./VaultLibrary.sol";
+import "./libraries/VaultLibrary.sol";
 
 abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     /* Libraries */

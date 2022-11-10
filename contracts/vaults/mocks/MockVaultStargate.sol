@@ -6,7 +6,7 @@ import "../VaultStargate.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-import "../VaultLibrary.sol";
+import "../libraries/VaultLibrary.sol";
 
 contract MockVaultStargate is VaultStargate {
     function unfarm(uint256 _wantAmt) public {

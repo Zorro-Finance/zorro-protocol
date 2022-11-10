@@ -14,7 +14,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./VaultLibrary.sol";
+import "./libraries/VaultLibrary.sol";
 
 import "../interfaces/ApeLending/ICErc20Interface.sol";
 
@@ -22,7 +22,7 @@ import "../interfaces/ApeLending/IRainMaker.sol";
 
 import "../interfaces/ApeLending/IUnitroller.sol";
 
-import "./VaultLendingLibrary.sol";
+import "./libraries/VaultLendingLibrary.sol";
 
 /// @title Vault contract for ApeLending leveraged lending strategies
 contract VaultApeLending is VaultBase {

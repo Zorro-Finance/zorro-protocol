@@ -10,15 +10,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../libraries/SafeSwap.sol";
+import "../../libraries/SafeSwap.sol";
 
-import "../libraries/PriceFeed.sol";
+import "../../libraries/PriceFeed.sol";
 
-import "../interfaces/IAlpacaFairLaunch.sol";
+import "../../interfaces/IAlpacaFairLaunch.sol";
 
-import "../interfaces/IAlpacaVault.sol";
+import "../../interfaces/IAlpacaVault.sol";
 
-import "../interfaces/IAMMRouter02.sol";
+import "../../interfaces/IAMMRouter02.sol";
 
 library VaultLibrary {
     /* Libs */

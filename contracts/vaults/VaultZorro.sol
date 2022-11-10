@@ -7,7 +7,7 @@ import "../libraries/PriceFeed.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "./VaultLibrary.sol";
+import "./libraries/VaultLibrary.sol";
 
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token

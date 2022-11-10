@@ -6,7 +6,7 @@ import "../VaultAlpaca.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-import "../VaultLibrary.sol";
+import "../libraries/VaultLibrary.sol";
 
 import "../../interfaces/IAlpacaFairLaunch.sol";
 

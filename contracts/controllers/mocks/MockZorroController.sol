@@ -8,7 +8,7 @@ import "../../vaults/_VaultBase.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-import "../../vaults/VaultLibrary.sol";
+import "../../vaults/libraries/VaultLibrary.sol";
 
 contract MockZorroController is ZorroController {
     event UpdatedPool(uint256 indexed _amount);

@@ -20,7 +20,7 @@ import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IStargateLPStaking.sol";
 
-import "./VaultLibrary.sol";
+import "./libraries/VaultLibrary.sol";
 
 
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
