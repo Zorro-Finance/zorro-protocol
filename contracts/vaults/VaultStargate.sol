@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../interfaces/IAMMFarm.sol";
 
-import "../interfaces/IStargateRouter.sol";
+import "../interfaces/Stargate/IStargateRouter.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
@@ -18,7 +18,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "../interfaces/IStargateLPStaking.sol";
+import "../interfaces/Stargate/IStargateLPStaking.sol";
 
 import "./libraries/VaultLibrary.sol";
 

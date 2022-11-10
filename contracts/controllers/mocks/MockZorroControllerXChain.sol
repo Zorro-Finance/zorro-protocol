@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../ZorroControllerXChain.sol";
 
-import "../../interfaces/ILayerZeroEndpoint.sol";
+import "../../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 contract MockZorroControllerXChain is ZorroControllerXChain {
     event ReceiveXChainDepositReq(

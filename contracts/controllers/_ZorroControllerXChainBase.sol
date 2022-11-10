@@ -10,9 +10,9 @@ import "../interfaces/IVault.sol";
 
 import "../libraries/SafeSwap.sol";
 
-import "../interfaces/ILayerZeroEndpoint.sol";
+import "../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
-import "../interfaces/IStargateRouter.sol";
+import "../interfaces/Stargate/IStargateRouter.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 

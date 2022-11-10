@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./ILayerZeroReceiver.sol";
+import "./LayerZero/ILayerZeroReceiver.sol";
 
-import "./IStargateReceiver.sol";
+import "./Stargate/IStargateReceiver.sol";
 
 /// @title IZorroControllerXChain
 interface IZorroControllerXChainBase {

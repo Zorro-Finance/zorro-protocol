@@ -8,9 +8,9 @@ import "../../tokens/mocks/MockToken.sol";
 
 import "../libraries/VaultLibrary.sol";
 
-import "../../interfaces/IAlpacaFairLaunch.sol";
+import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
-import "../../interfaces/IAlpacaVault.sol";
+import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 contract MockVaultAlpaca is VaultAlpaca {
     function unfarm(uint256 _wantAmt) public {

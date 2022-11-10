@@ -14,9 +14,9 @@ import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
-import "../../interfaces/IAlpacaFairLaunch.sol";
+import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
-import "../../interfaces/IAlpacaVault.sol";
+import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "./VaultLibrary.sol";
 

@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/ILayerZeroReceiver.sol";
+import "../interfaces/LayerZero/ILayerZeroReceiver.sol";
 
-import "../interfaces/IStargateReceiver.sol";
+import "../interfaces/Stargate/IStargateReceiver.sol";
 
 import "./_ZorroControllerXChainDeposit.sol";
 
