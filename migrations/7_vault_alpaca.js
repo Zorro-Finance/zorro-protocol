@@ -94,6 +94,7 @@ module.exports = async function (deployer, network, accounts) {
       }
     };
     // Deploy master contract
+    await deployer.link(VaultLibrary, [VaultLibraryAlpaca]);
     await deployer.deploy(VaultLibraryAlpaca);
     await deployer.link(VaultLibraryAlpaca, [VaultAlpaca]);
     await deployer.link(VaultLibrary, [VaultAlpaca]);
