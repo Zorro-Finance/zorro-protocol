@@ -1,8 +1,12 @@
+// TODO: let's put each of these mock initializations in the
+// migrations files of where the respective contracts were 
+// originally deployed. 
+
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const { deploy } = require('@openzeppelin/truffle-upgrades/dist/utils');
 const VaultLibrary = artifacts.require('VaultLibrary');
-// TODO: Replace with Alpaca
+const VaultLendingLibrary = artifacts.require('VaultLendingLibrary');
 const VaultLibraryAlpaca = artifacts.require('VaultLibraryAlpaca');
 const VaultLibraryStandardAMM = artifacts.require('VaultLibraryStandardAMM');
 // Controllers (only for testing)
@@ -46,6 +50,20 @@ const MockStargateLPStaking = artifacts.require('MockStargateLPStaking');
 const MockSTGToken = artifacts.require('MockSTGToken');
 // LayerZero
 const MockLayerZeroEndpoint = artifacts.require('MockLayerZeroEndpoint');
+// ApeLending
+const MockVaultApeLending = artifacts.require('MockVaultApeLending');
+const MockApeLendingPool = artifacts.require('MockApeLendingPool');
+const MockApeLendingRainMaker = artifacts.require('MockApeLendingRainMaker');
+const MockApeLendingUnitroller = artifacts.require('MockApeLendingUnitroller');
+// Benqi Lending
+const MockVaultBenqiLending = artifacts.require('MockVaultBenqiLending');
+const MockBenqiLendingPool = artifacts.require('MockBenqiLendingPool');
+const MockBenqiTokenSaleDistributor = artifacts.require('MockBenqiTokenSaleDistributor');
+const MockBenqiUnitroller = artifacts.require('MockBenqiUnitroller');
+
+// Benqi Liq Stake LP
+const MockVaultBenqiLiqStakeLP = artifacts.require('MockVaultBenqiLiqStakeLP');
+const MockBenqiLiqStakePoolAVAX = artifacts.require('MockBenqiLiqStakePoolAVAX');
 
 // Other vars
 const zeroAddress = '0x0000000000000000000000000000000000000000';
@@ -139,14 +157,28 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(MockAMMOtherLPToken);
 
     // Other contracts
+    // AMM
     await deployer.deploy(MockAMMFarm);
+    // Alpaca
     await deployer.deploy(MockAlpacaFarm);
     await deployer.deploy(MockAlpacaVault);
+    // Stargate
     await deployer.deploy(MockStargateRouter);
     await deployer.deploy(MockStargatePool);
     await deployer.deploy(MockStargateLPStaking);
     await deployer.deploy(MockSTGToken);
     await deployer.deploy(MockLayerZeroEndpoint);
+    // ApeLending
+    await deployer.deploy(MockApeLendingPool);
+    await deployer.deploy(MockApeLendingRainMaker);
+    await deployer.deploy(MockApeLendingUnitroller);
+    // Benqi Lending
+    await deployer.deploy(MockBenqiLendingPool);
+    await deployer.deploy(MockBenqiTokenSaleDistributor);
+    await deployer.deploy(MockBenqiUnitroller);
+    // Benqi Liq Stake LP
+    await deployer.deploy(MockBenqiLiqStakePoolAVAX);
+
 
     // Vaults
     // VaultZorro
@@ -415,5 +447,183 @@ module.exports = async function (deployer, network, accounts) {
   } else {
     console.log('On live network. Skipping deployment of contracts');
   }
+
+  // VaultApeLending
+  const initVal4 = {
+    pid: 0,
+    isHomeChain: true,
+    keyAddresses: {
+      govAddress: accounts[0],
+      zorroControllerAddress: zeroAddress,
+      zorroXChainController: zeroAddress,
+      ZORROAddress: zeroAddress,
+      zorroStakingVault: zeroAddress,
+      wantAddress: zeroAddress,
+      token0Address: zeroAddress,
+      token1Address: zeroAddress,
+      earnedAddress: zeroAddress,
+      farmContractAddress: zeroAddress,
+      rewardsAddress: zeroAddress,
+      poolAddress: zeroAddress,
+      uniRouterAddress: zeroAddress,
+      zorroLPPool: zeroAddress,
+      zorroLPPoolOtherToken: zeroAddress,
+      defaultStablecoin: zeroAddress,
+    },
+    earnedToZORROPath: [],
+    earnedToToken0Path: [],
+    stablecoinToToken0Path: [],
+    earnedToZORLPPoolOtherTokenPath: [],
+    earnedToStablecoinPath: [],
+    stablecoinToZORROPath: [],
+    stablecoinToLPPoolOtherTokenPath: [],
+    fees: {
+      controllerFee: 0,
+      buyBackRate: 0,
+      revShareRate: 0,
+      entranceFeeFactor: 0,
+      withdrawFeeFactor: 0,
+    },
+    priceFeeds: {
+      token0PriceFeed: zeroAddress,
+      token1PriceFeed: zeroAddress,
+      earnTokenPriceFeed: zeroAddress,
+      ZORPriceFeed: zeroAddress,
+      lpPoolOtherTokenPriceFeed: zeroAddress,
+      stablecoinPriceFeed: zeroAddress,
+    },
+  };
+  await deployer.link(VaultLibrary, [MockVaultApeLending]);
+  await deployer.link(VaultLendingLibrary, [MockVaultApeLending]);
+  await deployProxy(
+    MockVaultApeLending,
+    [
+      accounts[0],
+      initVal4
+    ], {
+    deployer,
+    unsafeAllow: [
+      'external-library-linking',
+    ],
+  });
+
+  // VaultBenqiLending
+  const initVal5 = {
+    pid: 0,
+    isHomeChain: true,
+    keyAddresses: {
+      govAddress: accounts[0],
+      zorroControllerAddress: zeroAddress,
+      zorroXChainController: zeroAddress,
+      ZORROAddress: zeroAddress,
+      zorroStakingVault: zeroAddress,
+      wantAddress: zeroAddress,
+      token0Address: zeroAddress,
+      token1Address: zeroAddress,
+      earnedAddress: zeroAddress,
+      farmContractAddress: zeroAddress,
+      rewardsAddress: zeroAddress,
+      poolAddress: zeroAddress,
+      uniRouterAddress: zeroAddress,
+      zorroLPPool: zeroAddress,
+      zorroLPPoolOtherToken: zeroAddress,
+      defaultStablecoin: zeroAddress,
+    },
+    earnedToZORROPath: [],
+    earnedToToken0Path: [],
+    stablecoinToToken0Path: [],
+    earnedToZORLPPoolOtherTokenPath: [],
+    earnedToStablecoinPath: [],
+    stablecoinToZORROPath: [],
+    stablecoinToLPPoolOtherTokenPath: [],
+    fees: {
+      controllerFee: 0,
+      buyBackRate: 0,
+      revShareRate: 0,
+      entranceFeeFactor: 0,
+      withdrawFeeFactor: 0,
+    },
+    priceFeeds: {
+      token0PriceFeed: zeroAddress,
+      token1PriceFeed: zeroAddress,
+      earnTokenPriceFeed: zeroAddress,
+      ZORPriceFeed: zeroAddress,
+      lpPoolOtherTokenPriceFeed: zeroAddress,
+      stablecoinPriceFeed: zeroAddress,
+    },
+  };
+  await deployer.link(VaultLibrary, [MockVaultBenqiLending]);
+  await deployer.link(VaultLendingLibrary, [MockVaultBenqiLending]);
+  await deployProxy(
+    MockVaultBenqiLending,
+    [
+      accounts[0],
+      initVal5
+    ], {
+    deployer,
+    unsafeAllow: [
+      'external-library-linking',
+    ],
+  });
+
+  // VaultBenqiLending
+  const initVal6 = {
+    pid: 0,
+    isHomeChain: true,
+    keyAddresses: {
+      govAddress: accounts[0],
+      zorroControllerAddress: zeroAddress,
+      zorroXChainController: zeroAddress,
+      ZORROAddress: zeroAddress,
+      zorroStakingVault: zeroAddress,
+      wantAddress: zeroAddress,
+      token0Address: zeroAddress,
+      token1Address: zeroAddress,
+      earnedAddress: zeroAddress,
+      farmContractAddress: zeroAddress,
+      rewardsAddress: zeroAddress,
+      poolAddress: zeroAddress,
+      uniRouterAddress: zeroAddress,
+      zorroLPPool: zeroAddress,
+      zorroLPPoolOtherToken: zeroAddress,
+      defaultStablecoin: zeroAddress,
+    },
+    earnedToZORROPath: [],
+    earnedToToken0Path: [],
+    stablecoinToToken0Path: [],
+    earnedToZORLPPoolOtherTokenPath: [],
+    earnedToStablecoinPath: [],
+    stablecoinToZORROPath: [],
+    stablecoinToLPPoolOtherTokenPath: [],
+    fees: {
+      controllerFee: 0,
+      buyBackRate: 0,
+      revShareRate: 0,
+      entranceFeeFactor: 0,
+      withdrawFeeFactor: 0,
+    },
+    priceFeeds: {
+      token0PriceFeed: zeroAddress,
+      token1PriceFeed: zeroAddress,
+      earnTokenPriceFeed: zeroAddress,
+      ZORPriceFeed: zeroAddress,
+      lpPoolOtherTokenPriceFeed: zeroAddress,
+      stablecoinPriceFeed: zeroAddress,
+    },
+  };
+  await deployer.link(VaultLibrary, [VaultLiqStakeLPLibrary]);
+  await deployer.link(VaultLiqStakeLPLibrary, [VaultBenqiLiqStakeLPLibrary]);
+  await deployer.link(VaultBenqiLiqStakeLPLibrary, [MockVaultBenqiLiqStakeLP]);
+  await deployProxy(
+    MockVaultBenqiLiqStakeLP,
+    [
+      accounts[0],
+      initVal6
+    ], {
+    deployer,
+    unsafeAllow: [
+      'external-library-linking',
+    ],
+  });
 
 };
