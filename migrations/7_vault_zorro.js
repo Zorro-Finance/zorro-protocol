@@ -1,5 +1,15 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+// Get key params
+const { 
+  getKeyParams, 
+  getSynthNetwork,
+  testNets,
+  homeNetworks,
+  zeroAddress,
+  wavaxOnAvax,
+} = require('../chains');
+
 // Libraries
 const VaultLibrary = artifacts.require("VaultLibrary");
 // Vaults
@@ -9,13 +19,14 @@ const PoolPublic = artifacts.require("PoolPublic");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
-const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
-// Get key params
-const { getKeyParams, getSynthNetwork, devNets, homeNetworks } = require('../chains');
-const zeroAddress = '0x0000000000000000000000000000000000000000';
-const wavax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
+// Price feeds
+const ZORPriceFeed = artifacts.require("ZORPriceFeed");
+// Mocks
+const MockVaultZorro = artifacts.require("MockVaultZorro");
 
 module.exports = async function (deployer, network, accounts) {
+  /* Production */
+
   // Deployed contracts
   const zorroController = await ZorroController.deployed();
   const zorroControllerXChain = await ZorroControllerXChain.deployed();
@@ -27,23 +38,16 @@ module.exports = async function (deployer, network, accounts) {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    stablecoinToZorroPath,
-    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
   } = getKeyParams(accounts, zorro.address)[getSynthNetwork(network)];
-
-  let mockPriceAggZORLP;
-
-  if (devNets.includes(network)) {
-    // Deploy Mock ZOR price feed if necessary
-    if (!MockPriceAggZORLP.hasNetwork(network)) {
-      await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-    }
-    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
-  }
-
+  
   if (homeNetworks.includes(network)) {
+    /* Home chain */
+
+    // Deploy
+    const zorPriceFeed = await ZORPriceFeed.deployed();
+
     // Init values 
     const initVal = {
       pid: vaults.pid,
@@ -65,18 +69,18 @@ module.exports = async function (deployer, network, accounts) {
         zorroLPPoolOtherToken,
         defaultStablecoin,
       },
-      stablecoinToToken0Path: [defaultStablecoin, wavax, zorro.address],
+      stablecoinToToken0Path: [defaultStablecoin, wavaxOnAvax, zorro.address],
       fees: vaults.fees,
       priceFeeds: {
-        token0PriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+        token0PriceFeed: zorPriceFeed,
         token1PriceFeed: zeroAddress,
         earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+        ZORPriceFeed: zorPriceFeed,
         lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
         stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
       },
     };
-    console.log('vz: ', 'devNets.includes(network): ', devNets.includes(network), 'priceFeeds.priceFeedZOR: ', priceFeeds.priceFeedZOR, 'mockPriceAggZORLP.address: ', mockPriceAggZORLP.address, 'zcInitVal: ', initVal);
+    
     // Deploy
     // TODO: For this and all ownable contracts, make sure to set an account that we can always have access to. 
     // https://ethereum.stackexchange.com/questions/17441/how-to-choose-an-account-to-deploy-a-contract-in-truffle 
@@ -98,5 +102,32 @@ module.exports = async function (deployer, network, accounts) {
     await zorroController.setZorroContracts(poolPublic.address, vaultZorro.address);
   } else {
     console.log('Not home chain. Skipping Zorro Single Staking Vault creation');
+  }
+
+  /* Tests */
+
+  // Allowed networks: Test/dev only
+  const testVaultParams = getKeyParams(accounts, zorro.address)['test'];
+
+  if (testNets.includes(network)) {
+    const initVal = {
+      pid: 0,
+      keyAddresses: testVaultParams.keyAddresses,
+      stablecoinToToken0Path: [],
+      fees: testVaultParams.fees,
+      priceFeeds: testVaultParams.priceFeeds,
+    };
+    await deployer.link(VaultLibrary, [MockVaultZorro]);
+    await deployProxy(
+      MockVaultZorro,
+      [
+        accounts[0],
+        initVal,
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
   }
 };

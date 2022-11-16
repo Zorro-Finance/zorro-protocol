@@ -1,24 +1,39 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+// Get key params
+const { 
+  getKeyParams, 
+  getSynthNetwork, 
+  testNets,
+  wavaxOnAvax,
+} = require('../chains');
+
 // Vaults
 const StargateUSDCOnAVAX = artifacts.require("StargateUSDCOnAVAX");
 const VaultZorro = artifacts.require("VaultZorro");
 // Libraries
 const VaultLibrary = artifacts.require('VaultLibrary');
 // Other contracts 
-const MockPriceAggZORLP = artifacts.require("MockPriceAggZORLP");
-const MockPriceAggSTG = artifacts.require("MockPriceAggSTG");
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
-// Get key params
-const { getKeyParams, getSynthNetwork, devNets } = require('../chains');
-const zeroAddress = '0x0000000000000000000000000000000000000000';
-const wavax = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+// Price feeds
+const ZORPriceFeed = artifacts.require("ZORPriceFeed");
+const STGPriceFeed = artifacts.require("STGPriceFeed");
+// Mocks
+const MockVaultStargate = artifacts.require("MockVaultStargate");
+const MockStargateRouter = artifacts.require('MockStargateRouter');
+const MockStargatePool = artifacts.require('MockStargatePool');
+const MockStargateLPStaking = artifacts.require('MockStargateLPStaking');
+const MockSTGToken = artifacts.require('MockSTGToken');
+const MockLayerZeroEndpoint = artifacts.require('MockLayerZeroEndpoint');
+
 
 // TODO: This needs to be filled out in much more detail. Started but incomplete!
 module.exports = async function (deployer, network, accounts) {
+  /* Production */
+
   // Deployed contracts
   const vaultZorro = await VaultZorro.deployed();
   const zorroController = await ZorroController.deployed();
@@ -28,34 +43,18 @@ module.exports = async function (deployer, network, accounts) {
   if (TraderJoe_ZOR_WAVAX.hasNetwork(network)) {
     tjzavax = await TraderJoe_ZOR_WAVAX.deployed();
   }
+  const zorPriceFeed = await ZORPriceFeed.deployed();
+  const stgPriceFeed = await STGPriceFeed.deployed();
 
   // Unpack keyParams
   const {
     defaultStablecoin,
     uniRouterAddress,
     zorroLPPoolOtherToken,
-    stablecoinToZorroPath,
-    stablecoinToZorroLPPoolOtherTokenPath,
     priceFeeds,
     vaults,
     bridge,
   } = getKeyParams(accounts)[getSynthNetwork(network)];
-
-  let mockPriceAggZORLP, mockPriceAggSTG;
-  
-  if (devNets.includes(network)) {
-    // Deploy Mock ZOR price feed if necessary
-    if (!MockPriceAggZORLP.hasNetwork(network)) {
-      await deployer.deploy(MockPriceAggZORLP, uniRouterAddress, zorro.address, zorroLPPoolOtherToken, defaultStablecoin);
-    }
-    mockPriceAggZORLP = await MockPriceAggZORLP.deployed();
-
-    // Same for STG
-    if (!MockPriceAggSTG.hasNetwork(network)) {
-      await deployer.deploy(MockPriceAggSTG, uniRouterAddress, bridge.tokenSTG, wavax, defaultStablecoin);
-    }
-    mockPriceAggSTG = await MockPriceAggSTG.deployed();
-  }
 
   const zorroLPPool = tjzavax ? await tjzavax.poolAddress.call() : zeroAddress;
   const sgUSDCPool = '0x1205f31718499dBf1fCa446663B532Ef87481fe1';
@@ -87,7 +86,7 @@ module.exports = async function (deployer, network, accounts) {
     earnedToZORROPath: [
       bridge.tokenSTG,
       defaultStablecoin,
-      wavax,
+      wavaxOnAvax,
       zorro.address,
     ],
     earnedToToken0Path: [
@@ -98,7 +97,7 @@ module.exports = async function (deployer, network, accounts) {
     earnedToZORLPPoolOtherTokenPath: [
       bridge.tokenSTG,
       defaultStablecoin,
-      wavax,
+      wavaxOnAvax,
     ],
     earnedToStablecoinPath: [
       bridge.tokenSTG,
@@ -108,8 +107,8 @@ module.exports = async function (deployer, network, accounts) {
     priceFeeds: {
       token0PriceFeed: priceFeeds.priceFeedStablecoin,
       token1PriceFeed: zeroAddress,
-      earnTokenPriceFeed: mockPriceAggSTG.address,
-      ZORPriceFeed: devNets.includes(network) ? mockPriceAggZORLP.address : priceFeeds.priceFeedZOR,
+      earnTokenPriceFeed: stgPriceFeed.address,
+      ZORPriceFeed: zorPriceFeed.address,
       lpPoolOtherTokenPriceFeed: priceFeeds.priceFeedLPPoolOtherToken,
       stablecoinPriceFeed: priceFeeds.priceFeedStablecoin,
     },
@@ -131,4 +130,48 @@ module.exports = async function (deployer, network, accounts) {
         'external-library-linking',
       ],
     });
+
+  /* Tests */
+
+  // Allowed networks: Test/dev only
+  const testVaultParams = getKeyParams(accounts, zorro.address).test.vaults;
+
+  if (testNets.includes(network)) {
+    // Mocks
+    await deployer.deploy(MockStargateRouter);
+    await deployer.deploy(MockStargatePool);
+    await deployer.deploy(MockStargateLPStaking);
+    await deployer.deploy(MockSTGToken);
+    await deployer.deploy(MockLayerZeroEndpoint);
+
+    // VaultStargate
+    const initVal = {
+      pid: 0,
+      isHomeChain: true,
+      isFarmable: true,
+      keyAddresses: testVaultParams.keyAddresses,
+      earnedToZORROPath: [],
+      earnedToToken0Path: [],
+      stablecoinToToken0Path: [],
+      earnedToZORLPPoolOtherTokenPath: [],
+      earnedToStablecoinPath: [],
+      fees: testVaultParams.fees,
+      priceFeeds: testVaultParams.priceFeeds,
+      tokenSTG: zeroAddress,
+      stargateRouter: zeroAddress,
+      stargatePoolId: 0
+    };
+    await deployer.link(VaultLibrary, [MockVaultStargate]);
+    await deployProxy(
+      MockVaultStargate,
+      [
+        accounts[0],
+        initVal,
+      ], {
+      deployer,
+      unsafeAllow: [
+        'external-library-linking',
+      ],
+    });
+  }
 };

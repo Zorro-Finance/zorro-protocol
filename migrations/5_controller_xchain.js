@@ -1,15 +1,23 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+// Get key params
+const {
+  getKeyParams, 
+  getSynthNetwork, 
+  zeroAddress, 
+  testNets,
+} = require('../chains');
+
 // Controller
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const ZorroController = artifacts.require("ZorroController");
+const MockZorroControllerXChain = artifacts.require("MockZorroControllerXChain");
 // Token
 const Zorro = artifacts.require('Zorro');
-// Get key params
-const {getKeyParams, getSynthNetwork} = require('../chains');
-const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 module.exports = async function (deployer, network, accounts) {
+  /* Production */
+
   // Existing contracts
   const zorro = await Zorro.deployed();
   const zorroController = await ZorroController.deployed();
@@ -49,12 +57,48 @@ module.exports = async function (deployer, network, accounts) {
   };
 
   // Deploy
-  console.log('zcxc init val: ', zcxInitVal.priceFeeds);
   await deployProxy(ZorroControllerXChain, [zcxInitVal], {deployer});
 
   // Update ZorroController
   const zorroControllerXChain = await ZorroControllerXChain.deployed();
   await zorroController.setZorroXChainEndpoint(zorroControllerXChain.address);
+
+  /* Tests */
+  // Allowed networks: Test/dev only
+  if (testNets.includes(network)) {
+    // Zorro Controller X Chain
+    const mockZCXInitVal = {
+      defaultStablecoin: zeroAddress,
+      ZORRO: MockZorroToken.address,
+      zorroLPPoolOtherToken: zeroAddress,
+      zorroStakingVault: zeroAddress,
+      uniRouterAddress: zeroAddress,
+      homeChainZorroController: zeroAddress,
+      currentChainController: zeroAddress,
+      publicPool: zeroAddress,
+      bridge: {
+        chainId: 0,
+        homeChainId: 0,
+        ZorroChainIDs: [],
+        controllerContracts: [],
+        LZChainIDs: [],
+        stargateDestPoolIds: [],
+        stargateRouter: zeroAddress,
+        layerZeroEndpoint: zeroAddress,
+        stargateSwapPoolId: zeroAddress,
+      },
+      swaps: {
+        stablecoinToZorroPath: [],
+        stablecoinToZorroLPPoolOtherTokenPath: [],
+      },
+      priceFeeds: {
+        priceFeedZOR: zeroAddress,
+        priceFeedLPPoolOtherToken: zeroAddress,
+        priceFeedStablecoin: zeroAddress,
+      },
+    };
+    await deployProxy(MockZorroControllerXChain, [mockZCXInitVal], { deployer });
+  }
 };
 
 // TODO: Don't forget to eventually assign timelockowner

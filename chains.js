@@ -1,20 +1,59 @@
-const zeroAdress = '0x0000000000000000000000000000000000000000';
+// Addresses
+const zeroAddress = '0x0000000000000000000000000000000000000000';
+const wavaxOnAvax = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
 
 // Key params
 exports.getKeyParams = (accounts, zorroToken) => ({
+  test: {
+    vaults: {
+      keyAddresses: {
+        govAddress: accounts[0],
+        zorroControllerAddress: zeroAddress,
+        zorroXChainController: zeroAddress,
+        ZORROAddress: zeroAddress,
+        zorroStakingVault: zeroAddress,
+        wantAddress: zeroAddress,
+        token0Address: zeroAddress,
+        token1Address: zeroAddress,
+        earnedAddress: zeroAddress,
+        farmContractAddress: zeroAddress,
+        rewardsAddress: zeroAddress,
+        poolAddress: zeroAddress,
+        uniRouterAddress: zeroAddress,
+        zorroLPPool: zeroAddress,
+        zorroLPPoolOtherToken: zeroAddress,
+        defaultStablecoin: zeroAddress,
+      },
+      fees: {
+        controllerFee: 0,
+        buyBackRate: 0,
+        revShareRate: 0,
+        entranceFeeFactor: 0,
+        withdrawFeeFactor: 0,
+      },
+      priceFeeds: {
+        token0PriceFeed: zeroAddress,
+        token1PriceFeed: zeroAddress,
+        earnTokenPriceFeed: zeroAddress,
+        ZORPriceFeed: zeroAddress,
+        lpPoolOtherTokenPriceFeed: zeroAddress,
+        stablecoinPriceFeed: zeroAddress,
+      },
+    },
+  },
   dev: {
-    defaultStablecoin: zeroAdress,
-    uniRouterAddress: zeroAdress,
-    uniFactoryAddress: zeroAdress,
-    uniPoolAddress: zeroAdress,
-    zorroLPPoolOtherToken: zeroAdress,
+    defaultStablecoin: zeroAddress,
+    uniRouterAddress: zeroAddress,
+    uniFactoryAddress: zeroAddress,
+    uniPoolAddress: zeroAddress,
+    zorroLPPoolOtherToken: zeroAddress,
     stablecoinToZorroPath: [
-      zeroAdress,
+      zeroAddress,
       zorroToken,
     ],
     stablecoinToZorroLPPoolOtherTokenPath: [
-      zeroAdress,
-      zeroAdress,
+      zeroAddress,
+      zeroAddress,
     ],
     rewards: {
       blocksPerDay: 43200,
@@ -27,28 +66,28 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     xChain: {
       chainId: 0,
       homeChainId: 0,
-      homeChainZorroController: zeroAdress, // To be filled in on each chain
+      homeChainZorroController: zeroAddress, // To be filled in on each chain
       zorroControllerOracle: accounts[0], // Initially set to deployer address
-      zorroXChainEndpoint: zeroAdress, // To be filled in on each chain after deployment
+      zorroXChainEndpoint: zeroAddress, // To be filled in on each chain after deployment
     },
     priceFeeds: {
-      priceFeedZOR: zeroAdress, 
-      priceFeedLPPoolOtherToken: zeroAdress,
-      priceFeedStablecoin: zeroAdress,
+      priceFeedZOR: zeroAddress, 
+      priceFeedLPPoolOtherToken: zeroAddress,
+      priceFeedStablecoin: zeroAddress,
     },
-    zorroLPPool: zeroAdress, // To be filled in on home chain after deployment!
+    zorroLPPool: zeroAddress, // To be filled in on home chain after deployment!
     bridge: {
       chainId: 0,
       homeChainId: 0,
       ZorroChainIDs: [0],
-      controllerContracts: [zeroAdress], // To be filled in on each chain
+      controllerContracts: [zeroAddress], // To be filled in on each chain
       LZChainIDs: [6],
-      stargateDestPoolIds: [zeroAdress],
-      stargateRouter: zeroAdress,
-      layerZeroEndpoint: zeroAdress,
-      stargateSwapPoolId: zeroAdress,
+      stargateDestPoolIds: [zeroAddress],
+      stargateRouter: zeroAddress,
+      layerZeroEndpoint: zeroAddress,
+      stargateSwapPoolId: zeroAddress,
       stargatePoolId: 1,
-      tokenSTG: zeroAdress,
+      tokenSTG: zeroAddress,
     },
     vaults: {
       pid: 0, // needs to be re-set to appropriate value, if applicable
@@ -68,7 +107,7 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     uniPoolAddress: '0xf4003f4efbe8691b60249e6afbd307abe7758adb', // WAVAX/USDC
     zorroLPPoolOtherToken: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', // WAVAX
     stablecoinToZorroPath: [
-      zeroAdress,
+      zeroAddress,
       zorroToken,
     ],
     stablecoinToZorroLPPoolOtherTokenPath: [
@@ -86,21 +125,21 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     xChain: {
       chainId: 0,
       homeChainId: 0,
-      homeChainZorroController: zeroAdress, // To be filled in on each chain
+      homeChainZorroController: zeroAddress, // To be filled in on each chain
       zorroControllerOracle: accounts[0], // Initially set to deployer address
-      zorroXChainEndpoint: zeroAdress, // To be filled in on each chain after deployment
+      zorroXChainEndpoint: zeroAddress, // To be filled in on each chain after deployment
     },
     priceFeeds: {
-      priceFeedZOR: zeroAdress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
+      priceFeedZOR: zeroAddress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
       priceFeedLPPoolOtherToken: '0x0A77230d17318075983913bC2145DB16C7366156', // AVAX/USD price feed
       priceFeedStablecoin: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
     },
-    zorroLPPool: zeroAdress, // To be filled in on home chain after deployment!
+    zorroLPPool: zeroAddress, // To be filled in on home chain after deployment!
     bridge: {
       chainId: 0,
       homeChainId: 0,
       ZorroChainIDs: [0],
-      controllerContracts: [zeroAdress], // To be filled in on each chain
+      controllerContracts: [zeroAddress], // To be filled in on each chain
       LZChainIDs: [6],
       stargateDestPoolIds: ['0x1205f31718499dBf1fCa446663B532Ef87481fe1'],
       stargateRouter: '0x45A01E4e04F14f7A4a6702c74187c5F6222033cd',
@@ -125,8 +164,8 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     defaultStablecoin: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
     uniRouterAddress: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
     uniFactoryAddress: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
-    uniPoolAddress: zeroAdress,
-    zorroLPPoolOtherToken: zeroAdress,
+    uniPoolAddress: zeroAddress,
+    zorroLPPoolOtherToken: zeroAddress,
     stablecoinToZorroPath: [
       '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
       zorroToken,
@@ -143,21 +182,21 @@ exports.getKeyParams = (accounts, zorroToken) => ({
     xChain: {
       chainId: 0,
       homeChainId: 0,
-      homeChainZorroController: zeroAdress, // To be filled in on each chain
+      homeChainZorroController: zeroAddress, // To be filled in on each chain
       zorroControllerOracle: accounts[0], // Initially set to deployer address
-      zorroXChainEndpoint: zeroAdress, // To be filled in on each chain after deployment
+      zorroXChainEndpoint: zeroAddress, // To be filled in on each chain after deployment
     },
     priceFeeds: {
-      priceFeedZOR: zeroAdress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
-      priceFeedLPPoolOtherToken: zeroAdress,
+      priceFeedZOR: zeroAddress, // TODO: Fill this out with the actual value on each chain, once Oracle is up
+      priceFeedLPPoolOtherToken: zeroAddress,
       priceFeedStablecoin: '0x9331b55D9830EF609A2aBCfAc0FBCE050A52fdEa', // BUSD
     },
-    zorroLPPool: zeroAdress,
+    zorroLPPool: zeroAddress,
     bridge: {
       chainId: 1,
       homeChainId: 0,
       ZorroChainIDs: [1],
-      controllerContracts: [zeroAdress], // To be filled in on each chain // TODO: Need to adjust for BSC, AVAX
+      controllerContracts: [zeroAddress], // To be filled in on each chain // TODO: Need to adjust for BSC, AVAX
       LZChainIDs: [2],
       stargateDestPoolIds: [],
       stargateRouter: '0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8',
@@ -180,13 +219,17 @@ exports.getKeyParams = (accounts, zorroToken) => ({
   },
 });
 
-const devNets = [
-  'avaxfork',
-  'bscfork',
+const testNets = [
   'ganachecli',
   'default',
-  'development',
   'test',
+]
+
+const devNets = [
+  'development',
+  'avaxfork',
+  'bscfork',
+  ...testNets,
 ];
 
 const homeNetworks = [
@@ -194,6 +237,9 @@ const homeNetworks = [
   ...devNets,
 ];
 
+exports.zeroAddress = zeroAddress;
+exports.wavaxOnAvax = wavaxOnAvax;
+exports.testNets = testNets;
 exports.devNets = devNets;
 exports.homeNetworks = homeNetworks;
 

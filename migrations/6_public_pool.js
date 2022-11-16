@@ -1,15 +1,16 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+// Chain params
+const {homeNetworks} = require('../chains');
+// Migration
+const Migrations = artifacts.require("Migrations");
+
 // Finance
 const PoolPublic = artifacts.require("PoolPublic");
 // Controller
 const ZorroController = artifacts.require("ZorroController");
 // Token
 const Zorro = artifacts.require("Zorro");
-// Chain params
-const {homeNetworks} = require('../chains');
-// Migration
-const Migrations = artifacts.require("Migrations");
 
 
 module.exports = async function (deployer, network, accounts) {
