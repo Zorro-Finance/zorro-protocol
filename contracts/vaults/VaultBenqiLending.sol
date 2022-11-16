@@ -16,13 +16,13 @@ import "../libraries/PriceFeed.sol";
 
 import "./libraries/VaultLibrary.sol";
 
+import "./libraries/VaultLendingLibrary.sol";
+
 import "../interfaces/Benqi/IQiErc20.sol";
 
 import "../interfaces/Benqi/IQiTokenSaleDistributor.sol";
 
 import "../interfaces/Benqi/IUnitroller.sol";
-
-import "./libraries/VaultLendingLibrary.sol";
 
 /// @title Vault contract for Benqi leveraged lending strategies
 contract VaultBenqiLending is VaultBase {
