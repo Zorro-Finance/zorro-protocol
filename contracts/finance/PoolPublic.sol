@@ -29,6 +29,7 @@ contract PoolPublic is Initializable, OwnableUpgradeable {
         _allowControllerToSpend();
         // TODO: For some reason, owner is being set to the ZERO address
     }
+    
     /* State */
 
     address public ZORRO; // Zorro token contract address
