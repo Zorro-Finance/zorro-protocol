@@ -24,6 +24,8 @@ import "../interfaces/Benqi/IQiTokenSaleDistributor.sol";
 
 import "../interfaces/Benqi/IUnitroller.sol";
 
+// TODO: Like ApeLending, this needs to have an adjusted WantLockedTotal calculation. Compare this closely to Apelending
+
 /// @title Vault contract for Benqi leveraged lending strategies
 contract VaultBenqiLending is VaultBase {
     /* Libraries */

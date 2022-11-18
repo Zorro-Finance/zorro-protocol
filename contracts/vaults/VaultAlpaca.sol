@@ -16,7 +16,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./libraries/VaultLibrary.sol";
+import "./libraries/VaultLibraryAlpaca.sol";
 
 // TODO: Do we still have the same issue whereby the want token can fluctuate in quantity over the duration of the investment?
 

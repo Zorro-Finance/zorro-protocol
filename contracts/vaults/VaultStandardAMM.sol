@@ -22,7 +22,7 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./libraries/VaultLibrary.sol";
+import "./libraries/VaultLibraryStandardAMM.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
