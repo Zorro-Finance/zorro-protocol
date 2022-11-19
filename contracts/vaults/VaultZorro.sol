@@ -7,7 +7,7 @@ import "../libraries/PriceFeed.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "./libraries/VaultLibrary.sol";
+import "./actions/VaultActionsZorro.sol";
 
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
@@ -52,7 +52,7 @@ contract VaultZorro is VaultBase {
 
         // Swap paths
         stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(stablecoinToToken0Path);
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -70,10 +70,10 @@ contract VaultZorro is VaultBase {
 
     struct VaultZorroInit {
         uint256 pid;
-        VaultLibrary.VaultAddresses keyAddresses;
+        VaultActions.VaultAddresses keyAddresses;
         address[] stablecoinToToken0Path;
-        VaultLibrary.VaultFees fees;
-        VaultLibrary.VaultPriceFeeds priceFeeds;
+        VaultActions.VaultFees fees;
+        VaultActions.VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -127,46 +127,22 @@ contract VaultZorro is VaultBase {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Get balance of deposited USD
-        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
-        // Check that USD was actually deposited
-        require(_amountUSD > 0, "dep<=0");
-        require(_amountUSD <= _balUSD, "amt>bal");
+        // Allow spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(vaultActions, _amountUSD);
 
-        // Use price feed to determine exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = stablecoinPriceFeed.getExchangeRate();
-        _priceTokens[1] = token0PriceFeed.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-        // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSD
-        );
-
-        // Swap USD for token0
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSD,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            stablecoinToToken0Path,
-            _decimals,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(address(this));
-
-        // Transfer back to sender
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
-
-        return _wantAmt;
+        // Exchange
+        return
+            VaultActionsZorro(vaultActions).exchangeUSDForWantToken(
+                _amountUSD,
+                VaultActionsZorro.ExchangeUSDForWantParams({
+                    stablecoin: defaultStablecoin,
+                    tokenZorroAddress: token0Address,
+                    zorroPriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    stablecoinToZorroPath: stablecoinToToken0Path
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice Public function for farming Want token.
@@ -228,41 +204,22 @@ contract VaultZorro is VaultBase {
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
-        // Preflight checks
-        require(_amount > 0, "negWant");
+        // Allow spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(vaultActions, _amount);
 
-        // Safely transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-
-        // Use price feed to determine exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = token0PriceFeed.getExchangeRate();
-        _priceTokens[1] = stablecoinPriceFeed.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-
-        // Increase allowance
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(uniRouterAddress, _amount);
-
-        // Swap token0 for USD
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            token0ToStablecoinPath,
-            _decimals,
-            msg.sender,
-            block.timestamp.add(600)
-        );
-
-        return IERC20Upgradeable(defaultStablecoin).balanceOf(msg.sender);
+        // Exchange
+        return
+            VaultActionsZorro(vaultActions).exchangeWantTokenForUSD(
+                _amount,
+                VaultActionsZorro.ExchangeWantTokenForUSDParams({
+                    tokenZorroAddress: token0Address,
+                    stablecoin: defaultStablecoin,
+                    zorroPriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    zorroToStablecoinPath: token0ToStablecoinPath
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -288,30 +245,5 @@ contract VaultZorro is VaultBase {
 
         // Update want locked total
         wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));
-    }
-
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Dummy function to implement interface
-    }
-
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Dummy function to implement interface
-    }
-
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Dummy function to implement interface
     }
 }
