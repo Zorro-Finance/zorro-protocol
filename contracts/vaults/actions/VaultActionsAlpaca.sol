@@ -33,15 +33,24 @@ contract VaultActionsAlpaca is VaultActions {
     /* Structs */
 
     struct ExchangeUSDForWantParams {
-        address token0Address;
         address stablecoin;
+        address token0Address;
         address tokenZorroAddress;
-        AggregatorV3Interface token0PriceFeed;
-        AggregatorV3Interface stablecoinPriceFeed;
-        address uniRouterAddress;
-        address[] stablecoinToToken0Path;
         address poolAddress;
         address wantAddress;
+        AggregatorV3Interface token0PriceFeed;
+        AggregatorV3Interface stablecoinPriceFeed;
+        address[] stablecoinToToken0Path;
+    }
+
+    struct ExchangeWantTokenForUSDParams {
+        address stablecoin;
+        address token0Address;
+        address wantAddress;
+        address poolAddress;
+        AggregatorV3Interface token0PriceFeed;
+        AggregatorV3Interface stablecoinPriceFeed;
+        address[] token0ToStablecoinPath;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token
@@ -118,17 +127,6 @@ contract VaultActionsAlpaca is VaultActions {
         );
 
         return _wantAmt;
-    }
-
-    struct ExchangeWantTokenForUSDParams {
-        address token0Address;
-        address stablecoin;
-        address wantAddress;
-        address poolAddress;
-        AggregatorV3Interface token0PriceFeed;
-        AggregatorV3Interface stablecoinPriceFeed;
-        address[] token0ToStablecoinPath;
-        address uniRouterAddress;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender

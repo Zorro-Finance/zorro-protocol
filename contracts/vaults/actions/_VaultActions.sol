@@ -74,11 +74,12 @@ contract VaultActions is OwnableUpgradeable {
         uint256 stablecoin; // Exchange rate of stablecoin (e.g. USDC), times 1e12
     }
 
-    struct SwapEarnedToUSDParams {
+    struct BuybackBurnLPParams {
         address earnedAddress;
-        address stablecoin;
-        address[] earnedToStablecoinPath;
-        uint256 stablecoinExchangeRate;
+        address ZORROAddress;
+        address zorroLPPoolOtherToken;
+        address[] earnedToZORROPath;
+        address[] earnedToZORLPPoolOtherTokenPath;
     }
 
     /* Constructor */
@@ -357,7 +358,7 @@ contract VaultActions is OwnableUpgradeable {
             block.timestamp.add(600)
         );
     }
-    
+
     /* Utilities */
 
     /// @notice Gets the swap path in the opposite direction of a trade

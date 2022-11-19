@@ -36,106 +36,32 @@ contract VaultActionsStandardAMM is VaultActions {
     // vars that are constant across all vaults (e.g. the ZOR token) and storing
     // them on contract. 
 
-    struct BuybackBurnLPParams {
-        address earnedAddress;
-        address ZORROAddress;
-        address zorroLPPoolOtherToken;
-        address[] earnedToZORROPath;
-        address[] earnedToZORLPPoolOtherTokenPath;
-    }
-
     struct ExchUSDToWantParams {
         address stablecoin;
         address token0Address;
         address token1Address;
+        address wantAddress;
         AggregatorV3Interface stablecoinPriceFeed;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface token1PriceFeed;
         address[] stablecoinToToken0Path;
         address[] stablecoinToToken1Path;
-        address wantAddress;
     }
 
     struct ExchWantToUSDParams {
         address stablecoin;
         address token0Address;
         address token1Address;
+        address wantAddress;
+        address poolAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface token1PriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
         address[] token0ToStablecoinPath;
         address[] token1ToStablecoinPath;
-        address wantAddress;
-        address poolAddress;
     }
 
     /* Functions */
-
-    /// @notice Buys back earn token, adds liquidity, and burns the LP token
-    // TODO docstrings
-    function buybackBurnLP(
-        uint256 _amount, 
-        uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates,
-        BuybackBurnLPParams memory _params
-    )
-        public
-    {
-        // Transfer tokens IN
-        IERC20Upgradeable(_params.earnedAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-
-        // Swap to ZOR Token
-        if (_params.earnedAddress != _params.ZORROAddress) {
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amount.div(2),
-                    priceToken0: _rates.earn,
-                    priceToken1: _rates.ZOR,
-                    token0: _params.earnedAddress,
-                    token1: _params.ZORROAddress,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.earnedToZORROPath,
-                    destination: address(this)
-                })
-            );
-        }
-        // Swap to Other token
-        if (_params.earnedAddress != _params.zorroLPPoolOtherToken) {
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amount.div(2),
-                    priceToken0: _rates.earn,
-                    priceToken1: _rates.lpPoolOtherToken,
-                    token0: _params.earnedAddress,
-                    token1: _params.zorroLPPoolOtherToken,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.earnedToZORLPPoolOtherTokenPath,
-                    destination: address(this)
-                })
-            );
-        }
-
-        // Calc balances
-        uint256 _amtZorro = IERC20Upgradeable(_params.ZORROAddress).balanceOf(
-            address(this)
-        );
-        uint256 _amtOtherToken = IERC20Upgradeable(_params.zorroLPPoolOtherToken)
-            .balanceOf(address(this));
-
-        // Add liquidity and burn
-        _joinPool(
-            _params.ZORROAddress,
-            _params.zorroLPPoolOtherToken,
-            _amtZorro,
-            _amtOtherToken,
-            _maxMarketMovementAllowed,
-            burnAddress
-        );
-    }
 
     /// @notice Performs necessary operations to convert USD into Want token and transfer back to sender
     /// @dev NOTE: Requires caller to approve spending beforehand
@@ -285,5 +211,71 @@ contract VaultActionsStandardAMM is VaultActions {
 
         // Calculate USD balance // TODO: Is this correct? or should it be the caller of msg.sender?
         return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
+    }
+
+    /// @notice Buys back earn token, adds liquidity, and burns the LP token
+    // TODO docstrings
+    function buybackBurnLP(
+        uint256 _amount, 
+        uint256 _maxMarketMovementAllowed,
+        ExchangeRates memory _rates,
+        BuybackBurnLPParams memory _params
+    )
+        public
+    {
+        // Transfer tokens IN
+        IERC20Upgradeable(_params.earnedAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
+        // Swap to ZOR Token
+        if (_params.earnedAddress != _params.ZORROAddress) {
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _amount.div(2),
+                    priceToken0: _rates.earn,
+                    priceToken1: _rates.ZOR,
+                    token0: _params.earnedAddress,
+                    token1: _params.ZORROAddress,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.earnedToZORROPath,
+                    destination: address(this)
+                })
+            );
+        }
+        // Swap to Other token
+        if (_params.earnedAddress != _params.zorroLPPoolOtherToken) {
+            _safeSwap(
+                SafeSwapParams({
+                    amountIn: _amount.div(2),
+                    priceToken0: _rates.earn,
+                    priceToken1: _rates.lpPoolOtherToken,
+                    token0: _params.earnedAddress,
+                    token1: _params.zorroLPPoolOtherToken,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.earnedToZORLPPoolOtherTokenPath,
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Calc balances
+        uint256 _amtZorro = IERC20Upgradeable(_params.ZORROAddress).balanceOf(
+            address(this)
+        );
+        uint256 _amtOtherToken = IERC20Upgradeable(_params.zorroLPPoolOtherToken)
+            .balanceOf(address(this));
+
+        // Add liquidity and burn
+        _joinPool(
+            _params.ZORROAddress,
+            _params.zorroLPPoolOtherToken,
+            _amtZorro,
+            _amtOtherToken,
+            _maxMarketMovementAllowed,
+            burnAddress
+        );
     }
 }

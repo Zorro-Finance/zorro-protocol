@@ -187,11 +187,9 @@ contract ZorroControllerXChainEarn is
         // Calculate total USD to transfer
         uint256 _totalUSD = _buybackAmountUSD.add(_revShareAmountUSD);
 
-        // Allow this contract to spend USD
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            address(this),
-            _totalUSD
-        );
+        // TODO: check the funds flow. Is safetransferfrom required
+        // if we transfer funds into this contract already?
+        // This is called from VaultBase. 
 
         // Transfer USD into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(

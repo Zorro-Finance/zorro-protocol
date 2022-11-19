@@ -28,9 +28,14 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "./actions/_VaultActions.sol";
 
-// TODO: Should we have Initializable here? 
+// TODO: Should we have Initializable here?
 
-abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+abstract contract VaultBase is
+    IVault,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable
+{
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
@@ -356,7 +361,10 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         );
     }
 
-    function setMaxMarketMovementAllowed(uint256 _slippageNumerator) external onlyOwner {
+    function setMaxMarketMovementAllowed(uint256 _slippageNumerator)
+        external
+        onlyOwner
+    {
         maxMarketMovementAllowed = _slippageNumerator;
     }
 
@@ -421,12 +429,27 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
         } else {
             // Otherwise, contact controller, to make cross chain call
 
+            // Calc sum
+            uint256 _swappableAmt = buybackAmt.add(revShareAmt);
+
+            // Allow spending
+            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+                vaultActions,
+                _swappableAmt
+            );
+
             // Swap to Earn to USD and send to zorro controller contract
-            _swapEarnedToUSD(
-                buybackAmt.add(revShareAmt),
-                zorroControllerAddress,
-                _maxMarketMovementAllowed,
-                _rates
+            VaultActions(vaultActions).safeSwap(
+                SafeSwapParams({
+                    amountIn: _swappableAmt,
+                    priceToken0: _rates.earn,
+                    priceToken1: _rates.stablecoin,
+                    token0: earnedAddress,
+                    token1: defaultStablecoin,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: earnedToStablecoinPath,
+                    destination: zorroXChainController
+                })
             );
 
             // Call distributeEarningsXChain on controller contract
@@ -452,11 +475,12 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
             // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
             if (controllerFee > 0) {
                 // Calculate the fee from the controllerFee parameters
-                fee = _earnedAmt.mul(controllerFee).div(
-                    controllerFeeMax
-                );
+                fee = _earnedAmt.mul(controllerFee).div(controllerFeeMax);
                 // Transfer the fee to the rewards address
-                IERC20Upgradeable(earnedAddress).safeTransfer(rewardsAddress, fee);
+                IERC20Upgradeable(earnedAddress).safeTransfer(
+                    rewardsAddress,
+                    fee
+                );
             }
         }
     }
@@ -496,13 +520,6 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     function _revShareOnChain(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual;
-
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
         uint256 _maxMarketMovementAllowed,
         VaultActions.ExchangeRates memory _rates
     ) internal virtual;

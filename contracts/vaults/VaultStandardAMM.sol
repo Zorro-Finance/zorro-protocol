@@ -193,16 +193,16 @@ contract VaultStandardAMM is VaultBase {
         return
             VaultActionsStandardAMM(vaultActions).exchangeUSDForWantToken(
                 _amountUSD,
-                VaultActionsStandardAMM.SwapUSDAddLiqParams({
+                VaultActionsStandardAMM.ExchUSDToWantParams({
                     stablecoin: defaultStablecoin,
                     token0Address: token0Address,
                     token1Address: token1Address,
+                    wantAddress: wantAddress,
                     stablecoinPriceFeed: stablecoinPriceFeed,
                     token0PriceFeed: token0PriceFeed,
                     token1PriceFeed: token1PriceFeed,
                     stablecoinToToken0Path: stablecoinToToken0Path,
-                    stablecoinToToken1Path: stablecoinToToken1Path,
-                    wantAddress: wantAddress
+                    stablecoinToToken1Path: stablecoinToToken1Path
                 }),
                 _maxMarketMovementAllowed
             );
@@ -481,7 +481,19 @@ contract VaultStandardAMM is VaultBase {
             _amount
         );
 
-        
+        // Buyback
+        VaultActionsStandardAMM(vaultActions).buybackBurnLP(
+            _amount,
+            _maxMarketMovementAllowed,
+            _rates,
+            VaultActionsStandardAMM.BuybackBurnLPParams({
+                earnedAddress: earnedAddress,
+                ZORROAddress: ZORROAddress,
+                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
+                earnedToZORROPath: earnedToZORROPath,
+                earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath
+            })
+        );
     }
 
     /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
@@ -508,30 +520,6 @@ contract VaultStandardAMM is VaultBase {
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: earnedToZORROPath,
                 destination: zorroStakingVault
-            })
-        );
-    }
-
-    /// @notice Swaps Earn token to USD and sends to destination specified
-    /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USD to
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {
-        VaultActions(vaultActions).safeSwap(
-            SafeSwapParams({
-                amountIn: _earnedAmount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.stablecoin,
-                token0: earnedAddress,
-                token1: defaultStablecoin,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToStablecoinPath,
-                destination: _destination
             })
         );
     }
