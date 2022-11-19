@@ -28,6 +28,8 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "./actions/_VaultActions.sol";
 
+// TODO: Do a protocol-wide inventory of imports and make sure there aren't any superfluous imports
+
 // TODO: Should we have Initializable here?
 
 abstract contract VaultBase is
@@ -485,6 +487,64 @@ abstract contract VaultBase is
         }
     }
 
+    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
+    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
+    /// @param _amount The amount of Earn token to buy back
+    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        VaultActions.ExchangeRates memory _rates
+    ) internal virtual {
+        // Authorize spending beforehand
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Buyback
+        VaultActions(vaultActions).buybackBurnLP(
+            _amount,
+            _maxMarketMovementAllowed,
+            _rates,
+            VaultActions.BuybackBurnLPParams({
+                earnedAddress: earnedAddress,
+                ZORROAddress: ZORROAddress,
+                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
+                earnedToZORROPath: earnedToZORROPath,
+                earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath
+            })
+        );
+    }
+
+    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
+    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
+    function _revShareOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        VaultActions.ExchangeRates memory _rates
+    ) internal virtual {
+        // Authorize spending beforehand
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Swap
+        VaultActions(vaultActions).safeSwap(
+            SafeSwapParams({
+                amountIn: _amount,
+                priceToken0: _rates.earn,
+                priceToken1: _rates.ZOR,
+                token0: earnedAddress,
+                token1: ZORROAddress,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: earnedToZORROPath,
+                destination: zorroStakingVault
+            })
+        );
+    }
+
     /* Abstract methods */
 
     // Deposits
@@ -511,16 +571,4 @@ abstract contract VaultBase is
 
     // Earnings/compounding
     function earn(uint256 _maxMarketMovementAllowed) public virtual;
-
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual;
-
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual;
 }

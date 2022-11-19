@@ -465,64 +465,6 @@ contract VaultStandardAMM is VaultBase {
         // Farm Want token
         _farm();
     }
-
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
-    /// @param _amount The amount of Earn token to buy back
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Buyback
-        VaultActionsStandardAMM(vaultActions).buybackBurnLP(
-            _amount,
-            _maxMarketMovementAllowed,
-            _rates,
-            VaultActionsStandardAMM.BuybackBurnLPParams({
-                earnedAddress: earnedAddress,
-                ZORROAddress: ZORROAddress,
-                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
-                earnedToZORROPath: earnedToZORROPath,
-                earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath
-            })
-        );
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Swap
-        VaultActionsStandardAMM(vaultActions).safeSwap(
-            SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.ZOR,
-                token0: earnedAddress,
-                token1: ZORROAddress,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORROPath,
-                destination: zorroStakingVault
-            })
-        );
-    }
 }
 
 contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {}

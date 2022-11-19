@@ -53,6 +53,8 @@ contract VaultActionsAlpaca is VaultActions {
         address[] token0ToStablecoinPath;
     }
 
+    /* Functions */
+
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
@@ -63,41 +65,27 @@ contract VaultActionsAlpaca is VaultActions {
         ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
-        // Get balance of deposited BUSD
-        uint256 _balBUSD = IERC20Upgradeable(_params.stablecoin).balanceOf(
-            address(this)
+       // Safe transfer IN
+        IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amountUSD
         );
-        // Check that USD was actually deposited
-        require(_amountUSD > 0, "dep<=0");
-        require(_amountUSD <= _balBUSD, "amt>bal");
-
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
-        uint256 _stablecoinExchangeRate = _params
-            .stablecoinPriceFeed
-            .getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(_params.stablecoin).decimals();
-        _decimals[1] = ERC20Upgradeable(_params.token0Address).decimals();
 
         // Swap USD for token0
         // Single asset. Swap from USD directly to Token0
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                _params.uniRouterAddress,
                 SafeSwapParams({
                     amountIn: _amountUSD,
-                    priceToken0: _stablecoinExchangeRate,
-                    priceToken1: _token0ExchangeRate,
+                    priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
+                    priceToken1: _params.token0PriceFeed.getExchangeRate(),
                     token0: _params.stablecoin,
                     token1: _params.token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: _params.stablecoinToToken0Path,
                     destination: address(this)
-                }),
-                _decimals
+                })
             );
         }
 
@@ -121,6 +109,7 @@ contract VaultActionsAlpaca is VaultActions {
         );
 
         // Transfer back to sender
+        // TODO: Should this in fact be msg.sender?
         IERC20Upgradeable(_params.wantAddress).safeTransfer(
             msg.sender,
             _wantAmt
@@ -158,42 +147,24 @@ contract VaultActionsAlpaca is VaultActions {
         // Withdraw Want token to get Token0
         IAlpacaVault(_params.poolAddress).withdraw(_amount);
 
-        // Use price feed to determine exchange rates
-        uint256 _token0ExchangeRate = _params.token0PriceFeed.getExchangeRate();
-        uint256 _stablecoinExchangeRate = _params
-            .stablecoinPriceFeed
-            .getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(_params.token0Address).decimals();
-        _decimals[1] = ERC20Upgradeable(_params.stablecoin).decimals();
-
-        // Swap Token0 for BUSD
         // Get Token0 balance
         uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
             address(this)
         );
-        // Increase allowance
-        IERC20Upgradeable(_params.token0Address).safeIncreaseAllowance(
-            _params.uniRouterAddress,
-            _token0Bal
-        );
+
         // Swap Token0 -> BUSD
         if (_params.token0Address != _params.stablecoin) {
-            VaultLibrary.safeSwap(
-                _params.uniRouterAddress,
+            _safeSwap(
                 SafeSwapParams({
                     amountIn: _token0Bal,
-                    priceToken0: _token0ExchangeRate,
-                    priceToken1: _stablecoinExchangeRate,
+                    priceToken0: _params.token0PriceFeed.getExchangeRate(),
+                    priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
                     token0: _params.token0Address,
                     token1: _params.stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: _params.token0ToStablecoinPath,
-                    destination: msg.sender
-                }),
-                _decimals
+                    destination: address(this)
+                })
             );
         }
 
