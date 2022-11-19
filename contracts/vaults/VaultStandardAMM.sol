@@ -22,7 +22,7 @@ import "../libraries/SafeSwap.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./libraries/VaultLibraryStandardAMM.sol";
+import "./actions/VaultActionsStandardAMM.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
@@ -81,8 +81,12 @@ contract VaultStandardAMM is VaultBase {
             .earnedToZORLPPoolOtherTokenPath;
         earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
-        token1ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken1Path);
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
+            stablecoinToToken0Path
+        );
+        token1ToStablecoinPath = VaultActions(vaultActions).reversePath(
+            stablecoinToToken1Path
+        );
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -114,7 +118,7 @@ contract VaultStandardAMM is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultLibrary.VaultAddresses keyAddresses;
+        VaultActions.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] earnedToToken1Path;
@@ -122,8 +126,8 @@ contract VaultStandardAMM is VaultBase {
         address[] stablecoinToToken1Path;
         address[] earnedToZORLPPoolOtherTokenPath;
         address[] earnedToStablecoinPath;
-        VaultLibrary.VaultFees fees;
-        VaultLibrary.VaultPriceFeeds priceFeeds;
+        VaultActions.VaultFees fees;
+        VaultActions.VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -179,22 +183,29 @@ contract VaultStandardAMM is VaultBase {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        return VaultLibraryStandardAMM.exchangeUSDForWantToken(
-            _amountUSD, 
-            VaultLibraryStandardAMM.SwapUSDAddLiqParams({
-                stablecoin: defaultStablecoin,
-                token0Address: token0Address,
-                token1Address: token1Address,
-                uniRouterAddress: uniRouterAddress,
-                stablecoinPriceFeed: stablecoinPriceFeed,
-                token0PriceFeed: token0PriceFeed,
-                token1PriceFeed: token1PriceFeed,
-                stablecoinToToken0Path: stablecoinToToken0Path,
-                stablecoinToToken1Path: stablecoinToToken1Path,
-                wantAddress: wantAddress
-            }),
-            _maxMarketMovementAllowed
+        // Approve spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
         );
+
+        // Perform exchange
+        return
+            VaultActionsStandardAMM(vaultActions).exchangeUSDForWantToken(
+                _amountUSD,
+                VaultActionsStandardAMM.SwapUSDAddLiqParams({
+                    stablecoin: defaultStablecoin,
+                    token0Address: token0Address,
+                    token1Address: token1Address,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    token0PriceFeed: token0PriceFeed,
+                    token1PriceFeed: token1PriceFeed,
+                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    stablecoinToToken1Path: stablecoinToToken1Path,
+                    wantAddress: wantAddress
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice Public function for farming Want token.
@@ -300,68 +311,30 @@ contract VaultStandardAMM is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        return VaultLibraryStandardAMM.exchangeWantTokenForUSD(
-            _amount,
-            VaultLibraryStandardAMM.ExchWantToUSDParams({
-                token0PriceFeed: token0PriceFeed,
-                token1PriceFeed: token1PriceFeed,
-                stablecoinPriceFeed: stablecoinPriceFeed,
-                token0Address: token0Address,
-                token1Address: token1Address,
-                stablecoin: defaultStablecoin,
-                uniRouterAddress: uniRouterAddress,
-                token0ToStablecoinPath: token0ToStablecoinPath,
-                token1ToStablecoinPath: token1ToStablecoinPath,
-                wantAddress: wantAddress,
-                poolAddress: poolAddress
-            }), 
-            _maxMarketMovementAllowed
+        // Approve spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
         );
-    }
 
-    /// @notice Adds liquidity to the pool of this contract
-    /// @param _token0Amt Quantity of Token0 to add
-    /// @param _token1Amt Quantity of Token1 to add
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _recipient The recipient of the LP token
-    function _joinPool(
-        uint256 _token0Amt,
-        uint256 _token1Amt,
-        uint256 _maxMarketMovementAllowed,
-        address _recipient
-    ) internal {
-        VaultLibraryStandardAMM.joinPool(
-            token0Address,
-            token1Address,
-            _token0Amt,
-            _token1Amt,
-            uniRouterAddress,
-            _maxMarketMovementAllowed,
-            _recipient
-        );
-    }
-
-    /// @notice Removes liquidity from a pool and sends tokens back to this address
-    /// @param _amountLP The amount of LP (Want) tokens to remove
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _recipient The recipient of the underlying tokens at pool exit
-    function _exitPool(
-        uint256 _amountLP,
-        uint256 _maxMarketMovementAllowed,
-        address _recipient
-    ) internal {
-        VaultLibraryStandardAMM.exitPool(
-            _amountLP,
-            _maxMarketMovementAllowed,
-            _recipient,
-            VaultLibraryStandardAMM.ExitPoolParams({
-                token0: token0Address,
-                token1: token1Address,
-                poolAddress: poolAddress,
-                uniRouterAddress: uniRouterAddress,
-                wantAddress: wantAddress
-            })
-        );
+        // Perform exchange
+        return
+            VaultActionsStandardAMM(vaultActions).exchangeWantTokenForUSD(
+                _amount,
+                VaultActionsStandardAMM.ExchWantToUSDParams({
+                    token0PriceFeed: token0PriceFeed,
+                    token1PriceFeed: token1PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    token0Address: token0Address,
+                    token1Address: token1Address,
+                    stablecoin: defaultStablecoin,
+                    token0ToStablecoinPath: token0ToStablecoinPath,
+                    token1ToStablecoinPath: token1ToStablecoinPath,
+                    wantAddress: wantAddress,
+                    poolAddress: poolAddress
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -391,21 +364,12 @@ contract VaultStandardAMM is VaultBase {
         require(_earnedAmt > 0, "0earn");
 
         // Create rates struct
-        VaultLibrary.ExchangeRates memory _rates;
-        uint256[] memory _priceTokens0 = new uint256[](2);
-        uint256[] memory _priceTokens1 = new uint256[](2);
-        {
-            _rates = VaultLibrary.ExchangeRates({
-                earn: earnTokenPriceFeed.getExchangeRate(),
-                ZOR: ZORPriceFeed.getExchangeRate(),
-                lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
-                stablecoin: stablecoinPriceFeed.getExchangeRate()
-            });
-            _priceTokens0[0] = _rates.earn;
-            _priceTokens0[1] = token0PriceFeed.getExchangeRate();
-            _priceTokens1[0] = _rates.earn;
-            _priceTokens1[1] = token1PriceFeed.getExchangeRate();
-        }
+        VaultActions.ExchangeRates memory _rates = VaultActions.ExchangeRates({
+            earn: earnTokenPriceFeed.getExchangeRate(),
+            ZOR: ZORPriceFeed.getExchangeRate(),
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+            stablecoin: stablecoinPriceFeed.getExchangeRate()
+        });
 
         // Calc remainder
         uint256 _remainingAmt;
@@ -426,47 +390,41 @@ contract VaultStandardAMM is VaultBase {
                 );
         }
 
-        // Allow the router contract to spen up to earnedAmt
+        // Allow spending
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _earnedAmt
+            vaultActions,
+            _remainingAmt
         );
 
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
-            // Get decimal info
-            uint8[] memory _decimals0 = new uint8[](2);
-            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals0[1] = ERC20Upgradeable(token0Address).decimals();
-
-            // Swap half earned to token0
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _remainingAmt.div(2),
-                _priceTokens0,
-                _maxMarketMovementAllowed,
-                earnedToToken0Path,
-                _decimals0,
-                address(this),
-                block.timestamp.add(600)
+            VaultActionsStandardAMM(vaultActions).safeSwap(
+                SafeSwapParams({
+                    amountIn: _remainingAmt.div(2),
+                    priceToken0: _rates.earn,
+                    priceToken1: token0PriceFeed.getExchangeRate(),
+                    token0: earnedAddress,
+                    token1: token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: earnedToToken0Path,
+                    destination: address(this)
+                })
             );
         }
 
         // Swap Earned token to token1 if token0 is not the Earned token
         if (earnedAddress != token1Address) {
-            // Get decimal info
-            uint8[] memory _decimals1 = new uint8[](2);
-            _decimals1[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals1[1] = ERC20Upgradeable(token1Address).decimals();
-
-            // Swap half earned to token1
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _remainingAmt.div(2),
-                _priceTokens1,
-                _maxMarketMovementAllowed,
-                earnedToToken1Path,
-                _decimals1,
-                address(this),
-                block.timestamp.add(600)
+            VaultActionsStandardAMM(vaultActions).safeSwap(
+                SafeSwapParams({
+                    amountIn: _remainingAmt.div(2),
+                    priceToken0: _rates.earn,
+                    priceToken1: token1PriceFeed.getExchangeRate(),
+                    token0: earnedAddress,
+                    token1: token1Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: earnedToToken1Path,
+                    destination: address(this)
+                })
             );
         }
 
@@ -480,18 +438,20 @@ contract VaultStandardAMM is VaultBase {
 
         // Provided that token0 and token1 are both > 0, add liquidity
         if (token0Amt > 0 && token1Amt > 0) {
-            // Increase the allowance of the router to spend token0
+            // Allow spending
             IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
+                vaultActions,
                 token0Amt
             );
-            // Increase the allowance of the router to spend token1
             IERC20Upgradeable(token1Address).safeIncreaseAllowance(
-                uniRouterAddress,
+                vaultActions,
                 token1Amt
             );
+
             // Add liquidity
-            _joinPool(
+            VaultActionsStandardAMM(vaultActions).joinPool(
+                token0Address,
+                token1Address,
                 token0Amt,
                 token1Amt,
                 _maxMarketMovementAllowed,
@@ -513,66 +473,15 @@ contract VaultStandardAMM is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {
-        // Get decimal, exch rate info
-        uint8[] memory _decimals0 = new uint8[](2);
-        uint8[] memory _decimals1 = new uint8[](2);
-        uint256[] memory _priceTokens0 = new uint256[](2);
-        uint256[] memory _priceTokens1 = new uint256[](2);
-        {
-            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
-            _decimals1[0] = _decimals0[0];
-            _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
-
-            _priceTokens0[0] = _rates.earn;
-            _priceTokens0[1] = _rates.ZOR;
-            _priceTokens1[0] = _rates.earn;
-            _priceTokens1[1] = _rates.lpPoolOtherToken;
-        }
-
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
+            vaultActions,
             _amount
         );
 
-        // Swap to ZOR Token
-        if (earnedAddress != ZORROAddress) {
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amount.div(2),
-                _priceTokens0,
-                _maxMarketMovementAllowed,
-                earnedToZORROPath,
-                _decimals0,
-                address(this),
-                block.timestamp.add(600)
-            );
-        }
-        // Swap to Other token
-        if (earnedAddress != zorroLPPoolOtherToken) {
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amount.div(2),
-                _priceTokens1,
-                _maxMarketMovementAllowed,
-                earnedToZORLPPoolOtherTokenPath,
-                _decimals1,
-                address(this),
-                block.timestamp.add(600)
-            );
-        }
-
-        // Add liquidity and burn
-        VaultLibraryStandardAMM.addLiqAndBurn(
-            _maxMarketMovementAllowed,
-            VaultLibraryStandardAMM.AddLiqAndBurnParams({
-                zorro: ZORROAddress,
-                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
-                uniRouterAddress: uniRouterAddress,
-                burnAddress: burnAddress
-            })
-        );
+        
     }
 
     /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
@@ -580,36 +489,27 @@ contract VaultStandardAMM is VaultBase {
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(ZORROAddress).decimals();
-
-        // Exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _rates.earn;
-        _priceTokens[1] = _rates.ZOR;
-
         // Authorize spending beforehand
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
+            vaultActions,
             _amount
         );
 
-        // Swap to ZOR
-        if (earnedAddress != ZORROAddress) {
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amount,
-                _priceTokens,
-                _maxMarketMovementAllowed,
-                earnedToZORROPath,
-                _decimals,
-                zorroStakingVault,
-                block.timestamp.add(600)
-            );
-        }
+        // Swap
+        VaultActionsStandardAMM(vaultActions).safeSwap(
+            SafeSwapParams({
+                amountIn: _amount,
+                priceToken0: _rates.earn,
+                priceToken1: _rates.ZOR,
+                token0: earnedAddress,
+                token1: ZORROAddress,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: earnedToZORROPath,
+                destination: zorroStakingVault
+            })
+        );
     }
 
     /// @notice Swaps Earn token to USD and sends to destination specified
@@ -620,36 +520,23 @@ contract VaultStandardAMM is VaultBase {
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-
-        // Get exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _rates.earn;
-        _priceTokens[1] = _rates.stablecoin;
-
-        // Increase allowance
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _earnedAmount
-        );
-
-        // Perform swap with Uni router
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _earnedAmount,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            earnedToStablecoinPath,
-            _decimals,
-            _destination,
-            block.timestamp.add(600)
+        VaultActions(vaultActions).safeSwap(
+            SafeSwapParams({
+                amountIn: _earnedAmount,
+                priceToken0: _rates.earn,
+                priceToken1: _rates.stablecoin,
+                token0: earnedAddress,
+                token1: defaultStablecoin,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: earnedToStablecoinPath,
+                destination: _destination
+            })
         );
     }
 }
 
 contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {}
+
 contract TraderJoe_WAVAX_USDC is VaultStandardAMM {}

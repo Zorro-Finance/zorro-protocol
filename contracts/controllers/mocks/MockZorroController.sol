@@ -8,7 +8,7 @@ import "../../vaults/_VaultBase.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-import "../../vaults/libraries/VaultLibrary.sol";
+import "../../vaults/actions/_VaultActions.sol";
 
 contract MockZorroController is ZorroController {
     event UpdatedPool(uint256 indexed _amount);
@@ -177,20 +177,20 @@ contract MockInvestmentVault is VaultBase {
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {}
 
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {}
 
     function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal override {}
 
     function farm() external {}

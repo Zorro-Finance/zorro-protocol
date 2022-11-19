@@ -26,7 +26,9 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "./libraries/VaultLibrary.sol";
+import "./actions/_VaultActions.sol";
+
+// TODO: Should we have Initializable here? 
 
 abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     /* Libraries */
@@ -73,6 +75,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     address public zorroXChainController; // Address of ZorroControllerXChain contract
     address public ZORROAddress; // Address of Zorro ERC20 token
     address public zorroStakingVault; // Address of ZOR single staking vault
+    address public vaultActions; // Address of VaultActions contract TODO: Need setter, constructor etc.
     // Pool/farm/token IDs/addresses
     address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
     address public token0Address; // Address of first (or only) token
@@ -396,7 +399,7 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     function _buyBackAndRevShare(
         uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal virtual returns (uint256 buybackAmt, uint256 revShareAmt) {
         // Calculate buyback amount
         if (buyBackRate > 0) {
@@ -488,19 +491,19 @@ abstract contract VaultBase is IVault, OwnableUpgradeable, ReentrancyGuardUpgrad
     function _buybackOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal virtual;
 
     function _revShareOnChain(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal virtual;
 
     function _swapEarnedToUSD(
         uint256 _earnedAmount,
         address _destination,
         uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
+        VaultActions.ExchangeRates memory _rates
     ) internal virtual;
 }
