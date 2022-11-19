@@ -14,15 +14,13 @@ import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
-import "../../interfaces/Stargate/IStargateRouter.sol";
+import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
-import "../../interfaces/Stargate/IStargateLPStaking.sol";
-
-import "../../interfaces/IAMMRouter02.sol";
+import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "./_VaultActions.sol";
 
-contract VaultActionsStargate is VaultActions {
+contract VaultActionsApeLending is VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -33,26 +31,22 @@ contract VaultActionsStargate is VaultActions {
     /* Structs */
 
     struct ExchangeUSDForWantParams {
-        address stablecoin;
         address token0Address;
+        address stablecoin;
         address tokenZorroAddress;
-        address wantAddress;
-        address stargateRouter;
+        address poolAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
         address[] stablecoinToToken0Path;
-        uint16 stargatePoolId;
     }
 
     struct ExchangeWantTokenForUSDParams {
-        address stablecoin;
         address token0Address;
-        address wantAddress;
-        address stargateRouter;
+        address stablecoin;
+        address poolAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
         address[] token0ToStablecoinPath;
-        uint16 stargatePoolId;
     }
 
     /* Functions */
@@ -96,32 +90,13 @@ contract VaultActionsStargate is VaultActions {
             address(this)
         );
 
-        // Increase allowance
-        IERC20Upgradeable(_params.token0Address).safeIncreaseAllowance(
-            _params.stargateRouter,
+        // Transfer back to sender
+        IERC20Upgradeable(_params.token0Address).safeTransfer(
+            msg.sender,
             _token0Bal
         );
 
-        // Deposit token to get Want token
-        IStargateRouter(_params.stargateRouter).addLiquidity(
-            _params.stargatePoolId,
-            _token0Bal,
-            address(this)
-        );
-
-        // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(_params.wantAddress).balanceOf(
-            address(this)
-        );
-
-        // Transfer back to sender
-        // TODO: Should this in fact be msg.sender?
-        IERC20Upgradeable(_params.wantAddress).safeTransfer(
-            msg.sender,
-            _wantAmt
-        );
-
-        return _wantAmt;
+        return _token0Bal;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -137,36 +112,18 @@ contract VaultActionsStargate is VaultActions {
         // Preflight checks
         require(_amount > 0, "negWant");
 
-        // Safely transfer Want token from sender
-        IERC20Upgradeable(_params.wantAddress).safeTransferFrom(
+        // Safely transfer Want/Underlying token from sender
+        IERC20Upgradeable(_params.token0Address).safeTransferFrom(
             msg.sender,
             address(this),
             _amount
         );
 
-        // Approve
-        IERC20Upgradeable(_params.wantAddress).safeIncreaseAllowance(
-            _params.stargateRouter,
-            _amount
-        );
-
+        // Swap Token0 -> BUSD
         if (_params.token0Address != _params.stablecoin) {
-            // Withdraw Want token to get Token0
-            IStargateRouter(_params.stargateRouter).instantRedeemLocal(
-                _params.stargatePoolId,
-                _amount,
-                address(this)
-            );
-
-            // Get Token0 balance
-            uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
-                address(this)
-            );
-
-            // Swap Token0 -> USD
             _safeSwap(
                 SafeSwapParams({
-                    amountIn: _token0Bal,
+                    amountIn: _amount,
                     priceToken0: _params.token0PriceFeed.getExchangeRate(),
                     priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
                     token0: _params.token0Address,
@@ -176,17 +133,9 @@ contract VaultActionsStargate is VaultActions {
                     destination: address(this)
                 })
             );
-        } else {
-            // Withdraw Want token to get Token0
-            IStargateRouter(_params.stargateRouter).instantRedeemLocal(
-                _params.stargatePoolId,
-                _amount,
-                msg.sender // TODO: Should this be msg.sender
-            );
         }
 
         // Calculate USD balance
-        // TODO: Is this msg.sender in fact?
         return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
     }
 }

@@ -20,8 +20,7 @@ import "../libraries/PriceFeed.sol";
 
 import "../interfaces/Stargate/IStargateLPStaking.sol";
 
-import "./libraries/VaultLibrary.sol";
-
+import "./actions/VaultActionsStargate.sol";
 
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
 contract VaultStargate is VaultBase {
@@ -82,7 +81,9 @@ contract VaultStargate is VaultBase {
         earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
 
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultLibrary.reversePath(stablecoinToToken0Path);
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
+            stablecoinToToken0Path
+        );
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -111,14 +112,14 @@ contract VaultStargate is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultLibrary.VaultAddresses keyAddresses;
+        VaultActions.VaultAddresses keyAddresses;
         address[] earnedToZORROPath;
         address[] earnedToToken0Path;
         address[] stablecoinToToken0Path;
         address[] earnedToZORLPPoolOtherTokenPath;
         address[] earnedToStablecoinPath;
-        VaultLibrary.VaultFees fees;
-        VaultLibrary.VaultPriceFeeds priceFeeds;
+        VaultActions.VaultFees fees;
+        VaultActions.VaultPriceFeeds priceFeeds;
         address tokenSTG;
         address stargateRouter;
         uint16 stargatePoolId;
@@ -198,72 +199,29 @@ contract VaultStargate is VaultBase {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Get balance of deposited USD
-        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
-            address(this)
+        // Allow spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
         );
-        // Check that USD was actually deposited
-        require(_amountUSD > 0, "dep<=0");
-        require(_amountUSD <= _balUSD, "amt>bal");
 
-        // Use price feed to determine exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = stablecoinPriceFeed.getExchangeRate();
-        _priceTokens[1] = token0PriceFeed.getExchangeRate();
-
-        if (defaultStablecoin != token0Address) {
-            // Only perform swaps if the token is not USD
-
-            // Get decimal info
-            uint8[] memory _decimals = new uint8[](2);
-            _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-            _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
-            // Swap USD for tokens
-            // Increase allowance
-            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-                uniRouterAddress,
-                _amountUSD
-            );
-            // Single asset. Swap from USD directly to Token0
-            IAMMRouter02(uniRouterAddress).safeSwap(
+        // Exchange
+        return
+            VaultActionsStargate(vaultActions).exchangeUSDForWantToken(
                 _amountUSD,
-                _priceTokens,
-                _maxMarketMovementAllowed,
-                stablecoinToToken0Path,
-                _decimals,
-                address(this),
-                block.timestamp.add(600)
+                VaultActionsStargate.ExchangeUSDForWantParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    tokenZorroAddress: ZORROAddress,
+                    token0PriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    stargateRouter: stargateRouter,
+                    wantAddress: wantAddress,
+                    stargatePoolId: stargatePoolId
+                }),
+                _maxMarketMovementAllowed
             );
-        }
-
-        // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-
-        // Safe approve
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(stargateRouter, _token0Bal);
-
-        // Deposit token to get Want token
-        IStargateRouter(stargateRouter).addLiquidity(
-            stargatePoolId,
-            _token0Bal,
-            address(this)
-        );
-
-        // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-
-        // Transfer back to sender
-        IERC20Upgradeable(wantAddress).safeTransfer(
-            zorroControllerAddress,
-            _wantAmt
-        );
-
-        return _wantAmt;
     }
 
     /// @notice Public function for farming Want token.
@@ -288,20 +246,14 @@ contract VaultStargate is VaultBase {
         );
 
         // Deposit the Want tokens in the Farm contract
-        IStargateLPStaking(farmContractAddress).deposit(
-            pid,
-            wantAmt
-        );
+        IStargateLPStaking(farmContractAddress).deposit(pid, wantAmt);
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal {
         // Withdraw the Want tokens from the Farm contract
-        IStargateLPStaking(farmContractAddress).withdraw(
-            pid,
-            _wantAmt
-        );
+        IStargateLPStaking(farmContractAddress).withdraw(pid, _wantAmt);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -377,73 +329,28 @@ contract VaultStargate is VaultBase {
         whenNotPaused
         returns (uint256)
     {
-        // Preflight checks
-        require(_amount > 0, "negWant");
-
-        // Safely transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
+        // Allow spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
             _amount
         );
 
-        // Safe approve
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(stargateRouter, _amount);
-
-        if (token0Address != defaultStablecoin) {
-            // Withdraw Want token to get Token0
-            IStargateRouter(stargateRouter).instantRedeemLocal(
-                stargatePoolId,
+        // Exchange
+        return
+            VaultActionsStargate(vaultActions).exchangeWantTokenForUSD(
                 _amount,
-                address(this)
+                VaultActionsStargate.ExchangeWantTokenForUSDParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    wantAddress: wantAddress,
+                    stargateRouter: stargateRouter,
+                    token0PriceFeed: token0PriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    token0ToStablecoinPath: token0ToStablecoinPath,
+                    stargatePoolId: stargatePoolId
+                }),
+                _maxMarketMovementAllowed
             );
-
-            // Get Token0 balance
-            uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-                address(this)
-            );
-
-            // Only swap if the token is not USD
-
-            // Use price feed to determine exchange rates
-            uint256[] memory _priceTokens = new uint256[](2);
-            _priceTokens[0] = token0PriceFeed.getExchangeRate();
-            _priceTokens[1] = stablecoinPriceFeed.getExchangeRate();
-
-            // Swap Token0 for USD
-
-            // Get decimal info
-            uint8[] memory _decimals = new uint8[](2);
-            _decimals[0] = ERC20Upgradeable(token0Address).decimals();
-            _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-
-            // Increase allowance
-            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-                uniRouterAddress,
-                _token0Bal
-            );
-
-            // Swap Token0 -> USD
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _token0Bal,
-                _priceTokens,
-                _maxMarketMovementAllowed,
-                token0ToStablecoinPath,
-                _decimals,
-                msg.sender,
-                block.timestamp.add(600)
-            );
-        } else {
-            // Withdraw Want token to get Token0
-            IStargateRouter(stargateRouter).instantRedeemLocal(
-                stargatePoolId,
-                _amount,
-                msg.sender
-            );
-        }
-
-        // Calculate USD balance.
-        return IERC20Upgradeable(defaultStablecoin).balanceOf(msg.sender);
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -456,7 +363,7 @@ contract VaultStargate is VaultBase {
         whenNotPaused
     {
         require(isFarmable, "!farmable");
-        
+
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
@@ -474,16 +381,12 @@ contract VaultStargate is VaultBase {
         require(_earnedAmt > 0, "0earn");
 
         // Create rates struct
-        VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
+        VaultActions.ExchangeRates memory _rates = VaultActions.ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),
             ZOR: ZORPriceFeed.getExchangeRate(),
             lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
             stablecoin: stablecoinPriceFeed.getExchangeRate()
         });
-        // Other rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _rates.earn;
-        _priceTokens[1] = token0PriceFeed.getExchangeRate();
 
         // Distribute fees
         uint256 _controllerFee = _distributeFees(_earnedAmt);
@@ -501,26 +404,24 @@ contract VaultStargate is VaultBase {
             .sub(_buybackAmt)
             .sub(_revShareAmt);
 
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(token0Address).decimals();
-
         // Allow spending
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _earnedAmt
+            vaultActions,
+            _earnedAmtNet
         );
 
         // Swap Earn token for single asset token (STG -> token0)
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _earnedAmtNet,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            earnedToToken0Path,
-            _decimals,
-            address(this),
-            block.timestamp.add(600)
+        VaultActionsStargate(vaultActions).safeSwap(
+            SafeSwapParams({
+                amountIn: _earnedAmtNet,
+                priceToken0: _rates.earn,
+                priceToken1: token0PriceFeed.getExchangeRate(),
+                token0: earnedAddress,
+                token1: token0Address,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: earnedToToken0Path,
+                destination: address(this)
+            })
         );
 
         // Redeposit single asset token to get Want token
@@ -530,7 +431,10 @@ contract VaultStargate is VaultBase {
         );
 
         // Safe approve
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(stargateRouter, _token0Bal);
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            stargateRouter,
+            _token0Bal
+        );
 
         // Deposit token to get Want token
         IStargateRouter(stargateRouter).addLiquidity(
@@ -544,170 +448,6 @@ contract VaultStargate is VaultBase {
         lastEarnBlock = block.number;
         // Farm LP token
         _farm();
-    }
-
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
-    /// @param _amount The amount of Earn token to buy back
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
-        // Get decimal info
-        uint8[] memory _decimals1 = new uint8[](2);
-        _decimals1[0] = _decimals0[0];
-        _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
-
-        // Get exchange rates
-        uint256[] memory _priceTokens0 = new uint256[](2);
-        _priceTokens0[0] = _rates.earn;
-        _priceTokens0[1] = _rates.ZOR;
-        uint256[] memory _priceTokens1 = new uint256[](2);
-        _priceTokens1[0] = _rates.earn;
-        _priceTokens1[1] = _rates.lpPoolOtherToken;
-
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amount
-        );
-
-        // 1. Swap 1/2 Earned -> ZOR
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
-            _priceTokens0,
-            _maxMarketMovementAllowed,
-            earnedToZORROPath,
-            _decimals0,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // 2. Swap 1/2 Earned -> LP "other token"
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount.div(2),
-            _priceTokens1,
-            _maxMarketMovementAllowed,
-            earnedToZORLPPoolOtherTokenPath,
-            _decimals1,
-            address(this),
-            block.timestamp.add(600)
-        );
-
-        // Add liquidity and burn
-        _addLiqAndBurn(_maxMarketMovementAllowed);
-    }
-
-    /// @notice Adds liquidity and burns the associated LP token
-    /// @param _maxMarketMovementAllowed Slippage factor (990 = 1% etc.)
-    function _addLiqAndBurn(uint256 _maxMarketMovementAllowed) internal {
-// Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
-            address(this)
-        );
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
-            .balanceOf(address(this));
-        IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            zorroTokenAmt
-        );
-        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            otherTokenAmt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORROAddress,
-            zorroLPPoolOtherToken,
-            zorroTokenAmt,
-            otherTokenAmt,
-            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
-    /// @param _maxMarketMovementAllowed Max slippage. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(ZORROAddress).decimals();
-
-        // Get exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _rates.earn;
-        _priceTokens[1] = _rates.ZOR;
-
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amount
-        );
-
-        // Swap Earn to ZOR
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amount,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            earnedToZORROPath,
-            _decimals,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Swaps Earn token to USD and sends to destination specified
-    /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USD to
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-
-        // Get exchange rates
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = _rates.earn;
-        _priceTokens[1] = _rates.stablecoin;
-
-        // Increase allowance
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _earnedAmount
-        );
-
-        // Swap
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _earnedAmount,
-            _priceTokens,
-            _maxMarketMovementAllowed,
-            earnedToStablecoinPath,
-            _decimals,
-            _destination,
-            block.timestamp.add(600)
-        );
     }
 }
 

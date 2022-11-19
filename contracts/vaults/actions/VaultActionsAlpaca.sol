@@ -65,7 +65,7 @@ contract VaultActionsAlpaca is VaultActions {
         ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256) {
-       // Safe transfer IN
+        // Safe transfer IN
         IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
             msg.sender,
             address(this),
