@@ -76,11 +76,6 @@ contract VaultActionsZorro is VaultActions {
             })
         );
 
-        // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(_params.tokenZorroAddress).balanceOf(
-            address(this)
-        );
-
         // Calculate resulting want token balance
         uint256 _wantAmt = IERC20Upgradeable(_params.tokenZorroAddress).balanceOf(
             address(this)

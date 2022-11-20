@@ -6,36 +6,11 @@ import "../VaultStargate.sol";
 
 import "../../tokens/mocks/MockToken.sol";
 
-import "../libraries/VaultLibrary.sol";
+// import "../libraries/VaultLibrary.sol";
 
 contract MockVaultStargate is VaultStargate {
     function unfarm(uint256 _wantAmt) public {
         _unfarm(_wantAmt);
-    }
-    
-    function swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _swapEarnedToUSD(_earnedAmount, _destination, _maxMarketMovementAllowed, _rates);
-    }
-
-    function revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _revShareOnChain(_amount, _maxMarketMovementAllowed, _rates);
-    }
-
-    function buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) public {
-        _buybackOnChain(_amount, _maxMarketMovementAllowed, _rates);
     }
 }
 

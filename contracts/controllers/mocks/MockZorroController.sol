@@ -186,13 +186,6 @@ contract MockInvestmentVault is VaultBase {
         VaultActions.ExchangeRates memory _rates
     ) internal override {}
 
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {}
-
     function farm() external {}
 }
 
