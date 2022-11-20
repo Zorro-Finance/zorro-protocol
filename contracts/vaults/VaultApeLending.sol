@@ -14,7 +14,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "../interfaces/ApeLending/ICErc20Interface.sol";
+import "../interfaces/Lending/ILendingToken.sol";
 
 import "../interfaces/ApeLending/IRainMaker.sol";
 
@@ -316,7 +316,7 @@ contract VaultApeLending is VaultBase {
         _rebalance(_amount);
 
         // Calc balance of underlying
-        uint256 _balance = ICErc20Interface(poolAddress).balanceOfUnderlying(
+        uint256 _balance = ILendingToken(poolAddress).balanceOfUnderlying(
             address(this)
         );
 
@@ -325,7 +325,7 @@ contract VaultApeLending is VaultBase {
 
         // Attempt to redeem underlying token
         require(
-            ICErc20Interface(poolAddress).redeemUnderlying(_amount) == 0,
+            ILendingToken(poolAddress).redeemUnderlying(_amount) == 0,
             "_withdrawSome: redeem failed"
         );
     }
@@ -483,7 +483,7 @@ contract VaultApeLending is VaultBase {
             _wantBal
         );
         // Supply underlying token
-        ICErc20Interface(poolAddress).mint(_wantBal);
+        ILendingToken(poolAddress).mint(_wantBal);
     }
 
     /// @notice Maintains target leverage amount, within tolerance
@@ -492,7 +492,7 @@ contract VaultApeLending is VaultBase {
         /* Init */
 
         // Be initial supply balance of underlying.
-        uint256 _ox = ICErc20Interface(poolAddress).balanceOfUnderlying(
+        uint256 _ox = ILendingToken(poolAddress).balanceOfUnderlying(
             address(this)
         );
         // If no supply, nothing to do so exit.
@@ -534,7 +534,7 @@ contract VaultApeLending is VaultBase {
                 );
 
             // Borrow incremental amount
-            ICErc20Interface(poolAddress).borrow(_dy);
+            ILendingToken(poolAddress).borrow(_dy);
 
             // Supply the amount borrowed
             _supplyWant();
@@ -557,7 +557,7 @@ contract VaultApeLending is VaultBase {
 
                 // Redeem underlying increment. Return val must be 0 (success)
                 require(
-                    ICErc20Interface(poolAddress).redeemUnderlying(_dy) == 0,
+                    ILendingToken(poolAddress).redeemUnderlying(_dy) == 0,
                     "rebal fail"
                 );
 
@@ -576,14 +576,14 @@ contract VaultApeLending is VaultBase {
                     _dy
                 );
                 // Repay borrowed amount (increment)
-                ICErc20Interface(poolAddress).repayBorrow(_dy);
+                ILendingToken(poolAddress).repayBorrow(_dy);
                 // Decrement total amount borrowed
                 _y = _y.sub(_dy);
 
                 // Update current leverage (borrowed / supplied)
                 _currentL = _y.mul(1e18).div(_x);
                 // Update current liquidity of underlying pool
-                _liquidityAvailable = ICErc20Interface(poolAddress).getCash();
+                _liquidityAvailable = ILendingToken(poolAddress).getCash();
             }
         }
     }

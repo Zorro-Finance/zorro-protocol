@@ -16,13 +16,11 @@ import "../libraries/PriceFeed.sol";
 
 import "./actions/VaultActionsBenqiLending.sol";
 
-import "../interfaces/Benqi/IQiErc20.sol";
+import "../interfaces/Lending/ILendingToken.sol";
 
 import "../interfaces/Benqi/IQiTokenSaleDistributor.sol";
 
 import "../interfaces/Benqi/IUnitroller.sol";
-
-// TODO: Like ApeLending, this needs to have an adjusted WantLockedTotal calculation. Compare this closely to Apelending
 
 /// @title Vault contract for Benqi leveraged lending strategies
 contract VaultBenqiLending is VaultBase {
@@ -212,18 +210,6 @@ contract VaultBenqiLending is VaultBase {
         _farm();
     }
 
-    // TODO: Abstract this and other functions into a generalized lending func
-    /// @notice Calc want token locked, accounting for leveraged supply/borrow
-    /// @return amtLocked The adjusted wantLockedTotal quantity
-    function wantTokenLockedAdj() public returns (uint256 amtLocked) {
-        return
-            VaultActionsBenqiLending(vaultActions).wantTokenLockedAdj(
-                address(this),
-                token0Address,
-                poolAddress
-            );
-    }
-
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
@@ -322,7 +308,7 @@ contract VaultBenqiLending is VaultBase {
         _rebalance(_amount);
 
         // Calc balance of underlying
-        uint256 _balance = IQiErc20(poolAddress).balanceOfUnderlying(
+        uint256 _balance = ILendingToken(poolAddress).balanceOfUnderlying(
             address(this)
         );
 
@@ -331,7 +317,7 @@ contract VaultBenqiLending is VaultBase {
 
         // Attempt to redeem underlying token 
         require(
-            IQiErc20(poolAddress).redeemUnderlying(_amount) == 0,
+            ILendingToken(poolAddress).redeemUnderlying(_amount) == 0,
             "_withdrawSome: redeem failed"
         );
     }
@@ -491,7 +477,7 @@ contract VaultBenqiLending is VaultBase {
             _wantBal
         );
         // Supply underlying token
-        IQiErc20(poolAddress).mint(_wantBal);
+        ILendingToken(poolAddress).mint(_wantBal);
     }
 
     /// @notice Maintains target leverage amount, within tolerance
@@ -500,7 +486,7 @@ contract VaultBenqiLending is VaultBase {
         /* Init */
 
         // Be initial supply balance of underlying.
-        uint256 _ox = IQiErc20(poolAddress).balanceOfUnderlying(
+        uint256 _ox = ILendingToken(poolAddress).balanceOfUnderlying(
             address(this)
         );
         // If no supply, nothing to do so exit.
@@ -542,7 +528,7 @@ contract VaultBenqiLending is VaultBase {
                 );
 
             // Borrow incremental amount
-            IQiErc20(poolAddress).borrow(_dy);
+            ILendingToken(poolAddress).borrow(_dy);
 
             // Supply the amount borrowed
             _supplyWant();
@@ -565,7 +551,7 @@ contract VaultBenqiLending is VaultBase {
 
                 // Redeem underlying increment. Return val must be 0 (success)
                 require(
-                    IQiErc20(poolAddress).redeemUnderlying(_dy) == 0,
+                    ILendingToken(poolAddress).redeemUnderlying(_dy) == 0,
                     "rebal fail"
                 );
 
@@ -584,14 +570,14 @@ contract VaultBenqiLending is VaultBase {
                     _dy
                 );
                 // Repay borrowed amount (increment)
-                IQiErc20(poolAddress).repayBorrow(_dy);
+                ILendingToken(poolAddress).repayBorrow(_dy);
                 // Decrement total amount borrowed
                 _y = _y.sub(_dy);
 
                 // Update current leverage (borrowed / supplied)
                 _currentL = _y.mul(1e18).div(_x);
                 // Update current liquidity of underlying pool
-                _liquidityAvailable = IQiErc20(poolAddress).getCash();
+                _liquidityAvailable = ILendingToken(poolAddress).getCash();
             }
         }
     }
