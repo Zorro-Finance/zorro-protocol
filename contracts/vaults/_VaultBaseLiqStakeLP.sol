@@ -14,7 +14,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./libraries/VaultLibrary.sol";
+import "./actions/_VaultActionsLiqStakeLP.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
@@ -80,7 +80,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         stablecoinToLPPoolOtherTokenPath = _initValue
             .stablecoinToLPPoolOtherTokenPath;
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultLibrary.reversePath(
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
             stablecoinToToken0Path
         );
         liquidStakeToToken0Path = _initValue.liquidStakeToToken0Path;
@@ -115,7 +115,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         uint256 pid;
         bool isHomeChain;
         bool isFarmable;
-        VaultLibrary.VaultAddresses keyAddresses;
+        VaultActions.VaultAddresses keyAddresses;
         address liquidStakeToken;
         address liquidStakingPool;
         address[] earnedToZORROPath;
@@ -126,7 +126,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         address[] stablecoinToZORROPath;
         address[] stablecoinToLPPoolOtherTokenPath;
         address[] liquidStakeToToken0Path;
-        VaultLibrary.VaultFees fees;
+        VaultActions.VaultFees fees;
         VaultBaseLiqStakeLPPriceFeeds priceFeeds;
         uint256 maxMarketMovementAllowed;
     }
@@ -215,16 +215,6 @@ contract VaultBaseLiqStakeLP is VaultBase {
         }
     }
 
-    /// @notice Safely swaps tokens using the most suitable protocol based on token
-    /// @param _swapParams SafeSwapParams for swap
-    /// @param _decimals Array of decimals for amount In, amount Out
-    function _safeSwap(
-        SafeSwapParams memory _swapParams,
-        uint8[] memory _decimals
-    ) internal {
-        VaultLibrary.safeSwap(uniRouterAddress, _swapParams, _decimals);
-    }
-
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _wantAmt The amount of Want token to withdraw
     /// @return sharesRemoved The number of shares removed
@@ -284,149 +274,6 @@ contract VaultBaseLiqStakeLP is VaultBase {
         );
     }
 
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
-    /// @param _amount The amount of Earn token to buy back
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Self contained block to limit stack depth
-        {
-            // Get exchange rate
-            uint256 _earnedExchangeRate = earnTokenPriceFeed
-                .getExchangeRate();
-
-            // Get decimal info
-            uint8[] memory _decimals0 = new uint8[](2);
-            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
-            uint8[] memory _decimals1 = new uint8[](2);
-            _decimals1[0] = _decimals0[0];
-            _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
-
-            // 1. Swap 1/2 Earned -> ZOR
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amount.div(2),
-                    priceToken0: _earnedExchangeRate,
-                    priceToken1: _rates.ZOR,
-                    token0: earnedAddress,
-                    token1: ZORROAddress,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToZORROPath,
-                    destination: address(this)
-                }),
-                _decimals0
-            );
-
-            // 2. Swap 1/2 Earned -> LP "other token"
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amount.div(2),
-                    priceToken0: _earnedExchangeRate,
-                    priceToken1: _rates.lpPoolOtherToken,
-                    token0: earnedAddress,
-                    token1: zorroLPPoolOtherToken,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToZORLPPoolOtherTokenPath,
-                    destination: address(this)
-                }),
-                _decimals1
-            );
-        }
-
-        // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
-            address(this)
-        );
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
-            .balanceOf(address(this));
-        IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            zorroTokenAmt
-        );
-        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            otherTokenAmt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORROAddress,
-            zorroLPPoolOtherToken,
-            zorroTokenAmt,
-            otherTokenAmt,
-            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
-    /// @param _maxMarketMovementAllowed Max slippage. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(ZORROAddress).decimals();
-
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amount
-        );
-
-        // Swap Earn to ZOR
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.ZOR,
-                token0: earnedAddress,
-                token1: ZORROAddress,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORROPath,
-                destination: zorroStakingVault
-            }),
-            _decimals0
-        );
-    }
-
-    /// @notice Swaps Earn token to USD and sends to destination specified
-    /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USD to
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        VaultLibrary.swapEarnedToUSD(
-            _earnedAmount,
-            _destination,
-            _maxMarketMovementAllowed,
-            _rates,
-            VaultLibrary.SwapEarnedToUSDParams({
-                earnedAddress: earnedAddress,
-                stablecoin: defaultStablecoin,
-                earnedToStablecoinPath: earnedToStablecoinPath,
-                uniRouterAddress: uniRouterAddress,
-                stablecoinExchangeRate: _rates.stablecoin
-            })
-        );
-    }
-
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {
         _farm();
@@ -465,6 +312,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
 
     function _liquidUnstake(uint256 _amount) internal virtual {}
 
+    // TODO: Make this an abstract contract instead?
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
