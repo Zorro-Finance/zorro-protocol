@@ -14,13 +14,13 @@ import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
-import "../../interfaces/ApeLending/IUnitroller.sol";
+import "../../interfaces/Benqi/IUnitroller.sol";
 
-import "../../interfaces/ApeLending/ICErc20Interface.sol";
+import "../../interfaces/Benqi/IQiErc20.sol";
 
 import "./_VaultActions.sol";
 
-contract VaultActionsApeLending is VaultActions {
+contract VaultActionsBenqiLending is VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -150,9 +150,8 @@ contract VaultActionsApeLending is VaultActions {
         view
         returns (uint256 collFactor)
     {
-        (, uint256 _collateralFactor, , , , ) = IUnitrollerApeLending(
-            _comptrollerAddress
-        ).markets(_poolAddress);
+        (, uint256 _collateralFactor, ) = IUnitrollerBenqi(_comptrollerAddress)
+            .markets(_poolAddress);
         return _collateralFactor;
     }
 
@@ -188,7 +187,7 @@ contract VaultActionsApeLending is VaultActions {
         // Adjusted supply = init supply - amt to withdraw
         x = _ox.sub(_withdrawAmt);
         // Calc init borrow balance
-        y = ICErc20Interface(_poolAddress).borrowBalanceCurrent(address(this));
+        y = IQiErc20(_poolAddress).borrowBalanceCurrent(address(this));
         // Get collateral factor from protocol
         c = this.collateralFactor(_comptrollerAddress, _poolAddress);
         // Target leverage
@@ -196,7 +195,7 @@ contract VaultActionsApeLending is VaultActions {
         // Current leverage = borrow / supply
         currentL = y.mul(1e18).div(x);
         // Liquidity (of underlying) available in the pool overall
-        liquidityAvailable = ICErc20Interface(_poolAddress).getCash();
+        liquidityAvailable = IQiErc20(_poolAddress).getCash();
     }
 
     /// @notice Calculates incremental borrow amount (_dy) when below leverage target hysteresis envelope
@@ -257,7 +256,7 @@ contract VaultActionsApeLending is VaultActions {
         if (dy > _liquidityAvailable) dy = _liquidityAvailable;
     }
 
-    // TODO: Hoist this to a parent class (and similar funcs)
+    // TODO: abstract this to a parent class (and other such functions)
     /// @notice Calc want token locked, accounting for leveraged supply/borrow
     /// @param _vault The vault to check balances of
     /// @param _tokenAddress The address of the underlying token
@@ -269,11 +268,10 @@ contract VaultActionsApeLending is VaultActions {
         address _poolAddress
     ) public returns (uint256 amtLocked) {
         uint256 _wantBal = IERC20Upgradeable(_tokenAddress).balanceOf(_vault);
-        uint256 _supplyBal = ICErc20Interface(_poolAddress).balanceOfUnderlying(
+        uint256 _supplyBal = IQiErc20(_poolAddress).balanceOfUnderlying(_vault);
+        uint256 _borrowBal = IQiErc20(_poolAddress).borrowBalanceCurrent(
             _vault
         );
-        uint256 _borrowBal = ICErc20Interface(_poolAddress)
-            .borrowBalanceCurrent(_vault);
         amtLocked = _wantBal.add(_supplyBal).sub(_borrowBal);
     }
 }

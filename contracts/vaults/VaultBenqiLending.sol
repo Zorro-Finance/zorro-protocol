@@ -14,9 +14,7 @@ import "./_VaultBase.sol";
 
 import "../libraries/PriceFeed.sol";
 
-import "./libraries/VaultLibrary.sol";
-
-import "./libraries/VaultLendingLibrary.sol";
+import "./actions/VaultActionsBenqiLending.sol";
 
 import "../interfaces/Benqi/IQiErc20.sol";
 
@@ -29,12 +27,14 @@ import "../interfaces/Benqi/IUnitroller.sol";
 /// @title Vault contract for Benqi leveraged lending strategies
 contract VaultBenqiLending is VaultBase {
     /* Libraries */
+
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
+
     /// @notice Upgradeable constructor
     /// @param _initValue A VaultAlpacaInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
@@ -88,7 +88,7 @@ contract VaultBenqiLending is VaultBase {
         stablecoinToLPPoolOtherTokenPath = _initValue
             .stablecoinToLPPoolOtherTokenPath;
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultLibrary.reversePath(
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
             stablecoinToToken0Path
         );
 
@@ -118,7 +118,7 @@ contract VaultBenqiLending is VaultBase {
     struct VaultBenqiLendingInit {
         uint256 pid;
         bool isHomeChain;
-        VaultLibrary.VaultAddresses keyAddresses;
+        VaultActions.VaultAddresses keyAddresses;
         uint256 targetBorrowLimit;
         uint256 targetBorrowLimitHysteresis;
         address[] earnedToZORROPath;
@@ -128,8 +128,8 @@ contract VaultBenqiLending is VaultBase {
         address[] earnedToStablecoinPath;
         address[] stablecoinToZORROPath;
         address[] stablecoinToLPPoolOtherTokenPath;
-        VaultLibrary.VaultFees fees;
-        VaultLibrary.VaultPriceFeeds priceFeeds;
+        VaultActions.VaultFees fees;
+        VaultActions.VaultPriceFeeds priceFeeds;
         address comptrollerAddress;
     }
 
@@ -194,12 +194,6 @@ contract VaultBenqiLending is VaultBase {
             _wantAmt
         );
 
-        // Supply the underlying token
-        _supplyWant();
-
-        // Leverage up to target leverage (using supply-borrow)
-        _rebalance(0);
-
         // Set sharesAdded to the Want token amount specified
         sharesAdded = _wantAmt;
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
@@ -214,129 +208,20 @@ contract VaultBenqiLending is VaultBase {
         // Increment the shares
         sharesTotal = sharesTotal.add(sharesAdded);
 
-        // Increment want token locked qty. NOTE, no farming takes place here, as the lending protocol automatically takes care of it
-        wantLockedTotal = wantLockedTotal.add(_wantAmt);
+        // Farm (leverage)
+        _farm();
     }
 
-    /// @notice Supplies underlying token to Pool (vToken contract)
-    function _supplyWant() internal whenNotPaused {
-        // Get underlying balance
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        // Allow spending of underlying token by Pool (VToken contract)
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            poolAddress,
-            _wantBal
-        );
-        // Supply underlying token
-        IQiErc20(poolAddress).mint(_wantBal);
-    }
-
-    /// @notice Maintains target leverage amount, within tolerance
-    /// @param _withdrawAmt The amount of tokens to deleverage for withdrawal
-    function _rebalance(uint256 _withdrawAmt) internal {
-        /* Init */
-
-        // Be initial supply balance of underlying.
-        uint256 _ox = IQiErc20(poolAddress).balanceOfUnderlying(
-            address(this)
-        );
-        // If no supply, nothing to do so exit.
-        if (_ox == 0) return;
-
-        // If withdrawal greater than balance of underlying, cap it (account for rounding)
-        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
-        // Adjusted supply = init supply - amt to withdraw
-        uint256 _x = _ox.sub(_withdrawAmt);
-        // Calc init borrow balance
-        uint256 _y = IQiErc20(poolAddress).borrowBalanceCurrent(
-            address(this)
-        );
-        // Get collateral factor from protocol
-        uint256 _c = collateralFactor();
-        // Target leverage
-        uint256 _L = _c.mul(targetBorrowLimit).div(1e18);
-        // Current leverage = borrow / supply
-        uint256 _currentL = _y.mul(1e18).div(_x);
-        // Liquidity (of underlying) available in the pool overall
-        uint256 _liquidityAvailable = IQiErc20(poolAddress).getCash();
-
-        /* Leverage targeting */
-
-        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
-            // If BELOW leverage target and below hysteresis envelope
-
-            // Calculate incremental amount to borrow:
-            // (Target lev % * curr supply - curr borrowed)/(1 - Target lev %)
-            uint256 _dy = _L.mul(_x).div(1e18).sub(_y).mul(1e18).div(
-                uint256(1e18).sub(_L)
+    // TODO: Abstract this and other functions into a generalized lending func
+    /// @notice Calc want token locked, accounting for leveraged supply/borrow
+    /// @return amtLocked The adjusted wantLockedTotal quantity
+    function wantTokenLockedAdj() public returns (uint256 amtLocked) {
+        return
+            VaultActionsBenqiLending(vaultActions).wantTokenLockedAdj(
+                address(this),
+                token0Address,
+                poolAddress
             );
-
-            // Cap incremental borrow to init supply * collateral fact % - curr borrowed
-            uint256 _max_dy = _ox.mul(_c).div(1e18).sub(_y);
-            if (_dy > _max_dy) _dy = _max_dy;
-            // Also cap to max liq available
-            if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
-
-            // Borrow incremental amount
-            IQiErc20(poolAddress).borrow(_dy);
-
-            // Supply the amount borrowed
-            _supplyWant();
-        } else {
-            // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
-            while (
-                _currentL > _L &&
-                _currentL.sub(_L) > targetBorrowLimitHysteresis
-            ) {
-                // Calculate incremental amount to borrow:
-                // (Curr borrowed - (Target lev % * Curr supply)) / (1 - Target lev %)
-                uint256 _dy = _y.sub(_L.mul(_x).div(1e18)).mul(1e18).div(
-                    uint256(1e18).sub(_L)
-                );
-                // Cap incremental borrow-repay to init supply - (curr borrowed / collateral fact %)
-                uint256 _max_dy = _ox.sub(_y.mul(1e18).div(_c));
-                if (_dy > _max_dy) _dy = _max_dy;
-                // Also cap to max liq available
-                if (_dy > _liquidityAvailable) _dy = _liquidityAvailable;
-
-                // Redeem underlying increment. Return val must be 0 (success)
-                require(
-                    IQiErc20(poolAddress).redeemUnderlying(_dy) == 0,
-                    "rebal fail"
-                );
-
-                // Decrement supply bal by amount repaid
-                _ox = _ox.sub(_dy);
-                // Cap withdrawal amount to new supply (account for rounding)
-                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
-                // Adjusted supply decremented by withdrawal amount
-                _x = _ox.sub(_withdrawAmt);
-
-                // Cap incremental borrow-repay to total amount borrowed
-                if (_dy > _y) _dy = _y;
-                // Allow pool to spend underlying
-                IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-                    poolAddress,
-                    _dy
-                );
-                // Repay borrowed amount (increment)
-                IQiErc20(poolAddress).repayBorrow(_dy);
-                // Decrement total amount borrowed
-                _y = _y.sub(_dy);
-
-                // Update current leverage (borrowed / supplied)
-                _currentL = _y.mul(1e18).div(_x);
-                // Update current liquidity of underlying pool
-                _liquidityAvailable = IQiErc20(poolAddress).getCash();
-            }
-        }
-    }
-
-    function collateralFactor() public view returns (uint256) {
-        (,uint256 _collateralFactor,) = IUnitrollerBenqi(comptrollerAddress).markets(poolAddress);
-        return _collateralFactor;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token
@@ -347,31 +232,27 @@ contract VaultBenqiLending is VaultBase {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
+        // Allow spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
+
+        // Exchange
         return
-            VaultLibraryApeLending.exchangeUSDForWantToken(
+            VaultActionsBenqiLending(vaultActions).exchangeUSDForWantToken(
                 _amountUSD,
-                VaultLibraryApeLending.ExchangeUSDForWantParams({
+                VaultActionsBenqiLending.ExchangeUSDForWantParams({
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: ZORROAddress,
                     token0PriceFeed: token0PriceFeed,
                     stablecoinPriceFeed: stablecoinPriceFeed,
-                    uniRouterAddress: uniRouterAddress,
                     stablecoinToToken0Path: stablecoinToToken0Path,
                     poolAddress: poolAddress
                 }),
                 _maxMarketMovementAllowed
             );
-    }
-
-    /// @notice Safely swaps tokens using the most suitable protocol based on token
-    /// @param _swapParams SafeSwapParams for swap
-    /// @param _decimals Array of decimals for amount In, amount Out
-    function _safeSwap(
-        SafeSwapParams memory _swapParams,
-        uint8[] memory _decimals
-    ) internal {
-        VaultLibrary.safeSwap(uniRouterAddress, _swapParams, _decimals);
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
@@ -389,6 +270,15 @@ contract VaultBenqiLending is VaultBase {
         // Preflight checks
         require(_wantAmt > 0, "negWant");
 
+        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
+        sharesRemoved = _wantAmt.mul(sharesTotal).div(this.wantTokenLockedAdj());
+        // Safety: cap the shares to the total number of shares
+        if (sharesRemoved > sharesTotal) {
+            sharesRemoved = sharesTotal;
+        }
+        // Decrement the total shares by the sharesRemoved
+        sharesTotal = sharesTotal.sub(sharesRemoved);
+
         // Get balance of underlying on this contract
         uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
@@ -397,19 +287,16 @@ contract VaultBenqiLending is VaultBase {
         // If amount to withdraw is gt balance, delever by appropriate amount
         if (_wantAmt > _wantBal) {
             // Delever the incremental amount needed and reassign _wantAmt
-            _wantAmt = _withdrawSome(_wantAmt.sub(_wantBal));
-            // Add back the existing balance and reassign _wantAmt
-            _wantAmt = _wantAmt.add(_wantBal);
+            _withdrawSome(_wantAmt.sub(_wantBal));
         }
+        
+        // Recalc balance
+        _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
 
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
-        // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
+        // Safety: Cap want amount to new balance (after delevering some), as a last resort
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
         }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
@@ -418,35 +305,35 @@ contract VaultBenqiLending is VaultBase {
             );
         }
 
-        // NOTE: No unfarming necessary for lending protocols
-
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
-
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
             _wantAmt
         );
+
+        // Rebalance
+        _farm();
     }
 
-    /// @notice TODO
+    /// @notice Withdraws specified amount of underlying and rebalances
+    /// @param _amount Amount of underlying to withdraw
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
+        // Rebalance first, based on withdrawal amount
         _rebalance(_amount);
+
+        // Calc balance of underlying
         uint256 _balance = IQiErc20(poolAddress).balanceOfUnderlying(
             address(this)
         );
+
+        // Safety: Cap amount to balance in case of rounding errors
         if (_amount > _balance) _amount = _balance;
+
+        // Attempt to redeem underlying token 
         require(
             IQiErc20(poolAddress).redeemUnderlying(_amount) == 0,
             "_withdrawSome: redeem failed"
         );
-        return _amount;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -464,17 +351,23 @@ contract VaultBenqiLending is VaultBase {
         whenNotPaused
         returns (uint256)
     {
+        // Approve spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Exchange
         return
-            VaultLibraryApeLending.exchangeWantTokenForUSD(
+            VaultActionsBenqiLending(vaultActions).exchangeWantTokenForUSD(
                 _amount,
-                VaultLibraryApeLending.ExchangeWantTokenForUSDParams({
+                VaultActionsBenqiLending.ExchangeWantTokenForUSDParams({
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     poolAddress: poolAddress,
                     token0PriceFeed: token0PriceFeed,
                     stablecoinPriceFeed: stablecoinPriceFeed,
-                    token0ToStablecoinPath: token0ToStablecoinPath,
-                    uniRouterAddress: uniRouterAddress
+                    token0ToStablecoinPath: token0ToStablecoinPath
                 }),
                 _maxMarketMovementAllowed
             );
@@ -507,7 +400,7 @@ contract VaultBenqiLending is VaultBase {
         uint256 _token0ExchangeRate = token0PriceFeed.getExchangeRate();
 
         // Create rates struct
-        VaultLibrary.ExchangeRates memory _rates = VaultLibrary.ExchangeRates({
+        VaultActions.ExchangeRates memory _rates = VaultActions.ExchangeRates({
             earn: earnTokenPriceFeed.getExchangeRate(),
             ZOR: ZORPriceFeed.getExchangeRate(),
             lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
@@ -530,30 +423,26 @@ contract VaultBenqiLending is VaultBase {
             .sub(_buybackAmt)
             .sub(_revShareAmt);
 
-        // Swap Earn token for single asset token
-
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-        uint8[] memory _decimals1 = new uint8[](2);
-        _decimals1[0] = _decimals0[1];
-        _decimals1[1] = ERC20Upgradeable(token0Address).decimals();
-
         // Swap earn to token0 if token0 is not earn
         if (token0Address != earnedAddress) {
-            _safeSwap(
+            // Approve spending
+            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+                vaultActions,
+                _earnedAmtNet
+            );
+
+            // Swap
+            VaultActionsBenqiLending(vaultActions).safeSwap(
                 SafeSwapParams({
                     amountIn: _earnedAmtNet,
                     priceToken0: _rates.earn,
-                    priceToken1: _token0ExchangeRate,
+                    priceToken1: token0PriceFeed.getExchangeRate(),
                     token0: earnedAddress,
                     token1: token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: earnedToToken0Path,
                     destination: address(this)
-                }),
-                _decimals1
+                })
             );
         }
 
@@ -567,214 +456,144 @@ contract VaultBenqiLending is VaultBase {
             poolAddress,
             _token0Bal
         );
-        // Re-supply
-        _supplyWant();
-        // Re-lever
-        _rebalance(0);
+        
+        // Re-supply/leverage
+        _farm();
 
         // This vault is only for single asset deposits, so farm that token and exit
         // Update the last earn block
         lastEarnBlock = block.number;
     }
 
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
-    /// @param _amount The amount of Earn token to buy back
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Self contained block to limit stack depth
-        {
-            // Get exchange rate
-            uint256 _stablecoinExchangeRate = stablecoinPriceFeed
-                .getExchangeRate();
-
-            // Get decimal info
-            uint8[] memory _decimals0 = new uint8[](2);
-            _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-            _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-            uint8[] memory _decimals1 = new uint8[](2);
-            _decimals1[0] = _decimals0[1];
-            _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
-            uint8[] memory _decimals2 = new uint8[](2);
-            _decimals2[0] = _decimals0[1];
-            _decimals2[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
-
-            // 1. Swap Earned -> BUSD
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _amount,
-                    priceToken0: _rates.earn,
-                    priceToken1: _stablecoinExchangeRate,
-                    token0: earnedAddress,
-                    token1: defaultStablecoin,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToStablecoinPath,
-                    destination: address(this)
-                }),
-                _decimals0
-            );
-
-            // Get BUSD bal
-            uint256 _balBUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
-                address(this)
-            );
-
-            // 2. Swap 1/2 BUSD -> ZOR
-            _safeSwap(
-                SafeSwapParams({
-                    amountIn: _balBUSD.div(2),
-                    priceToken0: _stablecoinExchangeRate,
-                    priceToken1: _rates.ZOR,
-                    token0: defaultStablecoin,
-                    token1: ZORROAddress,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: stablecoinToZORROPath,
-                    destination: address(this)
-                }),
-                _decimals1
-            );
-
-            // 3. Swap 1/2 BUSD -> LP "other token"
-            if (zorroLPPoolOtherToken != defaultStablecoin) {
-                _safeSwap(
-                    SafeSwapParams({
-                        amountIn: _balBUSD.div(2),
-                        priceToken0: _stablecoinExchangeRate,
-                        priceToken1: _rates.lpPoolOtherToken,
-                        token0: defaultStablecoin,
-                        token1: zorroLPPoolOtherToken,
-                        maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                        path: stablecoinToLPPoolOtherTokenPath,
-                        destination: address(this)
-                    }),
-                    _decimals2
-                );
-            }
-        }
-
-        // Enter LP pool and send received token to the burn address
-        uint256 zorroTokenAmt = IERC20Upgradeable(ZORROAddress).balanceOf(
-            address(this)
-        );
-        uint256 otherTokenAmt = IERC20Upgradeable(zorroLPPoolOtherToken)
-            .balanceOf(address(this));
-        IERC20Upgradeable(ZORROAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            zorroTokenAmt
-        );
-        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            otherTokenAmt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORROAddress,
-            zorroLPPoolOtherToken,
-            zorroTokenAmt,
-            otherTokenAmt,
-            zorroTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            otherTokenAmt.mul(_maxMarketMovementAllowed).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
-    /// @param _maxMarketMovementAllowed Max slippage. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        // Get decimal info
-        uint8[] memory _decimals0 = new uint8[](2);
-        _decimals0[0] = ERC20Upgradeable(earnedAddress).decimals();
-        _decimals0[1] = ERC20Upgradeable(defaultStablecoin).decimals();
-        // Get decimal info
-        uint8[] memory _decimals1 = new uint8[](2);
-        _decimals1[0] = _decimals0[1];
-        _decimals1[1] = ERC20Upgradeable(ZORROAddress).decimals();
-
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amount
-        );
-
-        // Swap Earn to USD
-        // 1. Router: Earn -> BUSD
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.stablecoin,
-                token0: earnedAddress,
-                token1: defaultStablecoin,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToStablecoinPath,
-                destination: address(this)
-            }),
-            _decimals0
-        );
-        // 2. Uni: BUSD -> ZOR
-        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
-            address(this)
-        );
-        // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _balUSD
-        );
-        _safeSwap(
-            SafeSwapParams({
-                amountIn: _balUSD,
-                priceToken0: _rates.stablecoin,
-                priceToken1: _rates.ZOR,
-                token0: defaultStablecoin,
-                token1: ZORROAddress,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: stablecoinToZORROPath,
-                destination: zorroStakingVault
-            }),
-            _decimals1
-        );
-    }
-
-    /// @notice Swaps Earn token to USD and sends to destination specified
-    /// @param _earnedAmount Quantity of Earned tokens
-    /// @param _destination Address to send swapped USD to
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    function _swapEarnedToUSD(
-        uint256 _earnedAmount,
-        address _destination,
-        uint256 _maxMarketMovementAllowed,
-        VaultLibrary.ExchangeRates memory _rates
-    ) internal override {
-        VaultLibrary.swapEarnedToUSD(
-            _earnedAmount,
-            _destination,
-            _maxMarketMovementAllowed,
-            _rates,
-            VaultLibrary.SwapEarnedToUSDParams({
-                earnedAddress: earnedAddress,
-                stablecoin: defaultStablecoin,
-                earnedToStablecoinPath: earnedToStablecoinPath,
-                uniRouterAddress: uniRouterAddress,
-                stablecoinExchangeRate: _rates.stablecoin
-            })
-        );
-    }
-
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {
-        // Do nothing - Only for implementing interface
+        _farm();
+    }
+
+    /// @notice Function for farming want token
+    function _farm() internal {
+        // Supply the underlying token
+        _supplyWant();
+
+        // Leverage up to target leverage (using supply-borrow)
+        _rebalance(0);
+    }
+
+    /// @notice Supplies underlying token to Pool (vToken contract)
+    function _supplyWant() internal whenNotPaused {
+        // Get underlying balance
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        // Allow spending of underlying token by Pool (VToken contract)
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            poolAddress,
+            _wantBal
+        );
+        // Supply underlying token
+        IQiErc20(poolAddress).mint(_wantBal);
+    }
+
+    /// @notice Maintains target leverage amount, within tolerance
+    /// @param _withdrawAmt The amount of tokens to deleverage for withdrawal
+    function _rebalance(uint256 _withdrawAmt) internal {
+        /* Init */
+
+        // Be initial supply balance of underlying.
+        uint256 _ox = IQiErc20(poolAddress).balanceOfUnderlying(
+            address(this)
+        );
+        // If no supply, nothing to do so exit.
+        if (_ox == 0) return;
+
+        // If withdrawal greater than balance of underlying, cap it (account for rounding)
+        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+
+        // Init
+        (
+            uint256 _x,
+            uint256 _y,
+            uint256 _c,
+            uint256 _L,
+            uint256 _currentL,
+            uint256 _liquidityAvailable
+        ) = VaultActionsBenqiLending(vaultActions).levLendingParams(
+                _withdrawAmt,
+                _ox,
+                comptrollerAddress,
+                poolAddress,
+                targetBorrowLimit
+            );
+
+        /* Leverage targeting */
+
+        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
+            // If BELOW leverage target and below hysteresis envelope
+
+            // Calculate incremental amount to borrow:
+            uint256 _dy = VaultActionsBenqiLending(vaultActions)
+                .calcIncBorrowBelowTarget(
+                    _x,
+                    _y,
+                    _ox,
+                    _c,
+                    _L,
+                    _liquidityAvailable
+                );
+
+            // Borrow incremental amount
+            IQiErc20(poolAddress).borrow(_dy);
+
+            // Supply the amount borrowed
+            _supplyWant();
+        } else {
+            // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
+            while (
+                _currentL > _L &&
+                _currentL.sub(_L) > targetBorrowLimitHysteresis
+            ) {
+                // Calculate incremental amount to borrow:
+                uint256 _dy = VaultActionsBenqiLending(vaultActions)
+                    .calcIncBorrowAboveTarget(
+                        _x,
+                        _y,
+                        _ox,
+                        _c,
+                        _L,
+                        _liquidityAvailable
+                    );
+
+                // Redeem underlying increment. Return val must be 0 (success)
+                require(
+                    IQiErc20(poolAddress).redeemUnderlying(_dy) == 0,
+                    "rebal fail"
+                );
+
+                // Decrement supply bal by amount repaid
+                _ox = _ox.sub(_dy);
+                // Cap withdrawal amount to new supply (account for rounding)
+                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+                // Adjusted supply decremented by withdrawal amount
+                _x = _ox.sub(_withdrawAmt);
+
+                // Cap incremental borrow-repay to total amount borrowed
+                if (_dy > _y) _dy = _y;
+                // Allow pool to spend underlying
+                IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+                    poolAddress,
+                    _dy
+                );
+                // Repay borrowed amount (increment)
+                IQiErc20(poolAddress).repayBorrow(_dy);
+                // Decrement total amount borrowed
+                _y = _y.sub(_dy);
+
+                // Update current leverage (borrowed / supplied)
+                _currentL = _y.mul(1e18).div(_x);
+                // Update current liquidity of underlying pool
+                _liquidityAvailable = IQiErc20(poolAddress).getCash();
+            }
+        }
     }
 }
 
