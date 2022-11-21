@@ -8,6 +8,8 @@ import "../interfaces/IZorroController.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
+import "./actions/ZorroControllerXChainActions.sol";
+
 contract ZorroControllerXChainDeposit is
     IZorroControllerXChainDeposit,
     ZorroControllerXChainBase
@@ -15,93 +17,6 @@ contract ZorroControllerXChainDeposit is
     /* Libraries */
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
-
-    /* Fees */
-
-    /// @notice Checks to see how much a cross chain deposit will cost
-    /// @param _chainId The Zorro Chain ID (not the LayerZero one)
-    /// @param _dstContract The destination contract address on the remote chain
-    /// @param _pid The pool ID on the remote chain
-    /// @param _valueUSD The amount of USD to deposit
-    /// @param _weeksCommitted Number of weeks to commit to a vault
-    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
-    /// @param _destWallet A valid address on the remote chain that can claim ownership
-    /// @return uint256 Expected fee to pay for bridging/cross chain execution
-    function checkXChainDepositFee(
-        uint256 _chainId,
-        bytes memory _dstContract,
-        uint256 _pid,
-        uint256 _valueUSD,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        bytes memory _destWallet
-    ) external view returns (uint256) {
-        // Init empty LZ object
-        IStargateRouter.lzTxObj memory _lzTxParams;
-
-        // Get payload
-        bytes memory _payload = _encodeXChainDepositPayload(
-            _chainId,
-            _pid,
-            _valueUSD,
-            _weeksCommitted,
-            _maxMarketMovement,
-            msg.sender,
-            _destWallet
-        );
-
-        // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
-            .quoteLayerZeroFee(
-                ZorroChainToLZMap[_chainId],
-                1,
-                _dstContract,
-                _payload,
-                _lzTxParams
-            );
-        return _nativeFee;
-    }
-
-    /* Payload encoding */
-
-    /// @notice Encodes payload for making cross chan deposit
-    /// @param _destChainId Destination Zorro Chain ID
-    /// @param _pid Pool ID on remote chain
-    /// @param _valueUSD Amount in USD to deposit
-    /// @param _weeksCommitted Number of weeks to commit deposit for in vault
-    /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
-    /// @param _originWallet Wallet address on origin chain that will be depositing funds cross chain.
-    /// @param _destWallet Optional wallet address on destination chain that will be receiving deposit. If not provided, will use a truncated address based on the _originWallet
-    /// @return payload The ABI encoded payload
-    function _encodeXChainDepositPayload(
-        uint256 _destChainId,
-        uint256 _pid,
-        uint256 _valueUSD,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        address _originWallet,
-        bytes memory _destWallet
-    ) internal view returns (bytes memory payload) {
-        if (chainTypes[_destChainId] == 0) {
-            // Destination chain is an EVM chain
-
-            // Calculate method signature
-            bytes4 _sig = this.receiveXChainDepositRequest.selector;
-            // Calculate abi encoded bytes for input args
-            bytes memory _inputs = abi.encode(
-                _pid,
-                _valueUSD,
-                _weeksCommitted,
-                _maxMarketMovement,
-                abi.encodePacked(_originWallet), // Convert address to bytes
-                _bytesToAddress(_destWallet) // Decode bytes to address
-            );
-            // Concatenate bytes of signature and inputs
-            payload = bytes.concat(_sig, _inputs);
-        }
-
-        require(payload.length > 0, "Invalid xchain payload");
-    }
 
     /* Sending */
 
@@ -137,15 +52,15 @@ contract ZorroControllerXChainDeposit is
         );
 
         // Generate payload
-        bytes memory _payload = _encodeXChainDepositPayload(
-            _zorroChainId,
-            _pid,
-            _balUSD,
-            _weeksCommitted,
-            _maxMarketMovement,
-            msg.sender,
-            _destWallet
-        );
+        bytes memory _payload = ZorroControllerXChainActions(controllerActions)
+            .encodeXChainDepositPayload(
+                _pid,
+                _balUSD,
+                _weeksCommitted,
+                _maxMarketMovement,
+                msg.sender,
+                _destWallet
+            );
 
         // Get the destination contract address on the remote chain
         bytes memory _dstContract = controllerContractsMap[_zorroChainId];
@@ -211,7 +126,7 @@ contract ZorroControllerXChainDeposit is
             currentChainController,
             _valueUSD
         );
-        
+
         // Call deposit function
         IZorroControllerInvestment(currentChainController)
             .depositFullServiceFromXChain(

@@ -69,6 +69,7 @@ contract ZorroControllerXChainBase is
     address public homeChainZorroController;
     address public currentChainController;
     address public publicPool;
+    address public controllerActions; // TODO: Setter and constructor
     // Chain config
     uint256 public chainId;
     uint256 public homeChainId;
@@ -189,11 +190,5 @@ contract ZorroControllerXChainBase is
             _msgPayload.refundAddress,
             _msgPayload.adapterParams
         );
-    }
-
-    function _bytesToAddress(bytes memory bys) internal pure returns (address addr) {
-        assembly {
-            addr := mload(add(bys,20))
-        } 
     }
 }

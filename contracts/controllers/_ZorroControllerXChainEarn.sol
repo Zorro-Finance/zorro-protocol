@@ -16,6 +16,8 @@ import "../interfaces/IZorro.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
+import "./actions/ZorroControllerXChainActions.sol";
+
 contract ZorroControllerXChainEarn is
     IZorroControllerXChainEarn,
     ZorroControllerXChainBase
@@ -52,6 +54,7 @@ contract ZorroControllerXChainEarn is
         uint256 indexed _revShareAmountUSD
     );
 
+    // TODO: Move all events, structs to interfaces -- globally
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
     /* State */
@@ -99,75 +102,6 @@ contract ZorroControllerXChainEarn is
         priceFeedStablecoin = AggregatorV3Interface(_priceFeeds[2]);
     }
 
-    /* Fees */
-
-    /// @notice Checks to see how much a cross chain earnings distribution will cost
-    /// @param _amountUSDBuyback Amount of USD to buy back
-    /// @param _amountUSDRevShare Amount of USD to rev share with ZOR single staking vault
-    /// @param _accSlashedRewards Accumulated slashed rewards on chain
-    /// @return uint256 Quantity of native token as fees
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function checkXChainDistributeEarningsFee(
-        uint256 _amountUSDBuyback,
-        uint256 _amountUSDRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) external view returns (uint256) {
-        // Init empty LZ object
-        IStargateRouter.lzTxObj memory _lzTxParams;
-
-        // Get payload
-        bytes memory _payload = _encodeXChainDistributeEarningsPayload(
-            chainId,
-            _amountUSDBuyback,
-            _amountUSDRevShare,
-            _accSlashedRewards,
-            _maxMarketMovement
-        );
-        bytes memory _dstContract = abi.encodePacked(homeChainZorroController);
-
-        // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
-            .quoteLayerZeroFee(
-                ZorroChainToLZMap[homeChainId],
-                1,
-                _dstContract,
-                _payload,
-                _lzTxParams
-            );
-        return _nativeFee;
-    }
-
-    /* Encoding (payloads) */
-
-    /// @notice Encodes payload for making cross chan earnings distribution request
-    /// @param _remoteChainId Zorro chain ID of the chain making the distribution request
-    /// @param _amountUSDBuyback Amount in USD to buy back
-    /// @param _amountUSDRevShare Amount in USD to rev share with ZOR staking vault
-    /// @param _accSlashedRewards Accumulated slashed rewards on chain
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    /// @return bytes ABI encoded payload
-    function _encodeXChainDistributeEarningsPayload(
-        uint256 _remoteChainId,
-        uint256 _amountUSDBuyback,
-        uint256 _amountUSDRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) internal pure returns (bytes memory) {
-        // Calculate method signature
-        bytes4 _sig = this.receiveXChainDistributionRequest.selector;
-        // Calculate abi encoded bytes for input args
-        bytes memory _inputs = abi.encode(
-            _remoteChainId,
-            _amountUSDBuyback,
-            _amountUSDRevShare,
-            _accSlashedRewards,
-            _maxMarketMovement
-        );
-        // Concatenate bytes of signature and inputs
-        return bytes.concat(_sig, _inputs);
-    }
-
     /* Sending */
 
     /// @notice Sends a request back to the home chain to distribute earnings
@@ -205,7 +139,7 @@ contract ZorroControllerXChainEarn is
         uint256 _slashedRewards = _removeSlashedRewards();
 
         // Generate payload
-        bytes memory _payload = _encodeXChainDistributeEarningsPayload(
+        bytes memory _payload = ZorroControllerXChainActions(controllerActions).encodeXChainDistributeEarningsPayload(
             chainId,
             _buybackAmountUSD,
             _revShareAmountUSD,

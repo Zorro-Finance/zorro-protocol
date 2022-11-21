@@ -30,27 +30,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         uint256 indexed _trancheId
     );
 
-    function encodeXChainDepositPayload(
-        uint256 _chainId,
-        uint256 _pid,
-        uint256 _valueUSD,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        address _originWallet,
-        bytes memory _destWallet
-    ) public view returns (bytes memory) {
-        return
-            _encodeXChainDepositPayload(
-                _chainId,
-                _pid,
-                _valueUSD,
-                _weeksCommitted,
-                _maxMarketMovement,
-                _originWallet,
-                _destWallet
-            );
-    }
-
     function mockReceiveXChainDepositRequest(
         uint256 _pid,
         uint256 _valueUSD,
@@ -186,48 +165,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         emit ReceiveXChainWithdrawalReq(_originChainId, _pid, _trancheId);
     }
 
-    function getLZAdapterParamsForWithdraw(uint256 _gasForDestinationLZReceive)
-        public
-        pure
-        returns (bytes memory)
-    {
-        return _getLZAdapterParamsForWithdraw(_gasForDestinationLZReceive);
-    }
-
-    function encodeXChainWithdrawalPayload(
-        uint256 _originChainId,
-        bytes memory _originAccount,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement
-    ) public pure returns (bytes memory) {
-        return
-            _encodeXChainWithdrawalPayload(
-                _originChainId,
-                _originAccount,
-                _pid,
-                _trancheId,
-                _maxMarketMovement
-            );
-    }
-
-    function encodeXChainRepatriationPayload(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _rewardsDue
-    ) public pure returns (bytes memory) {
-        return
-            _encodeXChainRepatriationPayload(
-                _originChainId,
-                _pid,
-                _trancheId,
-                _originRecipient,
-                _rewardsDue
-            );
-    }
-
     function sendXChainRepatriationRequest(
         uint256 _originChainId,
         uint256 _pid,
@@ -246,23 +183,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _rewardsDue,
             _maxMarketMovementAllowed
         );
-    }
-
-    function encodeXChainDistributeEarningsPayload(
-        uint256 _remoteChainId,
-        uint256 _amountUSDBuyback,
-        uint256 _amountUSDRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) public pure returns (bytes memory) {
-        return
-            _encodeXChainDistributeEarningsPayload(
-                _remoteChainId,
-                _amountUSDBuyback,
-                _amountUSDRevShare,
-                _accSlashedRewards,
-                _maxMarketMovement
-            );
     }
 
     function buybackOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)

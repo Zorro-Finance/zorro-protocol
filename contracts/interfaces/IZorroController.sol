@@ -6,6 +6,30 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 /// @title IZorroControllerBase
 interface IZorroControllerBase {
+    /* Structs */
+
+    // Info of each tranche.
+    struct TrancheInfo {
+        uint256 contribution; // The tranche-specific contribution for a given pool (Cx). Equivalent to the product of their contributed deposit and a time multiplier
+        uint256 timeMultiplier; // The time multiplier factor for rewards
+        uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
+        uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
+        uint256 enteredVaultAt; // The block timestamp for which the user deposited into a Vault.
+        uint256 exitedVaultAt; // The block timestamp for which the user finished withdrawal
+    }
+
+    // Info of each pool
+    struct PoolInfo {
+        IERC20Upgradeable want; // Want token contract.
+        uint256 allocPoint; // How many allocation points assigned to this pool.
+        uint256 lastRewardBlock; // Last block number that ZORRO distribution occurs.
+        uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
+        uint256 totalTrancheContributions; // Sum of all user contributions in this pool
+        address vault; // Address of the Vault
+    }
+
+    /* Setters */
+
     function setKeyAddresses(address _ZORRO, address _defaultStablecoin)
         external;
 
@@ -32,6 +56,8 @@ interface IZorroControllerBase {
     ) external;
 
     function setZorroControllerOracle(address _zorroControllerOracle) external;
+
+    /* Functions */
 
     function poolLength() external view returns (uint256);
 

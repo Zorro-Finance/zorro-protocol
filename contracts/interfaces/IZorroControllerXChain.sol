@@ -32,16 +32,6 @@ interface IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainDeposit
 interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
-    function checkXChainDepositFee(
-        uint256 _chainId,
-        bytes memory _dstContract,
-        uint256 _pid,
-        uint256 _valueUSD,
-        uint256 _weeksCommitted,
-        uint256 _maxMarketMovement,
-        bytes memory _destWallet
-    ) external view returns (uint256);
-
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
         uint256 _pid,
@@ -76,13 +66,6 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
 
     function setPriceFeeds(address[] calldata _priceFeeds) external;
 
-    function checkXChainDistributeEarningsFee(
-        uint256 _amountUSDBuyback,
-        uint256 _amountUSDRevShare,
-        uint256 _accSlashedRewards,
-        uint256 _maxMarketMovement
-    ) external view returns (uint256);
-
     function sendXChainDistributeEarningsRequest(
         uint256 _pid,
         uint256 _buybackAmountUSD,
@@ -101,22 +84,6 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainWithdraw
 interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
-    function checkXChainWithdrawalFee(
-        uint256 _zorroChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement,
-        uint256 _gasForDestinationLZReceive
-    ) external view returns (uint256);
-
-    function checkXChainRepatriationFee(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _rewardsDue
-    ) external view returns (uint256);
-
     function sendXChainWithdrawalRequest(
         uint256 _destZorroChainId,
         uint256 _pid,

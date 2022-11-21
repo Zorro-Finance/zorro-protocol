@@ -59,7 +59,9 @@ contract ZorroControllerXChainReceiver is
         // Get func signature
         bytes4 _funcSig = bytes4(payload);
         // Get params payload only
-        bytes memory _paramsPayload = this.extractParamsPayload(payload);
+        bytes memory _paramsPayload = ZorroControllerXChainActions(
+            controllerActions
+        ).extractParamsPayload(payload);
 
         // Match to appropriate func
         if (this.receiveXChainDepositRequest.selector == _funcSig) {
@@ -144,7 +146,9 @@ contract ZorroControllerXChainReceiver is
         // Get func signature
         bytes4 _funcSig = bytes4(_payload);
         // Get params-only payload
-        bytes memory _paramsPayload = this.extractParamsPayload(_payload);
+        bytes memory _paramsPayload = ZorroControllerXChainActions(
+            controllerActions
+        ).extractParamsPayload(_payload);
         // Match to appropriate func
         if (this.receiveXChainWithdrawalRequest.selector == _funcSig) {
             // Decode params
@@ -171,12 +175,5 @@ contract ZorroControllerXChainReceiver is
         } else {
             revert("Unrecognized func");
         }
-    }
-
-    /// @notice Removes function signature from ABI encoded payload
-    /// @param _payloadWithSig ABI encoded payload with function selector
-    /// @return paramsPayload Payload with params only
-    function extractParamsPayload(bytes calldata _payloadWithSig) public pure returns (bytes memory paramsPayload) {
-        paramsPayload = _payloadWithSig[4:];
     }
 }

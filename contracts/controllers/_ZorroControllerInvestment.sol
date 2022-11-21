@@ -20,6 +20,8 @@ import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IZorroController.sol";
 
+import "./actions/ZorroControllerActions.sol";
+
 contract ZorroControllerInvestment is
     IZorroControllerInvestment,
     ZorroControllerBase
@@ -218,10 +220,10 @@ contract ZorroControllerInvestment is
         );
 
         // Determine time multiplier value.
-        uint256 _timeMultiplier = getTimeMultiplier(_weeksCommitted);
+        uint256 _timeMultiplier = ZorroControllerActions(controllerActions).getTimeMultiplier(_weeksCommitted, isTimeMultiplierActive);
 
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-        uint256 _contributionAdded = _getUserContribution(
+        uint256 _contributionAdded = ZorroControllerActions(controllerActions).getUserContribution(
             sharesAdded,
             _timeMultiplier
         );
@@ -514,7 +516,7 @@ contract ZorroControllerInvestment is
             (
                 uint256 _rewardsDue,
                 uint256 _slashedRewards
-            ) = _getAdjustedRewards(_tranche, _pendingRewards);
+            ) = ZorroControllerActions(controllerActions).getAdjustedRewards(_tranche, _pendingRewards);
 
             if (_xChainRepatriation) {
                 // Update rewardsDueXChain
@@ -634,35 +636,6 @@ contract ZorroControllerInvestment is
                 _trancheId
             ];
             _tranche = trancheInfo[_pid][_ftLocalAcct][_trancheId];
-        }
-    }
-
-    /// @notice Splits rewards into rewards due and slashed rewards (if early withdrawal)
-    /// @param _tranche TrancheInfo object
-    /// @param _pendingRewards Qty of ZOR tokens as pending rewards
-    /// @return _rewardsDue The amount of ZOR rewards payable
-    /// @return _slashedRewards The amount of ZOR rewards slashed due to early withdrawals
-    function _getAdjustedRewards(
-        TrancheInfo memory _tranche,
-        uint256 _pendingRewards
-    ) internal view returns (uint256 _rewardsDue, uint256 _slashedRewards) {
-        // Only process rewards > 0
-        if (_pendingRewards <= 0) {
-            return (0, 0);
-        }
-        // Check if this is an early withdrawal
-        // If so, slash the accumulated rewards proportionally to the % time remaining before maturity of the time commitment
-        // If not, distribute rewards as normal
-        int256 _timeRemainingInCommitment = int256(_tranche.enteredVaultAt)
-            .add(int256(_tranche.durationCommittedInWeeks.mul(1 weeks)))
-            .sub(int256(block.timestamp));
-        if (_timeRemainingInCommitment > 0) {
-            _slashedRewards = _pendingRewards
-                .mul(uint256(_timeRemainingInCommitment))
-                .div(_tranche.durationCommittedInWeeks.mul(1 weeks));
-            _rewardsDue = _pendingRewards.sub(_slashedRewards);
-        } else {
-            _rewardsDue = _pendingRewards;
         }
     }
 
@@ -902,39 +875,5 @@ contract ZorroControllerInvestment is
 
         // Transfer slashed rewards from public pool to ZOR staking vault
         _fetchFundsFromPublicPool(_totalSlashed, zorroStakingVault);
-    }
-
-    /* Allocations */
-
-    /// @notice Calculate time multiplier based on duration committed
-    /// @dev For Zorro staking vault, returns 1e12 no matter what
-    /// @param durationInWeeks number of weeks committed into Vault
-    /// @return timeMultiplier Time multiplier factor, times 1e12
-    function getTimeMultiplier(uint256 durationInWeeks)
-        public
-        view
-        returns (uint256 timeMultiplier)
-    {
-        timeMultiplier = 1e12;
-
-        if (isTimeMultiplierActive) {
-            // Use sqrt(x * 10000)/100 to get better float point accuracy (see tests)
-            timeMultiplier = ((durationInWeeks.mul(1e4)).sqrt())
-                .mul(1e12)
-                .mul(2)
-                .div(1000)
-                .add(1e12);
-        }
-    }
-
-    /// @notice The contribution of the user, meant to be used in rewards allocations
-    /// @param _liquidityCommitted How many tokens staked (e.g. LP tokens)
-    /// @param _timeMultiplier Time multiplier value (from getTimeMultiplier())
-    /// @return uint256 The relative contribution of the user (unitless)
-    function _getUserContribution(
-        uint256 _liquidityCommitted,
-        uint256 _timeMultiplier
-    ) internal pure returns (uint256) {
-        return _liquidityCommitted.mul(_timeMultiplier).div(1e12);
     }
 }

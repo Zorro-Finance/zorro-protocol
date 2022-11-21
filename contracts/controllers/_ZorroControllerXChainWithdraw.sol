@@ -10,6 +10,8 @@ import "../interfaces/IZorroControllerXChain.sol";
 
 import "../interfaces/IZorro.sol";
 
+import "./actions/ZorroControllerXChainActions.sol";
+
 contract ZorroControllerXChainWithdraw is
     IZorroControllerXChainWithdraw,
     ZorroControllerXChainBase
@@ -24,169 +26,6 @@ contract ZorroControllerXChainWithdraw is
         uint256 _trancheId,
         uint256 _originChainId
     );
-
-    /* Fees */
-
-    /* Fees::withdrawals */
-
-    /// @notice Checks to see how much a cross chain withdrawal will cost
-    /// @param _zorroChainId The Zorro Chain ID (not the LayerZero one)
-    /// @param _pid The pool ID on the remote chain
-    /// @param _trancheId The tranche ID on the remote chain
-    /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
-    /// @param _gasForDestinationLZReceive How much additional gas to provide at destination contract
-    /// @return uint256 Expected fee to pay for bridging/cross chain execution
-    function checkXChainWithdrawalFee(
-        uint256 _zorroChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement,
-        uint256 _gasForDestinationLZReceive
-    ) external view returns (uint256) {
-        // Get destination
-        uint16 _dstChainId = ZorroChainToLZMap[_zorroChainId];
-
-        // Prepare encoding
-        bytes memory _payload = _encodeXChainWithdrawalPayload(
-            chainId,
-            abi.encodePacked(msg.sender),
-            _pid,
-            _trancheId,
-            _maxMarketMovement
-        );
-
-        // Encode adapter params to provide more gas for destination
-        bytes memory _adapterParams = _getLZAdapterParamsForWithdraw(
-            _gasForDestinationLZReceive
-        );
-
-        // Query LayerZero for quote
-        (uint256 _nativeFee, ) = ILayerZeroEndpoint(layerZeroEndpoint)
-            .estimateFees(
-                _dstChainId,
-                address(this),
-                _payload,
-                false,
-                _adapterParams
-            );
-        return _nativeFee;
-    }
-
-    /// @notice Encodes adapter params to provide more gas for destination
-    /// @param _gasForDestinationLZReceive How much additional gas to provide at destination contract
-    /// @return bytes Adapter payload
-    function _getLZAdapterParamsForWithdraw(uint256 _gasForDestinationLZReceive)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        uint16 _version = 1;
-        return abi.encodePacked(_version, _gasForDestinationLZReceive);
-    }
-
-    /* Fees::repatriation */
-
-    /// @notice Estimates fees for repatriation operation
-    /// @param _originChainId Zorro chain ID of chain to which funds are to be repatriated to
-    /// @param _pid Pool ID on current chain
-    /// @param _trancheId ID of tranche on current chain that funds were withdrawn from
-    /// @param _originRecipient Recipient of funds on the origin chain
-    /// @param _rewardsDue ZOR rewards due to the recipient
-    /// @return uint256 Estimated fee in native tokens
-    function checkXChainRepatriationFee(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _rewardsDue
-    ) external view returns (uint256) {
-        // Init empty LZ object
-        IStargateRouter.lzTxObj memory _lzTxParams;
-
-        // Get payload
-        bytes memory _payload = _encodeXChainRepatriationPayload(
-            _originChainId,
-            _pid,
-            _trancheId,
-            _originRecipient,
-            _rewardsDue
-        );
-        bytes memory _dstContract = controllerContractsMap[_originChainId];
-
-        // Calculate native gas fee and ZRO token fee (Layer Zero token)
-        (uint256 _nativeFee, ) = IStargateRouter(stargateRouter)
-            .quoteLayerZeroFee(
-                ZorroChainToLZMap[_originChainId],
-                1,
-                _dstContract,
-                _payload,
-                _lzTxParams
-            );
-
-        return _nativeFee;
-    }
-
-    /* Encoding (payloads) */
-
-    /* Encoding::withdrawals */
-
-    /// @notice Encodes payload for making cross chan withdrawal
-    /// @param _originChainId Chain that withdrawal request originated from
-    /// @param _originAccount Account on origin chain that withdrawal request originated from
-    /// @param _pid Pool ID on remote chain
-    /// @param _trancheId Tranche ID on remote chain
-    /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
-    /// @return bytes ABI encoded payload
-    function _encodeXChainWithdrawalPayload(
-        uint256 _originChainId,
-        bytes memory _originAccount,
-        uint256 _pid,
-        uint256 _trancheId,
-        uint256 _maxMarketMovement
-    ) internal pure returns (bytes memory) {
-        // Calculate method signature
-        bytes4 _sig = this.receiveXChainWithdrawalRequest.selector;
-        // Calculate abi encoded bytes for input args
-        bytes memory _inputs = abi.encode(
-            _originChainId,
-            _originAccount,
-            _pid,
-            _trancheId,
-            _maxMarketMovement
-        );
-        // Concatenate bytes of signature and inputs
-        return bytes.concat(_sig, _inputs);
-    }
-
-    /* Encoding::repatriation */
-
-    /// @notice Encodes payload for making cross chain repatriation
-    /// @param _originChainId Zorro chain ID of chain that funds shall be repatriated back to
-    /// @param _pid Pool ID on current chain that withdrawal came from
-    /// @param _trancheId Tranche ID on current chain that withdrawal came from
-    /// @param _originRecipient Recipient on home chain that repatriated funds shall be sent to
-    /// @param _rewardsDue ZOR rewards due to the recipient
-    /// @return bytes ABI encoded payload
-    function _encodeXChainRepatriationPayload(
-        uint256 _originChainId,
-        uint256 _pid,
-        uint256 _trancheId,
-        bytes memory _originRecipient,
-        uint256 _rewardsDue
-    ) internal pure returns (bytes memory) {
-        // Calculate method signature
-        bytes4 _sig = this.receiveXChainRepatriationRequest.selector;
-        // Calculate abi encoded bytes for input args
-        bytes memory _inputs = abi.encode(
-            _originChainId,
-            _pid,
-            _trancheId,
-            _originRecipient,
-            _rewardsDue
-        );
-        // Concatenate bytes of signature and inputs
-        return bytes.concat(_sig, _inputs);
-    }
 
     /* Sending */
 
@@ -207,13 +46,14 @@ contract ZorroControllerXChainWithdraw is
         uint256 _gasForDestinationLZReceive
     ) external payable nonReentrant {
         // Prep payload
-        bytes memory _payload = _encodeXChainWithdrawalPayload(
-            chainId,
-            abi.encodePacked(msg.sender),
-            _pid,
-            _trancheId,
-            _maxMarketMovement
-        );
+        bytes memory _payload = ZorroControllerXChainActions(controllerActions)
+            .encodeXChainWithdrawalPayload(
+                chainId,
+                abi.encodePacked(msg.sender),
+                _pid,
+                _trancheId,
+                _maxMarketMovement
+            );
 
         // Destination info
         bytes memory _dstContract = controllerContractsMap[_destZorroChainId];
@@ -226,7 +66,7 @@ contract ZorroControllerXChainWithdraw is
                 payload: _payload,
                 refundAddress: payable(msg.sender),
                 _zroPaymentAddress: address(0),
-                adapterParams: _getLZAdapterParamsForWithdraw(
+                adapterParams: ZorroControllerXChainActions(controllerActions).getLZAdapterParamsForWithdraw(
                     _gasForDestinationLZReceive
                 )
             })
@@ -253,13 +93,14 @@ contract ZorroControllerXChainWithdraw is
         uint256 _maxMarketMovementAllowed
     ) internal {
         // Prep payload
-        bytes memory _payload = _encodeXChainRepatriationPayload(
-            _originChainId,
-            _pid,
-            _trancheId,
-            _originRecipient,
-            _rewardsDue
-        );
+        bytes memory _payload = ZorroControllerXChainActions(controllerActions)
+            .encodeXChainRepatriationPayload(
+                _originChainId,
+                _pid,
+                _trancheId,
+                _originRecipient,
+                _rewardsDue
+            );
         // Destination info
         bytes memory _dstContract = controllerContractsMap[_originChainId];
 
@@ -319,18 +160,16 @@ contract ZorroControllerXChainWithdraw is
             .foreignTrancheInfo(_pid, _originAccount, _trancheId);
 
         // Withdraw funds
-        (
-            ,
-            uint256 _rewardsDue
-        ) = IZorroControllerInvestment(currentChainController)
-                .withdrawalFullServiceFromXChain(
-                    _account,
-                    _originAccount,
-                    _pid,
-                    _trancheId,
-                    false,
-                    _maxMarketMovement
-                );
+        (, uint256 _rewardsDue) = IZorroControllerInvestment(
+            currentChainController
+        ).withdrawalFullServiceFromXChain(
+                _account,
+                _originAccount,
+                _pid,
+                _trancheId,
+                false,
+                _maxMarketMovement
+            );
 
         // Get USD bal
         uint256 _balUSD = IERC20(defaultStablecoin).balanceOf(address(this));
@@ -388,17 +227,15 @@ contract ZorroControllerXChainWithdraw is
         uint256 _rewardsDue
     ) internal virtual {
         // Get EVM address (decode)
-        address _destination = _bytesToAddress(_originRecipient);
+        address _destination = ZorroControllerXChainActions(controllerActions).bytesToAddress(_originRecipient);
 
         // Emit repatriation event
-        emit XChainRepatriation(
-            _pid,
-            _destination,
-            _trancheId,
-            _originChainId
-        );
+        emit XChainRepatriation(_pid, _destination, _trancheId, _originChainId);
 
         // Repatriate rewards
-        IZorroControllerInvestment(currentChainController).repatriateRewards(_rewardsDue, _destination);
+        IZorroControllerInvestment(currentChainController).repatriateRewards(
+            _rewardsDue,
+            _destination
+        );
     }
 }
