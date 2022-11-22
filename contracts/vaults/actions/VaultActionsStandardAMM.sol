@@ -34,7 +34,7 @@ contract VaultActionsStandardAMM is VaultActions {
 
     // TODO: Rather than passing around these vars and structs, consider taking
     // vars that are constant across all vaults (e.g. the ZOR token) and storing
-    // them on contract. 
+    // them on contract.
 
     struct ExchUSDToWantParams {
         address stablecoin;
@@ -68,12 +68,12 @@ contract VaultActionsStandardAMM is VaultActions {
     /// @param _amountUSD The amount of USD to exchange for Want token (must already be deposited on this contract)
     /// @param _params A ExchUSDToWantParams struct
     /// @param _maxMarketMovementAllowed Slippage (990 = 1% etc.)
-    /// @return uint256 Amount of Want token obtained
+    /// @return wantObtained Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
         ExchUSDToWantParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 wantObtained) {
         // Safe transfer IN
         IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
             msg.sender,
@@ -132,20 +132,27 @@ contract VaultActionsStandardAMM is VaultActions {
         );
 
         // Calculate resulting want token balance
-        // TODO: Should this be msg.sender? Or the sender's sender?
-        return IERC20Upgradeable(_params.wantAddress).balanceOf(msg.sender);
+        wantObtained = IERC20Upgradeable(_params.wantAddress).balanceOf(
+            msg.sender
+        );
+
+        // Transfer back to sender
+        IERC20Upgradeable(_params.wantAddress).safeTransfer(
+            msg.sender,
+            wantObtained
+        );
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
     /// @param _amount The Want token quantity to exchange
     /// @param _params ExchWantToUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
+    /// @return usdObtained Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         ExchWantToUSDParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 usdObtained) {
         // Preflight checks
         require(_amount > 0, "negWant");
 
@@ -209,7 +216,15 @@ contract VaultActionsStandardAMM is VaultActions {
             );
         }
 
-        // Calculate USD balance // TODO: Is this correct? or should it be the caller of msg.sender?
-        return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
+        // Calculate USD balance
+        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(
+            address(this)
+        );
+
+        // Transfer back to sender
+        IERC20Upgradeable(_params.stablecoin).safeTransfer(
+            msg.sender,
+            usdObtained
+        );
     }
 }

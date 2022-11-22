@@ -196,7 +196,10 @@ contract VaultAlpaca is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(vaultActions, _amountUSD);
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
 
         // Exchange
         return
@@ -322,7 +325,10 @@ contract VaultAlpaca is VaultBase {
         returns (uint256)
     {
         // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(vaultActions, _amount);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
 
         // Exchange
         return

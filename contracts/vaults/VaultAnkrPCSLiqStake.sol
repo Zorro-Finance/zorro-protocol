@@ -21,6 +21,13 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     /// @dev NOTE: 1. liquidStakeToken must be aBNBc (cert not bond) 2. Min 0.502 BNB
     /// @param _amount The amount of BNB to liquid stake
     function _liquidStake(uint256 _amount) internal override whenNotPaused {
+        // Allow spending
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Stake
         VaultActionsAnkrLiqStakeLP(vaultActions).liquidStake(
             _amount,
             token0Address,
@@ -54,23 +61,31 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
-        return VaultActionsAnkrLiqStakeLP(vaultActions).exchangeUSDForWantToken(
-            _amountUSD, 
-            VaultActionsLiqStakeLP.ExchangeUSDForWantParams({
-                token0Address: token0Address,
-                stablecoin: defaultStablecoin,
-                liquidStakeToken: liquidStakeToken,
-                liquidStakePool: liquidStakingPool,
-                poolAddress: poolAddress,
-                wantAddress: wantAddress,
-                token0PriceFeed: token0PriceFeed,
-                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                stablecoinPriceFeed: stablecoinPriceFeed,
-                stablecoinToToken0Path: stablecoinToToken0Path,
-                liquidStakeToToken0Path: liquidStakeToToken0Path
-            }), 
-            _maxMarketMovementAllowed
+        // Increase allowance
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
         );
+
+        // Exchange
+        return
+            VaultActionsAnkrLiqStakeLP(vaultActions).exchangeUSDForWantToken(
+                _amountUSD,
+                VaultActionsLiqStakeLP.ExchangeUSDForWantParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    liquidStakeToken: liquidStakeToken,
+                    liquidStakePool: liquidStakingPool,
+                    poolAddress: poolAddress,
+                    wantAddress: wantAddress,
+                    token0PriceFeed: token0PriceFeed,
+                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    liquidStakeToToken0Path: liquidStakeToToken0Path
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -88,22 +103,30 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
         whenNotPaused
         returns (uint256 returnedUSD)
     {
-        return VaultActionsAnkrLiqStakeLP(vaultActions).exchangeWantTokenForUSD(
-            _amount, 
-            VaultActionsLiqStakeLP.ExchangeWantTokenForUSDParams({
-                token0Address: token0Address,
-                stablecoin: defaultStablecoin,
-                wantAddress: wantAddress,
-                poolAddress: poolAddress,
-                liquidStakeToken: liquidStakeToken,
-                token0PriceFeed: token0PriceFeed,
-                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                stablecoinPriceFeed: stablecoinPriceFeed,
-                liquidStakeToToken0Path: liquidStakeToToken0Path, 
-                token0ToStablecoinPath: token0ToStablecoinPath
-            }), 
-            _maxMarketMovementAllowed
+        // Allow spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
         );
+
+        // Spending
+        return
+            VaultActionsAnkrLiqStakeLP(vaultActions).exchangeWantTokenForUSD(
+                _amount,
+                VaultActionsLiqStakeLP.ExchangeWantTokenForUSDParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    wantAddress: wantAddress,
+                    poolAddress: poolAddress,
+                    liquidStakeToken: liquidStakeToken,
+                    token0PriceFeed: token0PriceFeed,
+                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    liquidStakeToToken0Path: liquidStakeToToken0Path,
+                    token0ToStablecoinPath: token0ToStablecoinPath
+                }),
+                _maxMarketMovementAllowed
+            );
     }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -158,7 +181,6 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
                 );
         }
 
-
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
             // Allow spending
@@ -168,7 +190,8 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
             );
 
             // Swap earned to token0
-            VaultActionsAnkrLiqStakeLP(vaultActions).safeSwap(SafeSwapParams({
+            VaultActionsAnkrLiqStakeLP(vaultActions).safeSwap(
+                SafeSwapParams({
                     amountIn: _remainingAmt,
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),
@@ -177,10 +200,11 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: earnedToToken0Path,
                     destination: address(this)
-                }));
+                })
+            );
         }
 
-        // Get values of tokens 0 and 1
+        // Get balance of tokens 0
         uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
             address(this)
         );
@@ -195,7 +219,10 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
                 .balanceOf(address(this));
 
             // Approve spending
-            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(vaultActions, _synthTokenBal.div(2));
+            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
+                vaultActions,
+                _synthTokenBal.div(2)
+            );
 
             // Swap 1/2 sETH to ETH
             VaultActionsAnkrLiqStakeLP(vaultActions).safeSwap(
@@ -218,6 +245,10 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
             _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
                 address(this)
             );
+
+            // Approve spending
+            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(vaultActions, _synthTokenBal);
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(vaultActions, _token0Bal);
 
             // Add liquidity back
             VaultActionsAnkrLiqStakeLP(vaultActions).joinPool(

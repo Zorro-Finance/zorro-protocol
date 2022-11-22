@@ -52,6 +52,17 @@ contract VaultActionsBenqiLiqStakeLP is VaultActionsLiqStakeLP {
 
         // Call deposit func
         IStakedAvax(_liqStakePool).submit{value: _amount}();
+
+        // Calc balance of liquid staking token
+        uint256 _balLiqToken = IERC20Upgradeable(_liqStakeToken).balanceOf(
+            address(this)
+        );
+
+        // Transfer synth token to sender
+        IERC20Upgradeable(_liqStakeToken).safeTransfer(
+            msg.sender,
+            _balLiqToken
+        );
     }
 
     /// @notice Withdraws liquid stake on Benqi protocol

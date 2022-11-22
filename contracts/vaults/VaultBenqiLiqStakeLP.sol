@@ -20,6 +20,13 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
     /// @notice Deposits liquid stake on Benqi protocol
     /// @param _amount The amount of AVAX to liquid stake
     function _liquidStake(uint256 _amount) internal override whenNotPaused {
+        // Allow spending
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Stake
         VaultActionsBenqiLiqStakeLP(vaultActions).liquidStake(
             _amount,
             token0Address,
@@ -53,6 +60,13 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
+        // Increase allowance
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
+
+        // Exchange
         return
             VaultActionsBenqiLiqStakeLP(vaultActions).exchangeUSDForWantToken(
                 _amountUSD,
@@ -88,6 +102,13 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
         whenNotPaused
         returns (uint256 returnedUSD)
     {
+        // Allow spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Spending
         return
             VaultActionsBenqiLiqStakeLP(vaultActions).exchangeWantTokenForUSD(
                 _amount,
@@ -159,7 +180,6 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
                 );
         }
 
-
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
             // Allow spending
@@ -167,9 +187,10 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
                 vaultActions,
                 _remainingAmt
             );
-            
+
             // Swap earned to token0
-            VaultActionsBenqiLiqStakeLP(vaultActions).safeSwap(SafeSwapParams({
+            VaultActionsBenqiLiqStakeLP(vaultActions).safeSwap(
+                SafeSwapParams({
                     amountIn: _remainingAmt,
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),
@@ -178,7 +199,8 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
                     path: earnedToToken0Path,
                     destination: address(this)
-                }));
+                })
+            );
         }
 
         // Get values of tokens 0 and 1
@@ -196,7 +218,10 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
                 .balanceOf(address(this));
 
             // Approve spending
-            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(vaultActions, _synthTokenBal.div(2));
+            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
+                vaultActions,
+                _synthTokenBal.div(2)
+            );
 
             // Swap 1/2 sETH to ETH
             VaultActionsBenqiLiqStakeLP(vaultActions).safeSwap(
@@ -218,6 +243,16 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
             );
             _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
                 address(this)
+            );
+
+            // Approve spending
+            IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
+                vaultActions,
+                _synthTokenBal
+            );
+            IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+                vaultActions,
+                _token0Bal
             );
 
             // Add liquidity back

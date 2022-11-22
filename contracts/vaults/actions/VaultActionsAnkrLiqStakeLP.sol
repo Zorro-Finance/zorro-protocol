@@ -60,6 +60,17 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
         IBinancePool_R1(_liqStakePool).stakeAndClaimCerts{
             value: _amount.add(_relayerFee)
         }();
+
+        // Calc balance of liquid staking token
+        uint256 _balLiqToken = IERC20Upgradeable(_liqStakeToken).balanceOf(
+            address(this)
+        );
+
+        // Transfer synth token to sender
+        IERC20Upgradeable(_liqStakeToken).safeTransfer(
+            msg.sender,
+            _balLiqToken
+        );
     }
 
     /// @notice Withdraws liquid stake on protocol

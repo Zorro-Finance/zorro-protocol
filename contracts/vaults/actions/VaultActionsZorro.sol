@@ -48,12 +48,12 @@ contract VaultActionsZorro is VaultActions {
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
+    /// @return wantObtained Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
         ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 wantObtained) {
         // Safe transfer IN
         IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
             msg.sender,
@@ -77,30 +77,27 @@ contract VaultActionsZorro is VaultActions {
         );
 
         // Calculate resulting want token balance
-        uint256 _wantAmt = IERC20Upgradeable(_params.tokenZorroAddress).balanceOf(
+        wantObtained = IERC20Upgradeable(_params.tokenZorroAddress).balanceOf(
             address(this)
         );
 
         // Transfer back to sender
-        // TODO: Should this in fact be msg.sender?
         IERC20Upgradeable(_params.tokenZorroAddress).safeTransfer(
             msg.sender,
-            _wantAmt
+            wantObtained
         );
-
-        return _wantAmt;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _params A ExchangeWantTokenForUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
+    /// @return usdObtained Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         ExchangeWantTokenForUSDParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 usdObtained) {
         // Preflight checks
         require(_amount > 0, "negWant");
 
@@ -121,14 +118,19 @@ contract VaultActionsZorro is VaultActions {
                 token1: _params.stablecoin,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
                 path: _params.zorroToStablecoinPath,
-                destination: msg.sender // Is this correct? 
+                destination: msg.sender // Is this correct?
             })
         );
 
         // Calculate USD balance
-        // TODO: Is msg.sender correct here?
-        // TODO: In general: Is this the best way? msg.sender can have a 
-        // pre-existing balance, making this calculation incorrect
-        return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
+        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(
+            address(this)
+        );
+
+        // Transfer back to sender
+        IERC20Upgradeable(_params.stablecoin).safeTransfer(
+            msg.sender,
+            usdObtained
+        );
     }
 }

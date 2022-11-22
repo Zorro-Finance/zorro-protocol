@@ -49,12 +49,12 @@ abstract contract VaultActionsLending is VaultActions {
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _params A ExchangeUSDForWantParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
+    /// @return wantObtained Amount of Want token obtained
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
         ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 wantObtained) {
         // Safe transfer IN
         IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
             msg.sender,
@@ -80,29 +80,27 @@ abstract contract VaultActionsLending is VaultActions {
         }
 
         // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
+        wantObtained = IERC20Upgradeable(_params.token0Address).balanceOf(
             address(this)
         );
 
         // Transfer back to sender
         IERC20Upgradeable(_params.token0Address).safeTransfer(
             msg.sender,
-            _token0Bal
+            wantObtained
         );
-
-        return _token0Bal;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _params A ExchangeWantTokenForUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
+    /// @return usdObtained Amount of USD token obtained
     function exchangeWantTokenForUSD(
         uint256 _amount,
         ExchangeWantTokenForUSDParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256) {
+    ) public returns (uint256 usdObtained) {
         // Preflight checks
         require(_amount > 0, "negWant");
 
@@ -130,7 +128,15 @@ abstract contract VaultActionsLending is VaultActions {
         }
 
         // Calculate USD balance
-        return IERC20Upgradeable(_params.stablecoin).balanceOf(msg.sender);
+        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(
+            address(this)
+        );
+
+        // Transfer to sender
+        IERC20Upgradeable(_params.stablecoin).safeTransfer(
+            msg.sender,
+            usdObtained
+        );
     }
 
     /* Utilities */
@@ -138,8 +144,8 @@ abstract contract VaultActionsLending is VaultActions {
     /// @notice Gets loan collateral factor from lending protocol
     function collateralFactor(address _comptrollerAddress, address _poolAddress)
         public
-        virtual
         view
+        virtual
         returns (uint256 collFactor);
 
     /// @notice Calculates leveraged lending parameters for supply/borrow rebalancing
@@ -257,8 +263,9 @@ abstract contract VaultActionsLending is VaultActions {
         uint256 _supplyBal = ILendingToken(_poolAddress).balanceOfUnderlying(
             _vault
         );
-        uint256 _borrowBal = ILendingToken(_poolAddress)
-            .borrowBalanceCurrent(_vault);
+        uint256 _borrowBal = ILendingToken(_poolAddress).borrowBalanceCurrent(
+            _vault
+        );
         amtLocked = _wantBal.add(_supplyBal).sub(_borrowBal);
     }
 }
