@@ -32,10 +32,6 @@ contract VaultActionsStandardAMM is VaultActions {
 
     /* Structs */
 
-    // TODO: Rather than passing around these vars and structs, consider taking
-    // vars that are constant across all vaults (e.g. the ZOR token) and storing
-    // them on contract.
-
     struct ExchUSDToWantParams {
         address stablecoin;
         address token0Address;
@@ -172,7 +168,7 @@ contract VaultActionsStandardAMM is VaultActions {
                 token0: _params.token0Address,
                 token1: _params.token1Address,
                 poolAddress: _params.poolAddress,
-                wantAddress: _params.wantAddress
+                lpTokenAddress: _params.wantAddress
             })
         );
 

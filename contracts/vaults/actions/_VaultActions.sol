@@ -82,6 +82,13 @@ contract VaultActions is OwnableUpgradeable {
         address[] earnedToZORLPPoolOtherTokenPath;
     }
 
+    struct ExitPoolParams {
+        address token0;
+        address token1;
+        address poolAddress;
+        address lpTokenAddress;
+    }
+
     /* Constructor */
 
     /// @notice Constructor
@@ -169,18 +176,6 @@ contract VaultActions is OwnableUpgradeable {
         uint256 _maxMarketMovementAllowed,
         address _recipient
     ) internal {
-        // Transfer funds in
-        IERC20Upgradeable(_token0).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _token0Amt
-        );
-        IERC20Upgradeable(_token1).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _token1Amt
-        );
-
         // Approve spending
         IERC20Upgradeable(_token0).safeIncreaseAllowance(
             uniRouterAddress,
@@ -204,13 +199,6 @@ contract VaultActions is OwnableUpgradeable {
         );
     }
 
-    struct ExitPoolParams {
-        address token0;
-        address token1;
-        address poolAddress;
-        address wantAddress;
-    }
-
     /// @notice Removes liquidity from a pool and sends tokens back to this address
     /// @dev NOTE: Requires caller to approve want token spending
     /// @param _amountLP The amount of LP (Want) tokens to remove
@@ -223,7 +211,7 @@ contract VaultActions is OwnableUpgradeable {
         ExitPoolParams memory _exitPoolParams
     ) public {
         // Transfer LP token in
-        IERC20Upgradeable(_exitPoolParams.wantAddress).safeTransferFrom(
+        IERC20Upgradeable(_exitPoolParams.lpTokenAddress).safeTransferFrom(
             msg.sender,
             address(this),
             _amountLP
@@ -274,7 +262,7 @@ contract VaultActions is OwnableUpgradeable {
         }
 
         // Approve
-        IERC20Upgradeable(_exitPoolParams.wantAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(_exitPoolParams.lpTokenAddress).safeIncreaseAllowance(
             uniRouterAddress,
             _amountLP
         );

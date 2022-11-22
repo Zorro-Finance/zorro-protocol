@@ -79,11 +79,14 @@ contract VaultBaseLiqStakeLP is VaultBase {
         stablecoinToZORROPath = _initValue.stablecoinToZORROPath;
         stablecoinToLPPoolOtherTokenPath = _initValue
             .stablecoinToLPPoolOtherTokenPath;
+        liquidStakeToToken0Path = _initValue.liquidStakeToToken0Path;
         // Corresponding reverse paths
         token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
             stablecoinToToken0Path
         );
-        liquidStakeToToken0Path = _initValue.liquidStakeToToken0Path;
+        token0ToLiquidStakePath = VaultActions(vaultActions).reversePath(
+            liquidStakeToToken0Path
+        );
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -101,7 +104,9 @@ contract VaultBaseLiqStakeLP is VaultBase {
         stablecoinPriceFeed = AggregatorV3Interface(
             _initValue.priceFeeds.stablecoinPriceFeed
         );
-        liquidStakeTokenPriceFeed = AggregatorV3Interface(_initValue.priceFeeds.liquidStakeTokenPriceFeed);
+        liquidStakeTokenPriceFeed = AggregatorV3Interface(
+            _initValue.priceFeeds.liquidStakeTokenPriceFeed
+        );
 
         maxMarketMovementAllowed = _initValue.maxMarketMovementAllowed;
 
@@ -142,12 +147,13 @@ contract VaultBaseLiqStakeLP is VaultBase {
 
     /* State */
 
-    address[] public stablecoinToZORROPath; // Swap path from BUSD to ZOR (PCS)
-    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
-    address[] public liquidStakeToToken0Path; // Swap path from sAVAX to wAVAX
-    address public liquidStakeToken; // Synth token for liquid staking (e.g. sAvax)
+    address[] public stablecoinToZORROPath; // Swap path from USD to ZOR (PCS)
+    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from USD to ZOR LP Pool's "other token" (PCS)
+    address[] public liquidStakeToToken0Path; // Swap path from sETH to WETH
+    address[] public token0ToLiquidStakePath; // Swap path from WETH to sETH
+    address public liquidStakeToken; // Synth token for liquid staking (e.g. sETH)
     address public liquidStakingPool; // Liquid staking pool (can sometimes be the same as liquidStakeToken)
-    AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sAVAX
+    AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sETH
 
     /* Setters */
 
@@ -281,7 +287,33 @@ contract VaultBaseLiqStakeLP is VaultBase {
 
     /// @notice Internal function for farming LP token. Responsible for staking LP token in a MasterChef/MasterApe-like contract
     function _farm() internal {
+        // Preflight checks
         require(isFarmable, "!farmable");
+
+        // Calc balance of sETH on this contract
+        uint256 _synthBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
+            address(this)
+        );
+
+        // Approve spending
+        IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
+            vaultActions,
+            _synthBal
+        );
+
+        // Swap 1/2 sETH, to ETH and add liquidity to an LP Pool (sends LP token back to this address)
+        VaultActionsLiqStakeLP(vaultActions).stakeInLPPool(
+            _synthBal,
+            VaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams({
+                liquidStakeToken: liquidStakeToken,
+                nativeToken: token0Address,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                nativeTokenPriceFeed: token0PriceFeed,
+                liquidStakeToNativePath: liquidStakeToToken0Path
+            }),
+            maxMarketMovementAllowed
+        );
+
         // Get the LP token stored on this contract
         uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
             address(this)
@@ -302,24 +334,197 @@ contract VaultBaseLiqStakeLP is VaultBase {
     function _unfarm(uint256 _lpAmt) internal {
         // Withdraw the LP tokens from the Farm contract pool
         IAMMFarm(farmContractAddress).withdraw(pid, _lpAmt);
+
+        // Calc balance
+        uint256 _balLPToken = IERC20Upgradeable(poolAddress).balanceOf(
+            address(this)
+        );
+
+        // Convert LP tokens to sETH + ETH and swap to sETH (want token)
+        VaultActionsLiqStakeLP(vaultActions).unStakeFromLPPool(
+            _balLPToken,
+            VaultActionsLiqStakeLP.UnstakeLiqTokenFromLPPoolParams({
+                liquidStakeToken: liquidStakeToken,
+                nativeToken: token0Address,
+                lpPoolToken: poolAddress,
+                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                nativeTokenPriceFeed: token0PriceFeed,
+                nativeToLiquidStakePath: token0ToLiquidStakePath
+            }),
+            maxMarketMovementAllowed
+        );
+    }
+
+    /// @notice Performs necessary operations to convert USD into Want token
+    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return uint256 Amount of Want token obtained
+    function exchangeUSDForWantToken(
+        uint256 _amountUSD,
+        uint256 _maxMarketMovementAllowed
+    ) public override onlyZorroController whenNotPaused returns (uint256) {
+        // Increase allowance
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
+
+        // Exchange
+        return
+            VaultActionsLiqStakeLP(vaultActions).exchangeUSDForWantToken(
+                _amountUSD,
+                VaultActionsLiqStakeLP.ExchangeUSDForWantParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    liquidStakeToken: liquidStakeToken,
+                    liquidStakePool: liquidStakingPool,
+                    poolAddress: poolAddress,
+                    token0PriceFeed: token0PriceFeed,
+                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    liquidStakeToToken0Path: liquidStakeToToken0Path
+                }),
+                _maxMarketMovementAllowed
+            );
+    }
+
+    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
+    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
+    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @return returnedUSD Amount of USD token obtained
+    function exchangeWantTokenForUSD(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    )
+        public
+        virtual
+        override
+        onlyZorroController
+        whenNotPaused
+        returns (uint256 returnedUSD)
+    {
+        // Allow spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Spending
+        return
+            VaultActionsLiqStakeLP(vaultActions).exchangeWantTokenForUSD(
+                _amount,
+                VaultActionsLiqStakeLP.ExchangeWantTokenForUSDParams({
+                    token0Address: token0Address,
+                    stablecoin: defaultStablecoin,
+                    poolAddress: poolAddress,
+                    liquidStakeToken: liquidStakeToken,
+                    token0PriceFeed: token0PriceFeed,
+                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    liquidStakeToToken0Path: liquidStakeToToken0Path,
+                    token0ToStablecoinPath: token0ToStablecoinPath
+                }),
+                _maxMarketMovementAllowed
+            );
+    }
+
+    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function earn(uint256 _maxMarketMovementAllowed)
+        public
+        virtual
+        override
+        nonReentrant
+        whenNotPaused
+    {
+        // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
+        if (onlyGov) {
+            require(msg.sender == govAddress, "!gov");
+        }
+
+        // Harvest farm tokens
+        _unfarm(0);
+
+        // Get the balance of the Earned token on this contract
+        uint256 _earnedAmt = IERC20Upgradeable(earnedAddress).balanceOf(
+            address(this)
+        );
+
+        // Require pending rewards in order to continue
+        require(_earnedAmt > 0, "0earn");
+
+        // Create rates struct
+        VaultActions.ExchangeRates memory _rates = VaultActions.ExchangeRates({
+            earn: earnTokenPriceFeed.getExchangeRate(),
+            ZOR: ZORPriceFeed.getExchangeRate(),
+            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
+            stablecoin: stablecoinPriceFeed.getExchangeRate()
+        });
+
+        // Calc remainder
+        uint256 _remainingAmt;
+
+        {
+            // Distribute fees
+            uint256 _controllerFee = _distributeFees(_earnedAmt);
+
+            // Buyback & rev share
+            (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
+                _earnedAmt,
+                _maxMarketMovementAllowed,
+                _rates
+            );
+
+            _remainingAmt = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
+                    _revShareAmt
+                );
+        }
+
+        // Swap Earned token to token0 if token0 is not the Earned token
+        if (earnedAddress != token0Address) {
+            // Allow spending
+            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+                vaultActions,
+                _remainingAmt
+            );
+
+            // Swap earned to token0
+            VaultActionsLiqStakeLP(vaultActions).safeSwap(
+                SafeSwapParams({
+                    amountIn: _remainingAmt,
+                    priceToken0: _rates.earn,
+                    priceToken1: token0PriceFeed.getExchangeRate(),
+                    token0: earnedAddress,
+                    token1: token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: earnedToToken0Path,
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Get balance of Token 0
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+
+        // Provided that token0 is > 0, re-deposit
+        if (_token0Bal > 0) {
+            // Stake
+            _liquidStake(_token0Bal);
+            
+            // Farm Want token
+            _farm();
+        }
+
+        // Update last earned block
+        lastEarnBlock = block.number;
     }
 
     /* Abstract functions - must be overriden in child contracts */
 
-    function earn(uint256 _maxMarketMovementAllowed) public virtual override {}
-
     function _liquidStake(uint256 _amount) internal virtual {}
 
     function _liquidUnstake(uint256 _amount) internal virtual {}
-
-    // TODO: Make this an abstract contract instead?
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public virtual override returns (uint256) {}
-
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    ) public virtual override returns (uint256) {}
 }

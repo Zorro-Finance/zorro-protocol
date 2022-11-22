@@ -134,7 +134,7 @@ abstract contract VaultBase is
     AggregatorV3Interface public stablecoinPriceFeed; // Price feed of stablecoin token (e.g. USDC)
 
     // Other
-    uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden)
+    uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden) // TODO: Setter/constructor
 
     /* Events */
 

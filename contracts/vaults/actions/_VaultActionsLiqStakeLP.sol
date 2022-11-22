@@ -32,7 +32,6 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         address liquidStakeToken;
         address liquidStakePool;
         address poolAddress;
-        address wantAddress;
         AggregatorV3Interface token0PriceFeed;
         AggregatorV3Interface liquidStakeTokenPriceFeed;
         AggregatorV3Interface stablecoinPriceFeed;
@@ -43,7 +42,6 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
     struct ExchangeWantTokenForUSDParams {
         address token0Address;
         address stablecoin;
-        address wantAddress;
         address poolAddress;
         address liquidStakeToken;
         AggregatorV3Interface token0PriceFeed;
@@ -51,6 +49,23 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         AggregatorV3Interface stablecoinPriceFeed;
         address[] liquidStakeToToken0Path;
         address[] token0ToStablecoinPath;
+    }
+
+    struct StakeLiqTokenInLPPoolParams {
+        address liquidStakeToken;
+        address nativeToken;
+        AggregatorV3Interface liquidStakeTokenPriceFeed;
+        AggregatorV3Interface nativeTokenPriceFeed;
+        address[] liquidStakeToNativePath;
+    }
+
+    struct UnstakeLiqTokenFromLPPoolParams {
+        address liquidStakeToken;
+        address nativeToken;
+        address lpPoolToken;
+        AggregatorV3Interface liquidStakeTokenPriceFeed;
+        AggregatorV3Interface nativeTokenPriceFeed;
+        address[] nativeToLiquidStakePath;
     }
 
     /* Functions */
@@ -69,7 +84,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
     function liquidUnstake(SafeSwapParams memory _swapParams) public virtual;
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
-    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
+    /// @param _amount The Want token quantity to exchange (must be approved beforehand)
     /// @param _params ExchangeWantTokenForUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return returnedUSD Amount of USD token obtained
@@ -79,7 +94,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         uint256 _maxMarketMovementAllowed
     ) public returns (uint256 returnedUSD) {
         // Transfer amount IN
-        IERC20Upgradeable(_params.wantAddress).safeTransferFrom(
+        IERC20Upgradeable(_params.liquidStakeToken).safeTransferFrom(
             msg.sender,
             address(this),
             _amount
@@ -94,7 +109,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
                 token0: _params.liquidStakeToken,
                 token1: _params.token0Address,
                 poolAddress: _params.poolAddress,
-                wantAddress: _params.wantAddress
+                lpTokenAddress: _params.poolAddress
             })
         );
 
@@ -189,44 +204,122 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         );
 
         // Get bal of sETH
-        uint256 _synthTokenBal = IERC20Upgradeable(_params.liquidStakeToken)
-            .balanceOf(address(this));
+
+        // Return bal of want tokens (same as Token0)
+        returnedWant = IERC20Upgradeable(_params.liquidStakeToken).balanceOf(
+            address(this)
+        );
+
+        // Transfer back to sender
+        IERC20Upgradeable(_params.liquidStakeToken).safeTransfer(
+            msg.sender,
+            returnedWant
+        );
+    }
+
+    /// @notice Swaps and stakes synthetic token in Uni LP Pool
+    /// @param _amount Quantity of sETH to swap and stake
+    /// @param _params A StakeLiqTokenInLPPoolParams struct describing the stake interactions
+    /// @param _maxMarketMovementAllowed Slippage parameter (990 = 1%)
+    function stakeInLPPool(
+        uint256 _amount,
+        StakeLiqTokenInLPPoolParams memory _params,
+        uint256 _maxMarketMovementAllowed
+    ) public {
+        // Transfer funds IN
+        IERC20Upgradeable(_params.liquidStakeToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
 
         // Swap half of sETH to ETH
         _safeSwap(
             SafeSwapParams({
-                amountIn: _synthTokenBal.div(2),
+                amountIn: _amount.div(2),
                 priceToken0: _params.liquidStakeTokenPriceFeed.getExchangeRate(),
-                priceToken1: _params.token0PriceFeed.getExchangeRate(),
+                priceToken1: _params.nativeTokenPriceFeed.getExchangeRate(),
                 token0: _params.liquidStakeToken,
-                token1: _params.token0Address,
+                token1: _params.nativeToken,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _params.liquidStakeToToken0Path,
+                path: _params.liquidStakeToNativePath,
                 destination: address(this)
             })
         );
 
-        // Re-calc balances
-        _synthTokenBal = IERC20Upgradeable(_params.liquidStakeToken)
-            .balanceOf(address(this));
-        _token0Bal = IERC20Upgradeable(_params.token0Address).balanceOf(
+        // Calc balances
+        uint256 _synthTokenBal = IERC20Upgradeable(_params.liquidStakeToken).balanceOf(
+            address(this)
+        );
+        uint256 _token0Bal = IERC20Upgradeable(_params.nativeToken).balanceOf(
             address(this)
         );
 
-        // Add liquidity to sETH-ETH pool
+        // Add liquidity to sETH-ETH pool and send back to sender
         _joinPool(
             _params.liquidStakeToken,
-            _params.token0Address,
+            _params.nativeToken,
             _synthTokenBal,
             _token0Bal,
             _maxMarketMovementAllowed,
+            msg.sender
+        );
+    }
+
+    /// @notice Takes sETH-ETH LP pool token and converts to sETH
+    /// @param _amount Quantity of LP token to convert to sETH
+    /// @param _params A UnstakeLiqTokenFromLPPoolParams struct describing the unstake interaction
+    /// @param _maxMarketMovementAllowed Slippage parameter (990 = 1%)
+    function unStakeFromLPPool(
+        uint256 _amount,
+        UnstakeLiqTokenFromLPPoolParams memory _params,
+        uint256 _maxMarketMovementAllowed
+    ) public {
+        // Transfer funds IN
+        IERC20Upgradeable(_params.lpPoolToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
+        // Exit pool
+        _exitPool(
+            _amount,
+            _maxMarketMovementAllowed,
+            address(this),
+            ExitPoolParams({
+                token0: _params.liquidStakeToken,
+                token1: _params.nativeToken,
+                poolAddress: _params.lpPoolToken,
+                lpTokenAddress: _params.lpPoolToken
+            })
+        );
+
+        // Calc balance of ETH
+        uint256 _token0Bal = IERC20Upgradeable(_params.nativeToken).balanceOf(
             address(this)
         );
 
-        // Return bal of want tokens (same as Token0)
-        returnedWant = IERC20Upgradeable(_params.wantAddress).balanceOf(address(this));
+        // Swap ETH to sETH
+        _safeSwap(
+            SafeSwapParams({
+                amountIn: _token0Bal,
+                priceToken0: _params.liquidStakeTokenPriceFeed.getExchangeRate(),
+                priceToken1: _params.nativeTokenPriceFeed.getExchangeRate(),
+                token0: _params.nativeToken,
+                token1: _params.liquidStakeToken,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: _params.nativeToLiquidStakePath,
+                destination: address(this)
+            })
+        );
+
+        // Calc balance of sETH
+        uint256 _synthBal = IERC20Upgradeable(_params.liquidStakeToken).balanceOf(
+            address(this)
+        );
 
         // Transfer back to sender
-        IERC20Upgradeable(_params.wantAddress).safeTransfer(msg.sender, returnedWant);
+        IERC20Upgradeable(_params.liquidStakeToken).safeTransfer(msg.sender, _synthBal);
     }
 }
