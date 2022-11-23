@@ -3,14 +3,9 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerBase.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "../interfaces/IZorroController.sol";
 
 contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBase {
-    /* Libraries */
-    using SafeMathUpgradeable for uint256;
-
     /* Pool management */
 
     /// @notice Adds a new pool. Can only be called by the owner.
@@ -34,7 +29,7 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
             ? block.number
             : startBlock;
         // Increment the total allocation points by the provided _allocPoint
-        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        totalAllocPoint = totalAllocPoint + _allocPoint;
         // Push to the poolInfo array
         poolInfo.push(
             PoolInfo({
@@ -62,9 +57,7 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
             massUpdatePools();
         }
         // Adjust the total allocation points by the provided _allocPoint
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
-            _allocPoint
-        );
+        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
         // Update the key params for this pool
         poolInfo[_pid].allocPoint = _allocPoint;
     }
@@ -76,7 +69,7 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
         uint256 length = poolInfo.length;
         // Iterate through each pool and run updatePool()
         for (uint256 pid = 0; pid < length; ++pid) {
-            _mintedZOR = _mintedZOR.add(this.updatePool(pid));
+            _mintedZOR = _mintedZOR + this.updatePool(pid);
         }
     }
 }

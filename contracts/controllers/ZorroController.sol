@@ -33,13 +33,10 @@ contract ZorroController is
         // Tokens
         ZORRO = _initValue.ZORRO;
         defaultStablecoin = _initValue.defaultStablecoin;
-        zorroLPPoolOtherToken = _initValue.zorroLPPoolOtherToken;
 
         // Key addresses
         publicPool = _initValue.publicPool;
         zorroStakingVault = _initValue.zorroStakingVault;
-        zorroLPPool = _initValue.zorroLPPool;
-        uniRouterAddress = _initValue.uniRouterAddress;
         burnAddress = 0x000000000000000000000000000000000000dEaD;
 
         // Rewards
@@ -61,19 +58,6 @@ contract ZorroController is
         homeChainZorroController = _initValue.xChain.homeChainZorroController;
         zorroControllerOracle = _initValue.xChain.zorroControllerOracle;
         zorroXChainEndpoint = _initValue.xChain.zorroXChainEndpoint;
-
-        // Investment
-        stablecoinToZorroPath = _initValue.stablecoinToZorroPath;
-        stablecoinToZorroLPPoolOtherTokenPath = _initValue
-            .stablecoinToZorroLPPoolOtherTokenPath;
-
-        // Price feeds
-        priceFeedZOR = AggregatorV3Interface(
-            _initValue.priceFeeds.priceFeedZOR
-        );
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(
-            _initValue.priceFeeds.priceFeedLPPoolOtherToken
-        );
 
         // Ownable
         __Ownable_init();
@@ -98,23 +82,12 @@ contract ZorroController is
         address zorroXChainEndpoint;
     }
 
-    struct ZorroControllerPriceFeeds {
-        address priceFeedZOR;
-        address priceFeedLPPoolOtherToken;
-    }
-
     struct ZorroControllerInit {
         address ZORRO;
         address defaultStablecoin;
-        address zorroLPPoolOtherToken;
         address publicPool;
         address zorroStakingVault;
-        address zorroLPPool;
-        address uniRouterAddress;
-        address[] stablecoinToZorroPath;
-        address[] stablecoinToZorroLPPoolOtherTokenPath;
         ZorroControllerRewards rewards;
         ZorroControllerXChainParams xChain;
-        ZorroControllerPriceFeeds priceFeeds;
     }
 }

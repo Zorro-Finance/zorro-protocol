@@ -3,17 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../interfaces/IZorro.sol";
-
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../interfaces/IZorroController.sol";
 
@@ -28,10 +22,11 @@ contract ZorroControllerBase is
     ReentrancyGuardUpgradeable
 {
     /* Libraries */
-    using SafeMathUpgradeable for uint256;
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Modifiers */
+    
     /// @notice Only allows functions to be executed where the sender matches the zorroPriceOracle address
     modifier onlyAllowZorroControllerOracle() {
         require(_msgSender() == zorroControllerOracle, "only Zorro oracle");
@@ -217,10 +212,10 @@ contract ZorroControllerBase is
         uint256 _publicPoolZORBalance
     ) external onlyAllowZorroControllerOracle {
         // Use the Rm formula to determine the percentage of the remaining public pool Zorro tokens to transfer to this contract as rewards
-        uint256 ZORRODailyDistributionFactorBasisPoints = baseRewardRateBasisPoints
-                .mul(_totalMarketTVLUSD)
-                .mul(_targetTVLCaptureBasisPoints)
-                .div(_ZorroTotalVaultTVLUSD.mul(10000));
+        uint256 ZORRODailyDistributionFactorBasisPoints = (baseRewardRateBasisPoints *
+                _totalMarketTVLUSD *
+                _targetTVLCaptureBasisPoints) /
+                (10000 * _ZorroTotalVaultTVLUSD);
 
         // Rail distribution to min and max values
         if (
@@ -238,10 +233,11 @@ contract ZorroControllerBase is
         // Multiply the factor above to determine the total Zorro tokens to distribute to this contract on a DAILY basis
         // And then multiply by the share of daily distribution for this chain
         // Finally: Convert this to a BLOCK basis and assign to ZORROPerBlock
-        ZORROPerBlock = _publicPoolZORBalance
-            .mul(ZORRODailyDistributionFactorBasisPoints)
-            .mul(chainMultiplier)
-            .div(_totalChainMultipliers.mul(10000).mul(blocksPerDay));
+        ZORROPerBlock =
+            (_publicPoolZORBalance *
+                ZORRODailyDistributionFactorBasisPoints *
+                chainMultiplier) /
+            (10000 * _totalChainMultipliers * blocksPerDay);
     }
 
     /* Pool Management */
@@ -266,13 +262,12 @@ contract ZorroControllerBase is
         }
 
         // Determine how many blocks have elapsed since the last updatePool() operation for this pool
-        uint256 elapsedBlocks = block.number.sub(pool.lastRewardBlock);
+        uint256 elapsedBlocks = block.number - pool.lastRewardBlock;
 
         // Finally, multiply rewards/block by the number of elapsed blocks and the pool weighting
-        uint256 ZORROReward = elapsedBlocks
-            .mul(ZORROPerBlock)
-            .mul(pool.allocPoint)
-            .div(totalAllocPoint);
+        uint256 ZORROReward = (elapsedBlocks *
+            ZORROPerBlock *
+            pool.allocPoint) / totalAllocPoint;
 
         // Check whether this function requires cross chain activity or not
         if (address(this) == homeChainZorroController) {
@@ -297,7 +292,7 @@ contract ZorroControllerBase is
         }
 
         // Increment this pool's accumulated Zorro per share value by the reward amount
-        pool.accZORRORewards = pool.accZORRORewards.add(ZORROReward);
+        pool.accZORRORewards = pool.accZORRORewards + ZORROReward;
         // Update the pool's last reward block to the current block
         pool.lastRewardBlock = block.number;
     }
@@ -309,7 +304,7 @@ contract ZorroControllerBase is
         nonHomeChainOnly
     {
         // Accumulate rewards
-        accSynthRewardsMinted = accSynthRewardsMinted.add(_mintedRewards);
+        accSynthRewardsMinted = accSynthRewardsMinted + _mintedRewards;
     }
 
     /// @notice Resets accumulated synthentic rewards minted
@@ -336,7 +331,7 @@ contract ZorroControllerBase is
         nonHomeChainOnly
     {
         // Accumulate rewards
-        accSynthRewardsSlashed = accSynthRewardsSlashed.add(_slashedRewards);
+        accSynthRewardsSlashed = accSynthRewardsSlashed + _slashedRewards;
     }
 
     /// @notice Resets accumulated synthentic rewards minted

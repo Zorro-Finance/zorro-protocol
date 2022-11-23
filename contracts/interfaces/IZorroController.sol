@@ -88,24 +88,39 @@ interface IZorroControllerAnalytics is IZorroControllerBase {
 
 /// @title IZorroControllerInvestment
 interface IZorroControllerInvestment is IZorroControllerBase {
+    /* Structs */
+
+    struct WithdrawalResult {
+        uint256 wantAmt; // Amount of Want token withdrawn
+        uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
+    }
+
+    /* Events */
+
+    event Deposit(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 wantAmount
+    );
+
+    event Withdraw(
+        address indexed account,
+        bytes indexed foreignAccount,
+        uint256 indexed pid,
+        uint256 trancheId,
+        uint256 wantAmount
+    );
+    event TransferInvestment(
+        address account,
+        uint256 indexed fromPid,
+        uint256 indexed fromTrancheId,
+        uint256 indexed toPid
+    );
+
+    /* Functions */
+
     function setIsTimeMultiplierActive(bool _isActive) external;
-
-    function setZorroLPPoolParams(
-        address _zorroLPPool,
-        address _zorroLPPoolOtherToken
-    ) external;
-
-    function setUniRouter(address _uniV2Router) external;
-
-    function setStablecoinToZORPath(address[] memory _path) external;
-
-    function setStablecoinToZorroLPPoolOtherTokenPath(address[] memory _path)
-        external;
-
-    function setPriceFeeds(
-        address _priceFeedZOR,
-        address _priceFeedLPPoolOtherToken
-    ) external;
 
     function setZorroXChainEndpoint(address _contract) external;
 

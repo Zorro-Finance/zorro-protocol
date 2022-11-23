@@ -2,21 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
 import "./_ZorroControllerBase.sol";
 
 import "../interfaces/IVault.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol";
-
-import "../libraries/Math.sol";
-
-import "../libraries/SafeSwap.sol";
-
-import "../libraries/PriceFeed.sol";
 
 import "../interfaces/IZorroController.sol";
 
@@ -27,33 +17,13 @@ contract ZorroControllerInvestment is
     ZorroControllerBase
 {
     /* Libraries */
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
-    using SignedSafeMathUpgradeable for int256;
-    using CustomMath for uint256;
-    using SafeSwapUni for IAMMRouter02;
-    using PriceFeed for AggregatorV3Interface;
 
-    /* Structs */
-    struct WithdrawalResult {
-        uint256 wantAmt; // Amount of Want token withdrawn
-        uint256 rewardsDueXChain; // ZOR rewards due to the origin (cross chain) user
-    }
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* State */
 
     // Rewards
     bool public isTimeMultiplierActive; // If true, allows use of time multiplier
-    // Zorro LP pool
-    address public zorroLPPool; // Main pool for Zorro liquidity
-    address public zorroLPPoolOtherToken; // For the dominant LP pool, the counterparty token to the ZOR token
-    // Swaps
-    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
-    address[] public stablecoinToZorroPath; // The path to swap USD to ZOR
-    address[] public stablecoinToZorroLPPoolOtherTokenPath; // The router path from USD to the primary Zorro LP pool, Token 0
-    // Oracles
-    AggregatorV3Interface public priceFeedZOR;
-    AggregatorV3Interface public priceFeedLPPoolOtherToken;
     // Cross chain
     address public zorroXChainEndpoint; // Cross chain controller contract
 
@@ -73,79 +43,11 @@ contract ZorroControllerInvestment is
         isTimeMultiplierActive = _isActive;
     }
 
-    /// @notice Setter: Zorro LP Pool params
-    /// @param _zorroLPPool Address of the Zorro-X LP pool
-    /// @param _zorroLPPoolOtherToken Address of the counterpart token to the ZOR token in the LP Pool
-    function setZorroLPPoolParams(
-        address _zorroLPPool,
-        address _zorroLPPoolOtherToken
-    ) external onlyOwner {
-        zorroLPPool = _zorroLPPool;
-        zorroLPPoolOtherToken = _zorroLPPoolOtherToken;
-    }
-
-    /// @notice Setter: Uniswap-compatible router address
-    /// @param _uniV2Router Address of router
-    function setUniRouter(address _uniV2Router) external onlyOwner {
-        uniRouterAddress = _uniV2Router;
-    }
-
-    /// @notice Setter: Set path for token swap from USD to ZOR
-    /// @param _path Swap path
-    function setStablecoinToZORPath(address[] memory _path) external onlyOwner {
-        stablecoinToZorroPath = _path;
-    }
-
-    /// @notice Setter: Set path for token swap from USD to counterparty token in ZOR LP pool
-    /// @param _path Swap path
-    function setStablecoinToZorroLPPoolOtherTokenPath(address[] memory _path)
-        external
-        onlyOwner
-    {
-        stablecoinToZorroLPPoolOtherTokenPath = _path;
-    }
-
-    /// @notice Setter: Chainlink price feeds
-    /// @param _priceFeedZOR The address of the price feed for ZOR
-    /// @param _priceFeedLPPoolOtherToken The address of the price feed for the counterparty token in the ZOR LP Pool
-    function setPriceFeeds(
-        address _priceFeedZOR,
-        address _priceFeedLPPoolOtherToken
-    ) external onlyOwner {
-        priceFeedZOR = AggregatorV3Interface(_priceFeedZOR);
-        priceFeedLPPoolOtherToken = AggregatorV3Interface(
-            _priceFeedLPPoolOtherToken
-        );
-    }
-
     /// @notice Setter: Cross chain endpoint
     /// @param _contract Contract address of endpoint
     function setZorroXChainEndpoint(address _contract) external onlyOwner {
         zorroXChainEndpoint = _contract;
     }
-
-    /* Events */
-
-    event Deposit(
-        address indexed account,
-        bytes indexed foreignAccount,
-        uint256 indexed pid,
-        uint256 wantAmount
-    );
-
-    event Withdraw(
-        address indexed account,
-        bytes indexed foreignAccount,
-        uint256 indexed pid,
-        uint256 trancheId,
-        uint256 wantAmount
-    );
-    event TransferInvestment(
-        address account,
-        uint256 indexed fromPid,
-        uint256 indexed fromTrancheId,
-        uint256 indexed toPid
-    );
 
     /* Cash flow */
 
@@ -220,18 +122,17 @@ contract ZorroControllerInvestment is
         );
 
         // Determine time multiplier value.
-        uint256 _timeMultiplier = ZorroControllerActions(controllerActions).getTimeMultiplier(_weeksCommitted, isTimeMultiplierActive);
+        uint256 _timeMultiplier = ZorroControllerActions(controllerActions)
+            .getTimeMultiplier(_weeksCommitted, isTimeMultiplierActive);
 
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-        uint256 _contributionAdded = ZorroControllerActions(controllerActions).getUserContribution(
-            sharesAdded,
-            _timeMultiplier
-        );
+        uint256 _contributionAdded = ZorroControllerActions(controllerActions)
+            .getUserContribution(sharesAdded, _timeMultiplier);
 
         // Update pool info: Increment the pool's total contributions by the contribution added
-        pool.totalTrancheContributions = pool.totalTrancheContributions.add(
-            _contributionAdded
-        );
+        pool.totalTrancheContributions =
+            pool.totalTrancheContributions +
+            _contributionAdded;
 
         // Create tranche
         _createTranche(
@@ -291,9 +192,8 @@ contract ZorroControllerInvestment is
         TrancheInfo memory _trancheInfo = TrancheInfo({
             contribution: _contributionAdded, // Contribution including time multiplier
             timeMultiplier: _timeMultiplier,
-            rewardDebt: pool.accZORRORewards.mul(_contributionAdded).div(
-                pool.totalTrancheContributions
-            ), // Pro-rata share of accumulated pool rewards, time-commitment weighted
+            rewardDebt: (pool.accZORRORewards * _contributionAdded) /
+                pool.totalTrancheContributions, // Pro-rata share of accumulated pool rewards, time-commitment weighted
             durationCommittedInWeeks: _durationCommittedInWeeks,
             enteredVaultAt: _enteredVaultAt,
             exitedVaultAt: 0
@@ -305,7 +205,7 @@ contract ZorroControllerInvestment is
         // If foreign account provided, write the tranche info to the foreign account ledger as well
         if (_foreignAccount.length > 0) {
             foreignTrancheInfo[_pid][_foreignAccount][
-                trancheLength(_pid, _localAccount).sub(1)
+                trancheLength(_pid, _localAccount) - 1
             ] = _localAccount;
         }
     }
@@ -504,11 +404,10 @@ contract ZorroControllerInvestment is
         updatePool(_pid);
 
         // Get pending rewards
-        uint256 _pendingRewards = (
-            _tranche.contribution.mul(_pool.accZORRORewards).div(
-                _pool.totalTrancheContributions
-            )
-        ).sub(_tranche.rewardDebt);
+        uint256 _pendingRewards = (_tranche.contribution *
+            _pool.accZORRORewards) /
+            _pool.totalTrancheContributions -
+            _tranche.rewardDebt;
 
         // Withdraw pending ZORRO rewards (a.k.a. "Harvest")
         if (_pendingRewards > 0) {
@@ -516,7 +415,10 @@ contract ZorroControllerInvestment is
             (
                 uint256 _rewardsDue,
                 uint256 _slashedRewards
-            ) = ZorroControllerActions(controllerActions).getAdjustedRewards(_tranche, _pendingRewards);
+            ) = ZorroControllerActions(controllerActions).getAdjustedRewards(
+                    _tranche,
+                    _pendingRewards
+                );
 
             if (_xChainRepatriation) {
                 // Update rewardsDueXChain
@@ -578,21 +480,20 @@ contract ZorroControllerInvestment is
 
             // Get staked want tokens
             // TODO: This MUST be based on shares and NOT want tokens,
-            // Because the quantity of want owed to the user will likely increase 
+            // Because the quantity of want owed to the user will likely increase
             // over time..... << END TODO
-            uint256 _stakedWantAmt = _tranche
-                .contribution
-                .mul(1e12)
-                .mul(_vault.wantLockedTotal())
-                .div(_tranche.timeMultiplier.mul(_vault.sharesTotal()));
+            uint256 _stakedWantAmt = (_tranche.contribution *
+                1e12 *
+                _vault.wantLockedTotal()) /
+                (_tranche.timeMultiplier * _vault.sharesTotal());
 
             // Withdraw the want token for this account
             _vault.withdrawWantToken(_stakedWantAmt);
 
             // Update shares safely
-            _pool.totalTrancheContributions = _pool
-                .totalTrancheContributions
-                .sub(_tranche.contribution);
+            _pool.totalTrancheContributions =
+                _pool.totalTrancheContributions -
+                _tranche.contribution;
 
             // Calculate Want token balance
             _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(
@@ -870,7 +771,7 @@ contract ZorroControllerInvestment is
         // the total tokens minted across all chains is constant
         IERC20Upgradeable(ZORRO).safeTransfer(
             burnAddress,
-            _totalMinted.sub(_totalSlashed)
+            _totalMinted - _totalSlashed
         );
 
         // Transfer slashed rewards from public pool to ZOR staking vault
