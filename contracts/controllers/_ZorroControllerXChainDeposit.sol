@@ -15,7 +15,7 @@ contract ZorroControllerXChainDeposit is
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMathUpgradeable for uint256;
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Sending */

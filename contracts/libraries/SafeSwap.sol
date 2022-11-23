@@ -97,6 +97,7 @@ library SafeSwapUni {
     }
 }
 
+// TODO: Move this into library itself, above?
 struct SafeSwapParams {
     uint256 amountIn;
     uint256 priceToken0;

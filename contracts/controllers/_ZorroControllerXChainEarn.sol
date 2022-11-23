@@ -2,19 +2,19 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
 import "./_ZorroControllerXChainBase.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
-
-import "../libraries/PriceFeed.sol";
-
-import "../libraries/SafeSwap.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
 import "../interfaces/IZorro.sol";
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "../libraries/PriceFeed.sol";
+
+import "../libraries/SafeSwap.sol";
 
 import "./actions/ZorroControllerXChainActions.sol";
 
@@ -23,9 +23,8 @@ contract ZorroControllerXChainEarn is
     ZorroControllerXChainBase
 {
     /* Libraries */
-    using SafeMathUpgradeable for uint256;
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Modifiers */
@@ -45,17 +44,6 @@ contract ZorroControllerXChainEarn is
         require(chainId == homeChainId, "only home chain");
         _;
     }
-
-    /* Events */
-
-    event XChainDistributeEarnings(
-        uint256 indexed _remoteChainId,
-        uint256 indexed _buybackAmountUSD,
-        uint256 indexed _revShareAmountUSD
-    );
-
-    // TODO: Move all events, structs to interfaces -- globally
-    event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
     /* State */
 
@@ -119,11 +107,11 @@ contract ZorroControllerXChainEarn is
         require(msg.value > 0, "No fees submitted");
 
         // Calculate total USD to transfer
-        uint256 _totalUSD = _buybackAmountUSD.add(_revShareAmountUSD);
+        uint256 _totalUSD = _buybackAmountUSD + _revShareAmountUSD;
 
         // TODO: check the funds flow. Is safetransferfrom required
         // if we transfer funds into this contract already?
-        // This is called from VaultBase. 
+        // This is called from VaultBase.
 
         // Transfer USD into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
@@ -133,19 +121,22 @@ contract ZorroControllerXChainEarn is
         );
 
         // Check balances
-        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(address(this));
+        uint256 _balUSD = IERC20Upgradeable(defaultStablecoin).balanceOf(
+            address(this)
+        );
 
         // Get accumulated ZOR rewards and set value
         uint256 _slashedRewards = _removeSlashedRewards();
 
         // Generate payload
-        bytes memory _payload = ZorroControllerXChainActions(controllerActions).encodeXChainDistributeEarningsPayload(
-            chainId,
-            _buybackAmountUSD,
-            _revShareAmountUSD,
-            _slashedRewards,
-            _maxMarketMovement
-        );
+        bytes memory _payload = ZorroControllerXChainActions(controllerActions)
+            .encodeXChainDistributeEarningsPayload(
+                chainId,
+                _buybackAmountUSD,
+                _revShareAmountUSD,
+                _slashedRewards,
+                _maxMarketMovement
+            );
 
         // Get the destination contract address on the remote chain
         bytes memory _dstContract = controllerContractsMap[chainId];
@@ -186,6 +177,8 @@ contract ZorroControllerXChainEarn is
         );
     }
 
+    /* Fees */
+
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
     /// @param _remoteChainId The Zorro chain ID of the chain that this request originated from
     /// @param _amountUSDBuyback The amount in USD that should be minted for LP + burn
@@ -199,31 +192,42 @@ contract ZorroControllerXChainEarn is
         uint256 _accSlashedRewards,
         uint256 _maxMarketMovement
     ) internal virtual onlyHomeChain {
-        // Total USD to perform operations
-        uint256 _totalUSD = _amountUSDBuyback.add(_amountUSDRevShare);
-
-        // Determine new USD balances
-        uint256 _balUSD = IERC20(defaultStablecoin).balanceOf(address(this));
-
-        /* Buyback */
-        // (Account for slippage)
-        uint256 _buybackAmount = _balUSD.mul(_amountUSDBuyback).div(
-            _totalUSD
+        // Approve spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(controllerActions, _amountUSDBuyback + _amountUSDRevShare);
+        
+        // Perform distribution
+        ZorroControllerXChainActions(controllerActions).distributeEarnings(
+            defaultStablecoin,
+            _amountUSDBuyback,
+            _amountUSDRevShare,
+            _maxMarketMovement,
+            ZorroControllerXChainActions.EarningsBuybackParams({
+                stablecoin: defaultStablecoin,
+                ZORRO: ZORRO,
+                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
+                burnAddress: burnAddress,
+                priceFeedStablecoin: priceFeedStablecoin,
+                priceFeedZOR: priceFeedZOR, 
+                priceFeedLPPoolOtherToken: priceFeedLPPoolOtherToken, 
+                stablecoinToZorroPath: stablecoinToZorroPath, 
+                stablecoinToZorroLPPoolOtherTokenPath: stablecoinToZorroLPPoolOtherTokenPath
+            }),
+            ZorroControllerXChainActions.EarningsRevshareParams({
+                stablecoin: defaultStablecoin,
+                ZORRO: ZORRO,
+                zorroLPPoolOtherToken: zorroLPPoolOtherToken, 
+                zorroStakingVault: zorroStakingVault,
+                priceFeedStablecoin: priceFeedStablecoin, 
+                priceFeedZOR: priceFeedZOR,
+                stablecoinToZorroPath: stablecoinToZorroPath 
+            })
         );
-        _buybackOnChain(_buybackAmount, _maxMarketMovement);
-
-        /* Rev share */
-        // (Account for slippage)
-        uint256 _revShareAmount = _balUSD.mul(_amountUSDRevShare).div(
-            _totalUSD
-        );
-        _revShareOnChain(_revShareAmount, _maxMarketMovement);
 
         // Emit event
         emit XChainDistributeEarnings(
             _remoteChainId,
-            _buybackAmount,
-            _revShareAmount
+            _amountUSDBuyback,
+            _amountUSDRevShare
         );
 
         // Award slashed rewards to ZOR stakers
@@ -232,126 +236,6 @@ contract ZorroControllerXChainEarn is
         }
     }
 
-    /* Fees */
-
-    /// @notice Adds liquidity to the main ZOR LP pool and burns the resulting LP token
-    /// @param _amountUSD Amount of USD to add as liquidity
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _buybackOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
-        internal
-    {
-        // Authorize spending beforehand
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSD
-        );
-
-
-        {
-            // Determine exchange rates using price feed oracle
-            uint256[] memory _priceTokens0 = new uint256[](2);
-            _priceTokens0[0] = priceFeedStablecoin.getExchangeRate();
-            _priceTokens0[1] = priceFeedZOR.getExchangeRate();
-            uint256[] memory _priceTokens1 = new uint256[](2);
-            _priceTokens1[0] = _priceTokens0[0];
-            _priceTokens1[1] = priceFeedLPPoolOtherToken.getExchangeRate();
-
-            // Get decimal info
-            uint8[] memory _decimals0 = new uint8[](2);
-            _decimals0[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-            _decimals0[1] = ERC20Upgradeable(ZORRO).decimals();
-            uint8[] memory _decimals1 = new uint8[](2);
-            _decimals1[0] = _decimals0[0];
-            _decimals1[1] = ERC20Upgradeable(zorroLPPoolOtherToken).decimals();
-
-            // Increase allowance
-            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSD);
-
-
-            // Swap to ZOR token
-            IAMMRouter02(uniRouterAddress).safeSwap(
-                _amountUSD.div(2),
-                _priceTokens0,
-                _maxMarketMovement,
-                stablecoinToZorroPath,
-                _decimals0,
-                address(this),
-                block.timestamp.add(600)
-            );
-
-            // Swap to counterparty token (if not USD)
-            if (zorroLPPoolOtherToken != defaultStablecoin) {
-                IAMMRouter02(uniRouterAddress).safeSwap(
-                    _amountUSD.div(2),
-                    _priceTokens1,
-                    _maxMarketMovement,
-                    stablecoinToZorroLPPoolOtherTokenPath,
-                    _decimals1,
-                    address(this),
-                    block.timestamp.add(600)
-                );
-            }
-        }
-
-
-        // Enter LP pool
-        uint256 tokenZORAmt = IERC20Upgradeable(ZORRO).balanceOf(address(this));
-        uint256 tokenOtherAmt = IERC20Upgradeable(zorroLPPoolOtherToken).balanceOf(
-            address(this)
-        );
-        IERC20Upgradeable(ZORRO).safeIncreaseAllowance(uniRouterAddress, tokenZORAmt);
-        IERC20Upgradeable(zorroLPPoolOtherToken).safeIncreaseAllowance(
-            uniRouterAddress,
-            tokenOtherAmt
-        );
-        IAMMRouter02(uniRouterAddress).addLiquidity(
-            ZORRO,
-            zorroLPPoolOtherToken,
-            tokenZORAmt,
-            tokenOtherAmt,
-            tokenZORAmt.mul(_maxMarketMovement).div(1000),
-            tokenOtherAmt.mul(_maxMarketMovement).div(1000),
-            burnAddress,
-            block.timestamp.add(600)
-        );
-    }
-
-    /// @notice Pays the ZOR single staking pool the revenue share amount specified
-    /// @param _amountUSD Amount of USD to send as ZOR revenue share
-    /// @param _maxMarketMovement factor to account for max market movement/slippage.
-    function _revShareOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
-        internal
-    {
-        // Authorize spending beforehand
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountUSD
-        );
-
-        // Determine exchange rates using price feed oracle
-        uint256[] memory _priceTokens = new uint256[](2);
-        _priceTokens[0] = priceFeedStablecoin.getExchangeRate();
-        _priceTokens[1] = priceFeedZOR.getExchangeRate();
-
-        // Get decimal info
-        uint8[] memory _decimals = new uint8[](2);
-        _decimals[0] = ERC20Upgradeable(defaultStablecoin).decimals();
-        _decimals[1] = ERC20Upgradeable(ZORRO).decimals();
-
-        // Swap to ZOR
-        // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(uniRouterAddress, _amountUSD);
-        // Swap
-        IAMMRouter02(uniRouterAddress).safeSwap(
-            _amountUSD,
-            _priceTokens,
-            _maxMarketMovement,
-            stablecoinToZorroPath,
-            _decimals,
-            zorroStakingVault,
-            block.timestamp.add(600)
-        );
-    }
 
     /* Slashed rewards */
 

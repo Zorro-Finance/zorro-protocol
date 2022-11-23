@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 import "./_ZorroControllerInvestment.sol";
 
-import "../interfaces/IAMMRouter02.sol";
-
 import "../interfaces/IVault.sol";
-
-import "../libraries/SafeSwap.sol";
 
 import "../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
@@ -16,39 +16,14 @@ import "../interfaces/Stargate/IStargateRouter.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-
 contract ZorroControllerXChainBase is
     IZorroControllerXChainBase,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     /* Libraries */
-    using SafeMathUpgradeable for uint256;
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
-
-    /* Structs */
-
-    // Stargate swaps
-    struct StargateSwapPayload {
-        uint256 chainId;
-        uint256 qty;
-        bytes dstContract;
-        bytes payload;
-        uint256 maxMarketMovement;
-    }
-
-    // LayerZero messages
-    struct LZMessagePayload {
-        uint256 zorroChainId;
-        bytes destinationContract;
-        bytes payload;
-        address payable refundAddress;
-        address _zroPaymentAddress;
-        bytes adapterParams;
-    }
 
     /* State */
 
@@ -139,10 +114,10 @@ contract ZorroControllerXChainBase is
         layerZeroEndpoint = _layerZeroEndpoint;
     }
 
-    function setChainType(
-        uint256 _zorroChainId,
-        uint256 _chainType
-    ) external onlyOwner {
+    function setChainType(uint256 _zorroChainId, uint256 _chainType)
+        external
+        onlyOwner
+    {
         chainTypes[_zorroChainId] = _chainType;
     }
 
@@ -157,8 +132,11 @@ contract ZorroControllerXChainBase is
     function _callStargateSwap(StargateSwapPayload memory _swapPayload)
         internal
     {
-        // Approve spending by Stargate 
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(stargateRouter, _swapPayload.qty);
+        // Approve spending by Stargate
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            stargateRouter,
+            _swapPayload.qty
+        );
 
         // Swap call
         IStargateRouter.lzTxObj memory _lzTxObj;
@@ -168,7 +146,7 @@ contract ZorroControllerXChainBase is
             stargateDestPoolIds[_swapPayload.chainId],
             payable(msg.sender),
             _swapPayload.qty,
-            _swapPayload.qty.mul(_swapPayload.maxMarketMovement).div(1000),
+            (_swapPayload.qty * _swapPayload.maxMarketMovement) / 1000,
             _lzTxObj,
             _swapPayload.dstContract,
             _swapPayload.payload

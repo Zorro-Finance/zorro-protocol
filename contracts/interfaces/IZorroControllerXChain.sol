@@ -10,6 +10,29 @@ import "./Stargate/IStargateReceiver.sol";
 
 /// @title IZorroControllerXChain
 interface IZorroControllerXChainBase {
+    /* Structs */
+
+    // Stargate swaps
+    struct StargateSwapPayload {
+        uint256 chainId;
+        uint256 qty;
+        bytes dstContract;
+        bytes payload;
+        uint256 maxMarketMovement;
+    }
+
+    // LayerZero messages
+    struct LZMessagePayload {
+        uint256 zorroChainId;
+        bytes destinationContract;
+        bytes payload;
+        address payable refundAddress;
+        address _zroPaymentAddress;
+        bytes adapterParams;
+    }
+
+    /* Functions */
+    
     function setControllerContract(
         uint256 _zorroChainId,
         bytes calldata _controller
@@ -53,6 +76,19 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainEarn
 interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
+    /* Events */
+
+    event XChainDistributeEarnings(
+        uint256 indexed _remoteChainId,
+        uint256 indexed _buybackAmountUSD,
+        uint256 indexed _revShareAmountUSD
+    );
+
+    // TODO: Move all events, structs to interfaces -- globally
+    event RemovedSlashedRewards(uint256 indexed _amountZOR);
+
+    /* Functions */
+    
     function setZorroLPPoolOtherToken(address _token) external;
 
     function setZorroStakingVault(address _contract) external;
@@ -84,6 +120,17 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
 
 /// @title IZorroControllerXChainWithdraw
 interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
+    /* Events */
+    
+    event XChainRepatriation(
+        uint256 indexed _pid,
+        address indexed _originRecipient,
+        uint256 _trancheId,
+        uint256 _originChainId
+    );
+
+    /* Functions */
+
     function sendXChainWithdrawalRequest(
         uint256 _destZorroChainId,
         uint256 _pid,

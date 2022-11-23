@@ -16,17 +16,6 @@ contract ZorroControllerXChainWithdraw is
     IZorroControllerXChainWithdraw,
     ZorroControllerXChainBase
 {
-    /* Libraries */
-    using SafeMathUpgradeable for uint256;
-
-    /* Events */
-    event XChainRepatriation(
-        uint256 indexed _pid,
-        address indexed _originRecipient,
-        uint256 _trancheId,
-        uint256 _originChainId
-    );
-
     /* Sending */
 
     /* Sending::withdrawals */

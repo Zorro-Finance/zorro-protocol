@@ -185,18 +185,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         );
     }
 
-    function buybackOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
-        public
-    {
-        _buybackOnChain(_amountUSD, _maxMarketMovement);
-    }
-
-    function revShareOnChain(uint256 _amountUSD, uint256 _maxMarketMovement)
-        public
-    {
-        _revShareOnChain(_amountUSD, _maxMarketMovement);
-    }
-
     function awardSlashedRewardsToStakers(uint256 _slashedZORRewards)
         public
     {
