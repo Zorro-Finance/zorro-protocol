@@ -250,19 +250,15 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
         );
 
         /* Buyback */
-        // (Account for slippage)
-        uint256 _buybackAmount = (_totalUSD * _amountUSDBuyback) / _totalUSD;
         _buybackOnChain(
-            _buybackAmount, 
+            _amountUSDBuyback, 
             _maxMarketMovement,
             _buybackParams
         );
 
         /* Rev share */
-        // (Account for slippage)
-        uint256 _revShareAmount = (_totalUSD * _amountUSDRevShare) / _totalUSD;
         _revShareOnChain(
-            _revShareAmount, 
+            _amountUSDRevShare, 
             _maxMarketMovement,
             _revshareParams
         );

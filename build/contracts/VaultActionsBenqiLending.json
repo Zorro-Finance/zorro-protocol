@@ -2787,7 +2787,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$25904_memory_ptr",
+            "name": "abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$25886_memory_ptr",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -4582,7 +4582,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_struct$_SafeSwapParams_$15547_memory_ptr",
+            "name": "abi_decode_tuple_t_struct$_SafeSwapParams_$15529_memory_ptr",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -8651,7 +8651,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_uint256t_uint256t_struct$_ExchangeRates_$25882_memory_ptrt_struct$_BuybackBurnLPParams_$25895_memory_ptr",
+            "name": "abi_decode_tuple_t_uint256t_uint256t_struct$_ExchangeRates_$25864_memory_ptrt_struct$_BuybackBurnLPParams_$25877_memory_ptr",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -9703,7 +9703,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_uint256t_struct$_ExchangeUSDForWantParams_$26568_memory_ptrt_uint256",
+            "name": "abi_decode_tuple_t_uint256t_struct$_ExchangeUSDForWantParams_$26550_memory_ptrt_uint256",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -11804,7 +11804,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_uint256t_struct$_ExchangeWantTokenForUSDParams_$26584_memory_ptrt_uint256",
+            "name": "abi_decode_tuple_t_uint256t_struct$_ExchangeWantTokenForUSDParams_$26566_memory_ptrt_uint256",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -20944,7 +20944,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function validator_revert_address(value)\n    {\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_address(value)\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_3421() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x80)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3423() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0100)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3428() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xe0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3430() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory(size) -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(size, 31), not(31)))\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$25904_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        if slt(add(_1, not(95)), 0x80) { revert(0, 0) }\n        let value_1 := allocate_memory_3421()\n        let value_2 := calldataload(add(headStart, 96))\n        validator_revert_address(value_2)\n        mstore(value_1, value_2)\n        let value_3 := calldataload(add(headStart, 0x80))\n        validator_revert_address(value_3)\n        mstore(add(value_1, 32), value_3)\n        let value_4 := calldataload(add(headStart, 160))\n        validator_revert_address(value_4)\n        mstore(add(value_1, 64), value_4)\n        let value_5 := calldataload(add(headStart, 192))\n        validator_revert_address(value_5)\n        mstore(add(value_1, 96), value_5)\n        value3 := value_1\n    }\n    function array_allocation_size_array_address_dyn(length) -> size\n    {\n        if gt(length, 0xffffffffffffffff) { panic_error_0x41() }\n        size := add(mul(length, 0x20), 0x20)\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_1))\n        let dst_1 := dst\n        mstore(dst, _1)\n        dst := add(dst, _2)\n        let srcEnd := add(add(offset, mul(_1, _2)), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            let value := calldataload(src)\n            validator_revert_address(value)\n            mstore(dst, value)\n            dst := add(dst, _2)\n        }\n        array := dst_1\n    }\n    function abi_decode_tuple_t_struct$_SafeSwapParams_$15547_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0100) { revert(0, 0) }\n        let value := allocate_memory_3423()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), calldataload(add(_2, 32)))\n        mstore(add(value, 64), calldataload(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), calldataload(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_address(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        let value_2 := calldataload(add(headStart, 64))\n        validator_revert_address(value_2)\n        value2 := value_2\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_uint256t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        let value_2 := calldataload(add(headStart, 160))\n        validator_revert_address(value_2)\n        value5 := value_2\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        value5 := calldataload(add(headStart, 160))\n    }\n    function abi_decode_tuple_t_array$_t_address_$dyn_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value0 := abi_decode_array_address_dyn(add(headStart, offset), dataEnd)\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), 0xffffffffffffffffffffffffffffffffffffffff))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_tuple_t_array$_t_address_$dyn_memory_ptr__to_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        tail := abi_encode_array_address_dyn(value0, add(headStart, 32))\n    }\n    function abi_decode_struct_BuybackBurnLPParams(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xa0)\n        let _1 := 0xffffffffffffffff\n        if or(gt(newFreePtr, _1), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        value := memPtr\n        let value_1 := calldataload(headStart)\n        validator_revert_address(value_1)\n        mstore(memPtr, value_1)\n        let value_2 := calldataload(add(headStart, 32))\n        validator_revert_address(value_2)\n        mstore(add(memPtr, 32), value_2)\n        mstore(add(memPtr, 64), abi_decode_address(add(headStart, 64)))\n        let offset := calldataload(add(headStart, 96))\n        if gt(offset, _1) { revert(0, 0) }\n        mstore(add(memPtr, 96), abi_decode_array_address_dyn(add(headStart, offset), end))\n        let offset_1 := calldataload(add(headStart, 128))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(memPtr, 128), abi_decode_array_address_dyn(add(headStart, offset_1), end))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_struct$_ExchangeRates_$25882_memory_ptrt_struct$_BuybackBurnLPParams_$25895_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        if slt(add(_1, not(63)), 0x80) { revert(0, 0) }\n        let value := allocate_memory_3421()\n        mstore(value, calldataload(add(headStart, 64)))\n        mstore(add(value, 32), calldataload(add(headStart, 96)))\n        mstore(add(value, 64), calldataload(add(headStart, 0x80)))\n        mstore(add(value, 96), calldataload(add(headStart, 160)))\n        value2 := value\n        let offset := calldataload(add(headStart, 192))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value3 := abi_decode_struct_BuybackBurnLPParams(add(headStart, offset), dataEnd)\n    }\n    function abi_decode_tuple_t_uint256t_struct$_ExchangeUSDForWantParams_$26568_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0xe0) { revert(0, 0) }\n        let value := allocate_memory_3428()\n        mstore(value, abi_decode_address(_2))\n        mstore(add(value, 32), abi_decode_address(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_address(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), abi_decode_address(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        value1 := value\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_addresst_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_addresst_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        let value_1 := calldataload(add(headStart, 96))\n        validator_revert_address(value_1)\n        value3 := value_1\n        value4 := calldataload(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n    }\n    function abi_decode_tuple_t_uint256t_struct$_ExchangeWantTokenForUSDParams_$26584_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0xc0) { revert(0, 0) }\n        let value := allocate_memory_3430()\n        let value_1 := calldataload(_2)\n        validator_revert_address(value_1)\n        mstore(value, value_1)\n        let value_2 := calldataload(add(_2, 32))\n        validator_revert_address(value_2)\n        mstore(add(value, 32), value_2)\n        let value_3 := calldataload(add(_2, 64))\n        validator_revert_address(value_3)\n        mstore(add(value, 64), value_3)\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        let offset_1 := calldataload(add(_2, 160))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 160), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        value1 := value\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function increment_t_uint16(value) -> ret\n    {\n        let _1 := 0xffff\n        let value_1 := and(value, _1)\n        if eq(value_1, _1) { panic_error_0x11() }\n        ret := add(value_1, 1)\n    }\n    function abi_decode_bool_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_boolt_uint256t_bool_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := abi_decode_bool_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := abi_decode_bool_fromMemory(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_869a81434170bf1000300fd22bf6ea05da16d1d14b21ddcb3fa8ec273453ac05__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 7)\n        mstore(add(headStart, 64), \"negWant\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n        mstore(add(headStart, 192), value6)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint8_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        if iszero(eq(value, and(value, 0xff))) { revert(0, 0) }\n        value0 := value\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value7, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 256)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n        mstore(add(headStart, 192), and(value6, _1))\n        mstore(add(headStart, 224), value7)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function abi_decode_uint80_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint80t_int256t_uint256t_uint256t_uint80_fromMemory(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := abi_decode_uint80_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n        value3 := mload(add(headStart, 96))\n        value4 := abi_decode_uint80_fromMemory(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_stringliteral_4813dba0f997fcf98efb8a1f547325c010bceec392f7bce0213eb7a0a0101425__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"neg prices not allowed\")\n        tail := add(headStart, 96)\n    }\n    function checked_exp_helper(_base, exponent) -> power, base\n    {\n        let power_1 := 1\n        power := power_1\n        base := _base\n        for { } gt(exponent, power_1) { }\n        {\n            if gt(base, div(not(0), base)) { panic_error_0x11() }\n            if and(exponent, power_1) { power := mul(power, base) }\n            base := mul(base, base)\n            exponent := div(exponent, 0x02)\n        }\n    }\n    function checked_exp_unsigned(base, exponent) -> power\n    {\n        if iszero(exponent)\n        {\n            power := 1\n            leave\n        }\n        if iszero(base)\n        {\n            power := 0\n            leave\n        }\n        switch base\n        case 1 {\n            power := 1\n            leave\n        }\n        case 2 {\n            if gt(exponent, 255) { panic_error_0x11() }\n            power := exp(2, exponent)\n            leave\n        }\n        if or(and(lt(base, 11), lt(exponent, 78)), and(lt(base, 307), lt(exponent, 32)))\n        {\n            power := exp(base, exponent)\n            leave\n        }\n        let power_1, base_1 := checked_exp_helper(base, exponent)\n        if gt(power_1, div(not(0), base_1)) { panic_error_0x11() }\n        power := mul(power_1, base_1)\n    }\n    function checked_exp_t_uint256_t_uint8(base, exponent) -> power\n    {\n        power := checked_exp_unsigned(base, and(exponent, 0xff))\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_bool_fromMemory(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_ae9749dd51684a9bfa2aae7f6df94626a600df20204fc3d562dff4de90da0c6b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"invalid dec\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__to_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__fromStack_reversed(headStart, value4, value3, value2, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), 160)\n        tail := abi_encode_array_address_dyn(value2, add(headStart, 160))\n        mstore(add(headStart, 96), and(value3, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 128), value4)\n    }\n    function abi_encode_tuple_t_uint256_t_array$_t_address_$dyn_memory_ptr__to_t_uint256_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), 64)\n        tail := abi_encode_array_address_dyn(value1, add(headStart, 64))\n    }\n    function abi_decode_tuple_t_array$_t_uint256_$dyn_memory_ptr_fromMemory(headStart, dataEnd) -> value0\n    {\n        let _1 := 32\n        if slt(sub(dataEnd, headStart), _1) { revert(0, 0) }\n        let offset := mload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let _3 := mload(_2)\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_3))\n        let dst_1 := dst\n        mstore(dst, _3)\n        dst := add(dst, _1)\n        let srcEnd := add(add(_2, mul(_3, _1)), _1)\n        if gt(srcEnd, dataEnd) { revert(0, 0) }\n        let src := add(_2, _1)\n        for { } lt(src, srcEnd) { src := add(src, _1) }\n        {\n            mstore(dst, mload(src))\n            dst := add(dst, _1)\n        }\n        value0 := dst_1\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
+      "contents": "{\n    { }\n    function validator_revert_address(value)\n    {\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_address(value)\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_3421() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x80)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3423() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0100)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3428() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xe0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3430() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory(size) -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(size, 31), not(31)))\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$25886_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        if slt(add(_1, not(95)), 0x80) { revert(0, 0) }\n        let value_1 := allocate_memory_3421()\n        let value_2 := calldataload(add(headStart, 96))\n        validator_revert_address(value_2)\n        mstore(value_1, value_2)\n        let value_3 := calldataload(add(headStart, 0x80))\n        validator_revert_address(value_3)\n        mstore(add(value_1, 32), value_3)\n        let value_4 := calldataload(add(headStart, 160))\n        validator_revert_address(value_4)\n        mstore(add(value_1, 64), value_4)\n        let value_5 := calldataload(add(headStart, 192))\n        validator_revert_address(value_5)\n        mstore(add(value_1, 96), value_5)\n        value3 := value_1\n    }\n    function array_allocation_size_array_address_dyn(length) -> size\n    {\n        if gt(length, 0xffffffffffffffff) { panic_error_0x41() }\n        size := add(mul(length, 0x20), 0x20)\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_1))\n        let dst_1 := dst\n        mstore(dst, _1)\n        dst := add(dst, _2)\n        let srcEnd := add(add(offset, mul(_1, _2)), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            let value := calldataload(src)\n            validator_revert_address(value)\n            mstore(dst, value)\n            dst := add(dst, _2)\n        }\n        array := dst_1\n    }\n    function abi_decode_tuple_t_struct$_SafeSwapParams_$15529_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0100) { revert(0, 0) }\n        let value := allocate_memory_3423()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), calldataload(add(_2, 32)))\n        mstore(add(value, 64), calldataload(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), calldataload(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_address(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        let value_2 := calldataload(add(headStart, 64))\n        validator_revert_address(value_2)\n        value2 := value_2\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_uint256t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        let value_2 := calldataload(add(headStart, 160))\n        validator_revert_address(value_2)\n        value5 := value_2\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        value5 := calldataload(add(headStart, 160))\n    }\n    function abi_decode_tuple_t_array$_t_address_$dyn_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value0 := abi_decode_array_address_dyn(add(headStart, offset), dataEnd)\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), 0xffffffffffffffffffffffffffffffffffffffff))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_tuple_t_array$_t_address_$dyn_memory_ptr__to_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        tail := abi_encode_array_address_dyn(value0, add(headStart, 32))\n    }\n    function abi_decode_struct_BuybackBurnLPParams(headStart, end) -> value\n    {\n        if slt(sub(end, headStart), 0xa0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xa0)\n        let _1 := 0xffffffffffffffff\n        if or(gt(newFreePtr, _1), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        value := memPtr\n        let value_1 := calldataload(headStart)\n        validator_revert_address(value_1)\n        mstore(memPtr, value_1)\n        let value_2 := calldataload(add(headStart, 32))\n        validator_revert_address(value_2)\n        mstore(add(memPtr, 32), value_2)\n        mstore(add(memPtr, 64), abi_decode_address(add(headStart, 64)))\n        let offset := calldataload(add(headStart, 96))\n        if gt(offset, _1) { revert(0, 0) }\n        mstore(add(memPtr, 96), abi_decode_array_address_dyn(add(headStart, offset), end))\n        let offset_1 := calldataload(add(headStart, 128))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(memPtr, 128), abi_decode_array_address_dyn(add(headStart, offset_1), end))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_struct$_ExchangeRates_$25864_memory_ptrt_struct$_BuybackBurnLPParams_$25877_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        if slt(add(_1, not(63)), 0x80) { revert(0, 0) }\n        let value := allocate_memory_3421()\n        mstore(value, calldataload(add(headStart, 64)))\n        mstore(add(value, 32), calldataload(add(headStart, 96)))\n        mstore(add(value, 64), calldataload(add(headStart, 0x80)))\n        mstore(add(value, 96), calldataload(add(headStart, 160)))\n        value2 := value\n        let offset := calldataload(add(headStart, 192))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value3 := abi_decode_struct_BuybackBurnLPParams(add(headStart, offset), dataEnd)\n    }\n    function abi_decode_tuple_t_uint256t_struct$_ExchangeUSDForWantParams_$26550_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0xe0) { revert(0, 0) }\n        let value := allocate_memory_3428()\n        mstore(value, abi_decode_address(_2))\n        mstore(add(value, 32), abi_decode_address(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_address(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), abi_decode_address(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        value1 := value\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_addresst_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_addresst_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        let value_1 := calldataload(add(headStart, 96))\n        validator_revert_address(value_1)\n        value3 := value_1\n        value4 := calldataload(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n    }\n    function abi_decode_tuple_t_uint256t_struct$_ExchangeWantTokenForUSDParams_$26566_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0xc0) { revert(0, 0) }\n        let value := allocate_memory_3430()\n        let value_1 := calldataload(_2)\n        validator_revert_address(value_1)\n        mstore(value, value_1)\n        let value_2 := calldataload(add(_2, 32))\n        validator_revert_address(value_2)\n        mstore(add(value, 32), value_2)\n        let value_3 := calldataload(add(_2, 64))\n        validator_revert_address(value_3)\n        mstore(add(value, 64), value_3)\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        let offset_1 := calldataload(add(_2, 160))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 160), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        value1 := value\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function increment_t_uint16(value) -> ret\n    {\n        let _1 := 0xffff\n        let value_1 := and(value, _1)\n        if eq(value_1, _1) { panic_error_0x11() }\n        ret := add(value_1, 1)\n    }\n    function abi_decode_bool_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_boolt_uint256t_bool_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := abi_decode_bool_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := abi_decode_bool_fromMemory(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_869a81434170bf1000300fd22bf6ea05da16d1d14b21ddcb3fa8ec273453ac05__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 7)\n        mstore(add(headStart, 64), \"negWant\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n        mstore(add(headStart, 192), value6)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint8_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        if iszero(eq(value, and(value, 0xff))) { revert(0, 0) }\n        value0 := value\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value7, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 256)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n        mstore(add(headStart, 192), and(value6, _1))\n        mstore(add(headStart, 224), value7)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function abi_decode_uint80_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint80t_int256t_uint256t_uint256t_uint80_fromMemory(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := abi_decode_uint80_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n        value3 := mload(add(headStart, 96))\n        value4 := abi_decode_uint80_fromMemory(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_stringliteral_4813dba0f997fcf98efb8a1f547325c010bceec392f7bce0213eb7a0a0101425__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"neg prices not allowed\")\n        tail := add(headStart, 96)\n    }\n    function checked_exp_helper(_base, exponent) -> power, base\n    {\n        let power_1 := 1\n        power := power_1\n        base := _base\n        for { } gt(exponent, power_1) { }\n        {\n            if gt(base, div(not(0), base)) { panic_error_0x11() }\n            if and(exponent, power_1) { power := mul(power, base) }\n            base := mul(base, base)\n            exponent := div(exponent, 0x02)\n        }\n    }\n    function checked_exp_unsigned(base, exponent) -> power\n    {\n        if iszero(exponent)\n        {\n            power := 1\n            leave\n        }\n        if iszero(base)\n        {\n            power := 0\n            leave\n        }\n        switch base\n        case 1 {\n            power := 1\n            leave\n        }\n        case 2 {\n            if gt(exponent, 255) { panic_error_0x11() }\n            power := exp(2, exponent)\n            leave\n        }\n        if or(and(lt(base, 11), lt(exponent, 78)), and(lt(base, 307), lt(exponent, 32)))\n        {\n            power := exp(base, exponent)\n            leave\n        }\n        let power_1, base_1 := checked_exp_helper(base, exponent)\n        if gt(power_1, div(not(0), base_1)) { panic_error_0x11() }\n        power := mul(power_1, base_1)\n    }\n    function checked_exp_t_uint256_t_uint8(base, exponent) -> power\n    {\n        power := checked_exp_unsigned(base, and(exponent, 0xff))\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_bool_fromMemory(headStart)\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_ae9749dd51684a9bfa2aae7f6df94626a600df20204fc3d562dff4de90da0c6b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"invalid dec\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__to_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__fromStack_reversed(headStart, value4, value3, value2, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), 160)\n        tail := abi_encode_array_address_dyn(value2, add(headStart, 160))\n        mstore(add(headStart, 96), and(value3, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 128), value4)\n    }\n    function abi_encode_tuple_t_uint256_t_array$_t_address_$dyn_memory_ptr__to_t_uint256_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), 64)\n        tail := abi_encode_array_address_dyn(value1, add(headStart, 64))\n    }\n    function abi_decode_tuple_t_array$_t_uint256_$dyn_memory_ptr_fromMemory(headStart, dataEnd) -> value0\n    {\n        let _1 := 32\n        if slt(sub(dataEnd, headStart), _1) { revert(0, 0) }\n        let offset := mload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let _3 := mload(_2)\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_3))\n        let dst_1 := dst\n        mstore(dst, _3)\n        dst := add(dst, _1)\n        let srcEnd := add(add(_2, mul(_3, _1)), _1)\n        if gt(srcEnd, dataEnd) { revert(0, 0) }\n        let src := add(_2, _1)\n        for { } lt(src, srcEnd) { src := add(src, _1) }\n        {\n            mstore(dst, mload(src))\n            dst := add(dst, _1)\n        }\n        value0 := dst_1\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
       "id": 123,
       "language": "Yul",
       "name": "#utility.yul"
@@ -20970,13 +20970,13 @@
         2557
       ],
       "IAMMRouter01": [
-        13217
+        13199
       ],
       "IAMMRouter02": [
-        13305
+        13287
       ],
       "IAlpacaVault": [
-        12653
+        12635
       ],
       "IERC20MetadataUpgradeable": [
         2660
@@ -20985,13 +20985,13 @@
         2635
       ],
       "IFairLaunch": [
-        12618
+        12600
       ],
       "ILendingToken": [
-        14672
+        14654
       ],
       "IUnitrollerBenqi": [
-        12849
+        12831
       ],
       "Initializable": [
         1774
@@ -21000,7 +21000,7 @@
         571
       ],
       "PriceFeed": [
-        15330
+        15312
       ],
       "SafeERC20Upgradeable": [
         2884
@@ -21009,27 +21009,27 @@
         3828
       ],
       "SafeSwapParams": [
-        15547
-      ],
-      "SafeSwapUni": [
         15529
       ],
+      "SafeSwapUni": [
+        15511
+      ],
       "VaultActions": [
-        26526
+        26508
       ],
       "VaultActionsBenqiLending": [
-        24725
+        24707
       ],
       "VaultActionsLending": [
-        27046
+        27028
       ]
     },
-    "id": 24726,
+    "id": 24708,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 24697,
+        "id": 24679,
         "literals": [
           "solidity",
           "^",
@@ -21042,11 +21042,11 @@
       {
         "absolutePath": "project:/contracts/interfaces/Benqi/IUnitroller.sol",
         "file": "../../interfaces/Benqi/IUnitroller.sol",
-        "id": 24698,
+        "id": 24680,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 24726,
-        "sourceUnit": 12850,
+        "scope": 24708,
+        "sourceUnit": 12832,
         "src": "58:48:106",
         "symbolAliases": [],
         "unitAlias": ""
@@ -21054,11 +21054,11 @@
       {
         "absolutePath": "project:/contracts/vaults/actions/_VaultActionsLending.sol",
         "file": "./_VaultActionsLending.sol",
-        "id": 24699,
+        "id": 24681,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 24726,
-        "sourceUnit": 27047,
+        "scope": 24708,
+        "sourceUnit": 27029,
         "src": "108:36:106",
         "symbolAliases": [],
         "unitAlias": ""
@@ -21068,13 +21068,13 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 24700,
+              "id": 24682,
               "name": "VaultActionsLending",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 27046,
+              "referencedDeclaration": 27028,
               "src": "183:19:106"
             },
-            "id": 24701,
+            "id": 24683,
             "nodeType": "InheritanceSpecifier",
             "src": "183:19:106"
           }
@@ -21083,11 +21083,11 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 24725,
+        "id": 24707,
         "linearizedBaseContracts": [
-          24725,
-          27046,
-          26526,
+          24707,
+          27028,
+          26508,
           571,
           3169,
           1774
@@ -21098,29 +21098,29 @@
         "nodes": [
           {
             "baseFunctions": [
-              26767
+              26749
             ],
             "body": {
-              "id": 24723,
+              "id": 24705,
               "nodeType": "Block",
               "src": "710:157:106",
               "statements": [
                 {
                   "assignments": [
                     null,
-                    24713,
+                    24695,
                     null
                   ],
                   "declarations": [
                     null,
                     {
                       "constant": false,
-                      "id": 24713,
+                      "id": 24695,
                       "mutability": "mutable",
                       "name": "_collateralFactor",
                       "nameLocation": "731:17:106",
                       "nodeType": "VariableDeclaration",
-                      "scope": 24723,
+                      "scope": 24705,
                       "src": "723:25:106",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -21129,7 +21129,7 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 24712,
+                        "id": 24694,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
                         "src": "723:7:106",
@@ -21142,15 +21142,15 @@
                     },
                     null
                   ],
-                  "id": 24720,
+                  "id": 24702,
                   "initialValue": {
                     "arguments": [
                       {
-                        "id": 24718,
+                        "id": 24700,
                         "name": "_poolAddress",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 24706,
+                        "referencedDeclaration": 24688,
                         "src": "813:12:106",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
@@ -21168,11 +21168,11 @@
                       "expression": {
                         "arguments": [
                           {
-                            "id": 24715,
+                            "id": 24697,
                             "name": "_comptrollerAddress",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 24704,
+                            "referencedDeclaration": 24686,
                             "src": "771:19:106",
                             "typeDescriptions": {
                               "typeIdentifier": "t_address",
@@ -21187,18 +21187,18 @@
                               "typeString": "address"
                             }
                           ],
-                          "id": 24714,
+                          "id": 24696,
                           "name": "IUnitrollerBenqi",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 12849,
+                          "referencedDeclaration": 12831,
                           "src": "754:16:106",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_type$_t_contract$_IUnitrollerBenqi_$12849_$",
+                            "typeIdentifier": "t_type$_t_contract$_IUnitrollerBenqi_$12831_$",
                             "typeString": "type(contract IUnitrollerBenqi)"
                           }
                         },
-                        "id": 24716,
+                        "id": 24698,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -21209,25 +21209,25 @@
                         "src": "754:37:106",
                         "tryCall": false,
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IUnitrollerBenqi_$12849",
+                          "typeIdentifier": "t_contract$_IUnitrollerBenqi_$12831",
                           "typeString": "contract IUnitrollerBenqi"
                         }
                       },
-                      "id": 24717,
+                      "id": 24699,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "markets",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 12841,
+                      "referencedDeclaration": 12823,
                       "src": "754:58:106",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_bool_$_t_uint256_$_t_bool_$",
                         "typeString": "function (address) view external returns (bool,uint256,bool)"
                       }
                     },
-                    "id": 24719,
+                    "id": 24701,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -21247,32 +21247,32 @@
                 },
                 {
                   "expression": {
-                    "id": 24721,
+                    "id": 24703,
                     "name": "_collateralFactor",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 24713,
+                    "referencedDeclaration": 24695,
                     "src": "843:17:106",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 24711,
-                  "id": 24722,
+                  "functionReturnParameters": 24693,
+                  "id": 24704,
                   "nodeType": "Return",
                   "src": "836:24:106"
                 }
               ]
             },
             "documentation": {
-              "id": 24702,
+              "id": 24684,
               "nodeType": "StructuredDocumentation",
               "src": "230:312:106",
               "text": "@notice Gets loan collateral factor from lending protocol\n @return collFactor The collateral factor %. TODO: Specify denominator (1e18?) Check against consuming logic.\n @param _comptrollerAddress Address of the ApeLending Unitroller proxy\n @param _poolAddress Address of the lending pool"
             },
             "functionSelector": "b9826d33",
-            "id": 24724,
+            "id": 24706,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -21280,23 +21280,23 @@
             "nameLocation": "556:16:106",
             "nodeType": "FunctionDefinition",
             "overrides": {
-              "id": 24708,
+              "id": 24690,
               "nodeType": "OverrideSpecifier",
               "overrides": [],
               "src": "660:8:106"
             },
             "parameters": {
-              "id": 24707,
+              "id": 24689,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 24704,
+                  "id": 24686,
                   "mutability": "mutable",
                   "name": "_comptrollerAddress",
                   "nameLocation": "581:19:106",
                   "nodeType": "VariableDeclaration",
-                  "scope": 24724,
+                  "scope": 24706,
                   "src": "573:27:106",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21305,7 +21305,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 24703,
+                    "id": 24685,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "573:7:106",
@@ -21319,12 +21319,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 24706,
+                  "id": 24688,
                   "mutability": "mutable",
                   "name": "_poolAddress",
                   "nameLocation": "610:12:106",
                   "nodeType": "VariableDeclaration",
-                  "scope": 24724,
+                  "scope": 24706,
                   "src": "602:20:106",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21333,7 +21333,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 24705,
+                    "id": 24687,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "602:7:106",
@@ -21349,17 +21349,17 @@
               "src": "572:51:106"
             },
             "returnParameters": {
-              "id": 24711,
+              "id": 24693,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 24710,
+                  "id": 24692,
                   "mutability": "mutable",
                   "name": "collFactor",
                   "nameLocation": "694:10:106",
                   "nodeType": "VariableDeclaration",
-                  "scope": 24724,
+                  "scope": 24706,
                   "src": "686:18:106",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21368,7 +21368,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 24709,
+                    "id": 24691,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "686:7:106",
@@ -21382,14 +21382,14 @@
               ],
               "src": "685:20:106"
             },
-            "scope": 24725,
+            "scope": 24707,
             "src": "547:320:106",
             "stateMutability": "view",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 24726,
+        "scope": 24708,
         "src": "146:723:106",
         "usedErrors": []
       }
@@ -21402,7 +21402,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-11-23T17:24:26.987Z",
+  "updatedAt": "2022-11-23T17:55:28.152Z",
   "devdoc": {
     "kind": "dev",
     "methods": {
