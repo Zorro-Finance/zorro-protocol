@@ -8,8 +8,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-/// @title PriceFeedBase
-abstract contract PriceFeedBase is AggregatorV3Interface, OwnableUpgradeable {
+abstract contract PriceFeedAggBase is AggregatorV3Interface, OwnableUpgradeable {
     /* State */
 
     address public router;

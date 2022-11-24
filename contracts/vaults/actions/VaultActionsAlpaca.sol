@@ -2,23 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../../libraries/SafeSwap.sol";
-
-import "../../libraries/PriceFeed.sol";
-
 import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
 import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "../../interfaces/IAMMRouter02.sol";
+
+import "../../libraries/SafeSwap.sol";
+
+import "../../libraries/PriceFeed.sol";
 
 import "./_VaultActions.sol";
 
@@ -27,7 +25,6 @@ contract VaultActionsAlpaca is VaultActions {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
-    using SafeMathUpgradeable for uint256;
     using PriceFeed for AggregatorV3Interface;
 
     /* Structs */

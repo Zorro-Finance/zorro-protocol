@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "./_PriceFeedBase.sol";
+import "./_PriceFeedAggBase.sol";
 
 /// @title BANANAPriceFeed
-contract BANANAPriceFeed is PriceFeedBase {
+contract BANANAPriceFeed is PriceFeedAggBase {
     /* State */
 
     address public bananaToken;
@@ -20,7 +20,7 @@ contract BANANAPriceFeed is PriceFeedBase {
         address _bananaToken,
         address _busdToken
     ) public initializer {
-        PriceFeedBase.initialize(_router, 18);
+        PriceFeedAggBase.initialize(_router, 18);
 
         bananaToken = _bananaToken;
         busdToken = _busdToken;

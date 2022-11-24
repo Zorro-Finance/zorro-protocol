@@ -2,15 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
@@ -25,7 +21,6 @@ import "./_VaultActions.sol";
 contract VaultActionsStandardAMM is VaultActions {
     /* Libraries */
 
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
@@ -81,7 +76,7 @@ contract VaultActionsStandardAMM is VaultActions {
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _amountUSD.div(2),
+                    amountIn: _amountUSD / 2,
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token0PriceFeed.getExchangeRate(),
                     token0: _params.stablecoin,
@@ -97,7 +92,7 @@ contract VaultActionsStandardAMM is VaultActions {
         if (_params.token1Address != _params.stablecoin) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _amountUSD.div(2),
+                    amountIn: _amountUSD / 2,
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token1PriceFeed.getExchangeRate(),
                     token0: _params.stablecoin,

@@ -12,8 +12,6 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
-    using SafeMathUpgradeable for uint256;
-    using SafeSwapUni for IAMMRouter02;
 
     /* Functions */
 

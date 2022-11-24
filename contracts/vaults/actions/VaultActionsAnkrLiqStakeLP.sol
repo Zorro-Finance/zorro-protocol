@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "../../interfaces/Ankr/IBinancePool_R1.sol";
 
 import "../../interfaces/IWETH.sol";
@@ -19,7 +17,6 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
 
     using PriceFeed for AggregatorV3Interface;
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
 
     /* Functions */
 
@@ -58,7 +55,7 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
 
         // Call deposit func
         IBinancePool_R1(_liqStakePool).stakeAndClaimCerts{
-            value: _amount.add(_relayerFee)
+            value: _amount + _relayerFee
         }();
 
         // Calc balance of liquid staking token

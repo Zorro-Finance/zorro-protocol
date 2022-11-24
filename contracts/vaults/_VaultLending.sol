@@ -2,33 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "./_VaultBase.sol";
-
-import "../libraries/PriceFeed.sol";
-
-import "./actions/VaultActionsBenqiLending.sol";
-
 import "../interfaces/Lending/ILendingToken.sol";
 
 import "../interfaces/Benqi/IQiTokenSaleDistributor.sol";
 
 import "../interfaces/Benqi/IUnitroller.sol";
 
+import "./actions/VaultActionsBenqiLending.sol";
+
+import "./_VaultBase.sol";
+
 /// @title Vault base contract for leveraged lending strategies
 abstract contract VaultLending is VaultBase {
     /* Libraries */
 
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
@@ -197,14 +185,12 @@ abstract contract VaultLending is VaultBase {
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded = _wantAmt
-                .mul(sharesTotal)
-                .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
-                .div(entranceFeeFactorMax);
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (wantLockedTotal * entranceFeeFactor);
         }
         // Increment the shares
-        sharesTotal = sharesTotal.add(sharesAdded);
+        sharesTotal = sharesTotal + sharesAdded;
 
         // Farm (leverage)
         _farm();
@@ -257,13 +243,13 @@ abstract contract VaultLending is VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(this.wantTokenLockedAdj());
+        sharesRemoved = (_wantAmt * sharesTotal) / this.wantTokenLockedAdj();
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+        sharesTotal = sharesTotal - sharesRemoved;
 
         // Get balance of underlying on this contract
         uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
@@ -273,9 +259,9 @@ abstract contract VaultLending is VaultBase {
         // If amount to withdraw is gt balance, delever by appropriate amount
         if (_wantAmt > _wantBal) {
             // Delever the incremental amount needed and reassign _wantAmt
-            _withdrawSome(_wantAmt.sub(_wantBal));
+            _withdrawSome(_wantAmt - _wantBal);
         }
-        
+
         // Recalc balance
         _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
 
@@ -286,9 +272,7 @@ abstract contract VaultLending is VaultBase {
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = _wantAmt.mul(withdrawFeeFactor).div(
-                withdrawFeeFactorMax
-            );
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
         }
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
@@ -315,7 +299,7 @@ abstract contract VaultLending is VaultBase {
         // Safety: Cap amount to balance in case of rounding errors
         if (_amount > _balance) _amount = _balance;
 
-        // Attempt to redeem underlying token 
+        // Attempt to redeem underlying token
         require(
             ILendingToken(poolAddress).redeemUnderlying(_amount) == 0,
             "_withdrawSome: redeem failed"
@@ -401,10 +385,10 @@ abstract contract VaultLending is VaultBase {
         );
 
         // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt
-            .sub(_controllerFee)
-            .sub(_buybackAmt)
-            .sub(_revShareAmt);
+        uint256 _earnedAmtNet = _earnedAmt -
+            _controllerFee -
+            _buybackAmt -
+            _revShareAmt;
 
         // Swap earn to token0 if token0 is not earn
         if (token0Address != earnedAddress) {
@@ -439,7 +423,7 @@ abstract contract VaultLending is VaultBase {
             poolAddress,
             _token0Bal
         );
-        
+
         // Re-supply/leverage
         _farm();
 
@@ -493,7 +477,7 @@ abstract contract VaultLending is VaultBase {
         if (_ox == 0) return;
 
         // If withdrawal greater than balance of underlying, cap it (account for rounding)
-        if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+        if (_withdrawAmt >= _ox) _withdrawAmt = _ox - 1;
 
         // Init
         (
@@ -513,7 +497,7 @@ abstract contract VaultLending is VaultBase {
 
         /* Leverage targeting */
 
-        if (_currentL < _L && _L.sub(_currentL) > targetBorrowLimitHysteresis) {
+        if (_currentL < _L && (_L - _currentL) > targetBorrowLimitHysteresis) {
             // If BELOW leverage target and below hysteresis envelope
 
             // Calculate incremental amount to borrow:
@@ -536,7 +520,7 @@ abstract contract VaultLending is VaultBase {
             // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
             while (
                 _currentL > _L &&
-                _currentL.sub(_L) > targetBorrowLimitHysteresis
+                (_currentL - _L) > targetBorrowLimitHysteresis
             ) {
                 // Calculate incremental amount to borrow:
                 uint256 _dy = VaultActionsBenqiLending(vaultActions)
@@ -556,11 +540,11 @@ abstract contract VaultLending is VaultBase {
                 );
 
                 // Decrement supply bal by amount repaid
-                _ox = _ox.sub(_dy);
+                _ox = _ox - _dy;
                 // Cap withdrawal amount to new supply (account for rounding)
-                if (_withdrawAmt >= _ox) _withdrawAmt = _ox.sub(1);
+                if (_withdrawAmt >= _ox) _withdrawAmt = _ox - 1;
                 // Adjusted supply decremented by withdrawal amount
-                _x = _ox.sub(_withdrawAmt);
+                _x = _ox - _withdrawAmt;
 
                 // Cap incremental borrow-repay to total amount borrowed
                 if (_dy > _y) _dy = _y;
@@ -572,10 +556,10 @@ abstract contract VaultLending is VaultBase {
                 // Repay borrowed amount (increment)
                 ILendingToken(poolAddress).repayBorrow(_dy);
                 // Decrement total amount borrowed
-                _y = _y.sub(_dy);
+                _y = _y - _dy;
 
                 // Update current leverage (borrowed / supplied)
-                _currentL = _y.mul(1e18).div(_x);
+                _currentL = _y * 1e18 / _x;
                 // Update current liquidity of underlying pool
                 _liquidityAvailable = ILendingToken(poolAddress).getCash();
             }

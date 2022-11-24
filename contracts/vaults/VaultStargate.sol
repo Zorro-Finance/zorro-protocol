@@ -2,35 +2,25 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
 import "../interfaces/IAMMFarm.sol";
 
 import "../interfaces/Stargate/IStargateRouter.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "./_VaultBase.sol";
-
-import "../libraries/PriceFeed.sol";
 
 import "../interfaces/Stargate/IStargateLPStaking.sol";
 
 import "./actions/VaultActionsStargate.sol";
 
+import "./_VaultBase.sol";
+
 /// @title Vault contract for Stargate single token strategies (e.g. for lending bridgeable tokens)
 contract VaultStargate is VaultBase {
     /* Libraries */
-    using SafeMathUpgradeable for uint256;
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
+
     /// @notice Upgradeable constructor
     /// @param _initValue A VaultStargateInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
@@ -126,11 +116,13 @@ contract VaultStargate is VaultBase {
     }
 
     /* State */
+
     address public tokenSTG; // Stargate token
     address public stargateRouter; // Stargate Router for adding/removing liquidity etc.
     uint16 public stargatePoolId; // Stargate Pool that tokens shall be lent to
 
     /* Setters */
+
     function setTokenSTG(address _token) external onlyOwner {
         tokenSTG = _token;
     }
@@ -172,20 +164,18 @@ contract VaultStargate is VaultBase {
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded = _wantAmt
-                .mul(sharesTotal)
-                .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
-                .div(entranceFeeFactorMax);
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (wantLockedTotal * entranceFeeFactorMax);
         }
         // Increment the shares
-        sharesTotal = sharesTotal.add(sharesAdded);
+        sharesTotal = sharesTotal + sharesAdded;
 
         // Farm the want token if applicable. Otherwise increment want locked
         if (isFarmable) {
             _farm();
         } else {
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
+            wantLockedTotal = wantLockedTotal + _wantAmt;
         }
 
         return sharesAdded;
@@ -238,7 +228,7 @@ contract VaultStargate is VaultBase {
             address(this)
         );
         // Increment the total Want tokens locked into this contract
-        wantLockedTotal = wantLockedTotal.add(wantAmt);
+        wantLockedTotal = wantLockedTotal + wantAmt;
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             farmContractAddress,
@@ -272,19 +262,17 @@ contract VaultStargate is VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+        sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = _wantAmt.mul(withdrawFeeFactor).div(
-                withdrawFeeFactorMax
-            );
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
         }
 
         // Unfarm Want token if applicable
@@ -305,7 +293,7 @@ contract VaultStargate is VaultBase {
         }
 
         // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        wantLockedTotal = wantLockedTotal - _wantAmt;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
@@ -399,10 +387,10 @@ contract VaultStargate is VaultBase {
         );
 
         // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt
-            .sub(_controllerFee)
-            .sub(_buybackAmt)
-            .sub(_revShareAmt);
+        uint256 _earnedAmtNet = _earnedAmt -
+            _controllerFee -
+            _buybackAmt -
+            _revShareAmt;
 
         // Allow spending
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(

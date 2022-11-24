@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "./_PriceFeedBase.sol";
+import "./_PriceFeedAggBase.sol";
 
 /// @title ZORPriceFeed
-contract ZORPriceFeed is PriceFeedBase {
+contract ZORPriceFeed is PriceFeedAggBase {
     /* State */
 
     address public zorToken;
@@ -22,7 +22,7 @@ contract ZORPriceFeed is PriceFeedBase {
         address _zorLPOtherToken,
         address _usdcToken
     ) public initializer {
-        PriceFeedBase.initialize(_router, 18);
+        PriceFeedAggBase.initialize(_router, 18);
 
         zorToken = _zorToken;
         zorLPOtherToken = _zorLPOtherToken;

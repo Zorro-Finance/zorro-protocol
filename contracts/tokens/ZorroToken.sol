@@ -39,15 +39,4 @@ contract Zorro is IZorro, ERC20("ZORRO", "ZOR"), Ownable {
     {
         _mint(_to, _amount);
     }
-
-    /// @notice Allows authorized burning of the Zorro token from a specified account
-    /// @param _account The address to transfer ZOR from for burning
-    /// @param _amount The amount of ZOR to transfer and burn
-    function burn(address _account, uint256 _amount)
-        public
-        virtual
-        onlyZorroController
-    {
-        _burn(_account, _amount);
-    }
 }

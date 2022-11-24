@@ -8,20 +8,17 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "../../libraries/PriceFeed.sol";
+
+import "../../interfaces/IAMMRouter02.sol";
 
 import "./_VaultActions.sol";
 
 import "./VaultActionsStandardAMM.sol";
 
-import "../../interfaces/IAMMRouter02.sol";
-
 abstract contract VaultActionsLiqStakeLP is VaultActions {
     /* Libs */
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
     using PriceFeed for AggregatorV3Interface;
 
     /* Structs */
@@ -236,7 +233,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         // Swap half of sETH to ETH
         _safeSwap(
             SafeSwapUni.SafeSwapParams({
-                amountIn: _amount.div(2),
+                amountIn: _amount / 2,
                 priceToken0: _params.liquidStakeTokenPriceFeed.getExchangeRate(),
                 priceToken1: _params.nativeTokenPriceFeed.getExchangeRate(),
                 token0: _params.liquidStakeToken,

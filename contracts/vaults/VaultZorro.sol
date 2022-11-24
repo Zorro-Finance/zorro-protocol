@@ -1,24 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./_VaultBase.sol";
-
-import "../libraries/PriceFeed.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
 import "./actions/VaultActionsZorro.sol";
+
+import "./_VaultBase.sol";
 
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
 contract VaultZorro is VaultBase {
     /* Libraries */
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
+
     /// @notice Upgradeable constructor
     /// @dev NOTE: Only to be deployed on home chain!
     /// @param _initValue A VaultZorroInit struct that contains all constructor args
@@ -52,7 +48,9 @@ contract VaultZorro is VaultBase {
 
         // Swap paths
         stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(stablecoinToToken0Path);
+        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
+            stablecoinToToken0Path
+        );
 
         // Price feeds
         token0PriceFeed = AggregatorV3Interface(
@@ -104,17 +102,17 @@ contract VaultZorro is VaultBase {
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded = _wantAmt
-                .mul(sharesTotal)
-                .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
-                .div(entranceFeeFactorMax);
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (wantLockedTotal * entranceFeeFactorMax);
         }
         // Increment the shares
-        sharesTotal = sharesTotal.add(sharesAdded);
+        sharesTotal = sharesTotal + sharesAdded;
 
         // Update want locked total
-        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
 
         return sharesAdded;
     }
@@ -128,7 +126,10 @@ contract VaultZorro is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public override onlyZorroController whenNotPaused returns (uint256) {
         // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(vaultActions, _amountUSD);
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
 
         // Exchange
         return
@@ -162,23 +163,23 @@ contract VaultZorro is VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        uint256 sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+        sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = _wantAmt.mul(withdrawFeeFactor).div(
-                withdrawFeeFactorMax
-            );
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
         if (_wantAmt > _wantBal) {
             _wantAmt = _wantBal;
         }
@@ -188,10 +189,13 @@ contract VaultZorro is VaultBase {
         }
 
         // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        wantLockedTotal = wantLockedTotal - _wantAmt;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(zorroControllerAddress, _wantAmt);
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
 
         return sharesRemoved;
     }
@@ -205,7 +209,10 @@ contract VaultZorro is VaultBase {
         uint256 _maxMarketMovementAllowed
     ) public virtual override onlyZorroController returns (uint256) {
         // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(vaultActions, _amount);
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
 
         // Exchange
         return
@@ -244,6 +251,8 @@ contract VaultZorro is VaultBase {
         lastEarnBlock = block.number;
 
         // Update want locked total
-        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(address(this));
+        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
     }
 }

@@ -2,33 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "./_VaultBase.sol";
-
-import "../libraries/PriceFeed.sol";
+import "../interfaces/IAMMFarm.sol";
 
 import "./actions/_VaultActionsLiqStakeLP.sol";
 
-import "../interfaces/IAMMRouter02.sol";
-
-import "../interfaces/IAMMFarm.sol";
+import "./_VaultBase.sol";
 
 /// @title Vault base contract for liquid staking + LP strategy
 contract VaultBaseLiqStakeLP is VaultBase {
-    /* Libraries */
-    using SafeMathUpgradeable for uint256;
+    /* Libraries */ 
+    
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
+
     /// @notice Upgradeable constructor
     /// @param _initValue A VaultAlpacaInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
@@ -201,23 +189,21 @@ contract VaultBaseLiqStakeLP is VaultBase {
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded = _wantAmt
-                .mul(sharesTotal)
-                .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
-                .div(entranceFeeFactorMax);
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (wantLockedTotal * entranceFeeFactorMax);
         }
         // Increment the shares
-        sharesTotal = sharesTotal.add(sharesAdded);
+        sharesTotal = sharesTotal + sharesAdded;
 
         // Increment want token locked qty. NOTE, no farming takes place here, as the lending protocol automatically takes care of it
-        wantLockedTotal = wantLockedTotal.add(_wantAmt);
+        wantLockedTotal = wantLockedTotal + _wantAmt;
 
         // Farm the want token if applicable. Otherwise increment want locked
         if (isFarmable) {
             _farm();
         } else {
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
+            wantLockedTotal = wantLockedTotal + _wantAmt;
         }
     }
 
@@ -237,19 +223,17 @@ contract VaultBaseLiqStakeLP is VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+        sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = _wantAmt.mul(withdrawFeeFactor).div(
-                withdrawFeeFactorMax
-            );
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
         }
 
         // Unfarm Want token if applicable
@@ -271,7 +255,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         }
 
         // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        wantLockedTotal = wantLockedTotal - _wantAmt;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
@@ -476,9 +460,11 @@ contract VaultBaseLiqStakeLP is VaultBase {
                 _rates
             );
 
-            _remainingAmt = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
-                    _revShareAmt
-                );
+            _remainingAmt =
+                _earnedAmt -
+                _controllerFee -
+                _buybackAmt -
+                _revShareAmt;
         }
 
         // Swap Earned token to token0 if token0 is not the Earned token
@@ -513,7 +499,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
         if (_token0Bal > 0) {
             // Stake
             _liquidStake(_token0Bal);
-            
+
             // Farm Want token
             _farm();
         }

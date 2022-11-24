@@ -2,37 +2,23 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "../interfaces/IAMMFarm.sol";
 
-import "../interfaces/IAMMRouter02.sol";
+import "./actions/VaultActionsStandardAMM.sol";
 
 import "./_VaultBase.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "../libraries/SafeSwap.sol";
-
-import "../libraries/PriceFeed.sol";
-
-import "./actions/VaultActionsStandardAMM.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
 contract VaultStandardAMM is VaultBase {
     /* Libraries */
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
-    using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
+
     /// @notice Upgradeable constructor
     /// @param _initValue A VaultStandardAMMInit struct with all constructor params
     /// @param _timelockOwner The designated timelock controller address to act as owner
@@ -158,20 +144,18 @@ contract VaultStandardAMM is VaultBase {
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
         if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded = _wantAmt
-                .mul(sharesTotal)
-                .mul(entranceFeeFactor)
-                .div(wantLockedTotal)
-                .div(entranceFeeFactorMax);
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (wantLockedTotal * entranceFeeFactorMax);
         }
         // Increment the shares
-        sharesTotal = sharesTotal.add(sharesAdded);
+        sharesTotal = sharesTotal + sharesAdded;
 
         // Farm the want token if applicable. Otherwise increment want locked
         if (isFarmable) {
             _farm();
         } else {
-            wantLockedTotal = wantLockedTotal.add(_wantAmt);
+            wantLockedTotal = wantLockedTotal + _wantAmt;
         }
     }
 
@@ -221,7 +205,7 @@ contract VaultStandardAMM is VaultBase {
             address(this)
         );
         // Increment the total Want tokens locked into this contract
-        wantLockedTotal = wantLockedTotal.add(wantBal);
+        wantLockedTotal = wantLockedTotal + wantBal;
         // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             farmContractAddress,
@@ -254,19 +238,17 @@ contract VaultStandardAMM is VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal.sub(sharesRemoved);
+        sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = _wantAmt.mul(withdrawFeeFactor).div(
-                withdrawFeeFactorMax
-            );
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
         }
 
         // Unfarm Want token if applicable
@@ -287,7 +269,7 @@ contract VaultStandardAMM is VaultBase {
         }
 
         // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+        wantLockedTotal = wantLockedTotal - _wantAmt;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
@@ -385,9 +367,7 @@ contract VaultStandardAMM is VaultBase {
                 _rates
             );
 
-            _remainingAmt = _earnedAmt.sub(_controllerFee).sub(_buybackAmt).sub(
-                    _revShareAmt
-                );
+            _remainingAmt = _earnedAmt - _controllerFee - _buybackAmt - _revShareAmt;
         }
 
         // Allow spending
@@ -400,7 +380,7 @@ contract VaultStandardAMM is VaultBase {
         if (earnedAddress != token0Address) {
             VaultActionsStandardAMM(vaultActions).safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _remainingAmt.div(2),
+                    amountIn: _remainingAmt /2,
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),
                     token0: earnedAddress,
@@ -416,7 +396,7 @@ contract VaultStandardAMM is VaultBase {
         if (earnedAddress != token1Address) {
             VaultActionsStandardAMM(vaultActions).safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _remainingAmt.div(2),
+                    amountIn: _remainingAmt / 2,
                     priceToken0: _rates.earn,
                     priceToken1: token1PriceFeed.getExchangeRate(),
                     token0: earnedAddress,

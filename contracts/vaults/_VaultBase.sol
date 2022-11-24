@@ -12,25 +12,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../interfaces/IAMMRouter01.sol";
-
-import "../interfaces/IAMMRouter02.sol";
-
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-import "../libraries/SafeSwap.sol";
-
 import "../interfaces/IVault.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "../libraries/SafeSwap.sol";
 
 import "./actions/_VaultActions.sol";
-
-// TODO: Do a protocol-wide inventory of imports and make sure there aren't any superfluous imports
-
-// TODO: Should we have Initializable here?
 
 abstract contract VaultBase is
     IVault,
@@ -40,8 +28,6 @@ abstract contract VaultBase is
 {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeSwapUni for IAMMRouter02;
-    using SafeMathUpgradeable for uint256;
 
     /* Constructor */
     function initialize(address _timelockOwner) public initializer {
@@ -95,7 +81,6 @@ abstract contract VaultBase is
     address public rewardsAddress; // The TimelockController RewardsDistributor contract
     // Routers/Pools
     address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair)
-    address public uniRouterAddress; // Router contract address for adding/removing liquidity, etc.
     // Zorro LP pool
     address public zorroLPPool; // Main pool for Zorro liquidity
     address public zorroLPPoolOtherToken; // For the dominant LP pool, the token paired with the ZOR token
@@ -135,22 +120,6 @@ abstract contract VaultBase is
 
     // Other
     uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden) // TODO: Setter/constructor
-
-    /* Events */
-
-    event SetSettings(
-        uint256 _entranceFeeFactor,
-        uint256 _withdrawFeeFactor,
-        uint256 _controllerFee,
-        uint256 _buyBackRate,
-        uint256 _revShareRate
-    );
-    event SetGov(address _govAddress);
-    event SetOnlyGov(bool _onlyGov);
-    event SetUniRouterAddress(address _uniRouterAddress);
-    event SetRewardsAddress(address _rewardsAddress);
-    event Buyback(uint256 indexed _amount);
-    event RevShare(uint256 indexed _amount);
 
     /* Modifiers */
 
@@ -207,10 +176,6 @@ abstract contract VaultBase is
 
     function setWantAddress(address _wantAddress) public onlyOwner {
         wantAddress = _wantAddress;
-    }
-
-    function setUniRouterAddress(address _uniRouterAddress) public onlyOwner {
-        uniRouterAddress = _uniRouterAddress;
     }
 
     function setPoolAddress(address _poolAddress) public onlyOwner {
@@ -414,13 +379,13 @@ abstract contract VaultBase is
         // Calculate buyback amount
         if (buyBackRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            buybackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
+            buybackAmt = _earnedAmt * buyBackRate / buyBackRateMax;
         }
 
         // Calculate revshare amount
         if (revShareRate > 0) {
             // Calculate the buyback amount via the buyBackRate parameters
-            revShareAmt = _earnedAmt.mul(revShareRate).div(revShareRateMax);
+            revShareAmt = _earnedAmt * revShareRate / revShareRateMax;
         }
 
         // Routing: Determine whether on home chain or not
@@ -432,7 +397,7 @@ abstract contract VaultBase is
             // Otherwise, contact controller, to make cross chain call
 
             // Calc sum
-            uint256 _swappableAmt = buybackAmt.add(revShareAmt);
+            uint256 _swappableAmt = buybackAmt + revShareAmt;
 
             // Allow spending
             IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
@@ -477,7 +442,7 @@ abstract contract VaultBase is
             // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
             if (controllerFee > 0) {
                 // Calculate the fee from the controllerFee parameters
-                fee = _earnedAmt.mul(controllerFee).div(controllerFeeMax);
+                fee = _earnedAmt * controllerFee / controllerFeeMax;
                 // Transfer the fee to the rewards address
                 IERC20Upgradeable(earnedAddress).safeTransfer(
                     rewardsAddress,

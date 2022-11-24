@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -25,12 +23,13 @@ import "../../interfaces/IAMMRouter02.sol";
 // TODO: Unit tests
 
 contract VaultActions is OwnableUpgradeable {
-    /* Libs */
-    using SafeMathUpgradeable for uint256;
+    /* Libraries */
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
 
     /* Structs */
+
     struct VaultAddresses {
         address govAddress;
         address zorroControllerAddress;
@@ -93,10 +92,7 @@ contract VaultActions is OwnableUpgradeable {
 
     /// @notice Constructor
     /// @param _uniRouterAddress Address of Uniswap style router
-    function initialize(address _uniRouterAddress)
-        public
-        initializer
-    {
+    function initialize(address _uniRouterAddress) public initializer {
         uniRouterAddress = _uniRouterAddress;
         burnAddress = 0x000000000000000000000000000000000000dEaD;
     }
@@ -192,10 +188,10 @@ contract VaultActions is OwnableUpgradeable {
             _token1,
             _token0Amt,
             _token1Amt,
-            _token0Amt.mul(_maxMarketMovementAllowed).div(1000),
-            _token1Amt.mul(_maxMarketMovementAllowed).div(1000),
+            (_token0Amt * _maxMarketMovementAllowed) / 1000,
+            (_token1Amt * _maxMarketMovementAllowed) / 1000,
             _recipient,
-            block.timestamp.add(600)
+            block.timestamp + 600
         );
     }
 
@@ -263,9 +259,9 @@ contract VaultActions is OwnableUpgradeable {
 
         // Approve
         IERC20Upgradeable(_exitPoolParams.lpTokenAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            _amountLP
-        );
+                uniRouterAddress,
+                _amountLP
+            );
 
         // Remove liquidity
         IAMMRouter02(uniRouterAddress).removeLiquidity(
@@ -275,7 +271,7 @@ contract VaultActions is OwnableUpgradeable {
             _amount0Min,
             _amount1Min,
             _recipient,
-            block.timestamp.add(600)
+            block.timestamp + 600
         );
     }
 
@@ -294,11 +290,9 @@ contract VaultActions is OwnableUpgradeable {
     ) internal view returns (uint256) {
         uint256 _balance = IERC20Upgradeable(_token).balanceOf(_poolAddress);
         return
-            (_amountLP.mul(_balance).div(_totalSupply))
-                .mul(_maxMarketMovementAllowed)
-                .div(1000);
+            (_amountLP * _balance * _maxMarketMovementAllowed) /
+            (1000 * _totalSupply);
     }
-
 
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @dev NOTE: Caller must approve tokens for spending beforehand
@@ -343,7 +337,7 @@ contract VaultActions is OwnableUpgradeable {
             _swapParams.path,
             _decimals,
             _swapParams.destination,
-            block.timestamp.add(600)
+            block.timestamp + 600
         );
     }
 
@@ -353,13 +347,11 @@ contract VaultActions is OwnableUpgradeable {
     /// @param _rates An ExchangeRates struct
     /// @param _params An BuybackBurnLPParams struct specifying buyback parameters
     function buybackBurnLP(
-        uint256 _amount, 
+        uint256 _amount,
         uint256 _maxMarketMovementAllowed,
         ExchangeRates memory _rates,
         BuybackBurnLPParams memory _params
-    )
-        public
-    {
+    ) public {
         // Transfer tokens IN
         IERC20Upgradeable(_params.earnedAddress).safeTransferFrom(
             msg.sender,
@@ -371,7 +363,7 @@ contract VaultActions is OwnableUpgradeable {
         if (_params.earnedAddress != _params.ZORROAddress) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _amount.div(2),
+                    amountIn: _amount / 2,
                     priceToken0: _rates.earn,
                     priceToken1: _rates.ZOR,
                     token0: _params.earnedAddress,
@@ -386,7 +378,7 @@ contract VaultActions is OwnableUpgradeable {
         if (_params.earnedAddress != _params.zorroLPPoolOtherToken) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
-                    amountIn: _amount.div(2),
+                    amountIn: _amount / 2,
                     priceToken0: _rates.earn,
                     priceToken1: _rates.lpPoolOtherToken,
                     token0: _params.earnedAddress,
@@ -402,8 +394,9 @@ contract VaultActions is OwnableUpgradeable {
         uint256 _amtZorro = IERC20Upgradeable(_params.ZORROAddress).balanceOf(
             address(this)
         );
-        uint256 _amtOtherToken = IERC20Upgradeable(_params.zorroLPPoolOtherToken)
-            .balanceOf(address(this));
+        uint256 _amtOtherToken = IERC20Upgradeable(
+            _params.zorroLPPoolOtherToken
+        ).balanceOf(address(this));
 
         // Add liquidity and burn
         _joinPool(
@@ -429,7 +422,7 @@ contract VaultActions is OwnableUpgradeable {
         uint256 _pathLength = _path.length;
         _newPath = new address[](_pathLength);
         for (uint16 i = 0; i < _pathLength; ++i) {
-            _newPath[i] = _path[_path.length.sub(1).sub(i)];
+            _newPath[i] = _path[_path.length - 1 - i];
         }
     }
 }

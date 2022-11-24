@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "./_PriceFeedbase.sol";
+import "./_PriceFeedAggBase.sol";
 
 /// @title STGPriceFeed
-contract STGPriceFeed is PriceFeedBase {
+contract STGPriceFeed is PriceFeedAggBase {
     /* State */
 
     address public stgToken;
@@ -22,7 +22,7 @@ contract STGPriceFeed is PriceFeedBase {
         address _wavaxToken,
         address _usdcToken
     ) public initializer {
-        PriceFeedBase.initialize(_router, 18);
+        PriceFeedAggBase.initialize(_router, 18);
 
         stgToken = _stgToken;
         wavaxToken = _wavaxToken;

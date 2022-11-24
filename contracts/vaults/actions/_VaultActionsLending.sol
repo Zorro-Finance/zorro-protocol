@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -17,9 +15,7 @@ import "./_VaultActions.sol";
 abstract contract VaultActionsLending is VaultActions {
     /* Libraries */
 
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
     using PriceFeed for AggregatorV3Interface;
 
     /* Structs */
@@ -178,15 +174,15 @@ abstract contract VaultActionsLending is VaultActions {
         )
     {
         // Adjusted supply = init supply - amt to withdraw
-        x = _ox.sub(_withdrawAmt);
+        x = _ox - _withdrawAmt;
         // Calc init borrow balance
         y = ILendingToken(_poolAddress).borrowBalanceCurrent(address(this));
         // Get collateral factor from protocol
         c = this.collateralFactor(_comptrollerAddress, _poolAddress);
         // Target leverage
-        targetL = c.mul(_targetBorrowLimit).div(1e18);
+        targetL = (c * _targetBorrowLimit) / 1e18;
         // Current leverage = borrow / supply
-        currentL = y.mul(1e18).div(x);
+        currentL = (y * 1e18) / x;
         // Liquidity (of underlying) available in the pool overall
         liquidityAvailable = ILendingToken(_poolAddress).getCash();
     }
@@ -208,12 +204,12 @@ abstract contract VaultActionsLending is VaultActions {
         uint256 _liquidityAvailable
     ) public pure returns (uint256 dy) {
         // (Target lev % * curr supply - curr borrowed)/(1 - Target lev %)
-        dy = _targetLeverage.mul(_x).div(1e18).sub(_y).mul(1e18).div(
-            uint256(1e18).sub(_targetLeverage)
-        );
+        dy =
+            (((_targetLeverage * _x) / 1e18) - _y * 1e18) /
+            (uint256(1e18) - _targetLeverage);
 
         // Cap incremental borrow to init supply * collateral fact % - curr borrowed
-        uint256 _max_dy = _ox.mul(_c).div(1e18).sub(_y);
+        uint256 _max_dy = ((_ox * _c) / 1e18) - _y;
         if (dy > _max_dy) dy = _max_dy;
 
         // Also cap to max liq available
@@ -237,12 +233,12 @@ abstract contract VaultActionsLending is VaultActions {
         uint256 _liquidityAvailable
     ) public pure returns (uint256 dy) {
         // (Curr borrowed - (Target lev % * Curr supply)) / (1 - Target lev %)
-        dy = _y.sub(_targetLeverage.mul(_x).div(1e18)).mul(1e18).div(
-            uint256(1e18).sub(_targetLeverage)
-        );
+        dy =
+            ((_y - ((_targetLeverage * _x) / 1e18)) * 1e18) /
+            (uint256(1e18) - _targetLeverage);
 
         // Cap incremental borrow-repay to init supply - (curr borrowed / collateral fact %)
-        uint256 _max_dy = _ox.sub(_y.mul(1e18).div(_c));
+        uint256 _max_dy = _ox - ((_y * 1e18) / _c);
         if (dy > _max_dy) dy = _max_dy;
 
         // Also cap to max liq available
@@ -266,6 +262,6 @@ abstract contract VaultActionsLending is VaultActions {
         uint256 _borrowBal = ILendingToken(_poolAddress).borrowBalanceCurrent(
             _vault
         );
-        amtLocked = _wantBal.add(_supplyBal).sub(_borrowBal);
+        amtLocked = _wantBal + _supplyBal - _borrowBal;
     }
 }
