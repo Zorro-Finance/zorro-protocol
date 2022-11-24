@@ -64,7 +64,7 @@ contract VaultActionsZorro is VaultActions {
         // Swap USD for token0
         // Single asset. Swap from USD directly to Token0
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amountUSD,
                 priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                 priceToken1: _params.zorroPriceFeed.getExchangeRate(),
@@ -110,7 +110,7 @@ contract VaultActionsZorro is VaultActions {
 
         // Swap ZOR -> USD
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: _params.zorroPriceFeed.getExchangeRate(),
                 priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),

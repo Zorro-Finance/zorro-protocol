@@ -66,7 +66,7 @@ abstract contract VaultActionsLending is VaultActions {
         // Single asset. Swap from USD directly to Token0
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD,
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token0PriceFeed.getExchangeRate(),
@@ -114,7 +114,7 @@ abstract contract VaultActionsLending is VaultActions {
         // Swap Token0 -> BUSD
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amount,
                     priceToken0: _params.token0PriceFeed.getExchangeRate(),
                     priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),

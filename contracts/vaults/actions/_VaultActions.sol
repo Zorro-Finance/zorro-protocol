@@ -303,7 +303,7 @@ contract VaultActions is OwnableUpgradeable {
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @dev NOTE: Caller must approve tokens for spending beforehand
     /// @param _swapParams SafeSwapParams for swap
-    function safeSwap(SafeSwapParams memory _swapParams) public {
+    function safeSwap(SafeSwapUni.SafeSwapParams memory _swapParams) public {
         // Transfer tokens in
         IERC20Upgradeable(_swapParams.token0).safeTransferFrom(
             msg.sender,
@@ -318,7 +318,7 @@ contract VaultActions is OwnableUpgradeable {
     /// @notice Internal function for swapping
     /// @dev Does not transfer tokens to this contract (assumes they are already here)
     /// @param _swapParams SafeSwapParams for swap
-    function _safeSwap(SafeSwapParams memory _swapParams) internal {
+    function _safeSwap(SafeSwapUni.SafeSwapParams memory _swapParams) internal {
         // Allowance
         IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
             uniRouterAddress,
@@ -370,7 +370,7 @@ contract VaultActions is OwnableUpgradeable {
         // Swap to ZOR Token
         if (_params.earnedAddress != _params.ZORROAddress) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amount.div(2),
                     priceToken0: _rates.earn,
                     priceToken1: _rates.ZOR,
@@ -385,7 +385,7 @@ contract VaultActions is OwnableUpgradeable {
         // Swap to Other token
         if (_params.earnedAddress != _params.zorroLPPoolOtherToken) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amount.div(2),
                     priceToken0: _rates.earn,
                     priceToken1: _rates.lpPoolOtherToken,

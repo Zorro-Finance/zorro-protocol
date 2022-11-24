@@ -491,7 +491,7 @@ contract VaultBaseLiqStakeLP is VaultBase {
 
             // Swap earned to token0
             VaultActionsLiqStakeLP(vaultActions).safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _remainingAmt,
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),

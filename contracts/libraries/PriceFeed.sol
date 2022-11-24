@@ -4,15 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
-
 library PriceFeed {
-    /* Libraries */
-    using SafeMathUpgradeable for uint256;
-
     /* Functions */
-    
+
     /// @notice Calculates exchange rate vs USD for a given priceFeed
     /// @dev Assumes price feed is in USD. If not, either multiply obtained exchange rate with another, or override this func.
     /// @param _priceFeed The Chainlink price feed
@@ -30,6 +24,6 @@ library PriceFeed {
         require(_price >= 0, "neg prices not allowed");
 
         // Get the price of the token times 1e12, accounting for decimals
-        return uint256(_price).mul(1e12).div(10**_decimals);
+        return (uint256(_price) * 1e12) / 10**_decimals;
     }
 }

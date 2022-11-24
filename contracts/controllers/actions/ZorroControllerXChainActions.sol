@@ -275,7 +275,7 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
     ) internal {
         // Swap to ZOR token
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amountUSD / 2,
                 priceToken0: _params.priceFeedStablecoin.getExchangeRate(),
                 priceToken1: _params.priceFeedZOR.getExchangeRate(),
@@ -290,7 +290,7 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
         // Swap to counterparty token (if not USD)
         if (_params.zorroLPPoolOtherToken != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD / 2,
                     priceToken0: _params.priceFeedStablecoin.getExchangeRate(),
                     priceToken1: _params
@@ -334,7 +334,7 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
     ) internal {
         // Swap to ZOR token and send to Zorro Staking Vault
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amountUSD,
                 priceToken0: _params.priceFeedStablecoin.getExchangeRate(),
                 priceToken1: _params.priceFeedZOR.getExchangeRate(),
@@ -478,7 +478,7 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
     /// @notice Safely swaps tokens using the most suitable protocol based on token
     /// @dev NOTE: Caller must approve tokens for spending beforehand
     /// @param _swapParams SafeSwapParams for swap
-    function safeSwap(SafeSwapParams memory _swapParams) public {
+    function safeSwap(SafeSwapUni.SafeSwapParams memory _swapParams) public {
         // Transfer tokens in
         IERC20Upgradeable(_swapParams.token0).safeTransferFrom(
             msg.sender,
@@ -493,7 +493,7 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
     /// @notice Internal function for swapping
     /// @dev Does not transfer tokens to this contract (assumes they are already here)
     /// @param _swapParams SafeSwapParams for swap
-    function _safeSwap(SafeSwapParams memory _swapParams) internal {
+    function _safeSwap(SafeSwapUni.SafeSwapParams memory _swapParams) internal {
         // Allowance
         IERC20Upgradeable(_swapParams.token0).safeIncreaseAllowance(
             uniRouterAddress,

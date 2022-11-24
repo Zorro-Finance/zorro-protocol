@@ -39,7 +39,7 @@ contract VaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
     /// @param _amount The amount of AVAX to unstake
     function _liquidUnstake(uint256 _amount) internal override whenNotPaused {
         VaultActionsBenqiLiqStakeLP(vaultActions).liquidUnstake(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: liquidStakeTokenPriceFeed.getExchangeRate(),
                 priceToken1: token0PriceFeed.getExchangeRate(),

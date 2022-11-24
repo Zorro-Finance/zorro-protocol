@@ -442,7 +442,7 @@ abstract contract VaultBase is
 
             // Swap to Earn to USD and send to zorro controller contract
             VaultActions(vaultActions).safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _swappableAmt,
                     priceToken0: _rates.earn,
                     priceToken1: _rates.stablecoin,
@@ -532,7 +532,7 @@ abstract contract VaultBase is
 
         // Swap
         VaultActions(vaultActions).safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: _rates.earn,
                 priceToken1: _rates.ZOR,

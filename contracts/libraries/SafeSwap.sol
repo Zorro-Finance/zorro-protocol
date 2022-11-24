@@ -4,14 +4,23 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {
-    /* Libraries */
-    using SafeMathUpgradeable for uint256;
+    /* Structs */
 
+    struct SafeSwapParams {
+        uint256 amountIn;
+        uint256 priceToken0;
+        uint256 priceToken1;
+        address token0;
+        address token1;
+        uint256 maxMarketMovementAllowed;
+        address[] path;
+        address destination;
+    }
+    
     /* Functions */
+
     /// @notice Safely swap tokens
     /// @param _uniRouter Uniswap V2 router
     /// @param _amountIn The quantity of the origin token to swap
@@ -73,11 +82,8 @@ library SafeSwapUni {
         uint8[] memory _decimals
     ) internal pure returns (uint256) {
         return
-            _amountIn
-                .mul(_priceTokenIn)
-                .mul(_slippageFactor)
-                .mul(10**_decimals[1])
-                .div(_priceTokenOut.mul(1000).mul(10**_decimals[0]));
+            (_amountIn * _priceTokenIn * _slippageFactor * 10**_decimals[1]) /
+            (1000 * _priceTokenOut * 10**_decimals[0]);
     }
 
     /// @notice Gets amounts out when exchange rates are not provided (uses router)
@@ -90,21 +96,7 @@ library SafeSwapUni {
     ) internal view returns (uint256) {
         uint256[] memory amounts = _uniRouter.getAmountsOut(_amountIn, _path);
         return
-            amounts[amounts.length.sub(1)]
-                .mul(_slippageFactor)
-                .mul(10**_decimals[1])
-                .div((10**_decimals[0]).mul(1000));
+            (amounts[amounts.length - 1] * _slippageFactor * 10**_decimals[1]) /
+            (1000 * (10**_decimals[0]));
     }
-}
-
-// TODO: Move this into library itself, above?
-struct SafeSwapParams {
-    uint256 amountIn;
-    uint256 priceToken0;
-    uint256 priceToken1;
-    address token0;
-    address token1;
-    uint256 maxMarketMovementAllowed;
-    address[] path;
-    address destination;
 }

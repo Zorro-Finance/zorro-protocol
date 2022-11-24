@@ -412,7 +412,7 @@ contract VaultStargate is VaultBase {
 
         // Swap Earn token for single asset token (STG -> token0)
         VaultActionsStargate(vaultActions).safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _earnedAmtNet,
                 priceToken0: _rates.earn,
                 priceToken1: token0PriceFeed.getExchangeRate(),

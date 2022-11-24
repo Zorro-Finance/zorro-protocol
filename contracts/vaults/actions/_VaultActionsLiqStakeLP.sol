@@ -81,7 +81,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
     /// @notice Withdraws liquid stake on protocol
     /// @dev Must be implemented by inherited contracts
-    function liquidUnstake(SafeSwapParams memory _swapParams) public virtual;
+    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) public virtual;
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be approved beforehand)
@@ -119,7 +119,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Unstake sETH to get ETH
         liquidUnstake(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _synthTokenBal,
                 priceToken0: _params
                     .liquidStakeTokenPriceFeed
@@ -140,7 +140,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Swap ETH to USD
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _token0Bal,
                 priceToken0: _params.token0PriceFeed.getExchangeRate(),
                 priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
@@ -178,7 +178,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Swap USD for ETH
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amountUSD,
                 priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                 priceToken1: _params.token0PriceFeed.getExchangeRate(),
@@ -235,7 +235,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Swap half of sETH to ETH
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amount.div(2),
                 priceToken0: _params.liquidStakeTokenPriceFeed.getExchangeRate(),
                 priceToken1: _params.nativeTokenPriceFeed.getExchangeRate(),
@@ -302,7 +302,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Swap ETH to sETH
         _safeSwap(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _token0Bal,
                 priceToken0: _params.liquidStakeTokenPriceFeed.getExchangeRate(),
                 priceToken1: _params.nativeTokenPriceFeed.getExchangeRate(),

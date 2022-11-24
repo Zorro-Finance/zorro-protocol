@@ -399,7 +399,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap Earned token to token0 if token0 is not the Earned token
         if (earnedAddress != token0Address) {
             VaultActionsStandardAMM(vaultActions).safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _remainingAmt.div(2),
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),
@@ -415,7 +415,7 @@ contract VaultStandardAMM is VaultBase {
         // Swap Earned token to token1 if token0 is not the Earned token
         if (earnedAddress != token1Address) {
             VaultActionsStandardAMM(vaultActions).safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _remainingAmt.div(2),
                     priceToken0: _rates.earn,
                     priceToken1: token1PriceFeed.getExchangeRate(),

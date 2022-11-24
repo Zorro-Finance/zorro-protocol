@@ -75,7 +75,7 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
 
     /// @notice Withdraws liquid stake on protocol
     /// @param _swapParams The SafeSwapParams object with swap information
-    function liquidUnstake(SafeSwapParams memory _swapParams) public override {
+    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) public override {
         // Transfer amount IN
         IERC20Upgradeable(_swapParams.token0).safeTransferFrom(
             msg.sender,

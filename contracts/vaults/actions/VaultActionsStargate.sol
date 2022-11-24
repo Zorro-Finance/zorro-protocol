@@ -78,7 +78,7 @@ contract VaultActionsStargate is VaultActions {
         // Single asset. Swap from USD directly to Token0
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD,
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token0PriceFeed.getExchangeRate(),
@@ -161,7 +161,7 @@ contract VaultActionsStargate is VaultActions {
 
             // Swap Token0 -> USD
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _token0Bal,
                     priceToken0: _params.token0PriceFeed.getExchangeRate(),
                     priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),

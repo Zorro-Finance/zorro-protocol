@@ -40,7 +40,7 @@ contract VaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     /// @param _amount The amount of BNB to unstake
     function _liquidUnstake(uint256 _amount) internal override whenNotPaused {
         VaultActionsAnkrLiqStakeLP(vaultActions).liquidUnstake(
-            SafeSwapParams({
+            SafeSwapUni.SafeSwapParams({
                 amountIn: _amount,
                 priceToken0: liquidStakeTokenPriceFeed.getExchangeRate(),
                 priceToken1: token0PriceFeed.getExchangeRate(),

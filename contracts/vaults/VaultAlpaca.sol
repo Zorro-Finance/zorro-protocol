@@ -407,7 +407,7 @@ contract VaultAlpaca is VaultBase {
 
             // Swap
             VaultActionsAlpaca(vaultActions).safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _earnedAmtNet,
                     priceToken0: _rates.earn,
                     priceToken1: token0PriceFeed.getExchangeRate(),

@@ -80,7 +80,7 @@ contract VaultActionsStandardAMM is VaultActions {
         // Swap 1/2 USD for token0
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD.div(2),
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token0PriceFeed.getExchangeRate(),
@@ -96,7 +96,7 @@ contract VaultActionsStandardAMM is VaultActions {
         // Swap 1/2 USD for token1
         if (_params.token1Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD.div(2),
                     priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
                     priceToken1: _params.token1PriceFeed.getExchangeRate(),
@@ -183,7 +183,7 @@ contract VaultActionsStandardAMM is VaultActions {
         // Swap token0 for USD
         if (_params.token0Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _token0Amt,
                     priceToken0: _params.token0PriceFeed.getExchangeRate(),
                     priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
@@ -199,7 +199,7 @@ contract VaultActionsStandardAMM is VaultActions {
         // Swap token1 for USD
         if (_params.token1Address != _params.stablecoin) {
             _safeSwap(
-                SafeSwapParams({
+                SafeSwapUni.SafeSwapParams({
                     amountIn: _token1Amt,
                     priceToken0: _params.token1PriceFeed.getExchangeRate(),
                     priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
