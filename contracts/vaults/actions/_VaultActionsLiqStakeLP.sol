@@ -334,7 +334,6 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         address _token0Address = _vault.token0Address();
         address _liquidStakeToken = _vault.liquidStakeToken();
         address _liquidStakingPool = _vault.liquidStakingPool();
-        address _wantAddress = _vault.wantAddress();
         AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
         AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
 
@@ -349,7 +348,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
                     token0: _earnedAddress,
                     token1: _token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _vault.earnedToToken0Path(),
+                    path: _getSwapPath(_earnedAddress, _token0Address),
                     destination: address(this)
                 })
             );

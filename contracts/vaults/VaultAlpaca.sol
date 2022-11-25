@@ -90,46 +90,6 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
         VaultBase.initialize(_timelockOwner);
     }
 
-    /* Structs */
-
-    struct VaultAlpacaInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToLPPoolOtherTokenPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
-    }
-
-    /* State */
-
-    address[] public stablecoinToZORROPath; // Swap path from BUSD to ZOR (PCS)
-    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from BUSD to ZOR LP Pool's "other token" (PCS)
-
-    /* Setters */
-
-    function setStablecoinSwapPaths(uint8 _idx, address[] calldata _path)
-        external
-        onlyOwner
-    {
-        if (_idx == 0) {
-            stablecoinToToken0Path = _path;
-        } else if (_idx == 1) {
-            stablecoinToZORROPath = _path;
-        } else if (_idx == 2) {
-            stablecoinToLPPoolOtherTokenPath = _path;
-        } else {
-            revert("unsupported idx swap path");
-        }
-    }
-
     /* Investment Actions */
 
     /// @notice Receives new deposits from user

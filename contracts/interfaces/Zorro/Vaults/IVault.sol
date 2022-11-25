@@ -30,11 +30,9 @@ interface IVault {
     function earnedAddress() external view returns (address);
     function token0Address() external view returns (address);
     function token1Address() external view returns (address);
-    function token0PriceFeed() external view returns (AggregatorV3Interface);
-    function token1PriceFeed() external view returns (AggregatorV3Interface);
-    function earnTokenPriceFeed() external view returns (AggregatorV3Interface);
-    function earnedToToken0Path(uint256 _index) external view returns (address);
-    function earnedToToken1Path(uint256 _index) external view returns (address);
+    function swapPaths(address _startToken, address _endToken, uint256 _index) external view returns (address); 
+    function swapPathLength(address _startToken, address _endToken) external view returns (uint16);
+    function priceFeeds(address _token) external view returns (AggregatorV3Interface);
     
     // Total want tokens managed by strategy
     function wantLockedTotal() external view returns (uint256);

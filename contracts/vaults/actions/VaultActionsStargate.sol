@@ -198,7 +198,7 @@ contract VaultActionsStargate is VaultActions {
                 token0: _earnedAddress,
                 token1: _token0Address,
                 maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: _vault.earnedToToken0Path(),
+                path: _getSwapPath(_earnedAddress, _token0Address),
                 destination: address(this)
             })
         );

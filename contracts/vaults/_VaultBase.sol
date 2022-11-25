@@ -101,23 +101,11 @@ abstract contract VaultBase is
     uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
     uint256 public sharesTotal; // Total shares for this Vault
     // Swap routes
-    address[] public stablecoinToToken0Path;
-    address[] public stablecoinToToken1Path;
-    address[] public token0ToStablecoinPath;
-    address[] public token1ToStablecoinPath;
-    address[] public earnedToToken0Path;
-    address[] public earnedToToken1Path;
-    address[] public earnedToZORROPath;
-    address[] public earnedToZORLPPoolOtherTokenPath;
-    address[] public earnedToStablecoinPath;
+    mapping(address => mapping(address => address[])) public swapPaths; // Swap paths. Mapping: start address => end address => address array describing swap path
+    mapping(address => mapping(address => uint16)) public swapPathLength; // Swap path lengths. Mapping: start address => end address => path length
 
     // Price feeds
-    AggregatorV3Interface public token0PriceFeed; // Token0 price feed
-    AggregatorV3Interface public token1PriceFeed; // Token1 price feed
-    AggregatorV3Interface public earnTokenPriceFeed; // Price feed of Earn token
-    AggregatorV3Interface public lpPoolOtherTokenPriceFeed; // Price feed of token that is NOT ZOR in liquidity pool
-    AggregatorV3Interface public ZORPriceFeed; // Price feed of ZOR token
-    AggregatorV3Interface public stablecoinPriceFeed; // Price feed of stablecoin token (e.g. USDC)
+    mapping(address => AggregatorV3Interface) public priceFeeds; // Price feeds. Mapping: token address => price feed address (AggregatorV3Interface implementation)
 
     // Other
     uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden) // TODO: Setter/constructor
@@ -213,49 +201,22 @@ abstract contract VaultBase is
         ZORROAddress = _ZORROAddress;
     }
 
-    function setPriceFeed(uint8 _idx, address _priceFeed) public onlyOwner {
-        if (_idx == 0) {
-            token0PriceFeed = AggregatorV3Interface(_priceFeed);
-        } else if (_idx == 1) {
-            token1PriceFeed = AggregatorV3Interface(_priceFeed);
-        } else if (_idx == 2) {
-            earnTokenPriceFeed = AggregatorV3Interface(_priceFeed);
-        } else if (_idx == 3) {
-            ZORPriceFeed = AggregatorV3Interface(_priceFeed);
-        } else if (_idx == 4) {
-            lpPoolOtherTokenPriceFeed = AggregatorV3Interface(_priceFeed);
-        } else if (_idx == 5) {
-            stablecoinPriceFeed = AggregatorV3Interface(_priceFeed);
-        } else {
-            revert("unsupported feed idx");
-        }
-    }
-
-    function setSwapPaths(uint8 _idx, address[] calldata _path)
+    function setPriceFeed(address _token, address _priceFeedAddress)
         public
         onlyOwner
     {
-        if (_idx == 0) {
-            stablecoinToToken0Path = _path;
-        } else if (_idx == 1) {
-            stablecoinToToken1Path = _path;
-        } else if (_idx == 2) {
-            token0ToStablecoinPath = _path;
-        } else if (_idx == 3) {
-            token1ToStablecoinPath = _path;
-        } else if (_idx == 4) {
-            earnedToToken0Path = _path;
-        } else if (_idx == 5) {
-            earnedToToken1Path = _path;
-        } else if (_idx == 6) {
-            earnedToZORROPath = _path;
-        } else if (_idx == 7) {
-            earnedToZORLPPoolOtherTokenPath = _path;
-        } else if (_idx == 8) {
-            earnedToStablecoinPath = _path;
-        } else {
-            revert("unsupported feed idx");
-        }
+        priceFeeds[_token] = AggregatorV3Interface(_priceFeedAddress);
+    }
+
+    function setSwapPaths(address[] calldata _path) public onlyOwner {
+        // Prep
+        address _startToken = _path[0];
+        address _endToken = _path[_path.length - 1];
+        // Set path mapping
+        swapPaths[_startToken][_endToken] = _path;
+
+        // Set length
+        swapPathLength[_startToken][_endToken] = uint16(_path.length);
     }
 
     /// @notice Set governor address
@@ -415,13 +376,13 @@ abstract contract VaultBase is
                     zorroStakingVault: zorroStakingVault,
                     zorroLPPoolOtherToken: zorroLPPoolOtherToken,
                     wantAddress: wantAddress,
-                    earnTokenPriceFeed: earnTokenPriceFeed,
-                    ZORPriceFeed: ZORPriceFeed,
-                    lpPoolOtherTokenPriceFeed: lpPoolOtherTokenPriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    earnedToZORROPath: earnedToZORROPath,
-                    earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath,
-                    earnedToStablecoinPath: earnedToStablecoinPath,
+                    earnTokenPriceFeed: priceFeeds[earnedAddress],
+                    ZORPriceFeed: priceFeeds[ZORROAddress],
+                    lpPoolOtherTokenPriceFeed: priceFeeds[zorroLPPoolOtherToken],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    earnedToZORROPath: swapPaths[earnedAddress][ZORROAddress],
+                    earnedToZORLPPoolOtherTokenPath: swapPaths[earnedAddress][zorroLPPoolOtherToken],
+                    earnedToStablecoinPath: swapPaths[earnedAddress][defaultStablecoin],
                     controllerFeeBP: uint16(
                         (controllerFee * 10000) / controllerFeeMax
                     ),

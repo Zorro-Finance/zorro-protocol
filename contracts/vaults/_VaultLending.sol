@@ -100,30 +100,8 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         VaultBase.initialize(_timelockOwner);
     }
 
-    /* Structs */
-
-    struct VaultLendingInit {
-        uint256 pid;
-        bool isHomeChain;
-        VaultActions.VaultAddresses keyAddresses;
-        uint256 targetBorrowLimit;
-        uint256 targetBorrowLimitHysteresis;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToLPPoolOtherTokenPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
-        address comptrollerAddress;
-    }
-
     /* State */
 
-    address[] public stablecoinToZORROPath; // Swap path from USD to ZOR (PCS)
-    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from USD to ZOR LP Pool's "other token" (PCS)
     uint256 public targetBorrowLimit; // Max borrow rate % (1e18 = 100%)
     uint256 public targetBorrowLimitHysteresis; // +/- envelope (1% = 1e16)
     address public comptrollerAddress; // Unitroller address

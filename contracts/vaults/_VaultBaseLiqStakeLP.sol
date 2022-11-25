@@ -105,30 +105,9 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 
     /* State */
 
-    address[] public stablecoinToZORROPath; // Swap path from USD to ZOR (PCS)
-    address[] public stablecoinToLPPoolOtherTokenPath; // Swap path from USD to ZOR LP Pool's "other token" (PCS)
-    address[] public liquidStakeToToken0Path; // Swap path from sETH to WETH
-    address[] public token0ToLiquidStakePath; // Swap path from WETH to sETH
     address public liquidStakeToken; // Synth token for liquid staking (e.g. sETH)
     address public liquidStakingPool; // Liquid staking pool (can sometimes be the same as liquidStakeToken)
     AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sETH
-
-    /* Setters */
-
-    function setStablecoinSwapPaths(uint8 _idx, address[] calldata _path)
-        external
-        onlyOwner
-    {
-        if (_idx == 0) {
-            stablecoinToToken0Path = _path;
-        } else if (_idx == 1) {
-            stablecoinToZORROPath = _path;
-        } else if (_idx == 2) {
-            stablecoinToLPPoolOtherTokenPath = _path;
-        } else {
-            revert("unsupported idx swap path");
-        }
-    }
 
     /* Investment Actions */
 

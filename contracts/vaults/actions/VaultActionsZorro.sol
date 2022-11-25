@@ -128,7 +128,7 @@ contract VaultActionsZorro is VaultActions {
         );
     }
 
-    // TODO: Docstrings
+    /// @notice Dummy implementation to satisfy abstract contract (unneeded for this contract)
     function _convertRemainingEarnedToWant(
         uint256 _remainingEarnAmt,
         uint256 _maxMarketMovementAllowed,

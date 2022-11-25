@@ -42,11 +42,6 @@ interface IVaultLiqStakeLP is IVault {
     /* Functions */
 
     // Config variables
-    function stablecoinToZORROPath(uint256 _i) external view returns (address);
-    function stablecoinToLPPoolOtherTokenPath(uint256 _i) external view returns (address);
-    function liquidStakeToToken0Path(uint256 _i) external view returns (address);
-    function token0ToLiquidStakePath(uint256 _i) external view returns (address);
     function liquidStakeToken() external view returns (address);
     function liquidStakingPool() external view returns (address);
-    function liquidStakeTokenPriceFeed() external view returns (AggregatorV3Interface);
 }

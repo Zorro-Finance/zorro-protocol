@@ -97,25 +97,6 @@ contract VaultStargate is IVaultStargate, VaultBase {
         VaultBase.initialize(_timelockOwner);
     }
 
-    /* Structs */
-
-    struct VaultStargateInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
-        address tokenSTG;
-        address stargateRouter;
-        uint16 stargatePoolId;
-    }
-
     /* State */
 
     address public tokenSTG; // Stargate token

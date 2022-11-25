@@ -10,15 +10,18 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../../libraries/SafeSwap.sol";
-
-import "../../libraries/PriceFeed.sol";
-
 import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
 import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "../../interfaces/IAMMRouter02.sol";
+
+import "../../interfaces/Zorro/Vaults/IVault.sol";
+
+import "../../libraries/SafeSwap.sol";
+
+import "../../libraries/PriceFeed.sol";
+
 
 // TODO: Unit tests
 
@@ -408,7 +411,7 @@ abstract contract VaultActions is OwnableUpgradeable {
             xChainRevShareAmt
         ) = _distributeEarnings(_earnedAmt, _maxMarketMovementAllowed, _params);
 
-        // Convert remainder to Want token and send back to sender 
+        // Convert remainder to Want token and send back to sender
         wantObtained = _convertRemainingEarnedToWant(
             _remainingEarnAmt,
             _maxMarketMovementAllowed,
@@ -648,6 +651,29 @@ abstract contract VaultActions is OwnableUpgradeable {
         _newPath = new address[](_pathLength);
         for (uint16 i = 0; i < _pathLength; ++i) {
             _newPath[i] = _path[_path.length - 1 - i];
+        }
+    }
+
+    /// @notice Derives swap path given a start and end token (calls)
+    /// @dev Only to be called from an IVault
+    /// @param _startToken The origin token to swap from
+    /// @param _endToken The desired token to swap to
+    /// @return path An array of addresses describing the swap path
+    function _getSwapPath(address _startToken, address _endToken)
+        internal
+        view
+        returns (address[] memory path)
+    {
+        // Init
+        IVault _vault = IVault(msg.sender);
+
+        // Path length 
+        uint16 _swapPathLength = _vault.swapPathLength(_startToken, _endToken);
+        path = new address[](_swapPathLength);
+
+        // Populate path array 
+        for (uint16 i = 0; i < _swapPathLength; ++i) {
+            path[i] = _vault.swapPaths(_startToken, _endToken, i);
         }
     }
 }

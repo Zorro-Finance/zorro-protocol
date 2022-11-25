@@ -2,13 +2,20 @@
 
 pragma solidity ^0.8.0;
 
+import "../../../vaults/actions/_VaultActions.sol";
+
 import "./IVault.sol";
 
 /* For interacting with our own Vaults */
 interface IVaultAlpaca is IVault {
-    /* Functions */
+    /* Structs */
 
-    // Config variables
-    function stablecoinToZORROPath(uint256 _i) external view returns (address);
-    function stablecoinToLPPoolOtherTokenPath(uint256 _i) external view returns (address);
+    struct VaultAlpacaInit {
+        uint256 pid;
+        bool isHomeChain;
+        bool isFarmable;
+        VaultActions.VaultAddresses keyAddresses;
+        VaultActions.VaultFees fees;
+        VaultActions.VaultPriceFeeds priceFeeds;
+    }
 }
