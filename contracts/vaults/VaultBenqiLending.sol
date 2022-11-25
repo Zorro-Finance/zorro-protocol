@@ -11,7 +11,8 @@ contract VaultBenqiLending is VaultLending {
     /* Functions */
 
     /// @notice Claims unclaimed rewards from lending protocols
-    function _claimLendingRewards() internal override {
+    /// @param _amount Amount to unfarm (unused- only present to conform to abstract contract)
+    function _unfarm(uint256 _amount) internal override {
         IQiTokenSaleDistributor(farmContractAddress).claim();
     }
 }

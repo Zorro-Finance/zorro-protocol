@@ -10,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../../interfaces/Lending/ILendingToken.sol";
 
+import "../../interfaces/Zorro/Vaults/IVaultLending.sol";
+
 import "./_VaultActions.sol";
 
 abstract contract VaultActionsLending is VaultActions {
@@ -263,5 +265,48 @@ abstract contract VaultActionsLending is VaultActions {
             _vault
         );
         amtLocked = _wantBal + _supplyBal - _borrowBal;
+    }
+
+    // TODO: Docstrings
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVault _vault = IVaultLending(msg.sender);
+
+        address _earnedAddress = _vault.earnedAddress();
+        address _token0Address = _vault.token0Address();
+        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+
+        // Swap earn to token0 if token0 is not earn
+        if (_token0Address != _earnedAddress) {
+            // Swap
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _remainingEarnAmt,
+                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _token0PriceFeed.getExchangeRate(),
+                    token0: _earnedAddress,
+                    token1: _token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _vault.earnedToToken0Path(),
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Get new Token0 balance
+        wantObtained = IERC20Upgradeable(_token0Address).balanceOf(
+            address(this)
+        );
+
+        // Transfer want token to destination
+        IERC20Upgradeable(_token0Address).safeTransfer(
+            _destination,
+            wantObtained
+        );
     }
 }

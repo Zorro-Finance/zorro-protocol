@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /* For interacting with our own Vaults */
 interface IVault {
@@ -22,6 +23,18 @@ interface IVault {
     event RevShare(uint256 indexed _amount);
 
     /* Functions */
+
+    // Config variables
+    function wantAddress() external view returns (address);
+    function poolAddress() external view returns (address);
+    function earnedAddress() external view returns (address);
+    function token0Address() external view returns (address);
+    function token1Address() external view returns (address);
+    function token0PriceFeed() external view returns (AggregatorV3Interface);
+    function token1PriceFeed() external view returns (AggregatorV3Interface);
+    function earnTokenPriceFeed() external view returns (AggregatorV3Interface);
+    function earnedToToken0Path(uint256 _index) external view returns (address);
+    function earnedToToken1Path(uint256 _index) external view returns (address);
     
     // Total want tokens managed by strategy
     function wantLockedTotal() external view returns (uint256);

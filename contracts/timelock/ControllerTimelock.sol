@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgrade
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "../interfaces/IVault.sol";
+import "../interfaces/Zorro/Vaults/IVault.sol";
 
 import "../interfaces/IZorroController.sol";
 

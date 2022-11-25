@@ -11,7 +11,7 @@ import "../interfaces/IZorro.sol";
 
 import "../interfaces/IZorroController.sol";
 
-import "../interfaces/IVault.sol";
+import "../interfaces/Zorro/Vaults/IVault.sol";
 
 /* Base Contract */
 

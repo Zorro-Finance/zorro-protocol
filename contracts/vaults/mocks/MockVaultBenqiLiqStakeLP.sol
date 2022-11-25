@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "../VaultBenqiLiqStakeLP.sol";
+import "../_VaultBaseLiqStakeLP.sol";
 
 import "../../interfaces/Benqi/IStakedAvax.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-contract MockVaultBenqiLiqStakeLP is VaultBenqiLiqStakeLP {
+contract MockVaultBenqiLiqStakeLP is VaultBaseLiqStakeLP {
     // TODO: Fill out any necessary methods for testing here
 }
 

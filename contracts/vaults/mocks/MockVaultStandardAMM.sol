@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../VaultStandardAMM.sol";
+import "../_VaultStandardAMM.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 

@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "../interfaces/Zorro/Vaults/IVaultZorro.sol";
+
 import "./actions/VaultActionsZorro.sol";
 
 import "./_VaultBase.sol";
 
 /// @title VaultZorro. The Vault for staking the Zorro token
 /// @dev Only to be deployed on the home of the ZOR token
-contract VaultZorro is VaultBase {
+contract VaultZorro is IVaultZorro, VaultBase {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -36,7 +38,6 @@ contract VaultZorro is VaultBase {
         wantAddress = _initValue.keyAddresses.wantAddress;
         token0Address = _initValue.keyAddresses.token0Address;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
-        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
 
         // Fees
@@ -62,16 +63,6 @@ contract VaultZorro is VaultBase {
 
         // Super call
         VaultBase.initialize(_timelockOwner);
-    }
-
-    /* Structs */
-
-    struct VaultZorroInit {
-        uint256 pid;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] stablecoinToToken0Path;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
     }
 
     /* Investment Actions */
@@ -148,6 +139,12 @@ contract VaultZorro is VaultBase {
 
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {}
+
+    /// @notice Implement dummy _farm function to satisfy abstract contract 
+    function _farm() internal override {}
+
+    /// @notice Implement dummy _unfarm function to satisfy abstract contract 
+    function _unfarm(uint256 _amount) internal override {}
 
     /// @notice Withdraw Want tokens from the Farm contract
     /// @param _wantAmt The amount of Want token to withdraw
@@ -233,7 +230,7 @@ contract VaultZorro is VaultBase {
     /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
     function earn(uint256 _maxMarketMovementAllowed)
         public
-        override
+        override(IVault, VaultBase)
         nonReentrant
         whenNotPaused
     {

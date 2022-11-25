@@ -2,17 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "../../libraries/PriceFeed.sol";
-
 import "../../interfaces/Stargate/IStargateRouter.sol";
 
 import "../../interfaces/Stargate/IStargateLPStaking.sol";
+
+import "../../interfaces/Zorro/Vaults/IVaultStargate.sol";
 
 import "./_VaultActions.sol";
 
@@ -175,6 +169,66 @@ contract VaultActionsStargate is VaultActions {
         IERC20Upgradeable(_params.stablecoin).safeTransfer(
             msg.sender,
             usdObtained
+        );
+    }
+
+    // TODO: Docstrings
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVaultStargate _vault = IVaultStargate(msg.sender);
+
+        address _earnedAddress = _vault.earnedAddress();
+        address _token0Address = _vault.token0Address();
+        address _wantAddress = _vault.wantAddress();
+        address _stargateRouter = _vault.stargateRouter();
+        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+        uint16 _stargatePoolId = _vault.stargatePoolId();
+
+        // Swap Earn token for single asset token (STG -> token0)
+        _safeSwap(
+            SafeSwapUni.SafeSwapParams({
+                amountIn: _remainingEarnAmt,
+                priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                priceToken1: _token0PriceFeed.getExchangeRate(),
+                token0: _earnedAddress,
+                token1: _token0Address,
+                maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                path: _vault.earnedToToken0Path(),
+                destination: address(this)
+            })
+        );
+
+        // Redeposit single asset token to get Want token
+        // Get new Token0 balance
+        uint256 _token0Bal = IERC20Upgradeable(_token0Address).balanceOf(
+            address(this)
+        );
+
+        // Safe approve
+        IERC20Upgradeable(_token0Address).safeIncreaseAllowance(
+            _stargateRouter,
+            _token0Bal
+        );
+
+        // Deposit token to get Want token
+        IStargateRouter(_stargateRouter).addLiquidity(
+            _stargatePoolId,
+            _token0Bal,
+            address(this)
+        );
+
+        // Calc want balance
+        wantObtained = IERC20Upgradeable(_wantAddress).balanceOf(address(this));
+
+        // Transfer want token to destination
+        IERC20Upgradeable(_wantAddress).safeTransfer(
+            _destination,
+            wantObtained
         );
     }
 }

@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "../VaultAnkrPCSLiqStake.sol";
+import "../_VaultBaseLiqStakeLP.sol";
 
 import "../../interfaces/Ankr/IBinancePool_R1.sol";
 
-contract MockVaultAnkrLiqStakeLP is VaultAnkrLiqStakeLP {
+contract MockVaultAnkrLiqStakeLP is VaultBaseLiqStakeLP {
     // TODO: Fill out any necessary methods for testing here
 }
 

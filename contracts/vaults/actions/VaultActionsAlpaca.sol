@@ -14,6 +14,8 @@ import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "../../interfaces/IAMMRouter02.sol";
 
+import "../../interfaces/Zorro/Vaults/IVaultAlpaca.sol";
+
 import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
@@ -163,9 +165,69 @@ contract VaultActionsAlpaca is VaultActions {
         }
 
         // Calculate USD balance
-        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(address(this));
+        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(
+            address(this)
+        );
 
         // Transfer back to the sender
-        IERC20Upgradeable(_params.stablecoin).safeTransfer(msg.sender, usdObtained);
+        IERC20Upgradeable(_params.stablecoin).safeTransfer(
+            msg.sender,
+            usdObtained
+        );
+    }
+
+    // TODO: Docstrings
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVaultAlpaca _vault = IVaultAlpaca(msg.sender);
+
+        address _earnedAddress = _vault.earnedAddress();
+        address _token0Address = _vault.token0Address();
+        address _wantAddress = _vault.wantAddress();
+        address _poolAddress = _vault.poolAddress();
+        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+
+        // Swap earn to token0 if token0 is not earn
+        if (_token0Address != _earnedAddress) {
+            // Swap
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _remainingEarnAmt,
+                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _token0PriceFeed.getExchangeRate(),
+                    token0: _earnedAddress,
+                    token1: _token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _vault.earnedToToken0Path(),
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Redeposit single asset token to get Want token
+        // Get new Token0 balance
+        uint256 _token0Bal = IERC20Upgradeable(_token0Address).balanceOf(
+            address(this)
+        );
+
+        // Allow spending
+        IERC20Upgradeable(_token0Address).safeIncreaseAllowance(
+            _poolAddress,
+            _token0Bal
+        );
+
+        // Deposit token to get Want token
+        IAlpacaVault(_poolAddress).deposit(_token0Bal);
+
+        // Calc want balance
+        wantObtained = IERC20Upgradeable(_wantAddress).balanceOf(address(this));
+
+        // Transfer want token to destination
+        IERC20Upgradeable(_wantAddress).safeTransfer(_destination, wantObtained);
     }
 }

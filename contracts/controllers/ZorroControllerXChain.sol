@@ -6,7 +6,7 @@ import "./_ZorroControllerInvestment.sol";
 
 import "../interfaces/IAMMRouter02.sol";
 
-import "../interfaces/IVault.sol";
+import "../interfaces/Zorro/Vaults/IVault.sol";
 
 import "../libraries/SafeSwap.sol";
 

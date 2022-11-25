@@ -25,12 +25,12 @@ contract VaultActionsBenqiLiqStakeLP is VaultActionsLiqStakeLP {
     /// @param _token0 The base (underlying) token to supply
     /// @param _liqStakeToken The liquid staking synthetic token returned after staking the underlying
     /// @param _liqStakePool The liquid staking pool address
-    function liquidStake(
+    function _liquidStake(
         uint256 _amount,
         address _token0,
         address _liqStakeToken,
         address _liqStakePool
-    ) public override {
+    ) internal override {
         // Peflight checks
         require(_liqStakePool == _liqStakeToken, "liqstake mismatch");
         
@@ -67,7 +67,7 @@ contract VaultActionsBenqiLiqStakeLP is VaultActionsLiqStakeLP {
 
     /// @notice Withdraws liquid stake on Benqi protocol
     /// @param _swapParams The SafeSwapParams object with swap information
-    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) public override {
+    function _liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) internal override {
         // Transfer amount IN
         IERC20Upgradeable(_swapParams.token0).safeTransferFrom(
             msg.sender,

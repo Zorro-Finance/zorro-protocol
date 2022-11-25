@@ -127,4 +127,11 @@ contract VaultActionsZorro is VaultActions {
             usdObtained
         );
     }
+
+    // TODO: Docstrings
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {}
 }

@@ -8,12 +8,14 @@ import "../interfaces/Benqi/IQiTokenSaleDistributor.sol";
 
 import "../interfaces/Benqi/IUnitroller.sol";
 
+import "../interfaces/Zorro/Vaults/IVaultLending.sol";
+
 import "./actions/VaultActionsBenqiLending.sol";
 
 import "./_VaultBase.sol";
 
 /// @title Vault base contract for leveraged lending strategies
-abstract contract VaultLending is VaultBase {
+abstract contract VaultLending is IVaultLending, VaultBase {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -49,7 +51,6 @@ abstract contract VaultLending is VaultBase {
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
         poolAddress = _initValue.keyAddresses.poolAddress;
-        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
@@ -343,111 +344,22 @@ abstract contract VaultLending is VaultBase {
             );
     }
 
-    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    function earn(uint256 _maxMarketMovementAllowed)
-        public
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-    {
-        // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
-        if (onlyGov) {
-            require(msg.sender == govAddress, "!gov");
-        }
-
-        // Claim any outstanding farm rewards
-        _claimLendingRewards();
-
-        // Get the balance of the Earned token on this contract
-        uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
-
-        // Require pending rewards in order to continue
-        require(_earnedAmt > 0, "0earn");
-
-        // Create rates struct
-        VaultActions.ExchangeRates memory _rates = VaultActions.ExchangeRates({
-            earn: earnTokenPriceFeed.getExchangeRate(),
-            ZOR: ZORPriceFeed.getExchangeRate(),
-            lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
-            stablecoin: stablecoinPriceFeed.getExchangeRate()
-        });
-
-        // Distribute fees
-        uint256 _controllerFee = _distributeFees(_earnedAmt);
-
-        // Buyback & rev share
-        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
-            _earnedAmt,
-            _maxMarketMovementAllowed,
-            _rates
-        );
-
-        // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt -
-            _controllerFee -
-            _buybackAmt -
-            _revShareAmt;
-
-        // Swap earn to token0 if token0 is not earn
-        if (token0Address != earnedAddress) {
-            // Approve spending
-            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-                vaultActions,
-                _earnedAmtNet
-            );
-
-            // Swap
-            VaultActionsLending(vaultActions).safeSwap(
-                SafeSwapUni.SafeSwapParams({
-                    amountIn: _earnedAmtNet,
-                    priceToken0: _rates.earn,
-                    priceToken1: token0PriceFeed.getExchangeRate(),
-                    token0: earnedAddress,
-                    token1: token0Address,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToToken0Path,
-                    destination: address(this)
-                })
-            );
-        }
-
-        // Redeposit single asset token to get Want token
-        // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-        // Allow spending
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            poolAddress,
-            _token0Bal
-        );
-
-        // Re-supply/leverage
-        _farm();
-
-        // This vault is only for single asset deposits, so farm that token and exit
-        // Update the last earn block
-        lastEarnBlock = block.number;
-    }
-
-    /// @notice Claims unclaimed rewards from lending protocols
-    function _claimLendingRewards() internal virtual;
-
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {
         _farm();
     }
 
     /// @notice Function for farming want token
-    function _farm() internal {
+    function _farm() internal override {
         // Supply the underlying token
         _supplyWant();
 
         // Leverage up to target leverage (using supply-borrow)
         _rebalance(0);
     }
+
+    /// @notice To be implemented by child contract
+    function _unfarm(uint256 _amount) internal virtual override;
 
     /// @notice Supplies underlying token to Pool (vToken contract)
     function _supplyWant() internal whenNotPaused {

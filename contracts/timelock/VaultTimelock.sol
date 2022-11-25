@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 
-import "../interfaces/IVault.sol";
+import "../interfaces/Zorro/Vaults/IVault.sol";
 
 /// @title VaultTimelock: A contract that owns all deployed implementations of IVault for safety
 contract VaultTimelock is TimelockControllerUpgradeable {

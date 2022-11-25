@@ -2,19 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "../../libraries/PriceFeed.sol";
-
 import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
 import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
-import "../../interfaces/IAMMRouter02.sol";
+import "../../interfaces/Zorro/Vaults/IVaultStandardAMM.sol";
 
 import "./_VaultActions.sol";
 
@@ -217,5 +209,82 @@ contract VaultActionsStandardAMM is VaultActions {
             msg.sender,
             usdObtained
         );
+    }
+
+    // TODO: Docstrings 
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVault _vault = IVaultStandardAMM(msg.sender);
+
+        address _earnedAddress = _vault.earnedAddress();
+        address _token0Address = _vault.token0Address();
+        address _token1Address = _vault.token1Address();
+        address _wantAddress = _vault.wantAddress();
+        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
+        AggregatorV3Interface _token1PriceFeed = _vault.token1PriceFeed();
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+
+        // Swap Earned token to token0 if token0 is not the Earned token
+        if (_earnedAddress != _token0Address) {
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _remainingEarnAmt / 2,
+                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _token0PriceFeed.getExchangeRate(),
+                    token0: _earnedAddress,
+                    token1: _token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _vault.earnedToToken0Path(),
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Swap Earned token to token1 if token0 is not the Earned token
+        if (_earnedAddress != _token1Address) {
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _remainingEarnAmt / 2,
+                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _token1PriceFeed.getExchangeRate(),
+                    token0: _earnedAddress,
+                    token1: _token1Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _vault.earnedToToken1Path(),
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Get values of tokens 0 and 1
+        uint256 token0Amt = IERC20Upgradeable(_token0Address).balanceOf(
+            address(this)
+        );
+        uint256 token1Amt = IERC20Upgradeable(_token1Address).balanceOf(
+            address(this)
+        );
+
+        // Provided that token0 and token1 are both > 0, add liquidity
+        if (token0Amt > 0 && token1Amt > 0) {
+            // Add liquidity
+            _joinPool(
+                _token0Address,
+                _token1Address,
+                token0Amt,
+                token1Amt,
+                _maxMarketMovementAllowed,
+                address(this)
+            );
+        }
+
+        // Calc want balance
+        wantObtained = IERC20Upgradeable(_wantAddress).balanceOf(address(this));
+
+        // Transfer want token to destination
+        IERC20Upgradeable(_wantAddress).safeTransfer(_destination, wantObtained);
     }
 }

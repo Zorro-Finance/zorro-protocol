@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.0;
 
+import "../interfaces/Zorro/Vaults/IVaultAlpaca.sol";
+
 import "./actions/VaultActionsAlpaca.sol";
 
 import "./_VaultBase.sol";
 
 /// @title Vault contract for Alpaca strategies
-contract VaultAlpaca is VaultBase {
+contract VaultAlpaca is IVaultAlpaca, VaultBase {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -40,7 +42,6 @@ contract VaultAlpaca is VaultBase {
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
         rewardsAddress = _initValue.keyAddresses.rewardsAddress;
         poolAddress = _initValue.keyAddresses.poolAddress;
-        uniRouterAddress = _initValue.keyAddresses.uniRouterAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
@@ -211,7 +212,7 @@ contract VaultAlpaca is VaultBase {
     }
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
-    function _farm() internal virtual {
+    function _farm() internal override {
         require(isFarmable, "!farmable");
 
         // Get the Want token stored on this contract
@@ -232,7 +233,7 @@ contract VaultAlpaca is VaultBase {
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _wantAmt) internal {
+    function _unfarm(uint256 _wantAmt) internal override {
         // Withdraw the Want tokens from the Farm contract
         IFairLaunch(farmContractAddress).withdraw(address(this), pid, _wantAmt);
     }
@@ -329,102 +330,6 @@ contract VaultAlpaca is VaultBase {
                 }),
                 _maxMarketMovementAllowed
             );
-    }
-
-    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    function earn(uint256 _maxMarketMovementAllowed)
-        public
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-    {
-        require(isFarmable, "!farmable");
-
-        // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
-        if (onlyGov) {
-            require(msg.sender == govAddress, "!gov");
-        }
-
-        // Harvest farm tokens
-        _unfarm(0);
-
-        // Get the balance of the Earned token on this contract
-        uint256 _earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
-
-        // Require pending rewards in order to continue
-        require(_earnedAmt > 0, "0earn");
-
-        // Create rates struct
-        VaultActionsAlpaca.ExchangeRates memory _rates = VaultActions
-            .ExchangeRates({
-                earn: earnTokenPriceFeed.getExchangeRate(),
-                ZOR: ZORPriceFeed.getExchangeRate(),
-                lpPoolOtherToken: lpPoolOtherTokenPriceFeed.getExchangeRate(),
-                stablecoin: stablecoinPriceFeed.getExchangeRate()
-            });
-
-        // Distribute fees
-        uint256 _controllerFee = _distributeFees(_earnedAmt);
-
-        // Buyback & rev share
-        (uint256 _buybackAmt, uint256 _revShareAmt) = _buyBackAndRevShare(
-            _earnedAmt,
-            _maxMarketMovementAllowed,
-            _rates
-        );
-
-        // Net earned amt
-        uint256 _earnedAmtNet = _earnedAmt -
-            _controllerFee -
-            _buybackAmt -
-            _revShareAmt;
-
-        // Swap earn to token0 if token0 is not earn
-        if (token0Address != earnedAddress) {
-            // Approve spending
-            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-                vaultActions,
-                _earnedAmtNet
-            );
-
-            // Swap
-            VaultActionsAlpaca(vaultActions).safeSwap(
-                SafeSwapUni.SafeSwapParams({
-                    amountIn: _earnedAmtNet,
-                    priceToken0: _rates.earn,
-                    priceToken1: token0PriceFeed.getExchangeRate(),
-                    token0: earnedAddress,
-                    token1: token0Address,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToToken0Path,
-                    destination: address(this)
-                })
-            );
-        }
-
-        // Redeposit single asset token to get Want token
-        // Get new Token0 balance
-        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
-
-        // Allow spending
-        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
-            poolAddress,
-            _token0Bal
-        );
-
-        // Deposit token to get Want token
-        IAlpacaVault(poolAddress).deposit(_token0Bal);
-
-        // This vault is only for single asset deposits, so farm that token and exit
-        // Update the last earn block
-        lastEarnBlock = block.number;
-
-        // Farm LP token
-        _farm();
     }
 }
 

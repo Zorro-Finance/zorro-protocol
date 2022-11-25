@@ -22,11 +22,12 @@ import "../../interfaces/IAMMRouter02.sol";
 
 // TODO: Unit tests
 
-contract VaultActions is OwnableUpgradeable {
+abstract contract VaultActions is OwnableUpgradeable {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Structs */
 
@@ -66,11 +67,32 @@ contract VaultActions is OwnableUpgradeable {
         address stablecoinPriceFeed;
     }
 
-    struct ExchangeRates {
-        uint256 earn; // Exchange rate of earn token, times 1e12
-        uint256 ZOR; // Exchange rate of ZOR token, times 1e12
-        uint256 lpPoolOtherToken; // Exchange rate of token paired with ZOR in LP pool, times 1e12
-        uint256 stablecoin; // Exchange rate of stablecoin (e.g. USDC), times 1e12
+    struct ExitPoolParams {
+        address token0;
+        address token1;
+        address poolAddress;
+        address lpTokenAddress;
+    }
+
+    struct DistributeEarningsParams {
+        address earnedAddress;
+        address ZORROAddress;
+        address rewardsAddress;
+        address stablecoin;
+        address zorroStakingVault;
+        address zorroLPPoolOtherToken;
+        address wantAddress;
+        AggregatorV3Interface earnTokenPriceFeed;
+        AggregatorV3Interface ZORPriceFeed;
+        AggregatorV3Interface lpPoolOtherTokenPriceFeed;
+        AggregatorV3Interface stablecoinPriceFeed;
+        address[] earnedToZORROPath;
+        address[] earnedToZORLPPoolOtherTokenPath;
+        address[] earnedToStablecoinPath;
+        uint16 controllerFeeBP; // BP = basis points
+        uint16 buybackBP;
+        uint16 revShareBP;
+        bool isHomeChain;
     }
 
     struct BuybackBurnLPParams {
@@ -79,13 +101,29 @@ contract VaultActions is OwnableUpgradeable {
         address zorroLPPoolOtherToken;
         address[] earnedToZORROPath;
         address[] earnedToZORLPPoolOtherTokenPath;
+        AggregatorV3Interface earnTokenPriceFeed;
+        AggregatorV3Interface ZORPriceFeed;
+        AggregatorV3Interface lpPoolOtherTokenPriceFeed;
     }
 
-    struct ExitPoolParams {
+    struct RevShareParams {
+        address earnedAddress;
+        address ZORROAddress;
+        address zorroStakingVault;
+        address[] earnedToZORROPath;
+        AggregatorV3Interface earnTokenPriceFeed;
+        AggregatorV3Interface ZORPriceFeed;
+    }
+
+    struct EarnToWantParams {
+        address wantAddress;
         address token0;
         address token1;
-        address poolAddress;
-        address lpTokenAddress;
+        address[] earnedToToken0Path;
+        address[] earnedToToken1Path;
+        AggregatorV3Interface earnTokenPriceFeed;
+        AggregatorV3Interface token0PriceFeed;
+        AggregatorV3Interface token1PriceFeed;
     }
 
     /* Constructor */
@@ -341,31 +379,207 @@ contract VaultActions is OwnableUpgradeable {
         );
     }
 
-    /// @notice Buys back earn token, adds liquidity, and burns the LP token
-    /// @param _amount The amount of Earn token to swap and buy back
-    /// @param _maxMarketMovementAllowed Acceptable slippage (990 = 1%)
-    /// @param _rates An ExchangeRates struct
-    /// @param _params An BuybackBurnLPParams struct specifying buyback parameters
-    function buybackBurnLP(
-        uint256 _amount,
+    // TODO: Docstrings
+    /// @notice Distributes earnings and reinvests remainder into Want token
+    function distributeAndReinvestEarnings(
+        uint256 _earnedAmt,
         uint256 _maxMarketMovementAllowed,
-        ExchangeRates memory _rates,
-        BuybackBurnLPParams memory _params
-    ) public {
-        // Transfer tokens IN
+        DistributeEarningsParams memory _params
+    )
+        public
+        returns (
+            uint256 wantObtained,
+            uint256 xChainBuybackAmt,
+            uint256 xChainRevShareAmt
+        )
+    {
+        // Transfer funds IN
         IERC20Upgradeable(_params.earnedAddress).safeTransferFrom(
             msg.sender,
             address(this),
-            _amount
+            _earnedAmt
         );
+
+        // Distribute earnings (fees + buyback + rev share)
+        uint256 _remainingEarnAmt;
+        (
+            _remainingEarnAmt,
+            xChainBuybackAmt,
+            xChainRevShareAmt
+        ) = _distributeEarnings(_earnedAmt, _maxMarketMovementAllowed, _params);
+
+        // Convert remainder to Want token and send back to sender 
+        wantObtained = _convertRemainingEarnedToWant(
+            _remainingEarnAmt,
+            _maxMarketMovementAllowed,
+            msg.sender
+        );
+    }
+
+    // TODO: Docstrings
+    /// @notice Takes earnings and distributes fees, buyback, revshare etc.
+    /// @return remainingEarnings The remaining earnings after all fees and fund distribution
+    function _distributeEarnings(
+        uint256 _earnedAmt,
+        uint256 _maxMarketMovementAllowed,
+        DistributeEarningsParams memory _params
+    )
+        internal
+        returns (
+            uint256 remainingEarnings,
+            uint256 xChainBuybackAmt,
+            uint256 xChainRevShareAmt
+        )
+    {
+        // Collect protocol fees
+        uint256 _controllerFee = _collectProtocolFees(
+            _params.earnedAddress,
+            _params.rewardsAddress,
+            _earnedAmt,
+            _params.controllerFeeBP
+        );
+
+        // Calculate buyback and revshare amounts
+        uint256 _buybackAmt = (_earnedAmt * _params.buybackBP) / 10000;
+        uint256 _revShareAmt = (_earnedAmt * _params.revShareBP) / 10000;
+
+        // Routing: Perform buyback & revshare if on home chain. Otherwise,
+        // return buyback & revshare amounts for cross chain earnings distribution.
+        if (_params.isHomeChain) {
+            // If on home chain, perform buyback, revshare locally
+            _buybackOnChain(
+                _buybackAmt,
+                _maxMarketMovementAllowed,
+                BuybackBurnLPParams({
+                    earnedAddress: _params.earnedAddress,
+                    ZORROAddress: _params.ZORROAddress,
+                    zorroLPPoolOtherToken: _params.zorroLPPoolOtherToken,
+                    earnedToZORROPath: _params.earnedToZORROPath,
+                    earnedToZORLPPoolOtherTokenPath: _params
+                        .earnedToZORLPPoolOtherTokenPath,
+                    earnTokenPriceFeed: _params.earnTokenPriceFeed,
+                    ZORPriceFeed: _params.ZORPriceFeed,
+                    lpPoolOtherTokenPriceFeed: _params.lpPoolOtherTokenPriceFeed
+                })
+            );
+            _revShareOnChain(
+                _revShareAmt,
+                _maxMarketMovementAllowed,
+                RevShareParams({
+                    earnedAddress: _params.earnedAddress,
+                    ZORROAddress: _params.ZORROAddress,
+                    zorroStakingVault: _params.zorroStakingVault,
+                    earnedToZORROPath: _params.earnedToZORROPath,
+                    earnTokenPriceFeed: _params.earnTokenPriceFeed,
+                    ZORPriceFeed: _params.ZORPriceFeed
+                })
+            );
+        } else {
+            // Otherwise, swap to USD and earmark for cross chain earnings distribution
+            // Return reserved xchain amounts
+            xChainBuybackAmt = _buybackAmt;
+            xChainRevShareAmt = _revShareAmt;
+
+            // Calc sum
+            uint256 _swappableAmt = _buybackAmt + _revShareAmt;
+
+            // Swap to Earn to USD and send to sender
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _swappableAmt,
+                    priceToken0: _params.earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
+                    token0: _params.earnedAddress,
+                    token1: _params.stablecoin,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.earnedToStablecoinPath,
+                    destination: msg.sender
+                })
+            );
+        }
+
+        // Return remainder after distribution
+        remainingEarnings =
+            _earnedAmt -
+            _controllerFee -
+            _buybackAmt -
+            _revShareAmt;
+    }
+
+    // TODO: Docstrings
+    /// @notice Combines buyback and rev share operations
+    /// @notice distribute controller (performance) fees
+    /// @param _earnedAmt The Earned token amount (profits)
+    /// @return fee The amount of controller fees collected for the treasury
+    function _collectProtocolFees(
+        address _earnedAddress,
+        address _rewardsAddress,
+        uint256 _earnedAmt,
+        uint16 _controllerFeeBP
+    ) internal virtual returns (uint256 fee) {
+        if (_earnedAmt > 0) {
+            // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
+            if (_controllerFeeBP > 0) {
+                // Calculate the fee from the controllerFee parameters
+                fee = (_earnedAmt * _controllerFeeBP) / 10000;
+
+                // Transfer the fee to the rewards address
+                IERC20Upgradeable(_earnedAddress).safeTransfer(
+                    _rewardsAddress,
+                    fee
+                );
+            }
+        }
+    }
+
+    // TODO: Docstrings
+    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
+    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
+    function _revShareOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        RevShareParams memory _params
+    ) internal virtual {
+        if (_amount > 0) {
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _amount,
+                    priceToken0: _params.earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _params.ZORPriceFeed.getExchangeRate(),
+                    token0: _params.earnedAddress,
+                    token1: _params.ZORROAddress,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _params.earnedToZORROPath,
+                    destination: _params.zorroStakingVault
+                })
+            );
+        }
+    }
+
+    /// @notice Buys back earn token, adds liquidity, and burns the LP token
+    /// @param _amount The amount of Earn token to swap and buy back
+    /// @param _maxMarketMovementAllowed Acceptable slippage (990 = 1%)
+    /// @param _params An BuybackBurnLPParams struct specifying buyback parameters
+    function _buybackOnChain(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed,
+        BuybackBurnLPParams memory _params
+    ) internal {
+        // Skip if amount not > 0
+        if (_amount == 0) {
+            return;
+        }
+
+        // Prep
+        uint256 _earnTokenPrice = _params.earnTokenPriceFeed.getExchangeRate();
 
         // Swap to ZOR Token
         if (_params.earnedAddress != _params.ZORROAddress) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amount / 2,
-                    priceToken0: _rates.earn,
-                    priceToken1: _rates.ZOR,
+                    priceToken0: _earnTokenPrice,
+                    priceToken1: _params.ZORPriceFeed.getExchangeRate(),
                     token0: _params.earnedAddress,
                     token1: _params.ZORROAddress,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -379,8 +593,10 @@ contract VaultActions is OwnableUpgradeable {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amount / 2,
-                    priceToken0: _rates.earn,
-                    priceToken1: _rates.lpPoolOtherToken,
+                    priceToken0: _earnTokenPrice,
+                    priceToken1: _params
+                        .lpPoolOtherTokenPriceFeed
+                        .getExchangeRate(),
                     token0: _params.earnedAddress,
                     token1: _params.zorroLPPoolOtherToken,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -408,6 +624,15 @@ contract VaultActions is OwnableUpgradeable {
             burnAddress
         );
     }
+
+    // TODO: Docstrings
+    /// @notice Abstract function to convert remaining earn token to Want.
+    /// @dev To be implemented by child contracts
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal virtual returns (uint256 wantObtained);
 
     /* Utilities */
 

@@ -174,19 +174,11 @@ contract MockInvestmentVault is VaultBase {
 
     function earn(uint256 _maxMarketMovementAllowed) public override {}
 
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {}
-
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal override {}
-
     function farm() external {}
+
+    function _farm() internal override {}
+
+    function _unfarm(uint256 _amount) internal override {}
 }
 
 contract MockInvestmentVault1 is MockInvestmentVault {}

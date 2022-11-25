@@ -8,16 +8,17 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "../../libraries/PriceFeed.sol";
-
 import "../../interfaces/IAMMRouter02.sol";
+
+import "../../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
+
+import "../../libraries/PriceFeed.sol";
 
 import "./_VaultActions.sol";
 
-import "./VaultActionsStandardAMM.sol";
-
 abstract contract VaultActionsLiqStakeLP is VaultActions {
     /* Libs */
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
 
@@ -69,16 +70,16 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
     /// @notice Deposits liquid stake on protocol
     /// @dev Must be implemented by inherited contracts
-    function liquidStake(
+    function _liquidStake(
         uint256 _amount,
         address _token0,
         address _liqStakeToken,
         address _liqStakePool
-    ) public virtual;
+    ) internal virtual;
 
     /// @notice Withdraws liquid stake on protocol
     /// @dev Must be implemented by inherited contracts
-    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) public virtual;
+    function _liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) internal virtual;
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be approved beforehand)
@@ -115,7 +116,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
             .balanceOf(address(this));
 
         // Unstake sETH to get ETH
-        liquidUnstake(
+        _liquidUnstake(
             SafeSwapUni.SafeSwapParams({
                 amountIn: _synthTokenBal,
                 priceToken0: _params
@@ -193,7 +194,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         );
 
         // Stake ETH (liquid staking)
-        liquidStake(
+        _liquidStake(
             _token0Bal,
             _params.token0Address,
             _params.liquidStakeToken,
@@ -318,5 +319,61 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
 
         // Transfer back to sender
         IERC20Upgradeable(_params.liquidStakeToken).safeTransfer(msg.sender, _synthBal);
+    }
+
+    // TODO: Docstrings
+    function _convertRemainingEarnedToWant(
+        uint256 _remainingEarnAmt,
+        uint256 _maxMarketMovementAllowed,
+        address _destination
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVaultLiqStakeLP _vault = IVaultLiqStakeLP(msg.sender);
+
+        address _earnedAddress = _vault.earnedAddress();
+        address _token0Address = _vault.token0Address();
+        address _liquidStakeToken = _vault.liquidStakeToken();
+        address _liquidStakingPool = _vault.liquidStakingPool();
+        address _wantAddress = _vault.wantAddress();
+        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+
+        // Swap Earned token to token0 if token0 is not the Earned token
+        if (_earnedAddress != _token0Address) {
+            // Swap earned to token0
+            _safeSwap(
+                SafeSwapUni.SafeSwapParams({
+                    amountIn: _remainingEarnAmt,
+                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
+                    priceToken1: _token0PriceFeed.getExchangeRate(),
+                    token0: _earnedAddress,
+                    token1: _token0Address,
+                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
+                    path: _vault.earnedToToken0Path(),
+                    destination: address(this)
+                })
+            );
+        }
+
+        // Get balance of Token 0 (ETH)
+        uint256 _token0Bal = IERC20Upgradeable(_token0Address).balanceOf(
+            address(this)
+        );
+
+        // Provided that token0 is > 0, re-deposit
+        if (_token0Bal > 0) {
+            _liquidStake(
+                _token0Bal,
+                _token0Address,
+                _liquidStakeToken,
+                _liquidStakingPool
+            );
+        }
+
+        // Calc want balance
+        wantObtained = IERC20Upgradeable(_liquidStakeToken).balanceOf(address(this));
+
+        // Transfer want token to destination
+        IERC20Upgradeable(_liquidStakeToken).safeTransfer(_destination, wantObtained);
     }
 }

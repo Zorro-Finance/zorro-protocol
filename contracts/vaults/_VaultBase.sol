@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../interfaces/IVault.sol";
+import "../interfaces/Zorro/Vaults/IVault.sol";
 
 import "../interfaces/IZorroControllerXChain.sol";
 
@@ -28,6 +28,7 @@ abstract contract VaultBase is
 {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
     function initialize(address _timelockOwner) public initializer {
@@ -363,177 +364,97 @@ abstract contract VaultBase is
         IERC20Upgradeable(_token).safeTransfer(_to, _amount);
     }
 
-    /* Performance fees & buyback */
+    /* Earnings */
 
-    /// @notice Combines buyback and rev share operations
-    /// @param _earnedAmt The amount of Earned tokens (profit)
-    /// @param _maxMarketMovementAllowed Slippage tolerance. 950 = 5%, 990 = 1% etc.
-    /// @param _rates ExchangeRates struct with realtime rates information for swaps
-    /// @return buybackAmt Amount bought back for LP and burn
-    /// @return revShareAmt Amount shared with ZOR stakers
-    function _buyBackAndRevShare(
-        uint256 _earnedAmt,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual returns (uint256 buybackAmt, uint256 revShareAmt) {
-        // Calculate buyback amount
-        if (buyBackRate > 0) {
-            // Calculate the buyback amount via the buyBackRate parameters
-            buybackAmt = _earnedAmt * buyBackRate / buyBackRateMax;
+    /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
+    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    function earn(uint256 _maxMarketMovementAllowed)
+        public
+        virtual
+        nonReentrant
+        whenNotPaused
+    {
+        require(isFarmable, "!farmable");
+
+        // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
+        if (onlyGov) {
+            require(msg.sender == govAddress, "!gov");
         }
 
-        // Calculate revshare amount
-        if (revShareRate > 0) {
-            // Calculate the buyback amount via the buyBackRate parameters
-            revShareAmt = _earnedAmt * revShareRate / revShareRateMax;
-        }
+        // Harvest farm tokens
+        _unfarm(0);
 
-        // Routing: Determine whether on home chain or not
-        if (isHomeChain) {
-            // If on home chain, perform buyback, revshare locally
-            _buybackOnChain(buybackAmt, _maxMarketMovementAllowed, _rates);
-            _revShareOnChain(revShareAmt, _maxMarketMovementAllowed, _rates);
-        } else {
-            // Otherwise, contact controller, to make cross chain call
+        // Calc earned balance
+        uint256 _earnedBal = IERC20Upgradeable(earnedAddress).balanceOf(
+            address(this)
+        );
 
-            // Calc sum
-            uint256 _swappableAmt = buybackAmt + revShareAmt;
+        // Only continue if farm tokens were earned
+        require(_earnedBal > 0, "0earn");
 
-            // Allow spending
-            IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-                vaultActions,
-                _swappableAmt
-            );
+        // Allow spending
+        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+            vaultActions,
+            _earnedBal
+        );
 
-            // Swap to Earn to USD and send to zorro controller contract
-            VaultActions(vaultActions).safeSwap(
-                SafeSwapUni.SafeSwapParams({
-                    amountIn: _swappableAmt,
-                    priceToken0: _rates.earn,
-                    priceToken1: _rates.stablecoin,
-                    token0: earnedAddress,
-                    token1: defaultStablecoin,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: earnedToStablecoinPath,
-                    destination: zorroXChainController
+        // Perform fee distribution (fees + buyback + revshare)
+        // and obtain Want token with remainder
+        (
+            ,
+            uint256 _xChainBuybackAmt,
+            uint256 _xChainRevShareAmt
+        ) = VaultActions(vaultActions).distributeAndReinvestEarnings(
+                _earnedBal,
+                _maxMarketMovementAllowed,
+                VaultActions.DistributeEarningsParams({
+                    earnedAddress: earnedAddress,
+                    ZORROAddress: ZORROAddress,
+                    rewardsAddress: rewardsAddress,
+                    stablecoin: defaultStablecoin,
+                    zorroStakingVault: zorroStakingVault,
+                    zorroLPPoolOtherToken: zorroLPPoolOtherToken,
+                    wantAddress: wantAddress,
+                    earnTokenPriceFeed: earnTokenPriceFeed,
+                    ZORPriceFeed: ZORPriceFeed,
+                    lpPoolOtherTokenPriceFeed: lpPoolOtherTokenPriceFeed,
+                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    earnedToZORROPath: earnedToZORROPath,
+                    earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath,
+                    earnedToStablecoinPath: earnedToStablecoinPath,
+                    controllerFeeBP: uint16(
+                        (controllerFee * 10000) / controllerFeeMax
+                    ),
+                    buybackBP: uint16((buyBackRate * 10000) / buyBackRateMax),
+                    revShareBP: uint16(
+                        (revShareRate * 10000) / revShareRateMax
+                    ),
+                    isHomeChain: isHomeChain
                 })
             );
 
+        // Distribute earnings cross chain if applicable
+        if (_xChainBuybackAmt > 0 || _xChainRevShareAmt > 0) {
             // Call distributeEarningsXChain on controller contract
             IZorroControllerXChainEarn(zorroXChainController)
                 .sendXChainDistributeEarningsRequest(
-                    pid,
-                    buybackAmt,
-                    revShareAmt,
+                    pid, // TODO: Is this the Pool PID or vault PID?
+                    _xChainBuybackAmt,
+                    _xChainRevShareAmt,
                     _maxMarketMovementAllowed
                 );
         }
-    }
 
-    /// @notice distribute controller (performance) fees
-    /// @param _earnedAmt The Earned token amount (profits)
-    /// @return fee The amount of controller fees collected for the treasury
-    function _distributeFees(uint256 _earnedAmt)
-        internal
-        virtual
-        returns (uint256 fee)
-    {
-        if (_earnedAmt > 0) {
-            // If the Earned token amount is > 0, assess a controller fee, if the controller fee is > 0
-            if (controllerFee > 0) {
-                // Calculate the fee from the controllerFee parameters
-                fee = _earnedAmt * controllerFee / controllerFeeMax;
-                // Transfer the fee to the rewards address
-                IERC20Upgradeable(earnedAddress).safeTransfer(
-                    rewardsAddress,
-                    fee
-                );
-            }
-        }
-    }
+        // Update last earned block
+        lastEarnBlock = block.number;
 
-    /// @notice Buys back the earned token on-chain, swaps it to add liquidity to the ZOR pool, then burns the associated LP token
-    /// @dev Requires funds to be sent to this address before calling. Can be called internally OR by controller
-    /// @param _amount The amount of Earn token to buy back
-    /// @param _maxMarketMovementAllowed Slippage factor. 950 = 5%, 990 = 1%, etc.
-    function _buybackOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual {
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Buyback
-        VaultActions(vaultActions).buybackBurnLP(
-            _amount,
-            _maxMarketMovementAllowed,
-            _rates,
-            VaultActions.BuybackBurnLPParams({
-                earnedAddress: earnedAddress,
-                ZORROAddress: ZORROAddress,
-                zorroLPPoolOtherToken: zorroLPPoolOtherToken,
-                earnedToZORROPath: earnedToZORROPath,
-                earnedToZORLPPoolOtherTokenPath: earnedToZORLPPoolOtherTokenPath
-            })
-        );
-    }
-
-    /// @notice Sends the specified earnings amount as revenue share to ZOR stakers
-    /// @param _amount The amount of Earn token to share as revenue with ZOR stakers
-    function _revShareOnChain(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed,
-        VaultActions.ExchangeRates memory _rates
-    ) internal virtual {
-        // Authorize spending beforehand
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Swap
-        VaultActions(vaultActions).safeSwap(
-            SafeSwapUni.SafeSwapParams({
-                amountIn: _amount,
-                priceToken0: _rates.earn,
-                priceToken1: _rates.ZOR,
-                token0: earnedAddress,
-                token1: ZORROAddress,
-                maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                path: earnedToZORROPath,
-                destination: zorroStakingVault
-            })
-        );
+        // Farm Want token
+        _farm();
     }
 
     /* Abstract methods */
 
-    // Deposits
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public virtual returns (uint256);
+    function _farm() internal virtual;
 
-    function depositWantToken(uint256 _wantAmt)
-        public
-        virtual
-        returns (uint256);
-
-    // Withdrawals
-    function withdrawWantToken(uint256 _wantAmt)
-        public
-        virtual
-        returns (uint256);
-
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    ) public virtual returns (uint256);
-
-    // Earnings/compounding
-    function earn(uint256 _maxMarketMovementAllowed) public virtual;
+    function _unfarm(uint256 _wantAmt) internal virtual;
 }
