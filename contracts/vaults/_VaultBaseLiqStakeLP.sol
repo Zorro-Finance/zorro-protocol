@@ -12,8 +12,8 @@ import "./_VaultBase.sol";
 
 /// @title Vault base contract for liquid staking + LP strategy
 contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
-    /* Libraries */ 
-    
+    /* Libraries */
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
 
@@ -58,45 +58,35 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        earnedToZORROPath = _initValue.earnedToZORROPath;
-        earnedToToken0Path = _initValue.earnedToToken0Path;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue
-            .earnedToZORLPPoolOtherTokenPath;
-        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        stablecoinToZORROPath = _initValue.stablecoinToZORROPath;
-        stablecoinToLPPoolOtherTokenPath = _initValue
-            .stablecoinToLPPoolOtherTokenPath;
-        liquidStakeToToken0Path = _initValue.liquidStakeToToken0Path;
-        // Corresponding reverse paths
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken0Path
+        setSwapPaths(_initValue.earnedToZORROPath);
+        setSwapPaths(_initValue.earnedToToken0Path);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.earnedToStablecoinPath);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue.stablecoinToZORROPath);
+        setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.liquidStakeToToken0Path);
+        setSwapPaths(
+            VaultActions(vaultActions).reversePath(
+                _initValue.stablecoinToToken0Path
+            )
         );
-        token0ToLiquidStakePath = VaultActions(vaultActions).reversePath(
-            liquidStakeToToken0Path
+        setSwapPaths(
+            VaultActions(vaultActions).reversePath(
+                _initValue.liquidStakeToToken0Path
+            )
         );
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token0PriceFeed
-        );
-        earnTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.earnTokenPriceFeed
-        );
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
-        );
-        ZORPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.ZORPriceFeed
-        );
-        stablecoinPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
-        liquidStakeTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.liquidStakeTokenPriceFeed
-        );
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
+        setPriceFeed(liquidStakeToken, _initValue.priceFeeds.liquidStakeTokenPriceFeed);
 
+        // Other
         maxMarketMovementAllowed = _initValue.maxMarketMovementAllowed;
 
         // Super call
@@ -241,8 +231,8 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                 liquidStakeToken: liquidStakeToken,
                 nativeToken: token0Address,
                 liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                nativeTokenPriceFeed: token0PriceFeed,
-                liquidStakeToNativePath: liquidStakeToToken0Path
+                nativeTokenPriceFeed: priceFeeds[token0Address],
+                liquidStakeToNativePath: swapPaths[liquidStakeToken][token0Address]
             }),
             maxMarketMovementAllowed
         );
@@ -281,8 +271,8 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                 nativeToken: token0Address,
                 lpPoolToken: poolAddress,
                 liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                nativeTokenPriceFeed: token0PriceFeed,
-                nativeToLiquidStakePath: token0ToLiquidStakePath
+                nativeTokenPriceFeed: priceFeeds[token0Address],
+                nativeToLiquidStakePath: swapPaths[token0Address][liquidStakeToken]
             }),
             maxMarketMovementAllowed
         );
@@ -312,11 +302,11 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                     liquidStakeToken: liquidStakeToken,
                     liquidStakePool: liquidStakingPool,
                     poolAddress: poolAddress,
-                    token0PriceFeed: token0PriceFeed,
+                    token0PriceFeed: priceFeeds[token0Address],
                     liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    stablecoinToToken0Path: stablecoinToToken0Path,
-                    liquidStakeToToken0Path: liquidStakeToToken0Path
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
+                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][token0Address]
                 }),
                 _maxMarketMovementAllowed
             );
@@ -352,11 +342,11 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                     stablecoin: defaultStablecoin,
                     poolAddress: poolAddress,
                     liquidStakeToken: liquidStakeToken,
-                    token0PriceFeed: token0PriceFeed,
+                    token0PriceFeed: priceFeeds[token0Address],
                     liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    liquidStakeToToken0Path: liquidStakeToToken0Path,
-                    token0ToStablecoinPath: token0ToStablecoinPath
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][token0Address],
+                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin]
                 }),
                 _maxMarketMovementAllowed
             );
@@ -364,4 +354,5 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 }
 
 contract VaultAnkrBNBLiqStakeLP is VaultBaseLiqStakeLP {}
+
 contract VaultBenqiAVAXLiqStakeLP is VaultBaseLiqStakeLP {}

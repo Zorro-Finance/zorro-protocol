@@ -278,8 +278,8 @@ abstract contract VaultActionsLending is VaultActions {
 
         address _earnedAddress = _vault.earnedAddress();
         address _token0Address = _vault.token0Address();
-        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
-        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0Address);
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.priceFeeds(_earnedAddress);
 
         // Swap earn to token0 if token0 is not earn
         if (_token0Address != _earnedAddress) {

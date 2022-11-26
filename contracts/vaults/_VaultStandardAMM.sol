@@ -59,41 +59,29 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        earnedToZORROPath = _initValue.earnedToZORROPath;
-        earnedToToken0Path = _initValue.earnedToToken0Path;
-        earnedToToken1Path = _initValue.earnedToToken1Path;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        stablecoinToToken1Path = _initValue.stablecoinToToken1Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue
-            .earnedToZORLPPoolOtherTokenPath;
-        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
+        setSwapPaths(_initValue.earnedToZORROPath);
+        setSwapPaths(_initValue.earnedToToken0Path);
+        setSwapPaths(_initValue.earnedToToken1Path);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue.stablecoinToToken1Path);
+        setSwapPaths(_initValue
+            .earnedToZORLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.earnedToStablecoinPath);
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken0Path
-        );
-        token1ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken1Path
-        );
+        setSwapPaths(VaultActions(vaultActions).reversePath(
+            _initValue.stablecoinToToken0Path
+        ));
+        setSwapPaths(VaultActions(vaultActions).reversePath(
+            _initValue.stablecoinToToken1Path
+        ));
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token0PriceFeed
-        );
-        token1PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token1PriceFeed
-        );
-        earnTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.earnTokenPriceFeed
-        );
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
-        );
-        ZORPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.ZORPriceFeed
-        );
-        stablecoinPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(token1Address, _initValue.priceFeeds.token1PriceFeed);
+        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -165,11 +153,11 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
                     token0Address: token0Address,
                     token1Address: token1Address,
                     wantAddress: wantAddress,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    token0PriceFeed: token0PriceFeed,
-                    token1PriceFeed: token1PriceFeed,
-                    stablecoinToToken0Path: stablecoinToToken0Path,
-                    stablecoinToToken1Path: stablecoinToToken1Path
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    token0PriceFeed: priceFeeds[token0Address],
+                    token1PriceFeed: priceFeeds[token1Address],
+                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
+                    stablecoinToToken1Path: swapPaths[defaultStablecoin][token1Address]
                 }),
                 _maxMarketMovementAllowed
             );
@@ -287,14 +275,14 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
             VaultActionsStandardAMM(vaultActions).exchangeWantTokenForUSD(
                 _amount,
                 VaultActionsStandardAMM.ExchWantToUSDParams({
-                    token0PriceFeed: token0PriceFeed,
-                    token1PriceFeed: token1PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
+                    token0PriceFeed: priceFeeds[token0Address],
+                    token1PriceFeed: priceFeeds[token1Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
                     token0Address: token0Address,
                     token1Address: token1Address,
                     stablecoin: defaultStablecoin,
-                    token0ToStablecoinPath: token0ToStablecoinPath,
-                    token1ToStablecoinPath: token1ToStablecoinPath,
+                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin],
+                    token1ToStablecoinPath: swapPaths[token1Address][defaultStablecoin],
                     wantAddress: wantAddress,
                     poolAddress: poolAddress
                 }),

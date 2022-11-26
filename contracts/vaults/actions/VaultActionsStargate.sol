@@ -185,8 +185,8 @@ contract VaultActionsStargate is VaultActions {
         address _token0Address = _vault.token0Address();
         address _wantAddress = _vault.wantAddress();
         address _stargateRouter = _vault.stargateRouter();
-        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
-        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0Address);
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.priceFeeds(_earnedAddress);
         uint16 _stargatePoolId = _vault.stargatePoolId();
 
         // Swap Earn token for single asset token (STG -> token0)

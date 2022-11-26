@@ -19,6 +19,11 @@ interface IVaultStargate is IVault {
         bool isHomeChain;
         bool isFarmable;
         VaultActions.VaultAddresses keyAddresses;
+        address[] earnedToZORROPath;
+        address[] earnedToToken0Path;
+        address[] stablecoinToToken0Path;
+        address[] earnedToZORLPPoolOtherTokenPath;
+        address[] earnedToStablecoinPath;
         VaultActions.VaultFees fees;
         VaultActions.VaultPriceFeeds priceFeeds;
         address tokenSTG;

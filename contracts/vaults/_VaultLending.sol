@@ -64,37 +64,28 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        earnedToZORROPath = _initValue.earnedToZORROPath;
-        earnedToToken0Path = _initValue.earnedToToken0Path;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue
-            .earnedToZORLPPoolOtherTokenPath;
-        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        stablecoinToZORROPath = _initValue.stablecoinToZORROPath;
-        stablecoinToLPPoolOtherTokenPath = _initValue
-            .stablecoinToLPPoolOtherTokenPath;
+        setSwapPaths(_initValue.earnedToZORROPath);
+        setSwapPaths(_initValue.earnedToToken0Path);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.earnedToStablecoinPath);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue.stablecoinToZORROPath);
+        setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.earnedToZORROPath);
+
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken0Path
-        );
+        setSwapPaths(VaultActions(vaultActions).reversePath(
+            _initValue.stablecoinToToken0Path
+        ));
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token0PriceFeed
-        );
-        earnTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.earnTokenPriceFeed
-        );
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
-        );
-        ZORPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.ZORPriceFeed
-        );
-        stablecoinPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -107,21 +98,6 @@ abstract contract VaultLending is IVaultLending, VaultBase {
     address public comptrollerAddress; // Unitroller address
 
     /* Setters */
-
-    function setStablecoinSwapPaths(uint8 _idx, address[] calldata _path)
-        external
-        onlyOwner
-    {
-        if (_idx == 0) {
-            stablecoinToToken0Path = _path;
-        } else if (_idx == 1) {
-            stablecoinToZORROPath = _path;
-        } else if (_idx == 2) {
-            stablecoinToLPPoolOtherTokenPath = _path;
-        } else {
-            revert("unsupported idx swap path");
-        }
-    }
 
     function setTargetBorrowLimit(uint256 _tbl) external onlyOwner {
         targetBorrowLimit = _tbl;
@@ -197,9 +173,9 @@ abstract contract VaultLending is IVaultLending, VaultBase {
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: ZORROAddress,
-                    token0PriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    token0PriceFeed: priceFeeds[token0Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
                     poolAddress: poolAddress
                 }),
                 _maxMarketMovementAllowed
@@ -314,9 +290,9 @@ abstract contract VaultLending is IVaultLending, VaultBase {
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     poolAddress: poolAddress,
-                    token0PriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    token0ToStablecoinPath: token0ToStablecoinPath
+                    token0PriceFeed: priceFeeds[token0Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin]
                 }),
                 _maxMarketMovementAllowed
             );

@@ -1,0 +1,1041 @@
+{
+  "contractName": "IVaultAlpaca",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Buyback",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RevShare",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_govAddress",
+          "type": "address"
+        }
+      ],
+      "name": "SetGov",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "_onlyGov",
+          "type": "bool"
+        }
+      ],
+      "name": "SetOnlyGov",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_rewardsAddress",
+          "type": "address"
+        }
+      ],
+      "name": "SetRewardsAddress",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_entranceFeeFactor",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_withdrawFeeFactor",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_controllerFee",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_buyBackRate",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_revShareRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "SetSettings",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_uniRouterAddress",
+          "type": "address"
+        }
+      ],
+      "name": "SetUniRouterAddress",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_wantAmt",
+          "type": "uint256"
+        }
+      ],
+      "name": "depositWantToken",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_maxMarketMovementAllowed",
+          "type": "uint256"
+        }
+      ],
+      "name": "earn",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "earnedAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amountUSD",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_maxMarketMovementAllowed",
+          "type": "uint256"
+        }
+      ],
+      "name": "exchangeUSDForWantToken",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_maxMarketMovementAllowed",
+          "type": "uint256"
+        }
+      ],
+      "name": "exchangeWantTokenForUSD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "farm",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        }
+      ],
+      "name": "inCaseTokensGetStuck",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "poolAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        }
+      ],
+      "name": "priceFeeds",
+      "outputs": [
+        {
+          "internalType": "contract AggregatorV3Interface",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sharesTotal",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_startToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_endToken",
+          "type": "address"
+        }
+      ],
+      "name": "swapPathLength",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_startToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_endToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "swapPaths",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token0Address",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token1Address",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "wantAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "wantLockedTotal",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_wantAmt",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawWantToken",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Buyback\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"RevShare\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_govAddress\",\"type\":\"address\"}],\"name\":\"SetGov\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"_onlyGov\",\"type\":\"bool\"}],\"name\":\"SetOnlyGov\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_rewardsAddress\",\"type\":\"address\"}],\"name\":\"SetRewardsAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_entranceFeeFactor\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_withdrawFeeFactor\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_controllerFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_buyBackRate\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_revShareRate\",\"type\":\"uint256\"}],\"name\":\"SetSettings\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_uniRouterAddress\",\"type\":\"address\"}],\"name\":\"SetUniRouterAddress\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_wantAmt\",\"type\":\"uint256\"}],\"name\":\"depositWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"earn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"earnedAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSD\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeUSDForWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeWantTokenForUSD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"farm\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"inCaseTokensGetStuck\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"poolAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"}],\"name\":\"priceFeeds\",\"outputs\":[{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"sharesTotal\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_startToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_endToken\",\"type\":\"address\"}],\"name\":\"swapPathLength\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_startToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_endToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_index\",\"type\":\"uint256\"}],\"name\":\"swapPaths\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token0Address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token1Address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"wantAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"wantLockedTotal\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_wantAmt\",\"type\":\"uint256\"}],\"name\":\"withdrawWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Zorro/Vaults/IVaultAlpaca.sol\":\"IVaultAlpaca\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\":{\"keccak256\":\"0x652fee292f698d8dba81bf287cb71f1682f6483b67ebe601a5f7387dcfc30b34\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://98c7bba29bcab7240cdaada7dd7cbe3529fec83314801270c46239e72a9e84d7\",\"dweb:/ipfs/QmfHCc1KMygjXchXVwafWTkFjhbb2SQ3Cu5GzRTdV4CCCh\"]},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"keccak256\":\"0x372b0bc04e3b4c074559bbbfb1317afddb56de5504158ca25a7f9cd403980445\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://88b812365459a042c2aab5c689ff723098e0e19cb372718d3dd028b3c406e4f6\",\"dweb:/ipfs/QmTsLrMYzPjnB85pyAy85NNcBg64RPVueJARzwNg9xMyR1\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol\":{\"keccak256\":\"0x7160017c8d2373a33a6d7e45368d60d7d582ea1695a098de8356c94dab2ec3ce\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://9057befea40d1fc42ccb4a6d3d8428e8e1a21c3f08bf7032a280049b0167b145\",\"dweb:/ipfs/QmQx7oAxLJs17wcG2pZN4PW9xKgo7AW92SttiJ7dWCGmTt\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol\":{\"keccak256\":\"0x6777f3fccb5dab95a9088ef62c41bee0198fd92e50d7c94f0e3733788af4079e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://bf67f82ba68e13b306fa350fc0e2acaac3b0e90b2734a56e61302d79b408fb0b\",\"dweb:/ipfs/QmVhMTANFDtZFpxdGk6SayfttDxEh23GrT8ttiFRoow7c2\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol\":{\"keccak256\":\"0x605434219ebbe4653f703640f06969faa5a1d78f0bfef878e5ddbb1ca369ceeb\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4c9c634f99dd02d73ce7498b03a6305e251c05eeebb71457306561c1fab0fa7d\",\"dweb:/ipfs/QmbYRBbZHy8YoaQKXdPryiL3CSS7uUaRfRYi1TUj9cTqJQ\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol\":{\"keccak256\":\"0x3e26a49d2fa5ef8338b8a9467c91e54f417cb07e849b1cc0f4ebc4d2a147938e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://ca7bd5deecc4abd97f0218708c6e004953971cc62de68557fe0c6c8607f85a65\",\"dweb:/ipfs/QmRw3dGdS6ksHZiqcPRknYvWXfYP2hTj21PhkLjXyEVEf6\"]},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"keccak256\":\"0x55cf2bd9fc76704ddcdc19834cd288b7de00fc0f298a40ea16a954ae8991db2d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://37e4df53c8d2e3c1062c1c7b2c17366db7de03bfd2559d340ca95c588aa49c2f\",\"dweb:/ipfs/QmQ9vsG3o4wED3FRogiSUhdzJvZSjjYFtydzXvFEJtgZk4\"]},\"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol\":{\"keccak256\":\"0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d6520943ea55fdf5f0bafb39ed909f64de17051bc954ff3e88c9e5621412c79c\",\"dweb:/ipfs/QmWZ4rAKTQbNG2HxGs46AcTXShsVytKeLs7CUCdCSv5N7a\"]},\"project:/contracts/interfaces/Alpaca/IAlpacaFairLaunch.sol\":{\"keccak256\":\"0xad81b0d4cffbce6e128843526c96ecea39b08242731eae4a52d032c64b00bb15\",\"license\":\"BUSL\",\"urls\":[\"bzz-raw://4ef4e8c6eb328a981308a37bf9850f18088febf7638b9e6e818ec6e8ebdfda54\",\"dweb:/ipfs/QmP482RAFoGhWC2Tyg93DVSHYuEcfeFeEZUua9aqxKy6X1\"]},\"project:/contracts/interfaces/Alpaca/IAlpacaVault.sol\":{\"keccak256\":\"0xabcbe1bf75a6a076a4c895f72562bb94e2dc082699bbc5b4e7cde1148667ad57\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6d96ad7765a52458ca06c56d90fdbc667ee581cc913562ac32008dd4d762dbcf\",\"dweb:/ipfs/QmbBK7B9KsFPu9hPVDMvPBM5um1TivCYH6AwtmPKrASgCG\"]},\"project:/contracts/interfaces/IAMMRouter01.sol\":{\"keccak256\":\"0xedff0a1c8dd8eac392692f031406c459891a88a09d996629e3a56a9b8e003915\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7bb31e6c73608c55b6a40f6a4ccb4d592acb6f402fad3b12e78f6314e6da491e\",\"dweb:/ipfs/QmVTMhwncB1MwGJabKKtfcRzyHtnkueAx8XrB4yLrv6Xci\"]},\"project:/contracts/interfaces/IAMMRouter02.sol\":{\"keccak256\":\"0x6ff071388c7b300cb602534f249a4a1e63e97ae3870945ebc477d8cf03d36e24\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://32dbfb0f88caff1dc0859b430d30b9bc8c301ce073d26d3c1d92eea481007d12\",\"dweb:/ipfs/QmP8giHQSDYVt9qxyMjnVawFCi8gTCrgCKhZrywiwCiZ9x\"]},\"project:/contracts/interfaces/Zorro/Vaults/IVault.sol\":{\"keccak256\":\"0x153c4d5c5840812f86d718e5237f845cc5769b30fbc18c96cf41ae200bc9a5ce\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1ef743dfc1b60b42d392195c3bd854c8c46ac11d5a658f46548d80da2456fcf8\",\"dweb:/ipfs/QmeAjiYzT9AuMGUjXRiVxS9YQ21HuPti3ti7aPiQt5Gt9R\"]},\"project:/contracts/interfaces/Zorro/Vaults/IVaultAlpaca.sol\":{\"keccak256\":\"0x44d4ebe7070e7cee0be4ab79af3727a44ab227b48f617cf5b5aeba7ed8622029\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a11be61dc137a265f32eea192ea0b1cf9fa57ae8ea34fb8aa59091b6ffdf7458\",\"dweb:/ipfs/QmYgVHZnACkDL17zUHqiNUenFVHcPuLFac1f1LTCpjhsNP\"]},\"project:/contracts/libraries/PriceFeed.sol\":{\"keccak256\":\"0xbc01335b64576076e0a43c0be771c89ccb5363b426521ce379f560e9d30cfe94\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://03d5bf8cb030a15ef51faf151654a2ffb2dabfeef04d56079a04289acc139317\",\"dweb:/ipfs/QmYGZw4JJPM4nxcWQzZKsrq8SuDW29Ye4c7enTaEsX1rpi\"]},\"project:/contracts/libraries/SafeSwap.sol\":{\"keccak256\":\"0x32cac346245d108670fd526a8d05a98c826fc16481b5e1a5f3342ef4bffe8692\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://05b9abe0286f0afa0793191ce077c9e821ee7b0f6f3cf1c60a6c2691262e5970\",\"dweb:/ipfs/QmYqaL5S8TPMmLgxZGM4g7J3DrPASVi9WDNdyLWBqThd34\"]},\"project:/contracts/vaults/actions/_VaultActions.sol\":{\"keccak256\":\"0x25ff9504c3a6c0a2e958940b9d67b2c966a17a5b4a4386a569053ab82fb88727\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6989aaabe3c5fa6ed78d969c8130a83a15cb21709295a607ca990038a492de8b\",\"dweb:/ipfs/QmQLGE5XA5mzRsTHbNJUD5VmmoCqgSWoqwnkts4R2JyNLD\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\nimport \"../../../vaults/actions/_VaultActions.sol\";\n\nimport \"./IVault.sol\";\n\n/* For interacting with our own Vaults */\ninterface IVaultAlpaca is IVault {\n    /* Structs */\n\n    struct VaultAlpacaInit {\n        uint256 pid;\n        bool isHomeChain;\n        bool isFarmable;\n        VaultActions.VaultAddresses keyAddresses;\n        address[] earnedToZORROPath;\n        address[] earnedToToken0Path;\n        address[] stablecoinToToken0Path;\n        address[] earnedToZORLPPoolOtherTokenPath;\n        address[] earnedToStablecoinPath;\n        address[] stablecoinToZORROPath;\n        address[] stablecoinToLPPoolOtherTokenPath;\n        VaultActions.VaultFees fees;\n        VaultActions.VaultPriceFeeds priceFeeds;\n    }\n}\n",
+  "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/Zorro/Vaults/IVaultAlpaca.sol",
+  "ast": {
+    "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/IVaultAlpaca.sol",
+    "exportedSymbols": {
+      "AddressUpgradeable": [
+        3127
+      ],
+      "AggregatorV3Interface": [
+        45
+      ],
+      "ContextUpgradeable": [
+        3169
+      ],
+      "ERC20Upgradeable": [
+        2557
+      ],
+      "IAMMRouter01": [
+        13190
+      ],
+      "IAMMRouter02": [
+        13278
+      ],
+      "IAlpacaVault": [
+        12626
+      ],
+      "IERC20MetadataUpgradeable": [
+        2660
+      ],
+      "IERC20Upgradeable": [
+        2635
+      ],
+      "IFairLaunch": [
+        12591
+      ],
+      "IVault": [
+        15279
+      ],
+      "IVaultAlpaca": [
+        15323
+      ],
+      "Initializable": [
+        1774
+      ],
+      "OwnableUpgradeable": [
+        571
+      ],
+      "PriceFeed": [
+        15684
+      ],
+      "SafeERC20Upgradeable": [
+        2884
+      ],
+      "SafeSwapUni": [
+        15890
+      ],
+      "VaultActions": [
+        25286
+      ]
+    },
+    "id": 15324,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 15281,
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "33:23:77"
+      },
+      {
+        "absolutePath": "project:/contracts/vaults/actions/_VaultActions.sol",
+        "file": "../../../vaults/actions/_VaultActions.sol",
+        "id": 15282,
+        "nameLocation": "-1:-1:-1",
+        "nodeType": "ImportDirective",
+        "scope": 15324,
+        "sourceUnit": 25287,
+        "src": "58:51:77",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/IVault.sol",
+        "file": "./IVault.sol",
+        "id": 15283,
+        "nameLocation": "-1:-1:-1",
+        "nodeType": "ImportDirective",
+        "scope": 15324,
+        "sourceUnit": 15280,
+        "src": "111:22:77",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 15284,
+              "name": "IVault",
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 15279,
+              "src": "203:6:77"
+            },
+            "id": 15285,
+            "nodeType": "InheritanceSpecifier",
+            "src": "203:6:77"
+          }
+        ],
+        "canonicalName": "IVaultAlpaca",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 15323,
+        "linearizedBaseContracts": [
+          15323,
+          15279
+        ],
+        "name": "IVaultAlpaca",
+        "nameLocation": "187:12:77",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "IVaultAlpaca.VaultAlpacaInit",
+            "id": 15322,
+            "members": [
+              {
+                "constant": false,
+                "id": 15287,
+                "mutability": "mutable",
+                "name": "pid",
+                "nameLocation": "276:3:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "268:11:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 15286,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "268:7:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15289,
+                "mutability": "mutable",
+                "name": "isHomeChain",
+                "nameLocation": "294:11:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "289:16:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 15288,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "289:4:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15291,
+                "mutability": "mutable",
+                "name": "isFarmable",
+                "nameLocation": "320:10:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "315:15:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 15290,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "315:4:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15294,
+                "mutability": "mutable",
+                "name": "keyAddresses",
+                "nameLocation": "368:12:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "340:40:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_struct$_VaultAddresses_$24185_storage_ptr",
+                  "typeString": "struct VaultActions.VaultAddresses"
+                },
+                "typeName": {
+                  "id": 15293,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 15292,
+                    "name": "VaultActions.VaultAddresses",
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 24185,
+                    "src": "340:27:77"
+                  },
+                  "referencedDeclaration": 24185,
+                  "src": "340:27:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_VaultAddresses_$24185_storage_ptr",
+                    "typeString": "struct VaultActions.VaultAddresses"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15297,
+                "mutability": "mutable",
+                "name": "earnedToZORROPath",
+                "nameLocation": "400:17:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "390:27:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15295,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "390:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15296,
+                  "nodeType": "ArrayTypeName",
+                  "src": "390:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15300,
+                "mutability": "mutable",
+                "name": "earnedToToken0Path",
+                "nameLocation": "437:18:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "427:28:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15298,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "427:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15299,
+                  "nodeType": "ArrayTypeName",
+                  "src": "427:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15303,
+                "mutability": "mutable",
+                "name": "stablecoinToToken0Path",
+                "nameLocation": "475:22:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "465:32:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15301,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "465:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15302,
+                  "nodeType": "ArrayTypeName",
+                  "src": "465:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15306,
+                "mutability": "mutable",
+                "name": "earnedToZORLPPoolOtherTokenPath",
+                "nameLocation": "517:31:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "507:41:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15304,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "507:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15305,
+                  "nodeType": "ArrayTypeName",
+                  "src": "507:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15309,
+                "mutability": "mutable",
+                "name": "earnedToStablecoinPath",
+                "nameLocation": "568:22:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "558:32:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15307,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "558:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15308,
+                  "nodeType": "ArrayTypeName",
+                  "src": "558:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15312,
+                "mutability": "mutable",
+                "name": "stablecoinToZORROPath",
+                "nameLocation": "610:21:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "600:31:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15310,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "600:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15311,
+                  "nodeType": "ArrayTypeName",
+                  "src": "600:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15315,
+                "mutability": "mutable",
+                "name": "stablecoinToLPPoolOtherTokenPath",
+                "nameLocation": "651:32:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "641:42:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                  "typeString": "address[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 15313,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "641:7:77",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 15314,
+                  "nodeType": "ArrayTypeName",
+                  "src": "641:9:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                    "typeString": "address[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15318,
+                "mutability": "mutable",
+                "name": "fees",
+                "nameLocation": "716:4:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "693:27:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_struct$_VaultFees_$24196_storage_ptr",
+                  "typeString": "struct VaultActions.VaultFees"
+                },
+                "typeName": {
+                  "id": 15317,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 15316,
+                    "name": "VaultActions.VaultFees",
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 24196,
+                    "src": "693:22:77"
+                  },
+                  "referencedDeclaration": 24196,
+                  "src": "693:22:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_VaultFees_$24196_storage_ptr",
+                    "typeString": "struct VaultActions.VaultFees"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 15321,
+                "mutability": "mutable",
+                "name": "priceFeeds",
+                "nameLocation": "759:10:77",
+                "nodeType": "VariableDeclaration",
+                "scope": 15322,
+                "src": "730:39:77",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_struct$_VaultPriceFeeds_$24209_storage_ptr",
+                  "typeString": "struct VaultActions.VaultPriceFeeds"
+                },
+                "typeName": {
+                  "id": 15320,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 15319,
+                    "name": "VaultActions.VaultPriceFeeds",
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 24209,
+                    "src": "730:28:77"
+                  },
+                  "referencedDeclaration": 24209,
+                  "src": "730:28:77",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_VaultPriceFeeds_$24209_storage_ptr",
+                    "typeString": "struct VaultActions.VaultPriceFeeds"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "VaultAlpacaInit",
+            "nameLocation": "242:15:77",
+            "nodeType": "StructDefinition",
+            "scope": 15323,
+            "src": "235:541:77",
+            "visibility": "public"
+          }
+        ],
+        "scope": 15324,
+        "src": "177:601:77",
+        "usedErrors": []
+      }
+    ],
+    "src": "33:746:77"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.8.10+commit.fc410830.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.4.10",
+  "updatedAt": "2022-11-26T00:05:46.687Z",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}

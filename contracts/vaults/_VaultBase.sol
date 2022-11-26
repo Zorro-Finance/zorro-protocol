@@ -208,7 +208,7 @@ abstract contract VaultBase is
         priceFeeds[_token] = AggregatorV3Interface(_priceFeedAddress);
     }
 
-    function setSwapPaths(address[] calldata _path) public onlyOwner {
+    function setSwapPaths(address[] memory _path) public onlyOwner {
         // Prep
         address _startToken = _path[0];
         address _endToken = _path[_path.length - 1];

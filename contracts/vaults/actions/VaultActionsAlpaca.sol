@@ -189,8 +189,8 @@ contract VaultActionsAlpaca is VaultActions {
         address _token0Address = _vault.token0Address();
         address _wantAddress = _vault.wantAddress();
         address _poolAddress = _vault.poolAddress();
-        AggregatorV3Interface _token0PriceFeed = _vault.token0PriceFeed();
-        AggregatorV3Interface _earnTokenPriceFeed = _vault.earnTokenPriceFeed();
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0Address);
+        AggregatorV3Interface _earnTokenPriceFeed = _vault.priceFeeds(_earnedAddress);
 
         // Swap earn to token0 if token0 is not earn
         if (_token0Address != _earnedAddress) {

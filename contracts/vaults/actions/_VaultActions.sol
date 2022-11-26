@@ -641,16 +641,16 @@ abstract contract VaultActions is OwnableUpgradeable {
 
     /// @notice Gets the swap path in the opposite direction of a trade
     /// @param _path The swap path to be reversed
-    /// @return _newPath An reversed path array
+    /// @return newPath An reversed path array
     function reversePath(address[] memory _path)
         public
         pure
-        returns (address[] memory _newPath)
+        returns (address[] memory newPath)
     {
         uint256 _pathLength = _path.length;
-        _newPath = new address[](_pathLength);
+        newPath = new address[](_pathLength);
         for (uint16 i = 0; i < _pathLength; ++i) {
-            _newPath[i] = _path[_path.length - 1 - i];
+            newPath[i] = _path[_path.length - 1 - i];
         }
     }
 

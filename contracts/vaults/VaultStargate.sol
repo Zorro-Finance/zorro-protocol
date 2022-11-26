@@ -64,34 +64,22 @@ contract VaultStargate is IVaultStargate, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        earnedToZORROPath = _initValue.earnedToZORROPath;
-        earnedToToken0Path = _initValue.earnedToToken0Path;
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        earnedToZORLPPoolOtherTokenPath = _initValue
-            .earnedToZORLPPoolOtherTokenPath;
-        earnedToStablecoinPath = _initValue.earnedToStablecoinPath;
-
+        setSwapPaths(_initValue.earnedToZORROPath);
+        setSwapPaths(_initValue.earnedToToken0Path);
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(_initValue
+            .earnedToZORLPPoolOtherTokenPath);
+        setSwapPaths(_initValue.earnedToStablecoinPath);
         // Corresponding reverse paths
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken0Path
-        );
+        setSwapPaths(VaultActions(vaultActions).reversePath(
+            _initValue.stablecoinToToken0Path
+        ));
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token0PriceFeed
-        );
-        earnTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.earnTokenPriceFeed
-        );
-        lpPoolOtherTokenPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
-        );
-        ZORPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.ZORPriceFeed
-        );
-        stablecoinPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -183,9 +171,9 @@ contract VaultStargate is IVaultStargate, VaultBase {
                     token0Address: token0Address,
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: ZORROAddress,
-                    token0PriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    stablecoinToToken0Path: stablecoinToToken0Path,
+                    token0PriceFeed: priceFeeds[token0Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
                     stargateRouter: stargateRouter,
                     wantAddress: wantAddress,
                     stargatePoolId: stargatePoolId
@@ -308,9 +296,9 @@ contract VaultStargate is IVaultStargate, VaultBase {
                     stablecoin: defaultStablecoin,
                     wantAddress: wantAddress,
                     stargateRouter: stargateRouter,
-                    token0PriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    token0ToStablecoinPath: token0ToStablecoinPath,
+                    token0PriceFeed: priceFeeds[token0Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin],
                     stargatePoolId: stargatePoolId
                 }),
                 _maxMarketMovementAllowed

@@ -48,18 +48,14 @@ contract VaultZorro is IVaultZorro, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        stablecoinToToken0Path = _initValue.stablecoinToToken0Path;
-        token0ToStablecoinPath = VaultActions(vaultActions).reversePath(
-            stablecoinToToken0Path
-        );
+        setSwapPaths(_initValue.stablecoinToToken0Path);
+        setSwapPaths(VaultActions(vaultActions).reversePath(
+            _initValue.stablecoinToToken0Path
+        ));
 
         // Price feeds
-        token0PriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.token0PriceFeed
-        );
-        stablecoinPriceFeed = AggregatorV3Interface(
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
+        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -129,9 +125,9 @@ contract VaultZorro is IVaultZorro, VaultBase {
                 VaultActionsZorro.ExchangeUSDForWantParams({
                     stablecoin: defaultStablecoin,
                     tokenZorroAddress: token0Address,
-                    zorroPriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    stablecoinToZorroPath: stablecoinToToken0Path
+                    zorroPriceFeed: priceFeeds[token0Address],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    stablecoinToZorroPath: swapPaths[defaultStablecoin][ZORROAddress]
                 }),
                 _maxMarketMovementAllowed
             );
@@ -218,9 +214,9 @@ contract VaultZorro is IVaultZorro, VaultBase {
                 VaultActionsZorro.ExchangeWantTokenForUSDParams({
                     tokenZorroAddress: token0Address,
                     stablecoin: defaultStablecoin,
-                    zorroPriceFeed: token0PriceFeed,
-                    stablecoinPriceFeed: stablecoinPriceFeed,
-                    zorroToStablecoinPath: token0ToStablecoinPath
+                    zorroPriceFeed: priceFeeds[ZORROAddress],
+                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
+                    zorroToStablecoinPath: swapPaths[ZORROAddress][defaultStablecoin]
                 }),
                 _maxMarketMovementAllowed
             );
