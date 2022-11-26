@@ -11,18 +11,6 @@ interface IVaultAlpaca is IVault {
     /* Structs */
 
     struct VaultAlpacaInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToLPPoolOtherTokenPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
+        VaultBaseInit baseInit;
     }
 }

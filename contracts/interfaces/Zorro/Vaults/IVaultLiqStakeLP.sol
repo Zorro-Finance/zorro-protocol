@@ -11,32 +11,11 @@ interface IVaultLiqStakeLP is IVault {
     /* Structs */
 
     struct VaultBaseLiqStakeLPInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
+        VaultBaseInit baseInit;
         address liquidStakeToken;
         address liquidStakingPool;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToLPPoolOtherTokenPath;
-        address[] liquidStakeToToken0Path;
-        VaultActions.VaultFees fees;
-        VaultBaseLiqStakeLPPriceFeeds priceFeeds;
-        uint256 maxMarketMovementAllowed;
-    }
-
-    struct VaultBaseLiqStakeLPPriceFeeds {
-        address token0PriceFeed;
-        address earnTokenPriceFeed;
-        address ZORPriceFeed;
-        address lpPoolOtherTokenPriceFeed;
-        address stablecoinPriceFeed;
         address liquidStakeTokenPriceFeed;
+        address[] liquidStakeToToken0Path;
     }
 
     /* Functions */

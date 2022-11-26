@@ -30,72 +30,20 @@ contract VaultStargate is IVaultStargate, VaultBase {
         address _timelockOwner,
         VaultStargateInit memory _initValue
     ) public initializer {
-        // Vault config
-        pid = _initValue.pid;
-        isHomeChain = _initValue.isHomeChain;
-        isFarmable = _initValue.isFarmable;
-
         // Addresses
-        govAddress = _initValue.keyAddresses.govAddress;
-        onlyGov = true;
-        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
-        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
-        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
-        zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
-        wantAddress = _initValue.keyAddresses.wantAddress;
-        token0Address = _initValue.keyAddresses.token0Address;
-        token1Address = _initValue.keyAddresses.token1Address;
-        earnedAddress = _initValue.keyAddresses.earnedAddress;
-        farmContractAddress = _initValue.keyAddresses.farmContractAddress;
-        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
-        poolAddress = _initValue.keyAddresses.poolAddress;
         stargateRouter = _initValue.stargateRouter;
-        zorroLPPool = _initValue.keyAddresses.zorroLPPool;
-        zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
-        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
-        tokenSTG = _initValue.tokenSTG;
         stargatePoolId = _initValue.stargatePoolId;
 
-        // Fees
-        controllerFee = _initValue.fees.controllerFee;
-        buyBackRate = _initValue.fees.buyBackRate;
-        revShareRate = _initValue.fees.revShareRate;
-        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
-        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
-
-        // Swap paths
-        _setSwapPaths(_initValue.earnedToZORROPath);
-        _setSwapPaths(_initValue.earnedToToken0Path);
-        _setSwapPaths(_initValue.stablecoinToToken0Path);
-        _setSwapPaths(_initValue
-            .earnedToZORLPPoolOtherTokenPath);
-        _setSwapPaths(_initValue.earnedToStablecoinPath);
-        // Corresponding reverse paths
-        _setSwapPaths(VaultActions(vaultActions).reversePath(
-            _initValue.stablecoinToToken0Path
-        ));
-
-        // Price feeds
-        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
-        _setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
-        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
-
         // Super call
-        VaultBase.initialize(_timelockOwner);
+        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */
 
-    address public tokenSTG; // Stargate token
     address public stargateRouter; // Stargate Router for adding/removing liquidity etc.
     uint16 public stargatePoolId; // Stargate Pool that tokens shall be lent to
 
     /* Setters */
-
-    function setTokenSTG(address _token) external onlyOwner {
-        tokenSTG = _token;
-    }
 
     function setStargatePoolId(uint16 _poolId) external onlyOwner {
         stargatePoolId = _poolId;

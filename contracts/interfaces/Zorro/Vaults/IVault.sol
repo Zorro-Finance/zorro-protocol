@@ -6,6 +6,70 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /* For interacting with our own Vaults */
 interface IVault {
+    /* Struct */
+
+    struct VaultBaseInit {
+        VaultConfig config;
+        VaultAddresses keyAddresses;
+        VaultSwapPaths swapPaths;
+        VaultFees fees;
+        VaultPriceFeeds priceFeeds;
+    }
+
+    struct VaultConfig {
+        uint256 pid;
+        bool isHomeChain;
+        bool isFarmable;
+    }
+
+    struct VaultAddresses {
+        address govAddress;
+        address zorroControllerAddress;
+        address zorroXChainController;
+        address ZORROAddress;
+        address zorroStakingVault;
+        address wantAddress;
+        address token0Address;
+        address token1Address;
+        address earnedAddress;
+        address farmContractAddress;
+        address rewardsAddress;
+        address poolAddress;
+        address uniRouterAddress;
+        address zorroLPPool;
+        address zorroLPPoolOtherToken;
+        address defaultStablecoin;
+    }
+
+    struct VaultSwapPaths {
+        address[] earnedToZORROPath;
+        address[] earnedToToken0Path;
+        address[] earnedToToken1Path;
+        address[] stablecoinToToken0Path;
+        address[] stablecoinToToken1Path;
+        address[] earnedToZORLPPoolOtherTokenPath;
+        address[] earnedToStablecoinPath;
+        address[] stablecoinToZORROPath;
+        address[] stablecoinToLPPoolOtherTokenPath;
+    }
+
+    struct VaultFees {
+        uint256 controllerFee;
+        uint256 buyBackRate;
+        uint256 revShareRate;
+        uint256 entranceFeeFactor;
+        uint256 withdrawFeeFactor;
+    }
+
+    struct VaultPriceFeeds {
+        address token0PriceFeed;
+        address token1PriceFeed;
+        address earnTokenPriceFeed;
+        address ZORPriceFeed;
+        address lpPoolOtherTokenPriceFeed;
+        address stablecoinPriceFeed;
+    }
+
     /* Events */
 
     event SetSettings(

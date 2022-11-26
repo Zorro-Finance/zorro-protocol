@@ -31,13 +31,81 @@ abstract contract VaultBase is
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    function initialize(address _timelockOwner) public initializer {
+    function initialize(address _timelockOwner, VaultBaseInit memory _initValue) public initializer {
         // Ownable
         __Ownable_init();
+
         // Transfer ownership
         transferOwnership(_timelockOwner);
+
+        // Vault config
+        pid = _initValue.config.pid;
+        isHomeChain = _initValue.config.isHomeChain;
+        isFarmable = _initValue.config.isFarmable;
+
+        // Addresses
+        govAddress = _initValue.keyAddresses.govAddress;
+        onlyGov = true;
+        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
+        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
+        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
+        zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
+        wantAddress = _initValue.keyAddresses.wantAddress;
+        token0Address = _initValue.keyAddresses.token0Address;
+        token1Address = _initValue.keyAddresses.token1Address;
+        earnedAddress = _initValue.keyAddresses.earnedAddress;
+        farmContractAddress = _initValue.keyAddresses.farmContractAddress;
+        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
+        poolAddress = _initValue.keyAddresses.poolAddress;
+        zorroLPPool = _initValue.keyAddresses.zorroLPPool;
+        zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
+        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
+
+        // Fees
+        controllerFee = _initValue.fees.controllerFee;
+        buyBackRate = _initValue.fees.buyBackRate;
+        revShareRate = _initValue.fees.revShareRate;
+        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
+        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
+
+        // Swap paths
+        _setSwapPaths(_initValue.swapPaths.earnedToZORROPath);
+        _setSwapPaths(_initValue.swapPaths.earnedToToken0Path);
+        _setSwapPaths(_initValue.swapPaths.earnedToToken1Path);
+        _setSwapPaths(_initValue.swapPaths.stablecoinToToken0Path);
+        _setSwapPaths(_initValue.swapPaths.stablecoinToToken1Path);
+        _setSwapPaths(_initValue.swapPaths.earnedToZORLPPoolOtherTokenPath);
+        _setSwapPaths(_initValue.swapPaths.earnedToStablecoinPath);
+        _setSwapPaths(_initValue.swapPaths.stablecoinToZORROPath);
+        _setSwapPaths(_initValue.swapPaths.stablecoinToLPPoolOtherTokenPath);
+        _setSwapPaths(
+            VaultActions(vaultActions).reversePath(
+                _initValue.swapPaths.stablecoinToToken0Path
+            )
+        );
+        _setSwapPaths(
+            VaultActions(vaultActions).reversePath(
+                _initValue.swapPaths.stablecoinToToken1Path
+            )
+        );
+
+        // Price feeds
+        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        _setPriceFeed(token1Address, _initValue.priceFeeds.token1PriceFeed);
+        _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        _setPriceFeed(
+            zorroLPPoolOtherToken,
+            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
+        );
+        _setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        _setPriceFeed(
+            defaultStablecoin,
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
+
         // Other
         burnAddress = 0x000000000000000000000000000000000000dEaD;
+        maxMarketMovementAllowed = 985;
     }
 
     /* Constants */
@@ -105,7 +173,7 @@ abstract contract VaultBase is
     mapping(address => AggregatorV3Interface) public priceFeeds; // Price feeds. Mapping: token address => price feed address (AggregatorV3Interface implementation)
 
     // Other
-    uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden) // TODO: Setter/constructor
+    uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden)
 
     /* Modifiers */
 

@@ -26,52 +26,12 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         address _timelockOwner,
         VaultBaseLiqStakeLPInit memory _initValue
     ) public initializer {
-        // Vault config
-        pid = _initValue.pid;
-        isHomeChain = _initValue.isHomeChain;
-        isFarmable = _initValue.isFarmable;
-
         // Addresses
-        govAddress = _initValue.keyAddresses.govAddress;
-        onlyGov = true;
-        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
-        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
-        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
-        zorroStakingVault = _initValue.keyAddresses.zorroStakingVault;
-        wantAddress = _initValue.keyAddresses.wantAddress;
-        token0Address = _initValue.keyAddresses.token0Address;
-        earnedAddress = _initValue.keyAddresses.earnedAddress;
-        farmContractAddress = _initValue.keyAddresses.farmContractAddress;
-        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
-        poolAddress = _initValue.keyAddresses.poolAddress;
-        zorroLPPool = _initValue.keyAddresses.zorroLPPool;
-        zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
-        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
         liquidStakeToken = _initValue.liquidStakeToken;
         liquidStakingPool = _initValue.liquidStakingPool;
 
-        // Fees
-        controllerFee = _initValue.fees.controllerFee;
-        buyBackRate = _initValue.fees.buyBackRate;
-        revShareRate = _initValue.fees.revShareRate;
-        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
-        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
-
         // Swap paths
-        _setSwapPaths(_initValue.earnedToZORROPath);
-        _setSwapPaths(_initValue.earnedToToken0Path);
-        _setSwapPaths(_initValue.stablecoinToToken0Path);
-        _setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
-        _setSwapPaths(_initValue.earnedToStablecoinPath);
-        _setSwapPaths(_initValue.stablecoinToToken0Path);
-        _setSwapPaths(_initValue.stablecoinToZORROPath);
-        _setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
         _setSwapPaths(_initValue.liquidStakeToToken0Path);
-        _setSwapPaths(
-            VaultActions(vaultActions).reversePath(
-                _initValue.stablecoinToToken0Path
-            )
-        );
         _setSwapPaths(
             VaultActions(vaultActions).reversePath(
                 _initValue.liquidStakeToToken0Path
@@ -79,27 +39,13 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Price feeds
-        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
-        _setPriceFeed(
-            zorroLPPoolOtherToken,
-            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
-        );
-        _setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
-        _setPriceFeed(
-            defaultStablecoin,
-            _initValue.priceFeeds.stablecoinPriceFeed
-        );
         _setPriceFeed(
             liquidStakeToken,
-            _initValue.priceFeeds.liquidStakeTokenPriceFeed
+            _initValue.liquidStakeTokenPriceFeed
         );
 
-        // Other
-        maxMarketMovementAllowed = _initValue.maxMarketMovementAllowed;
-
         // Super call
-        VaultBase.initialize(_timelockOwner);
+        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

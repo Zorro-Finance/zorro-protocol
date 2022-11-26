@@ -10,20 +10,9 @@ interface IVaultLending is IVault {
     /* Structs */
 
     struct VaultLendingInit {
-        uint256 pid;
-        bool isHomeChain;
-        VaultActions.VaultAddresses keyAddresses;
+        VaultBaseInit baseInit;
         uint256 targetBorrowLimit;
         uint256 targetBorrowLimitHysteresis;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToLPPoolOtherTokenPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
         address comptrollerAddress;
     }
 

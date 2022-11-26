@@ -6,27 +6,13 @@ import "../../../vaults/actions/_VaultActions.sol";
 
 import "./IVault.sol";
 
-// TODO: Create one of these for each vault
 // TODO: Hygiene - group all Vault interfaces into their own directory
-// TODO: For all of these, make sure the Vaults conform to the IVault child, not just IVault
 
-/* For interacting with our own Vaults */
 interface IVaultStargate is IVault {
     /* Structs */
 
     struct VaultStargateInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] stablecoinToToken0Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
-        address tokenSTG;
+        VaultBaseInit baseInit;
         address stargateRouter;
         uint16 stargatePoolId;
     }

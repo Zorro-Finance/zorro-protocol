@@ -25,40 +25,8 @@ contract VaultZorro is IVaultZorro, VaultBase {
         address _timelockOwner,
         VaultZorroInit memory _initValue
     ) public initializer {
-        // Vault config
-        pid = _initValue.pid;
-        isHomeChain = true;
-
-        // Addresses
-        govAddress = _initValue.keyAddresses.govAddress;
-        onlyGov = true;
-        zorroControllerAddress = _initValue.keyAddresses.zorroControllerAddress;
-        zorroXChainController = _initValue.keyAddresses.zorroXChainController;
-        ZORROAddress = _initValue.keyAddresses.ZORROAddress;
-        wantAddress = _initValue.keyAddresses.wantAddress;
-        token0Address = _initValue.keyAddresses.token0Address;
-        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
-        defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
-
-        // Fees
-        controllerFee = _initValue.fees.controllerFee;
-        buyBackRate = _initValue.fees.buyBackRate;
-        revShareRate = _initValue.fees.revShareRate;
-        entranceFeeFactor = _initValue.fees.entranceFeeFactor;
-        withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
-
-        // Swap paths
-        _setSwapPaths(_initValue.stablecoinToToken0Path);
-        _setSwapPaths(VaultActions(vaultActions).reversePath(
-            _initValue.stablecoinToToken0Path
-        ));
-
-        // Price feeds
-        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
-
         // Super call
-        VaultBase.initialize(_timelockOwner);
+        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* Investment Actions */

@@ -34,42 +34,6 @@ abstract contract VaultActions is OwnableUpgradeable {
 
     /* Structs */
 
-    struct VaultAddresses {
-        address govAddress;
-        address zorroControllerAddress;
-        address zorroXChainController;
-        address ZORROAddress;
-        address zorroStakingVault;
-        address wantAddress;
-        address token0Address;
-        address token1Address;
-        address earnedAddress;
-        address farmContractAddress;
-        address rewardsAddress;
-        address poolAddress;
-        address uniRouterAddress;
-        address zorroLPPool;
-        address zorroLPPoolOtherToken;
-        address defaultStablecoin;
-    }
-
-    struct VaultFees {
-        uint256 controllerFee;
-        uint256 buyBackRate;
-        uint256 revShareRate;
-        uint256 entranceFeeFactor;
-        uint256 withdrawFeeFactor;
-    }
-
-    struct VaultPriceFeeds {
-        address token0PriceFeed;
-        address token1PriceFeed;
-        address earnTokenPriceFeed;
-        address ZORPriceFeed;
-        address lpPoolOtherTokenPriceFeed;
-        address stablecoinPriceFeed;
-    }
-
     struct ExitPoolParams {
         address token0;
         address token1;

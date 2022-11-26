@@ -10,10 +10,6 @@ interface IVaultZorro is IVault {
     /* Structs */
 
     struct VaultZorroInit {
-        uint256 pid;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] stablecoinToToken0Path;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
+        VaultBaseInit baseInit;
     }
 }

@@ -10,18 +10,6 @@ interface IVaultStandardAMM is IVault {
     /* Structs */
 
     struct VaultStandardAMMInit {
-        uint256 pid;
-        bool isHomeChain;
-        bool isFarmable;
-        VaultActions.VaultAddresses keyAddresses;
-        address[] earnedToZORROPath;
-        address[] earnedToToken0Path;
-        address[] earnedToToken1Path;
-        address[] stablecoinToToken0Path;
-        address[] stablecoinToToken1Path;
-        address[] earnedToZORLPPoolOtherTokenPath;
-        address[] earnedToStablecoinPath;
-        VaultActions.VaultFees fees;
-        VaultActions.VaultPriceFeeds priceFeeds;
+        VaultBaseInit baseInit;
     }
 }

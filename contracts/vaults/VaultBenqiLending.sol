@@ -18,6 +18,8 @@ contract VaultBenqiLending is VaultLending {
 
         // Claim any outstanding rewards
         IQiTokenSaleDistributor(farmContractAddress).claim();
+
+        // TODO: See VaultApeLending and mimic the changes made there
     }
 }
 
