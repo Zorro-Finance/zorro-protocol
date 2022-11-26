@@ -13890,7 +13890,7 @@
                 }
               ]
             },
-            "name": "abi_encode_tuple_t_struct$_TrancheInfo_$13637_memory_ptr_t_uint256__to_t_struct$_TrancheInfo_$13637_memory_ptr_t_uint256__fromStack_reversed",
+            "name": "abi_encode_tuple_t_struct$_TrancheInfo_$13591_memory_ptr_t_uint256__to_t_struct$_TrancheInfo_$13591_memory_ptr_t_uint256__fromStack_reversed",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -15942,7 +15942,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_addresst_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := calldataload(headStart)\n    }\n    function abi_encode_tuple_t_contract$_IERC20Upgradeable_$2635_t_uint256_t_uint256_t_uint256_t_uint256_t_address__to_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n    }\n    function abi_decode_tuple_t_uint256t_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function abi_decode_bytes(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0xffffffffffffffff\n        if gt(_1, _2) { panic_error_0x41() }\n        let _3 := not(31)\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(and(add(_1, 0x1f), _3), 63), _3))\n        if or(gt(newFreePtr, _2), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        mstore(memPtr, _1)\n        if gt(add(add(offset, _1), 0x20), end) { revert(0, 0) }\n        calldatacopy(add(memPtr, 0x20), add(offset, 0x20), _1)\n        mstore(add(add(memPtr, _1), 0x20), 0)\n        array := memPtr\n    }\n    function abi_decode_tuple_t_uint256t_bytes_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value1 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function validator_revert_bool(value)\n    {\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_bool(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_bool(value)\n        value2 := value\n    }\n    function abi_decode_tuple_t_addresst_bytes_memory_ptrt_uint256t_uint256t_boolt_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        let offset := calldataload(add(headStart, 32))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value1 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        let value := calldataload(add(headStart, 128))\n        validator_revert_bool(value)\n        value4 := value\n        value5 := calldataload(add(headStart, 160))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := abi_decode_address(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n    }\n    function abi_decode_tuple_t_bool(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_boolt_uint256(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_bool(value)\n        value2 := value\n        value3 := calldataload(add(headStart, 96))\n    }\n    function abi_encode_tuple_t_bool__to_t_bool__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, iszero(iszero(value0)))\n    }\n    function abi_decode_tuple_t_uint256t_addresst_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_addresst_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint256t_addresst_bytes_memory_ptrt_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5, value6\n    {\n        if slt(sub(dataEnd, headStart), 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n        let offset := calldataload(add(headStart, 64))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value2 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        value5 := calldataload(add(headStart, 160))\n        value6 := calldataload(add(headStart, 192))\n    }\n    function abi_decode_tuple_t_uint256t_array$_t_uint256_$dyn_calldata_ptrt_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let length := calldataload(_2)\n        if gt(length, _1) { revert(0, 0) }\n        if gt(add(add(_2, mul(length, 32)), 32), dataEnd) { revert(0, 0) }\n        value1 := add(_2, 32)\n        value2 := length\n        value3 := calldataload(add(headStart, 64))\n        value4 := calldataload(add(headStart, 96))\n    }\n    function abi_encode_tuple_t_stringliteral_ebf73bba305590e4764d5cb53b69bffd6d4d092d1a67551cb346f8cfcdab8619__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 31)\n        mstore(add(headStart, 64), \"ReentrancyGuard: reentrant call\")\n        tail := add(headStart, 96)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function abi_encode_tuple_t_stringliteral_106dd020a538d1ae6f922247b7e26561e5484e140b4795916546d755f71d2ae5__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 17)\n        mstore(add(headStart, 64), \"only Zorro oracle\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_47630d341801ef06c294b542b2a8cfced0024de0b05d553d7138c41d8b4627ed__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 23)\n        mstore(add(headStart, 64), \"For non home chain only\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_fe323e2cc0a4fc8880b3262543b8f9d51a94a32ad89c3d65538b9540cea82b30__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"xchain only\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_stringliteral_35da06e20f30bf9596e37755e876ce73ca88d5620384068f2dd22de96553efe7__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 15)\n        mstore(add(headStart, 64), \"only home chain\")\n        tail := add(headStart, 96)\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function increment_t_uint256(value) -> ret\n    {\n        if eq(value, not(0)) { panic_error_0x11() }\n        ret := add(value, 1)\n    }\n    function abi_encode_tuple_t_stringliteral_7b6fa50bdbbfbb649e54ffedc0c1168c6a2b46ca7735b2c892bddd075624856b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 53)\n        mstore(add(headStart, 64), \"!safe to use Zorro token in func\")\n        mstore(add(headStart, 96), \" inCaseTokensGetStuck\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_8ad7be37c58e5b7c532bc18e04ea7e908e016fd6a15a7436ccaf06114508319e__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 21)\n        mstore(add(headStart, 64), \"blockParams immutable\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_stringliteral_25d4bbe27bfdecab2c494eb2506d6705f2b2e2579ba2b94d8660ff82c5e1ed4a__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 21)\n        mstore(add(headStart, 64), \"_wantAmt must be > 0!\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_bool__to_t_uint256_t_bool__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), iszero(iszero(value1)))\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_stringliteral_698cdecffd05a2892f38bd1ad62802d84341e6ff0a92fd49c2b6866bfa8caf60__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Only one account type allowed\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_fff8a4ad9fa1c36051c60570ad924c7ee956fa76fdae5bd619eadc811c0640ba__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 25)\n        mstore(add(headStart, 64), \"tranche.contribution is 0\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_0e23a33672f954cfaf5028db380836c6ad443baa4dcfd0b5f768f41f39697f8b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 30)\n        mstore(add(headStart, 64), \"totalTrancheContributions is 0\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_4e4ea3c0952ff50022a903870039c24110ffaeebae89a55133985e20d5220eec__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 20)\n        mstore(add(headStart, 64), \"Already exited vault\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_struct$_TrancheInfo_$13637_memory_ptr_t_uint256__to_t_struct$_TrancheInfo_$13637_memory_ptr_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        mstore(headStart, mload(value0))\n        mstore(add(headStart, 0x20), mload(add(value0, 0x20)))\n        mstore(add(headStart, 0x40), mload(add(value0, 0x40)))\n        mstore(add(headStart, 0x60), mload(add(value0, 0x60)))\n        mstore(add(headStart, 0x80), mload(add(value0, 0x80)))\n        mstore(add(headStart, 0xa0), mload(add(value0, 0xa0)))\n        mstore(add(headStart, 192), value1)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_727963951c266ac2e7e257964271708c5259f6c8f05757da55caae737aca972b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 44)\n        mstore(add(headStart, 64), \"Neither foreign acct nor local a\")\n        mstore(add(headStart, 96), \"cct provided\")\n        tail := add(headStart, 128)\n    }\n    function convert_bytes_to_fixedbytes_from_t_bytes_memory_ptr_to_t_bytes20(array) -> value\n    {\n        let length := mload(array)\n        let _1 := mload(add(array, 0x20))\n        let _2 := not(0xffffffffffffffffffffffff)\n        value := and(_1, _2)\n        if lt(length, 20)\n        {\n            value := and(and(_1, mul(_2, exp(2, mul(8, sub(20, length))))), _2)\n        }\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
+      "contents": "{\n    { }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_addresst_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := calldataload(headStart)\n    }\n    function abi_encode_tuple_t_contract$_IERC20Upgradeable_$2635_t_uint256_t_uint256_t_uint256_t_uint256_t_address__to_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n    }\n    function abi_decode_tuple_t_uint256t_address(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function abi_decode_bytes(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0xffffffffffffffff\n        if gt(_1, _2) { panic_error_0x41() }\n        let _3 := not(31)\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(and(add(_1, 0x1f), _3), 63), _3))\n        if or(gt(newFreePtr, _2), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        mstore(memPtr, _1)\n        if gt(add(add(offset, _1), 0x20), end) { revert(0, 0) }\n        calldatacopy(add(memPtr, 0x20), add(offset, 0x20), _1)\n        mstore(add(add(memPtr, _1), 0x20), 0)\n        array := memPtr\n    }\n    function abi_decode_tuple_t_uint256t_bytes_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value1 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function validator_revert_bool(value)\n    {\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_bool(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_bool(value)\n        value2 := value\n    }\n    function abi_decode_tuple_t_addresst_bytes_memory_ptrt_uint256t_uint256t_boolt_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        let offset := calldataload(add(headStart, 32))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value1 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        let value := calldataload(add(headStart, 128))\n        validator_revert_bool(value)\n        value4 := value\n        value5 := calldataload(add(headStart, 160))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := abi_decode_address(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n    }\n    function abi_decode_tuple_t_bool(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_boolt_uint256(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_bool(value)\n        value2 := value\n        value3 := calldataload(add(headStart, 96))\n    }\n    function abi_encode_tuple_t_bool__to_t_bool__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, iszero(iszero(value0)))\n    }\n    function abi_decode_tuple_t_uint256t_addresst_uint256(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n        value2 := calldataload(add(headStart, 64))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 192)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_addresst_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := abi_decode_address(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint256t_addresst_bytes_memory_ptrt_uint256t_uint256t_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5, value6\n    {\n        if slt(sub(dataEnd, headStart), 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := abi_decode_address(add(headStart, 32))\n        let offset := calldataload(add(headStart, 64))\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value2 := abi_decode_bytes(add(headStart, offset), dataEnd)\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        value5 := calldataload(add(headStart, 160))\n        value6 := calldataload(add(headStart, 192))\n    }\n    function abi_decode_tuple_t_uint256t_array$_t_uint256_$dyn_calldata_ptrt_uint256t_uint256(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 128) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let offset := calldataload(add(headStart, 32))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let length := calldataload(_2)\n        if gt(length, _1) { revert(0, 0) }\n        if gt(add(add(_2, mul(length, 32)), 32), dataEnd) { revert(0, 0) }\n        value1 := add(_2, 32)\n        value2 := length\n        value3 := calldataload(add(headStart, 64))\n        value4 := calldataload(add(headStart, 96))\n    }\n    function abi_encode_tuple_t_stringliteral_ebf73bba305590e4764d5cb53b69bffd6d4d092d1a67551cb346f8cfcdab8619__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 31)\n        mstore(add(headStart, 64), \"ReentrancyGuard: reentrant call\")\n        tail := add(headStart, 96)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function abi_encode_tuple_t_stringliteral_106dd020a538d1ae6f922247b7e26561e5484e140b4795916546d755f71d2ae5__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 17)\n        mstore(add(headStart, 64), \"only Zorro oracle\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_47630d341801ef06c294b542b2a8cfced0024de0b05d553d7138c41d8b4627ed__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 23)\n        mstore(add(headStart, 64), \"For non home chain only\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_fe323e2cc0a4fc8880b3262543b8f9d51a94a32ad89c3d65538b9540cea82b30__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"xchain only\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_stringliteral_35da06e20f30bf9596e37755e876ce73ca88d5620384068f2dd22de96553efe7__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 15)\n        mstore(add(headStart, 64), \"only home chain\")\n        tail := add(headStart, 96)\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function increment_t_uint256(value) -> ret\n    {\n        if eq(value, not(0)) { panic_error_0x11() }\n        ret := add(value, 1)\n    }\n    function abi_encode_tuple_t_stringliteral_7b6fa50bdbbfbb649e54ffedc0c1168c6a2b46ca7735b2c892bddd075624856b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 53)\n        mstore(add(headStart, 64), \"!safe to use Zorro token in func\")\n        mstore(add(headStart, 96), \" inCaseTokensGetStuck\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_8ad7be37c58e5b7c532bc18e04ea7e908e016fd6a15a7436ccaf06114508319e__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 21)\n        mstore(add(headStart, 64), \"blockParams immutable\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_stringliteral_25d4bbe27bfdecab2c494eb2506d6705f2b2e2579ba2b94d8660ff82c5e1ed4a__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 21)\n        mstore(add(headStart, 64), \"_wantAmt must be > 0!\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_bool__to_t_uint256_t_bool__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), iszero(iszero(value1)))\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_stringliteral_698cdecffd05a2892f38bd1ad62802d84341e6ff0a92fd49c2b6866bfa8caf60__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Only one account type allowed\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_fff8a4ad9fa1c36051c60570ad924c7ee956fa76fdae5bd619eadc811c0640ba__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 25)\n        mstore(add(headStart, 64), \"tranche.contribution is 0\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_0e23a33672f954cfaf5028db380836c6ad443baa4dcfd0b5f768f41f39697f8b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 30)\n        mstore(add(headStart, 64), \"totalTrancheContributions is 0\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_4e4ea3c0952ff50022a903870039c24110ffaeebae89a55133985e20d5220eec__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 20)\n        mstore(add(headStart, 64), \"Already exited vault\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_struct$_TrancheInfo_$13591_memory_ptr_t_uint256__to_t_struct$_TrancheInfo_$13591_memory_ptr_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        mstore(headStart, mload(value0))\n        mstore(add(headStart, 0x20), mload(add(value0, 0x20)))\n        mstore(add(headStart, 0x40), mload(add(value0, 0x40)))\n        mstore(add(headStart, 0x60), mload(add(value0, 0x60)))\n        mstore(add(headStart, 0x80), mload(add(value0, 0x80)))\n        mstore(add(headStart, 0xa0), mload(add(value0, 0xa0)))\n        mstore(add(headStart, 192), value1)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_727963951c266ac2e7e257964271708c5259f6c8f05757da55caae737aca972b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 44)\n        mstore(add(headStart, 64), \"Neither foreign acct nor local a\")\n        mstore(add(headStart, 96), \"cct provided\")\n        tail := add(headStart, 128)\n    }\n    function convert_bytes_to_fixedbytes_from_t_bytes_memory_ptr_to_t_bytes20(array) -> value\n    {\n        let length := mload(array)\n        let _1 := mload(add(array, 0x20))\n        let _2 := not(0xffffffffffffffffffffffff)\n        value := and(_1, _2)\n        if lt(length, 20)\n        {\n            value := and(and(_1, mul(_2, exp(2, mul(8, sub(20, length))))), _2)\n        }\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
       "id": 128,
       "language": "Yul",
       "name": "#utility.yul"
@@ -15965,31 +15965,31 @@
         3169
       ],
       "CustomMath": [
-        15639
+        15593
       ],
       "IERC20Upgradeable": [
         2635
       ],
       "IVault": [
-        15279
+        15233
       ],
       "IZorro": [
-        13620
+        13574
       ],
       "IZorroController": [
-        13957
+        13911
       ],
       "IZorroControllerAnalytics": [
-        13756
+        13710
       ],
       "IZorroControllerBase": [
-        13730
+        13684
       ],
       "IZorroControllerInvestment": [
-        13917
+        13871
       ],
       "IZorroControllerPoolMgmt": [
-        13947
+        13901
       ],
       "Initializable": [
         1774
@@ -16065,7 +16065,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 8290,
-        "sourceUnit": 15280,
+        "sourceUnit": 15234,
         "src": "186:47:35",
         "symbolAliases": [],
         "unitAlias": ""
@@ -16077,7 +16077,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 8290,
-        "sourceUnit": 13958,
+        "sourceUnit": 13912,
         "src": "235:44:35",
         "symbolAliases": [],
         "unitAlias": ""
@@ -16102,7 +16102,7 @@
               "id": 7042,
               "name": "IZorroControllerInvestment",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 13917,
+              "referencedDeclaration": 13871,
               "src": "371:26:35"
             },
             "id": 7043,
@@ -16134,8 +16134,8 @@
           571,
           3169,
           1774,
-          13917,
-          13730
+          13871,
+          13684
         ],
         "name": "ZorroControllerInvestment",
         "nameLocation": "338:25:35",
@@ -16386,7 +16386,7 @@
           },
           {
             "baseFunctions": [
-              13801
+              13755
             ],
             "body": {
               "id": 7078,
@@ -16514,7 +16514,7 @@
           },
           {
             "baseFunctions": [
-              13806
+              13760
             ],
             "body": {
               "id": 7091,
@@ -16643,7 +16643,7 @@
           },
           {
             "baseFunctions": [
-              13815
+              13769
             ],
             "body": {
               "id": 7136,
@@ -16667,7 +16667,7 @@
                       "stateVariable": false,
                       "storageLocation": "storage",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                         "typeString": "struct IZorroControllerBase.PoolInfo"
                       },
                       "typeName": {
@@ -16677,13 +16677,13 @@
                           "id": 7104,
                           "name": "PoolInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13651,
+                          "referencedDeclaration": 13605,
                           "src": "1844:8:35"
                         },
-                        "referencedDeclaration": 13651,
+                        "referencedDeclaration": 13605,
                         "src": "1844:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                          "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                           "typeString": "struct IZorroControllerBase.PoolInfo"
                         }
                       },
@@ -16700,7 +16700,7 @@
                       "referencedDeclaration": 6479,
                       "src": "1868:8:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                       }
                     },
@@ -16724,7 +16724,7 @@
                     "nodeType": "IndexAccess",
                     "src": "1868:14:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                      "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                       "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                     }
                   },
@@ -16855,7 +16855,7 @@
                               "referencedDeclaration": 7106,
                               "src": "1981:4:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                               }
                             },
@@ -16866,7 +16866,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "1981:9:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -17258,7 +17258,7 @@
                       "stateVariable": false,
                       "storageLocation": "storage",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                         "typeString": "struct IZorroControllerBase.PoolInfo"
                       },
                       "typeName": {
@@ -17268,13 +17268,13 @@
                           "id": 7155,
                           "name": "PoolInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13651,
+                          "referencedDeclaration": 13605,
                           "src": "3366:8:35"
                         },
-                        "referencedDeclaration": 13651,
+                        "referencedDeclaration": 13605,
                         "src": "3366:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                          "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                           "typeString": "struct IZorroControllerBase.PoolInfo"
                         }
                       },
@@ -17291,7 +17291,7 @@
                       "referencedDeclaration": 6479,
                       "src": "3390:8:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                       }
                     },
@@ -17315,7 +17315,7 @@
                     "nodeType": "IndexAccess",
                     "src": "3390:14:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                      "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                       "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                     }
                   },
@@ -17625,7 +17625,7 @@
                           "referencedDeclaration": 7157,
                           "src": "3855:4:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                            "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                             "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                           }
                         },
@@ -17636,7 +17636,7 @@
                         "lValueRequested": false,
                         "memberName": "vault",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13650,
+                        "referencedDeclaration": 13604,
                         "src": "3855:10:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
@@ -17678,7 +17678,7 @@
                               "referencedDeclaration": 7157,
                               "src": "3809:4:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                               }
                             },
@@ -17689,7 +17689,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "3809:9:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -17831,7 +17831,7 @@
                                 "referencedDeclaration": 6479,
                                 "src": "4053:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                 }
                               },
@@ -17855,7 +17855,7 @@
                               "nodeType": "IndexAccess",
                               "src": "4053:14:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                               }
                             },
@@ -17866,7 +17866,7 @@
                             "lValueRequested": false,
                             "memberName": "vault",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13650,
+                            "referencedDeclaration": 13604,
                             "src": "4053:20:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_address",
@@ -17885,10 +17885,10 @@
                           "name": "IVault",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 15279,
+                          "referencedDeclaration": 15233,
                           "src": "4046:6:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_type$_t_contract$_IVault_$15279_$",
+                            "typeIdentifier": "t_type$_t_contract$_IVault_$15233_$",
                             "typeString": "type(contract IVault)"
                           }
                         },
@@ -17903,7 +17903,7 @@
                         "src": "4046:28:35",
                         "tryCall": false,
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$15279",
+                          "typeIdentifier": "t_contract$_IVault_$15233",
                           "typeString": "contract IVault"
                         }
                       },
@@ -17914,7 +17914,7 @@
                       "lValueRequested": false,
                       "memberName": "depositWantToken",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15239,
+                      "referencedDeclaration": 15193,
                       "src": "4046:45:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$returns$_t_uint256_$",
@@ -18259,7 +18259,7 @@
                         "referencedDeclaration": 7157,
                         "src": "4687:4:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                          "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                           "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                         }
                       },
@@ -18270,7 +18270,7 @@
                       "lValueRequested": true,
                       "memberName": "totalTrancheContributions",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 13648,
+                      "referencedDeclaration": 13602,
                       "src": "4687:30:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -18298,7 +18298,7 @@
                           "referencedDeclaration": 7157,
                           "src": "4732:4:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                            "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                             "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                           }
                         },
@@ -18309,7 +18309,7 @@
                         "lValueRequested": false,
                         "memberName": "totalTrancheContributions",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13648,
+                        "referencedDeclaration": 13602,
                         "src": "4732:30:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -18570,7 +18570,7 @@
                       "name": "Deposit",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 13774,
+                      "referencedDeclaration": 13728,
                       "src": "5095:7:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_event_nonpayable$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_uint256_$returns$__$",
@@ -19362,7 +19362,7 @@
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_memory_ptr",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_memory_ptr",
                         "typeString": "struct IZorroControllerBase.PoolInfo"
                       },
                       "typeName": {
@@ -19372,13 +19372,13 @@
                           "id": 7309,
                           "name": "PoolInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13651,
+                          "referencedDeclaration": 13605,
                           "src": "6592:8:35"
                         },
-                        "referencedDeclaration": 13651,
+                        "referencedDeclaration": 13605,
                         "src": "6592:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                          "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                           "typeString": "struct IZorroControllerBase.PoolInfo"
                         }
                       },
@@ -19395,7 +19395,7 @@
                       "referencedDeclaration": 6479,
                       "src": "6615:8:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                       }
                     },
@@ -19419,7 +19419,7 @@
                     "nodeType": "IndexAccess",
                     "src": "6615:14:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                      "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                       "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                     }
                   },
@@ -19443,7 +19443,7 @@
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                         "typeString": "struct IZorroControllerBase.TrancheInfo"
                       },
                       "typeName": {
@@ -19453,13 +19453,13 @@
                           "id": 7316,
                           "name": "TrancheInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13637,
+                          "referencedDeclaration": 13591,
                           "src": "6671:11:35"
                         },
-                        "referencedDeclaration": 13637,
+                        "referencedDeclaration": 13591,
                         "src": "6671:11:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage_ptr",
+                          "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage_ptr",
                           "typeString": "struct IZorroControllerBase.TrancheInfo"
                         }
                       },
@@ -19524,7 +19524,7 @@
                                   "referencedDeclaration": 7311,
                                   "src": "6877:4:35",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_struct$_PoolInfo_$13651_memory_ptr",
+                                    "typeIdentifier": "t_struct$_PoolInfo_$13605_memory_ptr",
                                     "typeString": "struct IZorroControllerBase.PoolInfo memory"
                                   }
                                 },
@@ -19535,7 +19535,7 @@
                                 "lValueRequested": false,
                                 "memberName": "accZORRORewards",
                                 "nodeType": "MemberAccess",
-                                "referencedDeclaration": 13646,
+                                "referencedDeclaration": 13600,
                                 "src": "6877:20:35",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -19587,7 +19587,7 @@
                             "referencedDeclaration": 7311,
                             "src": "6938:4:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_PoolInfo_$13651_memory_ptr",
+                              "typeIdentifier": "t_struct$_PoolInfo_$13605_memory_ptr",
                               "typeString": "struct IZorroControllerBase.PoolInfo memory"
                             }
                           },
@@ -19598,7 +19598,7 @@
                           "lValueRequested": false,
                           "memberName": "totalTrancheContributions",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 13648,
+                          "referencedDeclaration": 13602,
                           "src": "6938:30:35",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -19683,10 +19683,10 @@
                       "name": "TrancheInfo",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 13637,
+                      "referencedDeclaration": 13591,
                       "src": "6705:11:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_type$_t_struct$_TrancheInfo_$13637_storage_ptr_$",
+                        "typeIdentifier": "t_type$_t_struct$_TrancheInfo_$13591_storage_ptr_$",
                         "typeString": "type(struct IZorroControllerBase.TrancheInfo storage pointer)"
                       }
                     },
@@ -19708,7 +19708,7 @@
                     "src": "6705:486:35",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                      "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                       "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                     }
                   },
@@ -19726,7 +19726,7 @@
                         "referencedDeclaration": 7318,
                         "src": "7293:12:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                          "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                           "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                         }
                       }
@@ -19734,7 +19734,7 @@
                     "expression": {
                       "argumentTypes": [
                         {
-                          "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                          "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                           "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                         }
                       ],
@@ -19748,7 +19748,7 @@
                             "referencedDeclaration": 6487,
                             "src": "7255:11:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                               "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                             }
                           },
@@ -19772,7 +19772,7 @@
                           "nodeType": "IndexAccess",
                           "src": "7255:17:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                           }
                         },
@@ -19796,7 +19796,7 @@
                         "nodeType": "IndexAccess",
                         "src": "7255:32:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                         }
                       },
@@ -19809,7 +19809,7 @@
                       "nodeType": "MemberAccess",
                       "src": "7255:37:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_arraypush_nonpayable$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_ptr_$_t_struct$_TrancheInfo_$13637_storage_$returns$__$bound_to$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_ptr_$",
+                        "typeIdentifier": "t_function_arraypush_nonpayable$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_ptr_$_t_struct$_TrancheInfo_$13591_storage_$returns$__$bound_to$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_ptr_$",
                         "typeString": "function (struct IZorroControllerBase.TrancheInfo storage ref[] storage pointer,struct IZorroControllerBase.TrancheInfo storage ref)"
                       }
                     },
@@ -20334,7 +20334,7 @@
           },
           {
             "baseFunctions": [
-              13826
+              13780
             ],
             "body": {
               "id": 7409,
@@ -20386,7 +20386,7 @@
                         "referencedDeclaration": 6479,
                         "src": "8328:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                         }
                       },
@@ -20410,7 +20410,7 @@
                       "nodeType": "IndexAccess",
                       "src": "8328:14:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                       }
                     },
@@ -20421,7 +20421,7 @@
                     "lValueRequested": false,
                     "memberName": "vault",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13650,
+                    "referencedDeclaration": 13604,
                     "src": "8328:20:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -20921,7 +20921,7 @@
           },
           {
             "baseFunctions": [
-              13843
+              13797
             ],
             "body": {
               "id": 7457,
@@ -20973,7 +20973,7 @@
                         "referencedDeclaration": 6479,
                         "src": "9815:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                         }
                       },
@@ -20997,7 +20997,7 @@
                       "nodeType": "IndexAccess",
                       "src": "9815:14:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                       }
                     },
@@ -21008,7 +21008,7 @@
                     "lValueRequested": false,
                     "memberName": "vault",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13650,
+                    "referencedDeclaration": 13604,
                     "src": "9815:20:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -21607,7 +21607,7 @@
                         "referencedDeclaration": 6479,
                         "src": "11323:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                         }
                       },
@@ -21631,7 +21631,7 @@
                       "nodeType": "IndexAccess",
                       "src": "11323:14:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                       }
                     },
@@ -21642,7 +21642,7 @@
                     "lValueRequested": false,
                     "memberName": "vault",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13650,
+                    "referencedDeclaration": 13604,
                     "src": "11323:20:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -21750,10 +21750,10 @@
                           "name": "IVault",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 15279,
+                          "referencedDeclaration": 15233,
                           "src": "11434:6:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_type$_t_contract$_IVault_$15279_$",
+                            "typeIdentifier": "t_type$_t_contract$_IVault_$15233_$",
                             "typeString": "type(contract IVault)"
                           }
                         },
@@ -21768,7 +21768,7 @@
                         "src": "11434:17:35",
                         "tryCall": false,
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$15279",
+                          "typeIdentifier": "t_contract$_IVault_$15233",
                           "typeString": "contract IVault"
                         }
                       },
@@ -21779,7 +21779,7 @@
                       "lValueRequested": false,
                       "memberName": "exchangeUSDForWantToken",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15232,
+                      "referencedDeclaration": 15186,
                       "src": "11434:41:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -21855,7 +21855,7 @@
                                 "referencedDeclaration": 6479,
                                 "src": "11636:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                 }
                               },
@@ -21879,7 +21879,7 @@
                               "nodeType": "IndexAccess",
                               "src": "11636:14:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                               }
                             },
@@ -21890,7 +21890,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "11636:19:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -22323,7 +22323,7 @@
           },
           {
             "baseFunctions": [
-              13854
+              13808
             ],
             "body": {
               "id": 7557,
@@ -22347,7 +22347,7 @@
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                        "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                         "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                       },
                       "typeName": {
@@ -22357,13 +22357,13 @@
                           "id": 7528,
                           "name": "WithdrawalResult",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13764,
+                          "referencedDeclaration": 13718,
                           "src": "12448:16:35"
                         },
-                        "referencedDeclaration": 13764,
+                        "referencedDeclaration": 13718,
                         "src": "12448:16:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_WithdrawalResult_$13764_storage_ptr",
+                          "typeIdentifier": "t_struct$_WithdrawalResult_$13718_storage_ptr",
                           "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                         }
                       },
@@ -22502,7 +22502,7 @@
                       "referencedDeclaration": 7847,
                       "src": "12479:9:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13764_memory_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13718_memory_ptr_$",
                         "typeString": "function (uint256,address,bytes memory,uint256,bool,bool) returns (struct IZorroControllerInvestment.WithdrawalResult memory)"
                       }
                     },
@@ -22517,7 +22517,7 @@
                     "src": "12479:146:35",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                      "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                       "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                     }
                   },
@@ -22562,7 +22562,7 @@
                           "referencedDeclaration": 7530,
                           "src": "12776:4:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                            "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                             "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                           }
                         },
@@ -22573,7 +22573,7 @@
                         "lValueRequested": false,
                         "memberName": "wantAmt",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13761,
+                        "referencedDeclaration": 13715,
                         "src": "12776:12:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -22604,7 +22604,7 @@
                                 "referencedDeclaration": 6479,
                                 "src": "12705:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                 }
                               },
@@ -22628,7 +22628,7 @@
                               "nodeType": "IndexAccess",
                               "src": "12705:14:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                               }
                             },
@@ -22639,7 +22639,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "12705:19:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -22723,7 +22723,7 @@
                       "referencedDeclaration": 7530,
                       "src": "12816:4:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                        "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                         "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                       }
                     },
@@ -22734,7 +22734,7 @@
                     "lValueRequested": false,
                     "memberName": "wantAmt",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13761,
+                    "referencedDeclaration": 13715,
                     "src": "12816:12:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -23377,7 +23377,7 @@
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                         "typeString": "struct IZorroControllerBase.TrancheInfo"
                       },
                       "typeName": {
@@ -23387,13 +23387,13 @@
                           "id": 7606,
                           "name": "TrancheInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13637,
+                          "referencedDeclaration": 13591,
                           "src": "14153:11:35"
                         },
-                        "referencedDeclaration": 13637,
+                        "referencedDeclaration": 13591,
                         "src": "14153:11:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage_ptr",
+                          "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage_ptr",
                           "typeString": "struct IZorroControllerBase.TrancheInfo"
                         }
                       },
@@ -23478,7 +23478,7 @@
                       "referencedDeclaration": 7902,
                       "src": "14183:11:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_view$_t_uint256_$_t_uint256_$_t_bytes_memory_ptr_$_t_address_$returns$_t_struct$_TrancheInfo_$13637_memory_ptr_$",
+                        "typeIdentifier": "t_function_internal_view$_t_uint256_$_t_uint256_$_t_bytes_memory_ptr_$_t_address_$returns$_t_struct$_TrancheInfo_$13591_memory_ptr_$",
                         "typeString": "function (uint256,uint256,bytes memory,address) view returns (struct IZorroControllerBase.TrancheInfo memory)"
                       }
                     },
@@ -23493,7 +23493,7 @@
                     "src": "14183:119:35",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                      "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                       "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                     }
                   },
@@ -23517,7 +23517,7 @@
                       "stateVariable": false,
                       "storageLocation": "storage",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                         "typeString": "struct IZorroControllerBase.PoolInfo"
                       },
                       "typeName": {
@@ -23527,13 +23527,13 @@
                           "id": 7616,
                           "name": "PoolInfo",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13651,
+                          "referencedDeclaration": 13605,
                           "src": "14358:8:35"
                         },
-                        "referencedDeclaration": 13651,
+                        "referencedDeclaration": 13605,
                         "src": "14358:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                          "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                           "typeString": "struct IZorroControllerBase.PoolInfo"
                         }
                       },
@@ -23550,7 +23550,7 @@
                       "referencedDeclaration": 6479,
                       "src": "14383:8:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                       }
                     },
@@ -23574,7 +23574,7 @@
                     "nodeType": "IndexAccess",
                     "src": "14383:14:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                      "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                       "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                     }
                   },
@@ -23603,7 +23603,7 @@
                             "referencedDeclaration": 7608,
                             "src": "14465:8:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                               "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                             }
                           },
@@ -23614,7 +23614,7 @@
                           "lValueRequested": false,
                           "memberName": "contribution",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 13626,
+                          "referencedDeclaration": 13580,
                           "src": "14465:21:35",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -23728,7 +23728,7 @@
                             "referencedDeclaration": 7618,
                             "src": "14608:5:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                              "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                               "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                             }
                           },
@@ -23739,7 +23739,7 @@
                           "lValueRequested": false,
                           "memberName": "totalTrancheContributions",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 13648,
+                          "referencedDeclaration": 13602,
                           "src": "14608:31:35",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -23853,7 +23853,7 @@
                             "referencedDeclaration": 7608,
                             "src": "14773:8:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                               "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                             }
                           },
@@ -23864,7 +23864,7 @@
                           "lValueRequested": false,
                           "memberName": "exitedVaultAt",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 13636,
+                          "referencedDeclaration": 13590,
                           "src": "14773:22:35",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -24084,7 +24084,7 @@
                                 "referencedDeclaration": 7608,
                                 "src": "15016:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                  "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                   "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                 }
                               },
@@ -24095,7 +24095,7 @@
                               "lValueRequested": false,
                               "memberName": "contribution",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13626,
+                              "referencedDeclaration": 13580,
                               "src": "15016:21:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -24113,7 +24113,7 @@
                                 "referencedDeclaration": 7618,
                                 "src": "15052:5:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                  "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                                 }
                               },
@@ -24124,7 +24124,7 @@
                               "lValueRequested": false,
                               "memberName": "accZORRORewards",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13646,
+                              "referencedDeclaration": 13600,
                               "src": "15052:21:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -24162,7 +24162,7 @@
                           "referencedDeclaration": 7618,
                           "src": "15089:5:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                            "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                             "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                           }
                         },
@@ -24173,7 +24173,7 @@
                         "lValueRequested": false,
                         "memberName": "totalTrancheContributions",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13648,
+                        "referencedDeclaration": 13602,
                         "src": "15089:31:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -24197,7 +24197,7 @@
                         "referencedDeclaration": 7608,
                         "src": "15135:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                          "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                           "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                         }
                       },
@@ -24208,7 +24208,7 @@
                       "lValueRequested": false,
                       "memberName": "rewardDebt",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 13630,
+                      "referencedDeclaration": 13584,
                       "src": "15135:19:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -24351,7 +24351,7 @@
                               "referencedDeclaration": 7608,
                               "src": "15498:8:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                 "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                               }
                             },
@@ -24371,7 +24371,7 @@
                           "expression": {
                             "argumentTypes": [
                               {
-                                "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                 "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                               },
                               {
@@ -24437,7 +24437,7 @@
                             "referencedDeclaration": 10041,
                             "src": "15416:60:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_function_external_view$_t_struct$_TrancheInfo_$13637_memory_ptr_$_t_uint256_$returns$_t_uint256_$_t_uint256_$",
+                              "typeIdentifier": "t_function_external_view$_t_struct$_TrancheInfo_$13591_memory_ptr_$_t_uint256_$returns$_t_uint256_$_t_uint256_$",
                               "typeString": "function (struct IZorroControllerBase.TrancheInfo memory,uint256) view external returns (uint256,uint256)"
                             }
                           },
@@ -24929,7 +24929,7 @@
                                     "referencedDeclaration": 7575,
                                     "src": "15662:4:35",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                                      "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                                       "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                                     }
                                   },
@@ -24940,7 +24940,7 @@
                                   "lValueRequested": true,
                                   "memberName": "rewardsDueXChain",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 13763,
+                                  "referencedDeclaration": 13717,
                                   "src": "15662:21:35",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -25431,7 +25431,7 @@
                             "stateVariable": false,
                             "storageLocation": "default",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_contract$_IVault_$15279",
+                              "typeIdentifier": "t_contract$_IVault_$15233",
                               "typeString": "contract IVault"
                             },
                             "typeName": {
@@ -25441,13 +25441,13 @@
                                 "id": 7762,
                                 "name": "IVault",
                                 "nodeType": "IdentifierPath",
-                                "referencedDeclaration": 15279,
+                                "referencedDeclaration": 15233,
                                 "src": "17996:6:35"
                               },
-                              "referencedDeclaration": 15279,
+                              "referencedDeclaration": 15233,
                               "src": "17996:6:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_contract$_IVault_$15279",
+                                "typeIdentifier": "t_contract$_IVault_$15233",
                                 "typeString": "contract IVault"
                               }
                             },
@@ -25467,7 +25467,7 @@
                                   "referencedDeclaration": 6479,
                                   "src": "18019:8:35",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                    "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                     "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                   }
                                 },
@@ -25491,7 +25491,7 @@
                                 "nodeType": "IndexAccess",
                                 "src": "18019:14:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                  "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                                 }
                               },
@@ -25502,7 +25502,7 @@
                               "lValueRequested": false,
                               "memberName": "vault",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13650,
+                              "referencedDeclaration": 13604,
                               "src": "18019:20:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_address",
@@ -25521,10 +25521,10 @@
                             "name": "IVault",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 15279,
+                            "referencedDeclaration": 15233,
                             "src": "18012:6:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_type$_t_contract$_IVault_$15279_$",
+                              "typeIdentifier": "t_type$_t_contract$_IVault_$15233_$",
                               "typeString": "type(contract IVault)"
                             }
                           },
@@ -25539,7 +25539,7 @@
                           "src": "18012:28:35",
                           "tryCall": false,
                           "typeDescriptions": {
-                            "typeIdentifier": "t_contract$_IVault_$15279",
+                            "typeIdentifier": "t_contract$_IVault_$15233",
                             "typeString": "contract IVault"
                           }
                         },
@@ -25621,7 +25621,7 @@
                                       "referencedDeclaration": 7608,
                                       "src": "18314:8:35",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                         "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                       }
                                     },
@@ -25632,7 +25632,7 @@
                                     "lValueRequested": false,
                                     "memberName": "contribution",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 13626,
+                                    "referencedDeclaration": 13580,
                                     "src": "18314:21:35",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -25677,7 +25677,7 @@
                                       "referencedDeclaration": 7764,
                                       "src": "18377:6:35",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_IVault_$15279",
+                                        "typeIdentifier": "t_contract$_IVault_$15233",
                                         "typeString": "contract IVault"
                                       }
                                     },
@@ -25688,7 +25688,7 @@
                                     "lValueRequested": false,
                                     "memberName": "wantLockedTotal",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 15218,
+                                    "referencedDeclaration": 15172,
                                     "src": "18377:22:35",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_external_view$__$returns$_t_uint256_$",
@@ -25753,7 +25753,7 @@
                                     "referencedDeclaration": 7608,
                                     "src": "18422:8:35",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                      "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                       "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                     }
                                   },
@@ -25764,7 +25764,7 @@
                                   "lValueRequested": false,
                                   "memberName": "timeMultiplier",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 13628,
+                                  "referencedDeclaration": 13582,
                                   "src": "18422:23:35",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -25785,7 +25785,7 @@
                                       "referencedDeclaration": 7764,
                                       "src": "18448:6:35",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_IVault_$15279",
+                                        "typeIdentifier": "t_contract$_IVault_$15233",
                                         "typeString": "contract IVault"
                                       }
                                     },
@@ -25796,7 +25796,7 @@
                                     "lValueRequested": false,
                                     "memberName": "sharesTotal",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 15223,
+                                    "referencedDeclaration": 15177,
                                     "src": "18448:18:35",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_external_view$__$returns$_t_uint256_$",
@@ -25878,7 +25878,7 @@
                               "referencedDeclaration": 7764,
                               "src": "18540:6:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_contract$_IVault_$15279",
+                                "typeIdentifier": "t_contract$_IVault_$15233",
                                 "typeString": "contract IVault"
                               }
                             },
@@ -25889,7 +25889,7 @@
                             "lValueRequested": false,
                             "memberName": "withdrawWantToken",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 15246,
+                            "referencedDeclaration": 15200,
                             "src": "18540:24:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$returns$_t_uint256_$",
@@ -25931,7 +25931,7 @@
                               "referencedDeclaration": 7618,
                               "src": "18631:5:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                               }
                             },
@@ -25942,7 +25942,7 @@
                             "lValueRequested": true,
                             "memberName": "totalTrancheContributions",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13648,
+                            "referencedDeclaration": 13602,
                             "src": "18631:31:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -25970,7 +25970,7 @@
                                 "referencedDeclaration": 7618,
                                 "src": "18681:5:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                  "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                                 }
                               },
@@ -25981,7 +25981,7 @@
                               "lValueRequested": false,
                               "memberName": "totalTrancheContributions",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13648,
+                              "referencedDeclaration": 13602,
                               "src": "18681:31:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -25999,7 +25999,7 @@
                                 "referencedDeclaration": 7608,
                                 "src": "18731:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                                  "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                                   "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                 }
                               },
@@ -26010,7 +26010,7 @@
                               "lValueRequested": false,
                               "memberName": "contribution",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13626,
+                              "referencedDeclaration": 13580,
                               "src": "18731:21:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -26049,7 +26049,7 @@
                               "referencedDeclaration": 7575,
                               "src": "18811:4:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                                "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                                 "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                               }
                             },
@@ -26060,7 +26060,7 @@
                             "lValueRequested": true,
                             "memberName": "wantAmt",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13761,
+                            "referencedDeclaration": 13715,
                             "src": "18811:12:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -26146,7 +26146,7 @@
                                       "referencedDeclaration": 7618,
                                       "src": "18844:5:35",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage_ptr",
+                                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage_ptr",
                                         "typeString": "struct IZorroControllerBase.PoolInfo storage pointer"
                                       }
                                     },
@@ -26157,7 +26157,7 @@
                                     "lValueRequested": false,
                                     "memberName": "want",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 13640,
+                                    "referencedDeclaration": 13594,
                                     "src": "18844:10:35",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -26256,7 +26256,7 @@
                                     "referencedDeclaration": 6487,
                                     "src": "18963:11:35",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                                      "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                                       "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                                     }
                                   },
@@ -26280,7 +26280,7 @@
                                   "nodeType": "IndexAccess",
                                   "src": "18963:17:35",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                                    "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                                     "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                                   }
                                 },
@@ -26304,7 +26304,7 @@
                                 "nodeType": "IndexAccess",
                                 "src": "18963:37:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                                 }
                               },
@@ -26328,7 +26328,7 @@
                               "nodeType": "IndexAccess",
                               "src": "18963:49:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage",
+                                "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage",
                                 "typeString": "struct IZorroControllerBase.TrancheInfo storage ref"
                               }
                             },
@@ -26339,7 +26339,7 @@
                             "lValueRequested": true,
                             "memberName": "exitedVaultAt",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13636,
+                            "referencedDeclaration": 13590,
                             "src": "18963:80:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -26444,7 +26444,7 @@
                                 "referencedDeclaration": 7575,
                                 "src": "19282:4:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                                  "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                                   "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                                 }
                               },
@@ -26455,7 +26455,7 @@
                               "lValueRequested": false,
                               "memberName": "wantAmt",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 13761,
+                              "referencedDeclaration": 13715,
                               "src": "19282:12:35",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -26490,7 +26490,7 @@
                             "name": "Withdraw",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 13786,
+                            "referencedDeclaration": 13740,
                             "src": "19142:8:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_event_nonpayable$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_uint256_$_t_uint256_$returns$__$",
@@ -26720,7 +26720,7 @@
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                    "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                     "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                   },
                   "typeName": {
@@ -26730,13 +26730,13 @@
                       "id": 7573,
                       "name": "WithdrawalResult",
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 13764,
+                      "referencedDeclaration": 13718,
                       "src": "13759:16:35"
                     },
-                    "referencedDeclaration": 13764,
+                    "referencedDeclaration": 13718,
                     "src": "13759:16:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_WithdrawalResult_$13764_storage_ptr",
+                      "typeIdentifier": "t_struct$_WithdrawalResult_$13718_storage_ptr",
                       "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                     }
                   },
@@ -26993,7 +26993,7 @@
                             "referencedDeclaration": 7860,
                             "src": "20352:8:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                               "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                             }
                           },
@@ -27010,7 +27010,7 @@
                                   "referencedDeclaration": 6487,
                                   "src": "20363:11:35",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                                    "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                                     "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                                   }
                                 },
@@ -27034,7 +27034,7 @@
                                 "nodeType": "IndexAccess",
                                 "src": "20363:17:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                                   "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                                 }
                               },
@@ -27058,7 +27058,7 @@
                               "nodeType": "IndexAccess",
                               "src": "20363:31:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                                "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                                 "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                               }
                             },
@@ -27082,13 +27082,13 @@
                             "nodeType": "IndexAccess",
                             "src": "20363:43:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage",
                               "typeString": "struct IZorroControllerBase.TrancheInfo storage ref"
                             }
                           },
                           "src": "20352:54:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                            "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                             "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                           }
                         },
@@ -27121,7 +27121,7 @@
                             "referencedDeclaration": 7860,
                             "src": "20108:8:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                               "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                             }
                           },
@@ -27138,7 +27138,7 @@
                                   "referencedDeclaration": 6487,
                                   "src": "20119:11:35",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                                    "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                                     "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                                   }
                                 },
@@ -27162,7 +27162,7 @@
                                 "nodeType": "IndexAccess",
                                 "src": "20119:17:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                                   "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                                 }
                               },
@@ -27186,7 +27186,7 @@
                               "nodeType": "IndexAccess",
                               "src": "20119:32:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                                "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                                 "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                               }
                             },
@@ -27210,13 +27210,13 @@
                             "nodeType": "IndexAccess",
                             "src": "20119:44:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage",
+                              "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage",
                               "typeString": "struct IZorroControllerBase.TrancheInfo storage ref"
                             }
                           },
                           "src": "20108:55:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                            "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                             "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                           }
                         },
@@ -27374,7 +27374,7 @@
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_TrancheInfo_$13637_memory_ptr",
+                    "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
                     "typeString": "struct IZorroControllerBase.TrancheInfo"
                   },
                   "typeName": {
@@ -27384,13 +27384,13 @@
                       "id": 7858,
                       "name": "TrancheInfo",
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 13637,
+                      "referencedDeclaration": 13591,
                       "src": "19987:11:35"
                     },
-                    "referencedDeclaration": 13637,
+                    "referencedDeclaration": 13591,
                     "src": "19987:11:35",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage_ptr",
+                      "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage_ptr",
                       "typeString": "struct IZorroControllerBase.TrancheInfo"
                     }
                   },
@@ -27407,7 +27407,7 @@
           },
           {
             "baseFunctions": [
-              13867
+              13821
             ],
             "body": {
               "id": 7942,
@@ -27958,7 +27958,7 @@
           },
           {
             "baseFunctions": [
-              13886
+              13840
             ],
             "body": {
               "id": 8006,
@@ -28860,7 +28860,7 @@
                         "referencedDeclaration": 6479,
                         "src": "24639:8:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                         }
                       },
@@ -28884,7 +28884,7 @@
                       "nodeType": "IndexAccess",
                       "src": "24639:14:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                        "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                       }
                     },
@@ -28895,7 +28895,7 @@
                     "lValueRequested": false,
                     "memberName": "vault",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13650,
+                    "referencedDeclaration": 13604,
                     "src": "24639:20:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -28922,7 +28922,7 @@
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                        "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                         "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                       },
                       "typeName": {
@@ -28932,13 +28932,13 @@
                           "id": 8036,
                           "name": "WithdrawalResult",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 13764,
+                          "referencedDeclaration": 13718,
                           "src": "24745:16:35"
                         },
-                        "referencedDeclaration": 13764,
+                        "referencedDeclaration": 13718,
                         "src": "24745:16:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_WithdrawalResult_$13764_storage_ptr",
+                          "typeIdentifier": "t_struct$_WithdrawalResult_$13718_storage_ptr",
                           "typeString": "struct IZorroControllerInvestment.WithdrawalResult"
                         }
                       },
@@ -29055,7 +29055,7 @@
                       "referencedDeclaration": 7847,
                       "src": "24776:9:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13764_memory_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13718_memory_ptr_$",
                         "typeString": "function (uint256,address,bytes memory,uint256,bool,bool) returns (struct IZorroControllerInvestment.WithdrawalResult memory)"
                       }
                     },
@@ -29070,7 +29070,7 @@
                     "src": "24776:171:35",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                      "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                       "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                     }
                   },
@@ -29101,7 +29101,7 @@
                           "referencedDeclaration": 8038,
                           "src": "25123:4:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                            "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                             "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                           }
                         },
@@ -29112,7 +29112,7 @@
                         "lValueRequested": false,
                         "memberName": "wantAmt",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13761,
+                        "referencedDeclaration": 13715,
                         "src": "25123:12:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -29143,7 +29143,7 @@
                                 "referencedDeclaration": 6479,
                                 "src": "25043:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                 }
                               },
@@ -29167,7 +29167,7 @@
                               "nodeType": "IndexAccess",
                               "src": "25043:14:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                               }
                             },
@@ -29178,7 +29178,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "25043:19:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -29284,7 +29284,7 @@
                             "referencedDeclaration": 8038,
                             "src": "25258:4:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                              "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                               "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                             }
                           },
@@ -29295,7 +29295,7 @@
                           "lValueRequested": false,
                           "memberName": "wantAmt",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 13761,
+                          "referencedDeclaration": 13715,
                           "src": "25258:12:35",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -29352,10 +29352,10 @@
                             "name": "IVault",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 15279,
+                            "referencedDeclaration": 15233,
                             "src": "25202:6:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_type$_t_contract$_IVault_$15279_$",
+                              "typeIdentifier": "t_type$_t_contract$_IVault_$15233_$",
                               "typeString": "type(contract IVault)"
                             }
                           },
@@ -29370,7 +29370,7 @@
                           "src": "25202:18:35",
                           "tryCall": false,
                           "typeDescriptions": {
-                            "typeIdentifier": "t_contract$_IVault_$15279",
+                            "typeIdentifier": "t_contract$_IVault_$15233",
                             "typeString": "contract IVault"
                           }
                         },
@@ -29381,7 +29381,7 @@
                         "lValueRequested": false,
                         "memberName": "exchangeWantTokenForUSD",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 15255,
+                        "referencedDeclaration": 15209,
                         "src": "25202:42:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -29443,7 +29443,7 @@
                         "referencedDeclaration": 8038,
                         "src": "25343:4:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                          "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                           "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                         }
                       },
@@ -29454,7 +29454,7 @@
                       "lValueRequested": false,
                       "memberName": "rewardsDueXChain",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 13763,
+                      "referencedDeclaration": 13717,
                       "src": "25343:21:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -29752,7 +29752,7 @@
           },
           {
             "baseFunctions": [
-              13897
+              13851
             ],
             "body": {
               "id": 8158,
@@ -29805,7 +29805,7 @@
                             "referencedDeclaration": 6487,
                             "src": "26033:11:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                               "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                             }
                           },
@@ -29829,7 +29829,7 @@
                           "nodeType": "IndexAccess",
                           "src": "26033:21:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                           }
                         },
@@ -29867,7 +29867,7 @@
                         "nodeType": "IndexAccess",
                         "src": "26033:33:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                         }
                       },
@@ -29891,7 +29891,7 @@
                       "nodeType": "IndexAccess",
                       "src": "26033:71:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage",
+                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage",
                         "typeString": "struct IZorroControllerBase.TrancheInfo storage ref"
                       }
                     },
@@ -29902,7 +29902,7 @@
                     "lValueRequested": false,
                     "memberName": "durationCommittedInWeeks",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13632,
+                    "referencedDeclaration": 13586,
                     "src": "26033:96:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -29958,7 +29958,7 @@
                             "referencedDeclaration": 6487,
                             "src": "26164:11:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$_$",
+                              "typeIdentifier": "t_mapping$_t_uint256_$_t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$_$",
                               "typeString": "mapping(uint256 => mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref))"
                             }
                           },
@@ -29982,7 +29982,7 @@
                           "nodeType": "IndexAccess",
                           "src": "26164:21:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage_$",
+                            "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct IZorroControllerBase.TrancheInfo storage ref[] storage ref)"
                           }
                         },
@@ -30020,7 +30020,7 @@
                         "nodeType": "IndexAccess",
                         "src": "26164:33:35",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13637_storage_$dyn_storage",
+                          "typeIdentifier": "t_array$_t_struct$_TrancheInfo_$13591_storage_$dyn_storage",
                           "typeString": "struct IZorroControllerBase.TrancheInfo storage ref[] storage ref"
                         }
                       },
@@ -30044,7 +30044,7 @@
                       "nodeType": "IndexAccess",
                       "src": "26164:71:35",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_TrancheInfo_$13637_storage",
+                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage",
                         "typeString": "struct IZorroControllerBase.TrancheInfo storage ref"
                       }
                     },
@@ -30055,7 +30055,7 @@
                     "lValueRequested": false,
                     "memberName": "enteredVaultAt",
                     "nodeType": "MemberAccess",
-                    "referencedDeclaration": 13634,
+                    "referencedDeclaration": 13588,
                     "src": "26164:86:35",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -30287,7 +30287,7 @@
                             "referencedDeclaration": 6479,
                             "src": "26609:8:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                              "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                               "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                             }
                           },
@@ -30311,7 +30311,7 @@
                           "nodeType": "IndexAccess",
                           "src": "26609:16:35",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                            "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                             "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                           }
                         },
@@ -30322,7 +30322,7 @@
                         "lValueRequested": false,
                         "memberName": "vault",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 13650,
+                        "referencedDeclaration": 13604,
                         "src": "26609:22:35",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
@@ -30690,7 +30690,7 @@
                       "name": "TransferInvestment",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 13796,
+                      "referencedDeclaration": 13750,
                       "src": "26918:18:35",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_event_nonpayable$_t_address_$_t_uint256_$_t_uint256_$_t_uint256_$returns$__$",
@@ -30875,7 +30875,7 @@
           },
           {
             "baseFunctions": [
-              13902
+              13856
             ],
             "body": {
               "id": 8229,
@@ -31139,7 +31139,7 @@
                             "referencedDeclaration": 7847,
                             "src": "27373:9:35",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13764_memory_ptr_$",
+                              "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$_t_address_$_t_bytes_memory_ptr_$_t_uint256_$_t_bool_$_t_bool_$returns$_t_struct$_WithdrawalResult_$13718_memory_ptr_$",
                               "typeString": "function (uint256,address,bytes memory,uint256,bool,bool) returns (struct IZorroControllerInvestment.WithdrawalResult memory)"
                             }
                           },
@@ -31154,7 +31154,7 @@
                           "src": "27373:50:35",
                           "tryCall": false,
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_WithdrawalResult_$13764_memory_ptr",
+                            "typeIdentifier": "t_struct$_WithdrawalResult_$13718_memory_ptr",
                             "typeString": "struct IZorroControllerInvestment.WithdrawalResult memory"
                           }
                         },
@@ -31407,7 +31407,7 @@
                                 "referencedDeclaration": 6479,
                                 "src": "27523:8:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                  "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                   "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                 }
                               },
@@ -31431,7 +31431,7 @@
                               "nodeType": "IndexAccess",
                               "src": "27523:14:35",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                 "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                               }
                             },
@@ -31442,7 +31442,7 @@
                             "lValueRequested": false,
                             "memberName": "want",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13640,
+                            "referencedDeclaration": 13594,
                             "src": "27523:19:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -31635,7 +31635,7 @@
                                       "referencedDeclaration": 6479,
                                       "src": "27650:8:35",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13651_storage_$dyn_storage",
+                                        "typeIdentifier": "t_array$_t_struct$_PoolInfo_$13605_storage_$dyn_storage",
                                         "typeString": "struct IZorroControllerBase.PoolInfo storage ref[] storage ref"
                                       }
                                     },
@@ -31659,7 +31659,7 @@
                                     "nodeType": "IndexAccess",
                                     "src": "27650:14:35",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_struct$_PoolInfo_$13651_storage",
+                                      "typeIdentifier": "t_struct$_PoolInfo_$13605_storage",
                                       "typeString": "struct IZorroControllerBase.PoolInfo storage ref"
                                     }
                                   },
@@ -31670,7 +31670,7 @@
                                   "lValueRequested": false,
                                   "memberName": "want",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 13640,
+                                  "referencedDeclaration": 13594,
                                   "src": "27650:19:35",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_contract$_IERC20Upgradeable_$2635",
@@ -31825,7 +31825,7 @@
           },
           {
             "baseFunctions": [
-              13909
+              13863
             ],
             "body": {
               "id": 8259,
@@ -31945,10 +31945,10 @@
                                 "name": "IZorro",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 13620,
+                                "referencedDeclaration": 13574,
                                 "src": "28483:6:35",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_contract$_IZorro_$13620_$",
+                                  "typeIdentifier": "t_type$_t_contract$_IZorro_$13574_$",
                                   "typeString": "type(contract IZorro)"
                                 }
                               },
@@ -31963,7 +31963,7 @@
                               "src": "28483:13:35",
                               "tryCall": false,
                               "typeDescriptions": {
-                                "typeIdentifier": "t_contract$_IZorro_$13620",
+                                "typeIdentifier": "t_contract$_IZorro_$13574",
                                 "typeString": "contract IZorro"
                               }
                             },
@@ -31974,7 +31974,7 @@
                             "lValueRequested": false,
                             "memberName": "mint",
                             "nodeType": "MemberAccess",
-                            "referencedDeclaration": 13619,
+                            "referencedDeclaration": 13573,
                             "src": "28483:18:35",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_uint256_$returns$__$",
@@ -32188,7 +32188,7 @@
           },
           {
             "baseFunctions": [
-              13916
+              13870
             ],
             "body": {
               "id": 8287,
@@ -32544,7 +32544,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-11-26T00:37:03.828Z",
+  "updatedAt": "2022-11-26T22:09:34.463Z",
   "devdoc": {
     "kind": "dev",
     "methods": {

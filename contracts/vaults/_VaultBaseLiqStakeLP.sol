@@ -81,10 +81,19 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         // Price feeds
         _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
         _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
-        _setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        _setPriceFeed(
+            zorroLPPoolOtherToken,
+            _initValue.priceFeeds.lpPoolOtherTokenPriceFeed
+        );
         _setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
-        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
-        _setPriceFeed(liquidStakeToken, _initValue.priceFeeds.liquidStakeTokenPriceFeed);
+        _setPriceFeed(
+            defaultStablecoin,
+            _initValue.priceFeeds.stablecoinPriceFeed
+        );
+        _setPriceFeed(
+            liquidStakeToken,
+            _initValue.priceFeeds.liquidStakeTokenPriceFeed
+        );
 
         // Other
         maxMarketMovementAllowed = _initValue.maxMarketMovementAllowed;
@@ -101,108 +110,6 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 
     /* Investment Actions */
 
-    /// @notice Receives new deposits from user
-    /// @param _wantAmt amount of underlying token to deposit/stake
-    /// @return sharesAdded uint256 Number of shares added
-    function depositWantToken(uint256 _wantAmt)
-        public
-        virtual
-        override
-        onlyZorroController
-        nonReentrant
-        whenNotPaused
-        returns (uint256 sharesAdded)
-    {
-        // Preflight checks
-        require(_wantAmt > 0, "Want token deposit must be > 0");
-
-        // Transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _wantAmt
-        );
-
-        // Set sharesAdded to the Want token amount specified
-        sharesAdded = _wantAmt;
-        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
-        // discounted by the entrance fee
-        if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded =
-                (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * feeDenominator);
-        }
-        // Increment the shares
-        sharesTotal = sharesTotal + sharesAdded;
-
-        // Increment want token locked qty. NOTE, no farming takes place here, as the lending protocol automatically takes care of it
-        wantLockedTotal = wantLockedTotal + _wantAmt;
-
-        // Farm the want token if applicable. Otherwise increment want locked
-        if (isFarmable) {
-            _farm();
-        } else {
-            wantLockedTotal = wantLockedTotal + _wantAmt;
-        }
-    }
-
-    /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _wantAmt The amount of Want token to withdraw
-    /// @return sharesRemoved The number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
-        public
-        virtual
-        override
-        onlyZorroController
-        nonReentrant
-        whenNotPaused
-        returns (uint256 sharesRemoved)
-    {
-        // Preflight checks
-        require(_wantAmt > 0, "negWant");
-
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
-        // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
-        }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal - sharesRemoved;
-
-        // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < feeDenominator) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
-        }
-
-        // Unfarm Want token if applicable
-        if (isFarmable) {
-            _unfarm(_wantAmt);
-        }
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
-        }
-
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal - _wantAmt;
-
-        // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(
-            zorroControllerAddress,
-            _wantAmt
-        );
-    }
-
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {
         _farm();
@@ -210,9 +117,6 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 
     /// @notice Internal function for farming LP token. Responsible for staking LP token in a MasterChef/MasterApe-like contract
     function _farm() internal override {
-        // Preflight checks
-        require(isFarmable, "!farmable");
-
         // Calc balance of sETH on this contract
         uint256 _synthBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
             address(this)
@@ -232,7 +136,9 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                 nativeToken: token0Address,
                 liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
                 nativeTokenPriceFeed: priceFeeds[token0Address],
-                liquidStakeToNativePath: swapPaths[liquidStakeToken][token0Address]
+                liquidStakeToNativePath: swapPaths[liquidStakeToken][
+                    token0Address
+                ]
             }),
             maxMarketMovementAllowed
         );
@@ -248,22 +154,32 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             _lpBal
         );
 
-        // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
-        IAMMFarm(farmContractAddress).deposit(pid, _lpBal);
+        // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID) IF AMM Masterchef allocates rewards
+        if (isFarmable) {
+            IAMMFarm(farmContractAddress).deposit(pid, _lpBal);
+        }
     }
 
     /// @notice Internal function for unfarming LP token. Responsible for unstaking LP token from MasterChef/MasterApe contracts
     /// @param _lpAmt the amount of LP tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _lpAmt) internal override {
-        // Withdraw the LP tokens from the Farm contract pool
-        IAMMFarm(farmContractAddress).withdraw(pid, _lpAmt);
+        // Withdraw the LP tokens from the Farm contract pool (IF AMM Masterchef allocates rewards)
+        if (isFarmable) {
+            IAMMFarm(farmContractAddress).withdraw(pid, _lpAmt);
+        }
 
         // Calc balance
         uint256 _balLPToken = IERC20Upgradeable(poolAddress).balanceOf(
             address(this)
         );
 
-        // Convert LP tokens to sETH + ETH and swap to sETH (want token)
+        // Approve spending
+        IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
+            vaultActions,
+            _balLPToken
+        );
+
+        // Convert LP tokens to sETH + ETH and swap to sETH (want token), deliver back to this contract
         VaultActionsLiqStakeLP(vaultActions).unStakeFromLPPool(
             _balLPToken,
             VaultActionsLiqStakeLP.UnstakeLiqTokenFromLPPoolParams({
@@ -272,7 +188,9 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                 lpPoolToken: poolAddress,
                 liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
                 nativeTokenPriceFeed: priceFeeds[token0Address],
-                nativeToLiquidStakePath: swapPaths[token0Address][liquidStakeToken]
+                nativeToLiquidStakePath: swapPaths[token0Address][
+                    liquidStakeToken
+                ]
             }),
             maxMarketMovementAllowed
         );
@@ -305,8 +223,12 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                     token0PriceFeed: priceFeeds[token0Address],
                     liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
                     stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
-                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][token0Address]
+                    stablecoinToToken0Path: swapPaths[defaultStablecoin][
+                        token0Address
+                    ],
+                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][
+                        token0Address
+                    ]
                 }),
                 _maxMarketMovementAllowed
             );
@@ -345,8 +267,12 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
                     token0PriceFeed: priceFeeds[token0Address],
                     liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
                     stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][token0Address],
-                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin]
+                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][
+                        token0Address
+                    ],
+                    token0ToStablecoinPath: swapPaths[token0Address][
+                        defaultStablecoin
+                    ]
                 }),
                 _maxMarketMovementAllowed
             );

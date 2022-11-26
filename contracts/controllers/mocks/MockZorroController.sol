@@ -132,25 +132,6 @@ contract MockInvestmentVault is VaultBase {
         return _amountUSD;
     }
 
-    function withdrawWantToken(uint256 _wantAmt)
-        public
-        override
-        onlyZorroController
-        nonReentrant
-        whenNotPaused
-        returns (uint256 sharesRemoved)
-    {
-        sharesTotal = sharesTotal.sub(_wantAmt);
-
-        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
-
-        MockERC20Upgradeable(wantAddress).mint(msg.sender, _wantAmt);
-
-        sharesRemoved = 0;
-
-        emit WithdrewWant(_wantAmt);
-    }
-
     function exchangeWantTokenForUSD(
         uint256 _amount,
         uint256 _maxMarketMovementAllowed

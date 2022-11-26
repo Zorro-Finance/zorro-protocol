@@ -113,44 +113,6 @@ abstract contract VaultLending is IVaultLending, VaultBase {
 
     /* Investment Actions */
 
-    /// @notice Receives new deposits from user
-    /// @param _wantAmt amount of underlying token to deposit/stake
-    /// @return sharesAdded uint256 Number of shares added
-    function depositWantToken(uint256 _wantAmt)
-        public
-        virtual
-        override
-        onlyZorroController
-        nonReentrant
-        whenNotPaused
-        returns (uint256 sharesAdded)
-    {
-        // Preflight checks
-        require(_wantAmt > 0, "Want token deposit must be > 0");
-
-        // Transfer Want token from sender
-        IERC20Upgradeable(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _wantAmt
-        );
-
-        // Set sharesAdded to the Want token amount specified
-        sharesAdded = _wantAmt;
-        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
-        // discounted by the entrance fee
-        if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded =
-                (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * entranceFeeFactor);
-        }
-        // Increment the shares
-        sharesTotal = sharesTotal + sharesAdded;
-
-        // Farm (leverage)
-        _farm();
-    }
-
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
@@ -180,64 +142,6 @@ abstract contract VaultLending is IVaultLending, VaultBase {
                 }),
                 _maxMarketMovementAllowed
             );
-    }
-
-    /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _wantAmt The amount of Want token to withdraw
-    /// @return sharesRemoved The number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
-        public
-        virtual
-        override
-        onlyZorroController
-        nonReentrant
-        whenNotPaused
-        returns (uint256 sharesRemoved)
-    {
-        // Preflight checks
-        require(_wantAmt > 0, "negWant");
-
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = (_wantAmt * sharesTotal) / this.wantTokenLockedAdj();
-        // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
-        }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal - sharesRemoved;
-
-        // Get balance of underlying on this contract
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-
-        // If amount to withdraw is gt balance, delever by appropriate amount
-        if (_wantAmt > _wantBal) {
-            // Delever the incremental amount needed and reassign _wantAmt
-            _withdrawSome(_wantAmt - _wantBal);
-        }
-
-        // Recalc balance
-        _wantBal = IERC20Upgradeable(wantAddress).balanceOf(address(this));
-
-        // Safety: Cap want amount to new balance (after delevering some), as a last resort
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
-        }
-
-        // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < feeDenominator) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
-        }
-
-        // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(
-            zorroControllerAddress,
-            _wantAmt
-        );
-
-        // Rebalance
-        _farm();
     }
 
     /// @notice Withdraws specified amount of underlying and rebalances

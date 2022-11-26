@@ -68,7 +68,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
     /// @return uint256 Number of shares added
     function depositWantToken(uint256 _wantAmt)
         public
-        override
+        override(IVault, VaultBase)
         onlyZorroController
         nonReentrant
         whenNotPaused
@@ -141,57 +141,6 @@ contract VaultZorro is IVaultZorro, VaultBase {
 
     /// @notice Implement dummy _unfarm function to satisfy abstract contract 
     function _unfarm(uint256 _amount) internal override {}
-
-    /// @notice Withdraw Want tokens from the Farm contract
-    /// @param _wantAmt The amount of Want token to withdraw
-    /// @return uint256 the number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
-        public
-        override
-        onlyZorroController
-        nonReentrant
-        returns (uint256)
-    {
-        // Preflight checks
-        require(_wantAmt > 0, "negWant");
-
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        uint256 sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
-        // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
-        }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal - sharesRemoved;
-
-        // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < feeDenominator) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
-        }
-
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
-        }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
-
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal - _wantAmt;
-
-        // Finally, transfer the want amount from this contract, back to the ZorroController contract
-        IERC20Upgradeable(wantAddress).safeTransfer(
-            zorroControllerAddress,
-            _wantAmt
-        );
-
-        return sharesRemoved;
-    }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange
