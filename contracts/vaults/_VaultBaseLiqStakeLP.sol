@@ -58,33 +58,33 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        setSwapPaths(_initValue.earnedToZORROPath);
-        setSwapPaths(_initValue.earnedToToken0Path);
-        setSwapPaths(_initValue.stablecoinToToken0Path);
-        setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
-        setSwapPaths(_initValue.earnedToStablecoinPath);
-        setSwapPaths(_initValue.stablecoinToToken0Path);
-        setSwapPaths(_initValue.stablecoinToZORROPath);
-        setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
-        setSwapPaths(_initValue.liquidStakeToToken0Path);
-        setSwapPaths(
+        _setSwapPaths(_initValue.earnedToZORROPath);
+        _setSwapPaths(_initValue.earnedToToken0Path);
+        _setSwapPaths(_initValue.stablecoinToToken0Path);
+        _setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
+        _setSwapPaths(_initValue.earnedToStablecoinPath);
+        _setSwapPaths(_initValue.stablecoinToToken0Path);
+        _setSwapPaths(_initValue.stablecoinToZORROPath);
+        _setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
+        _setSwapPaths(_initValue.liquidStakeToToken0Path);
+        _setSwapPaths(
             VaultActions(vaultActions).reversePath(
                 _initValue.stablecoinToToken0Path
             )
         );
-        setSwapPaths(
+        _setSwapPaths(
             VaultActions(vaultActions).reversePath(
                 _initValue.liquidStakeToToken0Path
             )
         );
 
         // Price feeds
-        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
-        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
-        setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
-        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
-        setPriceFeed(liquidStakeToken, _initValue.priceFeeds.liquidStakeTokenPriceFeed);
+        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        _setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        _setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
+        _setPriceFeed(liquidStakeToken, _initValue.priceFeeds.liquidStakeTokenPriceFeed);
 
         // Other
         maxMarketMovementAllowed = _initValue.maxMarketMovementAllowed;
@@ -130,7 +130,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         if (wantLockedTotal > 0 && sharesTotal > 0) {
             sharesAdded =
                 (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * entranceFeeFactorMax);
+                (wantLockedTotal * feeDenominator);
         }
         // Increment the shares
         sharesTotal = sharesTotal + sharesAdded;
@@ -171,8 +171,8 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
+        if (withdrawFeeFactor < feeDenominator) {
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
         }
 
         // Unfarm Want token if applicable

@@ -43,16 +43,13 @@ abstract contract VaultBase is
     /* Constants */
 
     // Addresses
-    // Fee min/max bounds
-    uint256 public constant controllerFeeMax = 10000; // Denominator for controller fee rate
-    uint256 public constant controllerFeeUL = 1000; // Upper limit on controller fee rate (10%)
-    uint256 public constant buyBackRateMax = 10000; // Denominator for buyback ratio
-    uint256 public constant buyBackRateUL = 1000; // Upper limit on buyback rate (10%)
-    uint256 public constant revShareRateMax = 10000; // Denominator for revshare ratio
-    uint256 public constant revShareRateUL = 1000; // Upper limit on rev share rate (10%)
-    uint256 public constant entranceFeeFactorMax = 10000; // Denominator of entrance fee factor
+    // Fee min/max bounds. NOTE that regardless of the constants here, all fee changes occur through a Timelock
+    // contract and governance for added safety and fairness.
+    uint256 public constant feeDenominator = 10000; // Denominator for fee ratio calculations
+    uint256 public constant controllerFeeUL = 5000; // Upper limit on controller fee rate (50%)
+    uint256 public constant buyBackRateUL = 5000; // Upper limit on buyback rate (50%)
+    uint256 public constant revShareRateUL = 5000; // Upper limit on rev share rate (50%)
     uint256 public constant entranceFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = "lowerlimit"
-    uint256 public constant withdrawFeeFactorMax = 10000; // Denominator of withdrawal fee factor
     uint256 public constant withdrawFeeFactorLL = 9000; // 10.0% is the max entrance fee settable. LL = lowerlimit
 
     /* State */
@@ -124,91 +121,70 @@ abstract contract VaultBase is
 
     /* Setters */
 
-    function setPid(uint256 _pid) public onlyOwner {
+    function setPid(uint256 _pid) external onlyOwner {
         pid = _pid;
     }
 
-    function setIsFarmable(bool _isFarmable) public onlyOwner {
+    function setIsFarmable(bool _isFarmable) external onlyOwner {
         isFarmable = _isFarmable;
     }
 
-    function setFarmContractAddress(address _farmContractAddress)
-        public
+    function setContractAddress(uint16 _index, address _addr)
+        external
         onlyOwner
     {
-        farmContractAddress = _farmContractAddress;
-    }
-
-    function setToken0Address(address _token0Address) public onlyOwner {
-        token0Address = _token0Address;
-    }
-
-    function setToken1Address(address _token1Address) public onlyOwner {
-        token1Address = _token1Address;
-    }
-
-    function setEarnedAddress(address _earnedAddress) public onlyOwner {
-        earnedAddress = _earnedAddress;
-    }
-
-    function setDefaultStablecoin(address _defaultStablecoin) public onlyOwner {
-        defaultStablecoin = _defaultStablecoin;
-    }
-
-    function setRewardsAddress(address _rewardsAddress) public onlyOwner {
-        rewardsAddress = _rewardsAddress;
-    }
-
-    function setBurnAddress(address _burnAddress) public onlyOwner {
-        burnAddress = _burnAddress;
-    }
-
-    function setWantAddress(address _wantAddress) public onlyOwner {
-        wantAddress = _wantAddress;
-    }
-
-    function setPoolAddress(address _poolAddress) public onlyOwner {
-        poolAddress = _poolAddress;
-    }
-
-    function setZorroLPPoolAddress(address _poolAddress) public onlyOwner {
-        zorroLPPool = _poolAddress;
-    }
-
-    function setZorroLPPoolOtherToken(address _otherToken) public onlyOwner {
-        zorroLPPoolOtherToken = _otherToken;
-    }
-
-    function setZorroControllerAddress(address _zorroControllerAddress)
-        public
-        onlyOwner
-    {
-        zorroControllerAddress = _zorroControllerAddress;
-    }
-
-    function setZorroXChainControllerAddress(address _zorroXChainController)
-        public
-        onlyOwner
-    {
-        zorroXChainController = _zorroXChainController;
-    }
-
-    function setZorroStakingVault(address _stakingVault) public onlyOwner {
-        zorroStakingVault = _stakingVault;
-    }
-
-    function setZORROAddress(address _ZORROAddress) public onlyOwner {
-        ZORROAddress = _ZORROAddress;
+        if (_index == 0) {
+            token0Address = _addr;
+        } else if (_index == 1) {
+            token1Address = _addr;
+        } else if (_index == 2) {
+            defaultStablecoin = _addr;
+        } else if (_index == 3) {
+            ZORROAddress = _addr;
+        } else if (_index == 4) {
+            wantAddress = _addr;
+        } else if (_index == 5) {
+            poolAddress = _addr;
+        } else if (_index == 6) {
+            earnedAddress = _addr;
+        } else if (_index == 7) {
+            farmContractAddress = _addr;
+        } else if (_index == 8) {
+            rewardsAddress = _addr;
+        } else if (_index == 9) {
+            burnAddress = _addr;
+        } else if (_index == 10) {
+            zorroLPPool = _addr;
+        } else if (_index == 11) {
+            zorroLPPoolOtherToken = _addr;
+        } else if (_index == 12) {
+            zorroControllerAddress = _addr;
+        } else if (_index == 13) {
+            zorroXChainController = _addr;
+        } else if (_index == 14) {
+            zorroStakingVault = _addr;
+        } else {
+            // Safety: Revert if unrecognized index provided
+            revert("urecogContractIdx");
+        }
     }
 
     function setPriceFeed(address _token, address _priceFeedAddress)
-        public
+        external
         onlyOwner
     {
+        _setPriceFeed(_token, _priceFeedAddress);
+    }
+
+    function _setPriceFeed(address _token, address _priceFeedAddress) internal {
         priceFeeds[_token] = AggregatorV3Interface(_priceFeedAddress);
     }
 
-    function setSwapPaths(address[] memory _path) public onlyOwner {
+    function setSwapPaths(address[] memory _path) external onlyOwner {
+        _setSwapPaths(_path);
+    }
+
+    function _setSwapPaths(address[] memory _path) internal {
         // Prep
         address _startToken = _path[0];
         address _endToken = _path[_path.length - 1];
@@ -252,7 +228,7 @@ abstract contract VaultBase is
             "_entranceFeeFactor too low"
         );
         require(
-            _entranceFeeFactor <= entranceFeeFactorMax,
+            _entranceFeeFactor <= feeDenominator,
             "_entranceFeeFactor too high"
         );
         entranceFeeFactor = _entranceFeeFactor;
@@ -263,7 +239,7 @@ abstract contract VaultBase is
             "_withdrawFeeFactor too low"
         );
         require(
-            _withdrawFeeFactor <= withdrawFeeFactorMax,
+            _withdrawFeeFactor <= feeDenominator,
             "_withdrawFeeFactor too high"
         );
         withdrawFeeFactor = _withdrawFeeFactor;
@@ -378,18 +354,22 @@ abstract contract VaultBase is
                     wantAddress: wantAddress,
                     earnTokenPriceFeed: priceFeeds[earnedAddress],
                     ZORPriceFeed: priceFeeds[ZORROAddress],
-                    lpPoolOtherTokenPriceFeed: priceFeeds[zorroLPPoolOtherToken],
+                    lpPoolOtherTokenPriceFeed: priceFeeds[
+                        zorroLPPoolOtherToken
+                    ],
                     stablecoinPriceFeed: priceFeeds[defaultStablecoin],
                     earnedToZORROPath: swapPaths[earnedAddress][ZORROAddress],
-                    earnedToZORLPPoolOtherTokenPath: swapPaths[earnedAddress][zorroLPPoolOtherToken],
-                    earnedToStablecoinPath: swapPaths[earnedAddress][defaultStablecoin],
+                    earnedToZORLPPoolOtherTokenPath: swapPaths[earnedAddress][
+                        zorroLPPoolOtherToken
+                    ],
+                    earnedToStablecoinPath: swapPaths[earnedAddress][
+                        defaultStablecoin
+                    ],
                     controllerFeeBP: uint16(
-                        (controllerFee * 10000) / controllerFeeMax
+                        (controllerFee * 10000) / feeDenominator
                     ),
-                    buybackBP: uint16((buyBackRate * 10000) / buyBackRateMax),
-                    revShareBP: uint16(
-                        (revShareRate * 10000) / revShareRateMax
-                    ),
+                    buybackBP: uint16((buyBackRate * 10000) / feeDenominator),
+                    revShareBP: uint16((revShareRate * 10000) / feeDenominator),
                     isHomeChain: isHomeChain
                 })
             );

@@ -64,28 +64,28 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        setSwapPaths(_initValue.earnedToZORROPath);
-        setSwapPaths(_initValue.earnedToToken0Path);
-        setSwapPaths(_initValue.stablecoinToToken0Path);
-        setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
-        setSwapPaths(_initValue.earnedToStablecoinPath);
-        setSwapPaths(_initValue.stablecoinToToken0Path);
-        setSwapPaths(_initValue.stablecoinToZORROPath);
-        setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
-        setSwapPaths(_initValue.earnedToZORROPath);
+        _setSwapPaths(_initValue.earnedToZORROPath);
+        _setSwapPaths(_initValue.earnedToToken0Path);
+        _setSwapPaths(_initValue.stablecoinToToken0Path);
+        _setSwapPaths(_initValue.earnedToZORLPPoolOtherTokenPath);
+        _setSwapPaths(_initValue.earnedToStablecoinPath);
+        _setSwapPaths(_initValue.stablecoinToToken0Path);
+        _setSwapPaths(_initValue.stablecoinToZORROPath);
+        _setSwapPaths(_initValue.stablecoinToLPPoolOtherTokenPath);
+        _setSwapPaths(_initValue.earnedToZORROPath);
 
         // Corresponding reverse paths
-        setSwapPaths(VaultActions(vaultActions).reversePath(
+        _setSwapPaths(VaultActions(vaultActions).reversePath(
             _initValue.stablecoinToToken0Path
         ));
 
         // Price feeds
-        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
-        setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
-        setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
-        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
+        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        _setPriceFeed(earnedAddress, _initValue.priceFeeds.earnTokenPriceFeed);
+        _setPriceFeed(zorroLPPoolOtherToken, _initValue.priceFeeds.lpPoolOtherTokenPriceFeed);
+        _setPriceFeed(ZORROAddress, _initValue.priceFeeds.ZORPriceFeed);
+        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -226,8 +226,8 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         }
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
+        if (withdrawFeeFactor < feeDenominator) {
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
         }
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract

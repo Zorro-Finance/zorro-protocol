@@ -48,14 +48,14 @@ contract VaultZorro is IVaultZorro, VaultBase {
         withdrawFeeFactor = _initValue.fees.withdrawFeeFactor;
 
         // Swap paths
-        setSwapPaths(_initValue.stablecoinToToken0Path);
-        setSwapPaths(VaultActions(vaultActions).reversePath(
+        _setSwapPaths(_initValue.stablecoinToToken0Path);
+        _setSwapPaths(VaultActions(vaultActions).reversePath(
             _initValue.stablecoinToToken0Path
         ));
 
         // Price feeds
-        setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
-        setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
+        _setPriceFeed(token0Address, _initValue.priceFeeds.token0PriceFeed);
+        _setPriceFeed(defaultStablecoin, _initValue.priceFeeds.stablecoinPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner);
@@ -91,7 +91,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
         if (wantLockedTotal > 0 && sharesTotal > 0) {
             sharesAdded =
                 (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * entranceFeeFactorMax);
+                (wantLockedTotal * feeDenominator);
         }
         // Increment the shares
         sharesTotal = sharesTotal + sharesAdded;
@@ -165,8 +165,8 @@ contract VaultZorro is IVaultZorro, VaultBase {
         sharesTotal = sharesTotal - sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < withdrawFeeFactorMax) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / withdrawFeeFactorMax;
+        if (withdrawFeeFactor < feeDenominator) {
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
         }
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
