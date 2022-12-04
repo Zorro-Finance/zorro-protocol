@@ -28,39 +28,10 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
         VaultBase.initialize(_timelockOwner, _initValue.baseInit);
     }
 
+    /* State */
+    address public lendingToken; // Lending token exchanged for supplying underlying asset (e.g. vToken) TODO: Constructor, setter
+
     /* Investment Actions */
-
-    /// @notice Performs necessary operations to convert USD into Want token
-    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            vaultActions,
-            _amountUSD
-        );
-
-        // Exchange
-        return
-            VaultActionsAlpaca(vaultActions).exchangeUSDForWantToken(
-                _amountUSD,
-                VaultActionsAlpaca.ExchangeUSDForWantParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    tokenZorroAddress: ZORROAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
-                    poolAddress: poolAddress,
-                    wantAddress: wantAddress
-                }),
-                _maxMarketMovementAllowed
-            );
-    }
 
     /// @notice Public function for farming Want token.
     function farm() public virtual nonReentrant {
@@ -69,17 +40,29 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal override {
-        require(isFarmable, "!farmable");
-
         // Get the Want token stored on this contract
         uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
         );
 
-        // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
+        // Increase allowance
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            farmContractAddress,
+            poolAddress,
             _wantAmt
+        );
+
+        // Deposit token to get Want token
+        IAlpacaVault(poolAddress).deposit(_wantAmt);
+
+        // Calculate resulting lending token balance
+        uint256 _lendingTokenBal = IERC20Upgradeable(lendingToken).balanceOf(
+            address(this)
+        );
+
+        // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
+        IERC20Upgradeable(lendingToken).safeIncreaseAllowance(
+            farmContractAddress,
+            _lendingTokenBal
         );
 
         // Deposit the Want tokens in the Farm contract
@@ -89,46 +72,20 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal override {
-        // Withdraw the Want tokens from the Farm contract
+        // Withdraw tokens from the Farm contract
         IFairLaunch(farmContractAddress).withdraw(address(this), pid, _wantAmt);
-    }
 
-    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
-    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    )
-        public
-        virtual
-        override
-        onlyZorroController
-        whenNotPaused
-        returns (uint256)
-    {
-        // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
+        // Get balance
+        uint256 _lendingBal = IERC20Upgradeable(lendingToken).balanceOf(address(this));
+
+        // Approve
+        IERC20Upgradeable(lendingToken).safeIncreaseAllowance(
+            poolAddress,
+            _lendingBal
         );
 
-        // Exchange
-        return
-            VaultActionsAlpaca(vaultActions).exchangeWantTokenForUSD(
-                _amount,
-                VaultActionsAlpaca.ExchangeWantTokenForUSDParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    wantAddress: wantAddress,
-                    poolAddress: poolAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin]
-                }),
-                _maxMarketMovementAllowed
-            );
+        // Withdraw lending token to get Token0
+        IAlpacaVault(poolAddress).withdraw(_lendingBal);
     }
 }
 

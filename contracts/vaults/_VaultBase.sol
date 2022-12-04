@@ -31,7 +31,10 @@ abstract contract VaultBase is
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    function initialize(address _timelockOwner, VaultBaseInit memory _initValue) public initializer {
+    function initialize(address _timelockOwner, VaultBaseInit memory _initValue)
+        public
+        initializer
+    {
         // Ownable
         __Ownable_init();
 
@@ -125,7 +128,8 @@ abstract contract VaultBase is
     // Vault characteristics
     bool public isHomeChain; // Whether this is deployed on the home chain
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
-    bool public isFarmable; // If true, will farm tokens and autocompound earnings. If false, will stake the token only
+    bool public isFarmable; // If true, will farm LP tokens
+    // TODO: Do an audit of all vaults to make sure they are using isFarmable correctly!
     // Governance
     address public govAddress; // Timelock controller contract
     bool public onlyGov; // Enforce gov only access on certain functions
@@ -163,7 +167,8 @@ abstract contract VaultBase is
     uint256 public withdrawFeeFactor; // Numerator of withdrawal fee factor
     // Accounting
     uint256 public lastEarnBlock; // Last recorded block for an earn() event
-    uint256 public wantLockedTotal; // Total Want tokens locked/staked for this Vault
+    uint256 public principalDebt; // Last recorded position value, accounting for change in principal (measured in Want token)
+    uint256 public profitDebt; // Last harvested profit, representing the accumulated profit taken to date (measured in Want token)
     uint256 public sharesTotal; // Total shares for this Vault
     // Swap routes
     mapping(address => mapping(address => address[])) public swapPaths; // Swap paths. Mapping: start address => end address => address array describing swap path
@@ -366,18 +371,25 @@ abstract contract VaultBase is
 
         // Set sharesAdded to the Want token amount specified
         sharesAdded = _wantAmt;
+
+        // Calc current want equity
+        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+            address(this)
+        );
+
         // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
         // discounted by the entrance fee
-        if (wantLockedTotal > 0 && sharesTotal > 0) {
+        if (_wantEquity > 0 && sharesTotal > 0) {
             sharesAdded =
                 (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * feeDenominator);
+                (_wantEquity * feeDenominator);
         }
-        // Increment the shares
-        sharesTotal = sharesTotal + sharesAdded;
 
-        // Increment want token locked qty
-        wantLockedTotal = wantLockedTotal + _wantAmt;
+        // Increment the shares
+        sharesTotal += sharesAdded;
+
+        // Increment principal debt to account for cash flow
+        principalDebt += _wantAmt;
 
         // Farm the want token if applicable.
         _farm();
@@ -388,7 +400,7 @@ abstract contract VaultBase is
     /// @return sharesRemoved The number of shares removed
     function withdrawWantToken(uint256 _wantAmt)
         public
-        override
+        virtual
         onlyZorroController
         nonReentrant
         whenNotPaused
@@ -397,14 +409,20 @@ abstract contract VaultBase is
         // Preflight checks
         require(_wantAmt > 0, "negWant");
 
+        // Calc current want equity
+        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+            address(this)
+        );
+
         // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = (_wantAmt * sharesTotal) / wantLockedTotal;
+        sharesRemoved = (_wantAmt * sharesTotal) / _wantEquity;
+
         // Safety: cap the shares to the total number of shares
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
         // Decrement the total shares by the sharesRemoved
-        sharesTotal = sharesTotal - sharesRemoved;
+        sharesTotal -= sharesRemoved;
 
         // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
         if (withdrawFeeFactor < feeDenominator) {
@@ -412,9 +430,7 @@ abstract contract VaultBase is
         }
 
         // Unfarm Want token if applicable
-        if (isFarmable) {
-            _unfarm(_wantAmt);
-        }
+        _unfarm(_wantAmt);
 
         // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
         uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
@@ -423,13 +439,9 @@ abstract contract VaultBase is
         if (_wantAmt > _wantBal) {
             _wantAmt = _wantBal;
         }
-        // Safety: cap _wantAmt at the total quantity of Want tokens locked
-        if (wantLockedTotal < _wantAmt) {
-            _wantAmt = wantLockedTotal;
-        }
 
-        // Decrement the total Want locked tokens by the _wantAmt
-        wantLockedTotal = wantLockedTotal - _wantAmt;
+        // Decrement principal debt to account for cash flow
+        principalDebt -= _wantAmt;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
@@ -476,58 +488,56 @@ abstract contract VaultBase is
         nonReentrant
         whenNotPaused
     {
+        // TODO: Be able to specify amount of Want to harvest
+
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
         }
 
-        // Harvest farm tokens
+        // Unfarm to redeem want tokens
         _unfarm(0);
 
-        // Calc earned balance
-        uint256 _earnedBal = IERC20Upgradeable(earnedAddress).balanceOf(
+        // Calc want balance after harvesting
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
         );
 
-        // Only continue if farm tokens were earned
-        require(_earnedBal > 0, "0earn");
+        // Only continue if harvestable earnings present
+        require(_wantBal > 0, "0wantHarvested");
 
         // Allow spending
         IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
             vaultActions,
-            _earnedBal
+            _wantBal
         );
 
         // Perform fee distribution (fees + buyback + revshare)
         // and obtain Want token with remainder
         (
-            ,
+            uint256 _wantRemaining,
             uint256 _xChainBuybackAmt,
             uint256 _xChainRevShareAmt
         ) = VaultActions(vaultActions).distributeAndReinvestEarnings(
-                _earnedBal,
+                _wantBal,
                 _maxMarketMovementAllowed,
                 VaultActions.DistributeEarningsParams({
-                    earnedAddress: earnedAddress,
                     ZORROAddress: ZORROAddress,
                     rewardsAddress: rewardsAddress,
                     stablecoin: defaultStablecoin,
                     zorroStakingVault: zorroStakingVault,
                     zorroLPPoolOtherToken: zorroLPPoolOtherToken,
-                    wantAddress: wantAddress,
-                    earnTokenPriceFeed: priceFeeds[earnedAddress],
                     ZORPriceFeed: priceFeeds[ZORROAddress],
                     lpPoolOtherTokenPriceFeed: priceFeeds[
                         zorroLPPoolOtherToken
                     ],
                     stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    earnedToZORROPath: swapPaths[earnedAddress][ZORROAddress],
-                    earnedToZORLPPoolOtherTokenPath: swapPaths[earnedAddress][
-                        zorroLPPoolOtherToken
+                    stablecoinToZORROPath: swapPaths[earnedAddress][
+                        ZORROAddress
                     ],
-                    earnedToStablecoinPath: swapPaths[earnedAddress][
-                        defaultStablecoin
-                    ],
+                    stablecoinToZORLPPoolOtherTokenPath: swapPaths[
+                        earnedAddress
+                    ][zorroLPPoolOtherToken],
                     controllerFeeBP: uint16(
                         (controllerFee * 10000) / feeDenominator
                     ),
@@ -536,9 +546,16 @@ abstract contract VaultBase is
                     isHomeChain: isHomeChain
                 })
             );
+        // TODO: Emit event that logs want intended, want actual, bb, revshare, controller
 
         // Distribute earnings cross chain if applicable
         if (_xChainBuybackAmt > 0 || _xChainRevShareAmt > 0) {
+            // Approve spending
+            IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+                zorroXChainController,
+                _xChainBuybackAmt + _xChainRevShareAmt
+            );
+
             // Call distributeEarningsXChain on controller contract
             IZorroControllerXChainEarn(zorroXChainController)
                 .sendXChainDistributeEarningsRequest(
@@ -552,8 +569,53 @@ abstract contract VaultBase is
         // Update last earned block
         lastEarnBlock = block.number;
 
-        // Farm Want token
+        // Update profit debt to make sure gains are only counted once
+        profitDebt = _wantBal;
+
+        // Farm Want token to keep earning
         _farm();
+    }
+
+    /// @notice Converts USD to Want token and delivers back to this contract
+    /// @param _amountUSD Amount of USD to exchange
+    /// @param _maxMarketMovementAllowed Slippage (990 = 1%)
+    /// @return wantObtained The amount of Want token returned
+    function exchangeUSDForWantToken(
+        uint256 _amountUSD,
+        uint256 _maxMarketMovementAllowed
+    ) external virtual returns (uint256 wantObtained) {
+        // Approve spending
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultActions,
+            _amountUSD
+        );
+
+        // Exchange
+        wantObtained = VaultActions(vaultActions).exchangeUSDForWantToken(
+            _amountUSD,
+            _maxMarketMovementAllowed
+        );
+    }
+
+    /// @notice Converts Want token to USD and delivers back to this contract
+    /// @param _amount Amount of want to exchange
+    /// @param _maxMarketMovementAllowed Slippage (990 = 1%)
+    /// @return usdObtained The amount of USD token returned
+    function exchangeWantTokenForUSD(
+        uint256 _amount,
+        uint256 _maxMarketMovementAllowed
+    ) external virtual returns (uint256 usdObtained) {
+        // Approve spending
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            vaultActions,
+            _amount
+        );
+
+        // Exchange
+        usdObtained = VaultActions(vaultActions).exchangeWantTokenForUSD(
+            _amount,
+            _maxMarketMovementAllowed
+        );
     }
 
     /* Abstract methods */

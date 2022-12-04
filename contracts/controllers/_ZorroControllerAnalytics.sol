@@ -80,27 +80,25 @@ contract ZorroControllerAnalytics is
         }
     }
 
-    /// @notice View function to see staked Want tokens on frontend.
-    /// @param _pid Index of pool
+    /// @notice Shares owned by an account for a vault
+    /// @param _pid Index of vault
     /// @param _account Wallet address of on chain account
     /// @param _trancheId Tranche ID, or -1 to aggregate across all tranches
-    /// @return stakedWantAmt Amount of staked Want tokens
-    function stakedWantTokens(
+    /// @return ownedShares Amount of vault shares owned (no time multipliers applied)
+    function shares(
         uint256 _pid,
         address _account,
         int256 _trancheId
-    ) external view returns (uint256 stakedWantAmt) {
+    ) external view returns (uint256 ownedShares) {
         // Get pool and user info
         PoolInfo storage pool = poolInfo[_pid];
+
         // Determine total number of shares in the underlying Zorro Vault contract
         uint256 sharesTotal = IVault(pool.vault).sharesTotal();
-        // Determine the total number of Want tokens locked into the underlying Zorro Vault contract
-        uint256 wantLockedTotal = IVault(pool.vault).wantLockedTotal();
 
         // If total shares is zero, there are no staked Want tokens
         if (sharesTotal == 0) {
-            stakedWantAmt = 0;
-            return stakedWantAmt;
+            return 0;
         }
 
         // Check to see if data is needed for all tranches or a specific tranche
@@ -110,32 +108,27 @@ contract ZorroControllerAnalytics is
 
             // Iterate through each tranche and increment rewards
             for (uint256 tid = 0; tid < numTranches; ++tid) {
+                // Get tranche
                 TrancheInfo storage _tranche = trancheInfo[_pid][_account][tid];
-                // Otherwise, staked Want tokens is the user's shares as a percentage of total shares multiplied by total Want tokens locked
-                stakedWantAmt =
-                    stakedWantAmt +
-                    ((_tranche.contribution *
-                        wantLockedTotal *
-                        _tranche.timeMultiplier *
-                        1e12) / sharesTotal);
+
+                // Increment shares if tranche not yet exited
+                if (_tranche.exitedVaultAt == 0) {
+                    ownedShares +=
+                        (_tranche.contribution * 1e12) /
+                        _tranche.timeMultiplier;
+                }
             }
         } else {
             // Get tranche
             TrancheInfo storage _tranche = trancheInfo[_pid][_account][
                 uint256(_trancheId)
             ];
+
             // Ensure tranche is not yet exited
             if (_tranche.exitedVaultAt == 0) {
-                // Otherwise, staked Want tokens is the tranche's shares as a percentage of total shares multiplied by total Want tokens locked
-                stakedWantAmt =
-                    stakedWantAmt +
-                    (_tranche.contribution *
-                        wantLockedTotal *
-                        1e12 *
-                        _tranche.timeMultiplier) /
-                    sharesTotal;
-            } else {
-                stakedWantAmt = 0;
+                ownedShares +=
+                    (_tranche.contribution * 1e12) /
+                    _tranche.timeMultiplier;
             }
         }
     }

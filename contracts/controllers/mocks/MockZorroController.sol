@@ -107,8 +107,6 @@ contract MockInvestmentVault is VaultBase {
 
         sharesTotal = sharesTotal.add(_wantAmt);
 
-        wantLockedTotal = wantLockedTotal.add(_wantAmt);
-
         emit DepositedWant(_wantAmt);
 
         return _wantAmt;

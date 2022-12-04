@@ -163,9 +163,9 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"contribution\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewardDebt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"durationCommittedInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"enteredVaultAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"exitedVaultAt\",\"type\":\"uint256\"}],\"internalType\":\"struct IZorroControllerBase.TrancheInfo\",\"name\":\"_tranche\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_pendingRewards\",\"type\":\"uint256\"}],\"name\":\"getAdjustedRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rewardsDue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"slashedRewards\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_durationInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_isTimeMultiplierActive\",\"type\":\"bool\"}],\"name\":\"getTimeMultiplier\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_liquidityCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_timeMultiplier\",\"type\":\"uint256\"}],\"name\":\"getUserContribution\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"params\":{\"_pendingRewards\":\"Qty of ZOR tokens as pending rewards\",\"_tranche\":\"TrancheInfo object\"},\"returns\":{\"rewardsDue\":\"The amount of ZOR rewards payable\",\"slashedRewards\":\"The amount of ZOR rewards slashed due to early withdrawals\"}},\"getTimeMultiplier(uint256,bool)\":{\"details\":\"For Zorro staking vault, returns 1e12 no matter what\",\"params\":{\"_durationInWeeks\":\"number of weeks committed into Vault\",\"_isTimeMultiplierActive\":\"Whether or not the time multiplier is active\"},\"returns\":{\"timeMultiplier\":\"Time multiplier factor, times 1e12\"}},\"getUserContribution(uint256,uint256)\":{\"params\":{\"_liquidityCommitted\":\"How many tokens staked (e.g. LP tokens)\",\"_timeMultiplier\":\"Time multiplier value (from getTimeMultiplier())\"},\"returns\":{\"_0\":\"uint256 The relative contribution of the user (unitless)\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"notice\":\"Splits rewards into rewards due and slashed rewards (if early withdrawal)\"},\"getTimeMultiplier(uint256,bool)\":{\"notice\":\"Calculate time multiplier based on duration committed\"},\"getUserContribution(uint256,uint256)\":{\"notice\":\"The contribution of the user, meant to be used in rewards allocations\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":\"ZorroControllerActions\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\":{\"keccak256\":\"0x652fee292f698d8dba81bf287cb71f1682f6483b67ebe601a5f7387dcfc30b34\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://98c7bba29bcab7240cdaada7dd7cbe3529fec83314801270c46239e72a9e84d7\",\"dweb:/ipfs/QmfHCc1KMygjXchXVwafWTkFjhbb2SQ3Cu5GzRTdV4CCCh\"]},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"keccak256\":\"0x372b0bc04e3b4c074559bbbfb1317afddb56de5504158ca25a7f9cd403980445\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://88b812365459a042c2aab5c689ff723098e0e19cb372718d3dd028b3c406e4f6\",\"dweb:/ipfs/QmTsLrMYzPjnB85pyAy85NNcBg64RPVueJARzwNg9xMyR1\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol\":{\"keccak256\":\"0x6777f3fccb5dab95a9088ef62c41bee0198fd92e50d7c94f0e3733788af4079e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://bf67f82ba68e13b306fa350fc0e2acaac3b0e90b2734a56e61302d79b408fb0b\",\"dweb:/ipfs/QmVhMTANFDtZFpxdGk6SayfttDxEh23GrT8ttiFRoow7c2\"]},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"keccak256\":\"0x55cf2bd9fc76704ddcdc19834cd288b7de00fc0f298a40ea16a954ae8991db2d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://37e4df53c8d2e3c1062c1c7b2c17366db7de03bfd2559d340ca95c588aa49c2f\",\"dweb:/ipfs/QmQ9vsG3o4wED3FRogiSUhdzJvZSjjYFtydzXvFEJtgZk4\"]},\"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol\":{\"keccak256\":\"0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d6520943ea55fdf5f0bafb39ed909f64de17051bc954ff3e88c9e5621412c79c\",\"dweb:/ipfs/QmWZ4rAKTQbNG2HxGs46AcTXShsVytKeLs7CUCdCSv5N7a\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol\":{\"keccak256\":\"0x0ac286be11c2345f71d938119e638483fc1ddb9f56b7da00dd470adcd977f439\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fe678d5eacb4e4ffcd6e7038921688c418effea0af6f00e8897ef7ad922bae6d\",\"dweb:/ipfs/QmVpqPCGsUFWG43yjAw4LFqJQZ9x58J57WnZscFrBBRgvw\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol\":{\"keccak256\":\"0x322088ced3c1d027a3260de4e5a867b2264adeef252b94158a9725767873ea31\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://b51371d5fbd30710a47361e5d9e2615664553ca0a896131d2a7b2ff304ccb51c\",\"dweb:/ipfs/Qmb9Y2f3XLymw7sjwhvYnJLkCZSrjVgUFdT1M1mpAy38sT\"]},\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":{\"keccak256\":\"0x6e79e7961283157ba1e5d47dcf742c6dd1cacd160833b3d19b5b5d02f61e2ae9\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://0943b5dba4a4c00b77930700c79ade3d03dcd870cf4f1793d2029fb2b08ce98f\",\"dweb:/ipfs/QmZkVQ3PM9xDXu49igeQMt3mXXqDQoAagpv9nhzRiXrwTD\"]},\"project:/contracts/interfaces/IZorroController.sol\":{\"keccak256\":\"0x8328d85c8bdad2c372560d312eccc24768b5c1fe0d60cd019f61962c8faca98f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://03e66335f55b4fa2138bb1cb2b4ef132e0c68a164e7290db006ece8127c51f6d\",\"dweb:/ipfs/Qme9bZ3Qqqy7zvWmAknRRCoHtCdZSVXuvxMN6Gd3kH83Ca\"]},\"project:/contracts/libraries/Math.sol\":{\"keccak256\":\"0x8b8949deef1b63739e25943b4c29f87593eafbc26331811884e7b19d086abcdf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d411fa18f0ef03d2dd5bab3989d0340d3cd3d0461dc9475857fb0173a3ffdeeb\",\"dweb:/ipfs/QmY9nMBk618tDvnemMwYsTpX49WcBDMZsQj7z8azx58zNr\"]}},\"version\":1}",
-  "bytecode": "0x608060405234801561001057600080fd5b5061082e806100206000396000f3fe608060405234801561001057600080fd5b506004361061007e577c010000000000000000000000000000000000000000000000000000000060003504631bb6ebbb8114610083578063715018a6146100b05780638da5cb5b146100ba578063a80bee07146100e2578063c25bf10714610103578063f2fde38b14610116575b600080fd5b610096610091366004610511565b610129565b604080519283526020830191909152015b60405180910390f35b6100b86101c4565b005b60335460405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100a7565b6100f56100f03660046105c4565b610256565b6040519081526020016100a7565b6100f56101113660046105e6565b610274565b6100b861012436600461061b565b6102b6565b6000806000831161013f575060009050806101bd565b60006101734261016d61016262093a8089606001516103e690919063ffffffff16565b6080890151906103f2565b906103fe565b905060008113156101b75760608501516101a4906101949062093a806103e6565b61019e86846103e6565b9061040a565b91506101b08483610416565b92506101bb565b8392505b505b9250929050565b60335473ffffffffffffffffffffffffffffffffffffffff16331461024a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6102546000610422565b565b600061026b64e8d4a5100061019e85856103e6565b90505b92915050565b64e8d4a51000811561026e5761026b64e8d4a510006102b06103e861019e60026102aa85816102a58c6127106103e6565b61048e565b906103e6565b90610505565b60335473ffffffffffffffffffffffffffffffffffffffff163314610337576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610241565b73ffffffffffffffffffffffffffffffffffffffff81166103da576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610241565b6103e381610422565b50565b600061026b8284610687565b600061026b82846106a6565b600061026b828461071a565b600061026b828461078e565b600061026b82846107c9565b6033805473ffffffffffffffffffffffffffffffffffffffff83811673ffffffffffffffffffffffffffffffffffffffff19831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b60008161049d57506000919050565b600382116104ad57506001919050565b600060026104bc8460016107e0565b6104c6919061078e565b90508291505b818110156104ff579050806002816104e4818661078e565b6104ee91906107e0565b6104f8919061078e565b90506104cc565b50919050565b600061026b82846107e0565b60008082840360e081121561052557600080fd5b60c081121561053357600080fd5b5060405160c0810181811067ffffffffffffffff8211171561057e577f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b604090815284358252602080860135908301528481013590820152606080850135908201526080808501359082015260a080850135908201529460c09093013593505050565b600080604083850312156105d757600080fd5b50508035926020909101359150565b600080604083850312156105f957600080fd5b823591506020830135801515811461061057600080fd5b809150509250929050565b60006020828403121561062d57600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461065157600080fd5b9392505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60008160001904831182151516156106a1576106a1610658565b500290565b6000808212827f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff038413811516156106e0576106e0610658565b827f800000000000000000000000000000000000000000000000000000000000000003841281161561071457610714610658565b50500190565b6000808312837f80000000000000000000000000000000000000000000000000000000000000000183128115161561075457610754610658565b837f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01831381161561078857610788610658565b50500390565b6000826107c4577f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b500490565b6000828210156107db576107db610658565b500390565b600082198211156107f3576107f3610658565b50019056fea2646970667358221220afbd96f87545e25b8cf7056328c1728d1bec3cf49276cdc52a2a63b358d1e51664736f6c634300080a0033",
-  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061007e577c010000000000000000000000000000000000000000000000000000000060003504631bb6ebbb8114610083578063715018a6146100b05780638da5cb5b146100ba578063a80bee07146100e2578063c25bf10714610103578063f2fde38b14610116575b600080fd5b610096610091366004610511565b610129565b604080519283526020830191909152015b60405180910390f35b6100b86101c4565b005b60335460405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100a7565b6100f56100f03660046105c4565b610256565b6040519081526020016100a7565b6100f56101113660046105e6565b610274565b6100b861012436600461061b565b6102b6565b6000806000831161013f575060009050806101bd565b60006101734261016d61016262093a8089606001516103e690919063ffffffff16565b6080890151906103f2565b906103fe565b905060008113156101b75760608501516101a4906101949062093a806103e6565b61019e86846103e6565b9061040a565b91506101b08483610416565b92506101bb565b8392505b505b9250929050565b60335473ffffffffffffffffffffffffffffffffffffffff16331461024a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6102546000610422565b565b600061026b64e8d4a5100061019e85856103e6565b90505b92915050565b64e8d4a51000811561026e5761026b64e8d4a510006102b06103e861019e60026102aa85816102a58c6127106103e6565b61048e565b906103e6565b90610505565b60335473ffffffffffffffffffffffffffffffffffffffff163314610337576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610241565b73ffffffffffffffffffffffffffffffffffffffff81166103da576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610241565b6103e381610422565b50565b600061026b8284610687565b600061026b82846106a6565b600061026b828461071a565b600061026b828461078e565b600061026b82846107c9565b6033805473ffffffffffffffffffffffffffffffffffffffff83811673ffffffffffffffffffffffffffffffffffffffff19831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b60008161049d57506000919050565b600382116104ad57506001919050565b600060026104bc8460016107e0565b6104c6919061078e565b90508291505b818110156104ff579050806002816104e4818661078e565b6104ee91906107e0565b6104f8919061078e565b90506104cc565b50919050565b600061026b82846107e0565b60008082840360e081121561052557600080fd5b60c081121561053357600080fd5b5060405160c0810181811067ffffffffffffffff8211171561057e577f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b604090815284358252602080860135908301528481013590820152606080850135908201526080808501359082015260a080850135908201529460c09093013593505050565b600080604083850312156105d757600080fd5b50508035926020909101359150565b600080604083850312156105f957600080fd5b823591506020830135801515811461061057600080fd5b809150509250929050565b60006020828403121561062d57600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461065157600080fd5b9392505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60008160001904831182151516156106a1576106a1610658565b500290565b6000808212827f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff038413811516156106e0576106e0610658565b827f800000000000000000000000000000000000000000000000000000000000000003841281161561071457610714610658565b50500190565b6000808312837f80000000000000000000000000000000000000000000000000000000000000000183128115161561075457610754610658565b837f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01831381161561078857610788610658565b50500390565b6000826107c4577f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b500490565b6000828210156107db576107db610658565b500390565b600082198211156107f3576107f3610658565b50019056fea2646970667358221220afbd96f87545e25b8cf7056328c1728d1bec3cf49276cdc52a2a63b358d1e51664736f6c634300080a0033",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"contribution\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewardDebt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"durationCommittedInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"enteredVaultAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"exitedVaultAt\",\"type\":\"uint256\"}],\"internalType\":\"struct IZorroControllerBase.TrancheInfo\",\"name\":\"_tranche\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_pendingRewards\",\"type\":\"uint256\"}],\"name\":\"getAdjustedRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rewardsDue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"slashedRewards\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_durationInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_isTimeMultiplierActive\",\"type\":\"bool\"}],\"name\":\"getTimeMultiplier\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_liquidityCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_timeMultiplier\",\"type\":\"uint256\"}],\"name\":\"getUserContribution\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"params\":{\"_pendingRewards\":\"Qty of ZOR tokens as pending rewards\",\"_tranche\":\"TrancheInfo object\"},\"returns\":{\"rewardsDue\":\"The amount of ZOR rewards payable\",\"slashedRewards\":\"The amount of ZOR rewards slashed due to early withdrawals\"}},\"getTimeMultiplier(uint256,bool)\":{\"details\":\"For Zorro staking vault, returns 1e12 no matter what\",\"params\":{\"_durationInWeeks\":\"number of weeks committed into Vault\",\"_isTimeMultiplierActive\":\"Whether or not the time multiplier is active\"},\"returns\":{\"timeMultiplier\":\"Time multiplier factor, times 1e12\"}},\"getUserContribution(uint256,uint256)\":{\"params\":{\"_liquidityCommitted\":\"How many tokens staked (e.g. LP tokens)\",\"_timeMultiplier\":\"Time multiplier value (from getTimeMultiplier())\"},\"returns\":{\"_0\":\"uint256 The relative contribution of the user (unitless)\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"notice\":\"Splits rewards into rewards due and slashed rewards (if early withdrawal)\"},\"getTimeMultiplier(uint256,bool)\":{\"notice\":\"Calculate time multiplier based on duration committed\"},\"getUserContribution(uint256,uint256)\":{\"notice\":\"The contribution of the user, meant to be used in rewards allocations\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":\"ZorroControllerActions\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\":{\"keccak256\":\"0x652fee292f698d8dba81bf287cb71f1682f6483b67ebe601a5f7387dcfc30b34\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://98c7bba29bcab7240cdaada7dd7cbe3529fec83314801270c46239e72a9e84d7\",\"dweb:/ipfs/QmfHCc1KMygjXchXVwafWTkFjhbb2SQ3Cu5GzRTdV4CCCh\"]},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"keccak256\":\"0x372b0bc04e3b4c074559bbbfb1317afddb56de5504158ca25a7f9cd403980445\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://88b812365459a042c2aab5c689ff723098e0e19cb372718d3dd028b3c406e4f6\",\"dweb:/ipfs/QmTsLrMYzPjnB85pyAy85NNcBg64RPVueJARzwNg9xMyR1\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol\":{\"keccak256\":\"0x6777f3fccb5dab95a9088ef62c41bee0198fd92e50d7c94f0e3733788af4079e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://bf67f82ba68e13b306fa350fc0e2acaac3b0e90b2734a56e61302d79b408fb0b\",\"dweb:/ipfs/QmVhMTANFDtZFpxdGk6SayfttDxEh23GrT8ttiFRoow7c2\"]},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"keccak256\":\"0x55cf2bd9fc76704ddcdc19834cd288b7de00fc0f298a40ea16a954ae8991db2d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://37e4df53c8d2e3c1062c1c7b2c17366db7de03bfd2559d340ca95c588aa49c2f\",\"dweb:/ipfs/QmQ9vsG3o4wED3FRogiSUhdzJvZSjjYFtydzXvFEJtgZk4\"]},\"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol\":{\"keccak256\":\"0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d6520943ea55fdf5f0bafb39ed909f64de17051bc954ff3e88c9e5621412c79c\",\"dweb:/ipfs/QmWZ4rAKTQbNG2HxGs46AcTXShsVytKeLs7CUCdCSv5N7a\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol\":{\"keccak256\":\"0x0ac286be11c2345f71d938119e638483fc1ddb9f56b7da00dd470adcd977f439\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fe678d5eacb4e4ffcd6e7038921688c418effea0af6f00e8897ef7ad922bae6d\",\"dweb:/ipfs/QmVpqPCGsUFWG43yjAw4LFqJQZ9x58J57WnZscFrBBRgvw\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol\":{\"keccak256\":\"0x322088ced3c1d027a3260de4e5a867b2264adeef252b94158a9725767873ea31\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://b51371d5fbd30710a47361e5d9e2615664553ca0a896131d2a7b2ff304ccb51c\",\"dweb:/ipfs/Qmb9Y2f3XLymw7sjwhvYnJLkCZSrjVgUFdT1M1mpAy38sT\"]},\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":{\"keccak256\":\"0x6e79e7961283157ba1e5d47dcf742c6dd1cacd160833b3d19b5b5d02f61e2ae9\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://0943b5dba4a4c00b77930700c79ade3d03dcd870cf4f1793d2029fb2b08ce98f\",\"dweb:/ipfs/QmZkVQ3PM9xDXu49igeQMt3mXXqDQoAagpv9nhzRiXrwTD\"]},\"project:/contracts/interfaces/IZorroController.sol\":{\"keccak256\":\"0xab0424b7f3e7a51058fa576584f483dbff1fae5f8738ea9c18df40d22c87b745\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://e0040fe96c619f35ec12827341a579eadcf9197e219cc33bb59a315393fd6f06\",\"dweb:/ipfs/QmX4DCic2c5LWu86mQF9uZGzn9YR2cCMp1z2RJ9W2N6Gyg\"]},\"project:/contracts/libraries/Math.sol\":{\"keccak256\":\"0x8b8949deef1b63739e25943b4c29f87593eafbc26331811884e7b19d086abcdf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d411fa18f0ef03d2dd5bab3989d0340d3cd3d0461dc9475857fb0173a3ffdeeb\",\"dweb:/ipfs/QmY9nMBk618tDvnemMwYsTpX49WcBDMZsQj7z8azx58zNr\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5061082e806100206000396000f3fe608060405234801561001057600080fd5b506004361061007e577c010000000000000000000000000000000000000000000000000000000060003504631bb6ebbb8114610083578063715018a6146100b05780638da5cb5b146100ba578063a80bee07146100e2578063c25bf10714610103578063f2fde38b14610116575b600080fd5b610096610091366004610511565b610129565b604080519283526020830191909152015b60405180910390f35b6100b86101c4565b005b60335460405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100a7565b6100f56100f03660046105c4565b610256565b6040519081526020016100a7565b6100f56101113660046105e6565b610274565b6100b861012436600461061b565b6102b6565b6000806000831161013f575060009050806101bd565b60006101734261016d61016262093a8089606001516103e690919063ffffffff16565b6080890151906103f2565b906103fe565b905060008113156101b75760608501516101a4906101949062093a806103e6565b61019e86846103e6565b9061040a565b91506101b08483610416565b92506101bb565b8392505b505b9250929050565b60335473ffffffffffffffffffffffffffffffffffffffff16331461024a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6102546000610422565b565b600061026b64e8d4a5100061019e85856103e6565b90505b92915050565b64e8d4a51000811561026e5761026b64e8d4a510006102b06103e861019e60026102aa85816102a58c6127106103e6565b61048e565b906103e6565b90610505565b60335473ffffffffffffffffffffffffffffffffffffffff163314610337576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610241565b73ffffffffffffffffffffffffffffffffffffffff81166103da576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610241565b6103e381610422565b50565b600061026b8284610687565b600061026b82846106a6565b600061026b828461071a565b600061026b828461078e565b600061026b82846107c9565b6033805473ffffffffffffffffffffffffffffffffffffffff83811673ffffffffffffffffffffffffffffffffffffffff19831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b60008161049d57506000919050565b600382116104ad57506001919050565b600060026104bc8460016107e0565b6104c6919061078e565b90508291505b818110156104ff579050806002816104e4818661078e565b6104ee91906107e0565b6104f8919061078e565b90506104cc565b50919050565b600061026b82846107e0565b60008082840360e081121561052557600080fd5b60c081121561053357600080fd5b5060405160c0810181811067ffffffffffffffff8211171561057e577f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b604090815284358252602080860135908301528481013590820152606080850135908201526080808501359082015260a080850135908201529460c09093013593505050565b600080604083850312156105d757600080fd5b50508035926020909101359150565b600080604083850312156105f957600080fd5b823591506020830135801515811461061057600080fd5b809150509250929050565b60006020828403121561062d57600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461065157600080fd5b9392505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60008160001904831182151516156106a1576106a1610658565b500290565b6000808212827f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff038413811516156106e0576106e0610658565b827f800000000000000000000000000000000000000000000000000000000000000003841281161561071457610714610658565b50500190565b6000808312837f80000000000000000000000000000000000000000000000000000000000000000183128115161561075457610754610658565b837f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01831381161561078857610788610658565b50500390565b6000826107c4577f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b500490565b6000828210156107db576107db610658565b500390565b600082198211156107f3576107f3610658565b50019056fea2646970667358221220965ee808bf28d4154d2aa9ffb786626b63398c8dc46674f82fdad923096d61c664736f6c634300080a0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061007e577c010000000000000000000000000000000000000000000000000000000060003504631bb6ebbb8114610083578063715018a6146100b05780638da5cb5b146100ba578063a80bee07146100e2578063c25bf10714610103578063f2fde38b14610116575b600080fd5b610096610091366004610511565b610129565b604080519283526020830191909152015b60405180910390f35b6100b86101c4565b005b60335460405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100a7565b6100f56100f03660046105c4565b610256565b6040519081526020016100a7565b6100f56101113660046105e6565b610274565b6100b861012436600461061b565b6102b6565b6000806000831161013f575060009050806101bd565b60006101734261016d61016262093a8089606001516103e690919063ffffffff16565b6080890151906103f2565b906103fe565b905060008113156101b75760608501516101a4906101949062093a806103e6565b61019e86846103e6565b9061040a565b91506101b08483610416565b92506101bb565b8392505b505b9250929050565b60335473ffffffffffffffffffffffffffffffffffffffff16331461024a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6102546000610422565b565b600061026b64e8d4a5100061019e85856103e6565b90505b92915050565b64e8d4a51000811561026e5761026b64e8d4a510006102b06103e861019e60026102aa85816102a58c6127106103e6565b61048e565b906103e6565b90610505565b60335473ffffffffffffffffffffffffffffffffffffffff163314610337576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610241565b73ffffffffffffffffffffffffffffffffffffffff81166103da576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610241565b6103e381610422565b50565b600061026b8284610687565b600061026b82846106a6565b600061026b828461071a565b600061026b828461078e565b600061026b82846107c9565b6033805473ffffffffffffffffffffffffffffffffffffffff83811673ffffffffffffffffffffffffffffffffffffffff19831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b60008161049d57506000919050565b600382116104ad57506001919050565b600060026104bc8460016107e0565b6104c6919061078e565b90508291505b818110156104ff579050806002816104e4818661078e565b6104ee91906107e0565b6104f8919061078e565b90506104cc565b50919050565b600061026b82846107e0565b60008082840360e081121561052557600080fd5b60c081121561053357600080fd5b5060405160c0810181811067ffffffffffffffff8211171561057e577f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b604090815284358252602080860135908301528481013590820152606080850135908201526080808501359082015260a080850135908201529460c09093013593505050565b600080604083850312156105d757600080fd5b50508035926020909101359150565b600080604083850312156105f957600080fd5b823591506020830135801515811461061057600080fd5b809150509250929050565b60006020828403121561062d57600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461065157600080fd5b9392505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60008160001904831182151516156106a1576106a1610658565b500290565b6000808212827f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff038413811516156106e0576106e0610658565b827f800000000000000000000000000000000000000000000000000000000000000003841281161561071457610714610658565b50500190565b6000808312837f80000000000000000000000000000000000000000000000000000000000000000183128115161561075457610754610658565b837f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01831381161561078857610788610658565b50500390565b6000826107c4577f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b500490565b6000828210156107db576107db610658565b500390565b600082198211156107f3576107f3610658565b50019056fea2646970667358221220965ee808bf28d4154d2aa9ffb786626b63398c8dc46674f82fdad923096d61c664736f6c634300080a0033",
   "immutableReferences": {},
   "generatedSources": [],
   "deployedGeneratedSources": [
@@ -1044,7 +1044,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_struct$_TrancheInfo_$13591_memory_ptrt_uint256",
+            "name": "abi_decode_tuple_t_struct$_TrancheInfo_$13568_memory_ptrt_uint256",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -3779,7 +3779,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function abi_decode_tuple_t_struct$_TrancheInfo_$13591_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        if slt(_1, 0xc0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr))\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x41)\n            revert(0, 0x24)\n        }\n        mstore(64, newFreePtr)\n        mstore(memPtr, calldataload(headStart))\n        mstore(add(memPtr, 32), calldataload(add(headStart, 32)))\n        mstore(add(memPtr, 64), calldataload(add(headStart, 64)))\n        mstore(add(memPtr, 96), calldataload(add(headStart, 96)))\n        mstore(add(memPtr, 128), calldataload(add(headStart, 128)))\n        mstore(add(memPtr, 160), calldataload(add(headStart, 160)))\n        value0 := memPtr\n        value1 := calldataload(add(headStart, 0xc0))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_uint256t_bool(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let value := calldataload(add(headStart, 32))\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n        value1 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_add_t_int256(x, y) -> sum\n    {\n        let _1 := slt(x, 0)\n        if and(iszero(_1), sgt(y, sub(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, x))) { panic_error_0x11() }\n        if and(_1, slt(y, sub(0x8000000000000000000000000000000000000000000000000000000000000000, x))) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_int256(x, y) -> diff\n    {\n        let _1 := slt(y, 0)\n        if and(iszero(_1), slt(x, add(0x8000000000000000000000000000000000000000000000000000000000000000, y))) { panic_error_0x11() }\n        if and(_1, sgt(x, add(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, y))) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n}",
+      "contents": "{\n    { }\n    function abi_decode_tuple_t_struct$_TrancheInfo_$13568_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        if slt(_1, 0xc0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr))\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x41)\n            revert(0, 0x24)\n        }\n        mstore(64, newFreePtr)\n        mstore(memPtr, calldataload(headStart))\n        mstore(add(memPtr, 32), calldataload(add(headStart, 32)))\n        mstore(add(memPtr, 64), calldataload(add(headStart, 64)))\n        mstore(add(memPtr, 96), calldataload(add(headStart, 96)))\n        mstore(add(memPtr, 128), calldataload(add(headStart, 128)))\n        mstore(add(memPtr, 160), calldataload(add(headStart, 160)))\n        value0 := memPtr\n        value1 := calldataload(add(headStart, 0xc0))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_uint256t_bool(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let value := calldataload(add(headStart, 32))\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n        value1 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_add_t_int256(x, y) -> sum\n    {\n        let _1 := slt(x, 0)\n        if and(iszero(_1), sgt(y, sub(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, x))) { panic_error_0x11() }\n        if and(_1, slt(y, sub(0x8000000000000000000000000000000000000000000000000000000000000000, x))) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_int256(x, y) -> diff\n    {\n        let _1 := slt(y, 0)\n        if and(iszero(_1), slt(x, add(0x8000000000000000000000000000000000000000000000000000000000000000, y))) { panic_error_0x11() }\n        if and(_1, sgt(x, add(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, y))) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n}",
       "id": 128,
       "language": "Yul",
       "name": "#utility.yul"
@@ -3799,25 +3799,25 @@
         3169
       ],
       "CustomMath": [
-        15518
+        15510
       ],
       "IERC20Upgradeable": [
         2635
       ],
       "IZorroController": [
-        13911
+        13888
       ],
       "IZorroControllerAnalytics": [
-        13710
+        13687
       ],
       "IZorroControllerBase": [
-        13684
+        13661
       ],
       "IZorroControllerInvestment": [
-        13871
+        13848
       ],
       "IZorroControllerPoolMgmt": [
-        13901
+        13878
       ],
       "Initializable": [
         1774
@@ -3832,15 +3832,15 @@
         3892
       ],
       "ZorroControllerActions": [
-        10102
+        10086
       ]
     },
-    "id": 10103,
+    "id": 10087,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 9943,
+        "id": 9927,
         "literals": [
           "solidity",
           "^",
@@ -3853,10 +3853,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol",
-        "id": 9944,
+        "id": 9928,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 10103,
+        "scope": 10087,
         "sourceUnit": 572,
         "src": "58:75:42",
         "symbolAliases": [],
@@ -3865,10 +3865,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol",
-        "id": 9945,
+        "id": 9929,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 10103,
+        "scope": 10087,
         "sourceUnit": 3829,
         "src": "135:80:42",
         "symbolAliases": [],
@@ -3877,10 +3877,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol",
-        "id": 9946,
+        "id": 9930,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 10103,
+        "scope": 10087,
         "sourceUnit": 3893,
         "src": "217:86:42",
         "symbolAliases": [],
@@ -3889,11 +3889,11 @@
       {
         "absolutePath": "project:/contracts/libraries/Math.sol",
         "file": "../../libraries/Math.sol",
-        "id": 9947,
+        "id": 9931,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 10103,
-        "sourceUnit": 15519,
+        "scope": 10087,
+        "sourceUnit": 15511,
         "src": "305:34:42",
         "symbolAliases": [],
         "unitAlias": ""
@@ -3901,11 +3901,11 @@
       {
         "absolutePath": "project:/contracts/interfaces/IZorroController.sol",
         "file": "../../interfaces/IZorroController.sol",
-        "id": 9948,
+        "id": 9932,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 10103,
-        "sourceUnit": 13912,
+        "scope": 10087,
+        "sourceUnit": 13889,
         "src": "341:47:42",
         "symbolAliases": [],
         "unitAlias": ""
@@ -3915,13 +3915,13 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 9949,
+              "id": 9933,
               "name": "OwnableUpgradeable",
               "nodeType": "IdentifierPath",
               "referencedDeclaration": 571,
               "src": "470:18:42"
             },
-            "id": 9950,
+            "id": 9934,
             "nodeType": "InheritanceSpecifier",
             "src": "470:18:42"
           }
@@ -3930,9 +3930,9 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 10102,
+        "id": 10086,
         "linearizedBaseContracts": [
-          10102,
+          10086,
           571,
           3169,
           1774
@@ -3942,9 +3942,9 @@
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "id": 9953,
+            "id": 9937,
             "libraryName": {
-              "id": 9951,
+              "id": 9935,
               "name": "SafeMathUpgradeable",
               "nodeType": "IdentifierPath",
               "referencedDeclaration": 3828,
@@ -3953,7 +3953,7 @@
             "nodeType": "UsingForDirective",
             "src": "515:38:42",
             "typeName": {
-              "id": 9952,
+              "id": 9936,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
               "src": "545:7:42",
@@ -3964,9 +3964,9 @@
             }
           },
           {
-            "id": 9956,
+            "id": 9940,
             "libraryName": {
-              "id": 9954,
+              "id": 9938,
               "name": "SignedSafeMathUpgradeable",
               "nodeType": "IdentifierPath",
               "referencedDeclaration": 3892,
@@ -3975,7 +3975,7 @@
             "nodeType": "UsingForDirective",
             "src": "558:43:42",
             "typeName": {
-              "id": 9955,
+              "id": 9939,
               "name": "int256",
               "nodeType": "ElementaryTypeName",
               "src": "594:6:42",
@@ -3986,18 +3986,18 @@
             }
           },
           {
-            "id": 9959,
+            "id": 9943,
             "libraryName": {
-              "id": 9957,
+              "id": 9941,
               "name": "CustomMath",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 15518,
+              "referencedDeclaration": 15510,
               "src": "612:10:42"
             },
             "nodeType": "UsingForDirective",
             "src": "606:29:42",
             "typeName": {
-              "id": 9958,
+              "id": 9942,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
               "src": "627:7:42",
@@ -4009,7 +4009,7 @@
           },
           {
             "body": {
-              "id": 10040,
+              "id": 10024,
               "nodeType": "Block",
               "src": "1206:880:42",
               "statements": [
@@ -4019,17 +4019,17 @@
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     },
-                    "id": 9974,
+                    "id": 9958,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
-                      "id": 9972,
+                      "id": 9956,
                       "name": "_pendingRewards",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 9965,
+                      "referencedDeclaration": 9949,
                       "src": "1256:15:42",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -4040,7 +4040,7 @@
                     "operator": "<=",
                     "rightExpression": {
                       "hexValue": "30",
-                      "id": 9973,
+                      "id": 9957,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -4060,11 +4060,11 @@
                       "typeString": "bool"
                     }
                   },
-                  "id": 9980,
+                  "id": 9964,
                   "nodeType": "IfStatement",
                   "src": "1252:64:42",
                   "trueBody": {
-                    "id": 9979,
+                    "id": 9963,
                     "nodeType": "Block",
                     "src": "1278:38:42",
                     "statements": [
@@ -4073,7 +4073,7 @@
                           "components": [
                             {
                               "hexValue": "30",
-                              "id": 9975,
+                              "id": 9959,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -4089,7 +4089,7 @@
                             },
                             {
                               "hexValue": "30",
-                              "id": 9976,
+                              "id": 9960,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -4104,7 +4104,7 @@
                               "value": "0"
                             }
                           ],
-                          "id": 9977,
+                          "id": 9961,
                           "isConstant": false,
                           "isInlineArray": false,
                           "isLValue": false,
@@ -4117,8 +4117,8 @@
                             "typeString": "tuple(int_const 0,int_const 0)"
                           }
                         },
-                        "functionReturnParameters": 9971,
-                        "id": 9978,
+                        "functionReturnParameters": 9955,
+                        "id": 9962,
                         "nodeType": "Return",
                         "src": "1292:13:42"
                       }
@@ -4127,17 +4127,17 @@
                 },
                 {
                   "assignments": [
-                    9982
+                    9966
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 9982,
+                      "id": 9966,
                       "mutability": "mutable",
                       "name": "_timeRemainingInCommitment",
                       "nameLocation": "1554:26:42",
                       "nodeType": "VariableDeclaration",
-                      "scope": 10040,
+                      "scope": 10024,
                       "src": "1547:33:42",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -4146,7 +4146,7 @@
                         "typeString": "int256"
                       },
                       "typeName": {
-                        "id": 9981,
+                        "id": 9965,
                         "name": "int256",
                         "nodeType": "ElementaryTypeName",
                         "src": "1547:6:42",
@@ -4158,14 +4158,14 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 10005,
+                  "id": 9989,
                   "initialValue": {
                     "arguments": [
                       {
                         "arguments": [
                           {
                             "expression": {
-                              "id": 10001,
+                              "id": 9985,
                               "name": "block",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
@@ -4176,7 +4176,7 @@
                                 "typeString": "block"
                               }
                             },
-                            "id": 10002,
+                            "id": 9986,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -4197,7 +4197,7 @@
                               "typeString": "uint256"
                             }
                           ],
-                          "id": 10000,
+                          "id": 9984,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -4209,14 +4209,14 @@
                             "typeString": "type(int256)"
                           },
                           "typeName": {
-                            "id": 9999,
+                            "id": 9983,
                             "name": "int256",
                             "nodeType": "ElementaryTypeName",
                             "src": "1705:6:42",
                             "typeDescriptions": {}
                           }
                         },
-                        "id": 10003,
+                        "id": 9987,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -4247,7 +4247,7 @@
                                 "arguments": [
                                   {
                                     "hexValue": "31",
-                                    "id": 9994,
+                                    "id": 9978,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": true,
@@ -4272,32 +4272,32 @@
                                   ],
                                   "expression": {
                                     "expression": {
-                                      "id": 9991,
+                                      "id": 9975,
                                       "name": "_tranche",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 9963,
+                                      "referencedDeclaration": 9947,
                                       "src": "1639:8:42",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
+                                        "typeIdentifier": "t_struct$_TrancheInfo_$13568_memory_ptr",
                                         "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                       }
                                     },
-                                    "id": 9992,
+                                    "id": 9976,
                                     "isConstant": false,
                                     "isLValue": true,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "durationCommittedInWeeks",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 13586,
+                                    "referencedDeclaration": 13563,
                                     "src": "1639:33:42",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
                                       "typeString": "uint256"
                                     }
                                   },
-                                  "id": 9993,
+                                  "id": 9977,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -4311,7 +4311,7 @@
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 9995,
+                                "id": 9979,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -4334,7 +4334,7 @@
                                   "typeString": "uint256"
                                 }
                               ],
-                              "id": 9990,
+                              "id": 9974,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -4346,14 +4346,14 @@
                                 "typeString": "type(int256)"
                               },
                               "typeName": {
-                                "id": 9989,
+                                "id": 9973,
                                 "name": "int256",
                                 "nodeType": "ElementaryTypeName",
                                 "src": "1632:6:42",
                                 "typeDescriptions": {}
                               }
                             },
-                            "id": 9996,
+                            "id": 9980,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -4380,25 +4380,25 @@
                             "arguments": [
                               {
                                 "expression": {
-                                  "id": 9985,
+                                  "id": 9969,
                                   "name": "_tranche",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 9963,
+                                  "referencedDeclaration": 9947,
                                   "src": "1590:8:42",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
+                                    "typeIdentifier": "t_struct$_TrancheInfo_$13568_memory_ptr",
                                     "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                   }
                                 },
-                                "id": 9986,
+                                "id": 9970,
                                 "isConstant": false,
                                 "isLValue": true,
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "memberName": "enteredVaultAt",
                                 "nodeType": "MemberAccess",
-                                "referencedDeclaration": 13588,
+                                "referencedDeclaration": 13565,
                                 "src": "1590:23:42",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -4413,7 +4413,7 @@
                                   "typeString": "uint256"
                                 }
                               ],
-                              "id": 9984,
+                              "id": 9968,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -4425,14 +4425,14 @@
                                 "typeString": "type(int256)"
                               },
                               "typeName": {
-                                "id": 9983,
+                                "id": 9967,
                                 "name": "int256",
                                 "nodeType": "ElementaryTypeName",
                                 "src": "1583:6:42",
                                 "typeDescriptions": {}
                               }
                             },
-                            "id": 9987,
+                            "id": 9971,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -4447,7 +4447,7 @@
                               "typeString": "int256"
                             }
                           },
-                          "id": 9988,
+                          "id": 9972,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -4461,7 +4461,7 @@
                             "typeString": "function (int256,int256) pure returns (int256)"
                           }
                         },
-                        "id": 9997,
+                        "id": 9981,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -4476,7 +4476,7 @@
                           "typeString": "int256"
                         }
                       },
-                      "id": 9998,
+                      "id": 9982,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -4490,7 +4490,7 @@
                         "typeString": "function (int256,int256) pure returns (int256)"
                       }
                     },
-                    "id": 10004,
+                    "id": 9988,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -4514,17 +4514,17 @@
                       "typeIdentifier": "t_int256",
                       "typeString": "int256"
                     },
-                    "id": 10008,
+                    "id": 9992,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
-                      "id": 10006,
+                      "id": 9990,
                       "name": "_timeRemainingInCommitment",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 9982,
+                      "referencedDeclaration": 9966,
                       "src": "1743:26:42",
                       "typeDescriptions": {
                         "typeIdentifier": "t_int256",
@@ -4535,7 +4535,7 @@
                     "operator": ">",
                     "rightExpression": {
                       "hexValue": "30",
-                      "id": 10007,
+                      "id": 9991,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -4556,23 +4556,23 @@
                     }
                   },
                   "falseBody": {
-                    "id": 10038,
+                    "id": 10022,
                     "nodeType": "Block",
                     "src": "2027:53:42",
                     "statements": [
                       {
                         "expression": {
-                          "id": 10036,
+                          "id": 10020,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftHandSide": {
-                            "id": 10034,
+                            "id": 10018,
                             "name": "rewardsDue",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 9968,
+                            "referencedDeclaration": 9952,
                             "src": "2041:10:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -4582,11 +4582,11 @@
                           "nodeType": "Assignment",
                           "operator": "=",
                           "rightHandSide": {
-                            "id": 10035,
+                            "id": 10019,
                             "name": "_pendingRewards",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 9965,
+                            "referencedDeclaration": 9949,
                             "src": "2054:15:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -4599,33 +4599,33 @@
                             "typeString": "uint256"
                           }
                         },
-                        "id": 10037,
+                        "id": 10021,
                         "nodeType": "ExpressionStatement",
                         "src": "2041:28:42"
                       }
                     ]
                   },
-                  "id": 10039,
+                  "id": 10023,
                   "nodeType": "IfStatement",
                   "src": "1739:341:42",
                   "trueBody": {
-                    "id": 10033,
+                    "id": 10017,
                     "nodeType": "Block",
                     "src": "1775:246:42",
                     "statements": [
                       {
                         "expression": {
-                          "id": 10024,
+                          "id": 10008,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftHandSide": {
-                            "id": 10009,
+                            "id": 9993,
                             "name": "slashedRewards",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 9970,
+                            "referencedDeclaration": 9954,
                             "src": "1789:14:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -4640,7 +4640,7 @@
                                 "arguments": [
                                   {
                                     "hexValue": "31",
-                                    "id": 10021,
+                                    "id": 10005,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": true,
@@ -4665,32 +4665,32 @@
                                   ],
                                   "expression": {
                                     "expression": {
-                                      "id": 10018,
+                                      "id": 10002,
                                       "name": "_tranche",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 9963,
+                                      "referencedDeclaration": 9947,
                                       "src": "1901:8:42",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
+                                        "typeIdentifier": "t_struct$_TrancheInfo_$13568_memory_ptr",
                                         "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                       }
                                     },
-                                    "id": 10019,
+                                    "id": 10003,
                                     "isConstant": false,
                                     "isLValue": true,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "durationCommittedInWeeks",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 13586,
+                                    "referencedDeclaration": 13563,
                                     "src": "1901:33:42",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
                                       "typeString": "uint256"
                                     }
                                   },
-                                  "id": 10020,
+                                  "id": 10004,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -4704,7 +4704,7 @@
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 10022,
+                                "id": 10006,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -4732,11 +4732,11 @@
                                   {
                                     "arguments": [
                                       {
-                                        "id": 10014,
+                                        "id": 9998,
                                         "name": "_timeRemainingInCommitment",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 9982,
+                                        "referencedDeclaration": 9966,
                                         "src": "1851:26:42",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_int256",
@@ -4751,7 +4751,7 @@
                                           "typeString": "int256"
                                         }
                                       ],
-                                      "id": 10013,
+                                      "id": 9997,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": true,
@@ -4763,14 +4763,14 @@
                                         "typeString": "type(uint256)"
                                       },
                                       "typeName": {
-                                        "id": 10012,
+                                        "id": 9996,
                                         "name": "uint256",
                                         "nodeType": "ElementaryTypeName",
                                         "src": "1843:7:42",
                                         "typeDescriptions": {}
                                       }
                                     },
-                                    "id": 10015,
+                                    "id": 9999,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
@@ -4794,18 +4794,18 @@
                                     }
                                   ],
                                   "expression": {
-                                    "id": 10010,
+                                    "id": 9994,
                                     "name": "_pendingRewards",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 9965,
+                                    "referencedDeclaration": 9949,
                                     "src": "1806:15:42",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
                                       "typeString": "uint256"
                                     }
                                   },
-                                  "id": 10011,
+                                  "id": 9995,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -4819,7 +4819,7 @@
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 10016,
+                                "id": 10000,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -4834,7 +4834,7 @@
                                   "typeString": "uint256"
                                 }
                               },
-                              "id": 10017,
+                              "id": 10001,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -4848,7 +4848,7 @@
                                 "typeString": "function (uint256,uint256) pure returns (uint256)"
                               }
                             },
-                            "id": 10023,
+                            "id": 10007,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -4869,23 +4869,23 @@
                             "typeString": "uint256"
                           }
                         },
-                        "id": 10025,
+                        "id": 10009,
                         "nodeType": "ExpressionStatement",
                         "src": "1789:159:42"
                       },
                       {
                         "expression": {
-                          "id": 10031,
+                          "id": 10015,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftHandSide": {
-                            "id": 10026,
+                            "id": 10010,
                             "name": "rewardsDue",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 9968,
+                            "referencedDeclaration": 9952,
                             "src": "1962:10:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -4897,11 +4897,11 @@
                           "rightHandSide": {
                             "arguments": [
                               {
-                                "id": 10029,
+                                "id": 10013,
                                 "name": "slashedRewards",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 9970,
+                                "referencedDeclaration": 9954,
                                 "src": "1995:14:42",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -4917,18 +4917,18 @@
                                 }
                               ],
                               "expression": {
-                                "id": 10027,
+                                "id": 10011,
                                 "name": "_pendingRewards",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 9965,
+                                "referencedDeclaration": 9949,
                                 "src": "1975:15:42",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
                                   "typeString": "uint256"
                                 }
                               },
-                              "id": 10028,
+                              "id": 10012,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -4942,7 +4942,7 @@
                                 "typeString": "function (uint256,uint256) pure returns (uint256)"
                               }
                             },
-                            "id": 10030,
+                            "id": 10014,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -4963,7 +4963,7 @@
                             "typeString": "uint256"
                           }
                         },
-                        "id": 10032,
+                        "id": 10016,
                         "nodeType": "ExpressionStatement",
                         "src": "1962:48:42"
                       }
@@ -4973,13 +4973,13 @@
               ]
             },
             "documentation": {
-              "id": 9960,
+              "id": 9944,
               "nodeType": "StructuredDocumentation",
               "src": "664:347:42",
               "text": "@notice Splits rewards into rewards due and slashed rewards (if early withdrawal)\n @param _tranche TrancheInfo object\n @param _pendingRewards Qty of ZOR tokens as pending rewards\n @return rewardsDue The amount of ZOR rewards payable\n @return slashedRewards The amount of ZOR rewards slashed due to early withdrawals"
             },
             "functionSelector": "1bb6ebbb",
-            "id": 10041,
+            "id": 10025,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -4987,38 +4987,38 @@
             "nameLocation": "1025:18:42",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9966,
+              "id": 9950,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9963,
+                  "id": 9947,
                   "mutability": "mutable",
                   "name": "_tranche",
                   "nameLocation": "1093:8:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10041,
+                  "scope": 10025,
                   "src": "1053:48:42",
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_TrancheInfo_$13591_memory_ptr",
+                    "typeIdentifier": "t_struct$_TrancheInfo_$13568_memory_ptr",
                     "typeString": "struct IZorroControllerBase.TrancheInfo"
                   },
                   "typeName": {
-                    "id": 9962,
+                    "id": 9946,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 9961,
+                      "id": 9945,
                       "name": "IZorroControllerBase.TrancheInfo",
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 13591,
+                      "referencedDeclaration": 13568,
                       "src": "1053:32:42"
                     },
-                    "referencedDeclaration": 13591,
+                    "referencedDeclaration": 13568,
                     "src": "1053:32:42",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_TrancheInfo_$13591_storage_ptr",
+                      "typeIdentifier": "t_struct$_TrancheInfo_$13568_storage_ptr",
                       "typeString": "struct IZorroControllerBase.TrancheInfo"
                     }
                   },
@@ -5026,12 +5026,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 9965,
+                  "id": 9949,
                   "mutability": "mutable",
                   "name": "_pendingRewards",
                   "nameLocation": "1119:15:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10041,
+                  "scope": 10025,
                   "src": "1111:23:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5040,7 +5040,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9964,
+                    "id": 9948,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1111:7:42",
@@ -5055,17 +5055,17 @@
               "src": "1043:97:42"
             },
             "returnParameters": {
-              "id": 9971,
+              "id": 9955,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9968,
+                  "id": 9952,
                   "mutability": "mutable",
                   "name": "rewardsDue",
                   "nameLocation": "1170:10:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10041,
+                  "scope": 10025,
                   "src": "1162:18:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5074,7 +5074,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9967,
+                    "id": 9951,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1162:7:42",
@@ -5087,12 +5087,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 9970,
+                  "id": 9954,
                   "mutability": "mutable",
                   "name": "slashedRewards",
                   "nameLocation": "1190:14:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10041,
+                  "scope": 10025,
                   "src": "1182:22:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5101,7 +5101,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9969,
+                    "id": 9953,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1182:7:42",
@@ -5115,7 +5115,7 @@
               ],
               "src": "1161:44:42"
             },
-            "scope": 10102,
+            "scope": 10086,
             "src": "1016:1070:42",
             "stateMutability": "view",
             "virtual": false,
@@ -5123,23 +5123,23 @@
           },
           {
             "body": {
-              "id": 10081,
+              "id": 10065,
               "nodeType": "Block",
               "src": "2625:346:42",
               "statements": [
                 {
                   "expression": {
-                    "id": 10053,
+                    "id": 10037,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 10051,
+                      "id": 10035,
                       "name": "timeMultiplier",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 10049,
+                      "referencedDeclaration": 10033,
                       "src": "2635:14:42",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -5150,7 +5150,7 @@
                     "operator": "=",
                     "rightHandSide": {
                       "hexValue": "31653132",
-                      "id": 10052,
+                      "id": 10036,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -5170,44 +5170,44 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 10054,
+                  "id": 10038,
                   "nodeType": "ExpressionStatement",
                   "src": "2635:21:42"
                 },
                 {
                   "condition": {
-                    "id": 10055,
+                    "id": 10039,
                     "name": "_isTimeMultiplierActive",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 10046,
+                    "referencedDeclaration": 10030,
                     "src": "2671:23:42",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
                     }
                   },
-                  "id": 10080,
+                  "id": 10064,
                   "nodeType": "IfStatement",
                   "src": "2667:298:42",
                   "trueBody": {
-                    "id": 10079,
+                    "id": 10063,
                     "nodeType": "Block",
                     "src": "2696:269:42",
                     "statements": [
                       {
                         "expression": {
-                          "id": 10077,
+                          "id": 10061,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftHandSide": {
-                            "id": 10056,
+                            "id": 10040,
                             "name": "timeMultiplier",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10049,
+                            "referencedDeclaration": 10033,
                             "src": "2796:14:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -5220,7 +5220,7 @@
                             "arguments": [
                               {
                                 "hexValue": "31653132",
-                                "id": 10075,
+                                "id": 10059,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": true,
@@ -5246,7 +5246,7 @@
                                 "arguments": [
                                   {
                                     "hexValue": "31303030",
-                                    "id": 10072,
+                                    "id": 10056,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": true,
@@ -5272,7 +5272,7 @@
                                     "arguments": [
                                       {
                                         "hexValue": "32",
-                                        "id": 10069,
+                                        "id": 10053,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": true,
@@ -5298,7 +5298,7 @@
                                         "arguments": [
                                           {
                                             "hexValue": "31653132",
-                                            "id": 10066,
+                                            "id": 10050,
                                             "isConstant": false,
                                             "isLValue": false,
                                             "isPure": true,
@@ -5332,7 +5332,7 @@
                                                         "arguments": [
                                                           {
                                                             "hexValue": "316534",
-                                                            "id": 10059,
+                                                            "id": 10043,
                                                             "isConstant": false,
                                                             "isLValue": false,
                                                             "isPure": true,
@@ -5355,18 +5355,18 @@
                                                             }
                                                           ],
                                                           "expression": {
-                                                            "id": 10057,
+                                                            "id": 10041,
                                                             "name": "_durationInWeeks",
                                                             "nodeType": "Identifier",
                                                             "overloadedDeclarations": [],
-                                                            "referencedDeclaration": 10044,
+                                                            "referencedDeclaration": 10028,
                                                             "src": "2815:16:42",
                                                             "typeDescriptions": {
                                                               "typeIdentifier": "t_uint256",
                                                               "typeString": "uint256"
                                                             }
                                                           },
-                                                          "id": 10058,
+                                                          "id": 10042,
                                                           "isConstant": false,
                                                           "isLValue": false,
                                                           "isPure": false,
@@ -5380,7 +5380,7 @@
                                                             "typeString": "function (uint256,uint256) pure returns (uint256)"
                                                           }
                                                         },
-                                                        "id": 10060,
+                                                        "id": 10044,
                                                         "isConstant": false,
                                                         "isLValue": false,
                                                         "isPure": false,
@@ -5396,7 +5396,7 @@
                                                         }
                                                       }
                                                     ],
-                                                    "id": 10061,
+                                                    "id": 10045,
                                                     "isConstant": false,
                                                     "isInlineArray": false,
                                                     "isLValue": false,
@@ -5409,21 +5409,21 @@
                                                       "typeString": "uint256"
                                                     }
                                                   },
-                                                  "id": 10062,
+                                                  "id": 10046,
                                                   "isConstant": false,
                                                   "isLValue": false,
                                                   "isPure": false,
                                                   "lValueRequested": false,
                                                   "memberName": "sqrt",
                                                   "nodeType": "MemberAccess",
-                                                  "referencedDeclaration": 15517,
+                                                  "referencedDeclaration": 15509,
                                                   "src": "2814:32:42",
                                                   "typeDescriptions": {
                                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$returns$_t_uint256_$bound_to$_t_uint256_$",
                                                     "typeString": "function (uint256) pure returns (uint256)"
                                                   }
                                                 },
-                                                "id": 10063,
+                                                "id": 10047,
                                                 "isConstant": false,
                                                 "isLValue": false,
                                                 "isPure": false,
@@ -5439,7 +5439,7 @@
                                                 }
                                               }
                                             ],
-                                            "id": 10064,
+                                            "id": 10048,
                                             "isConstant": false,
                                             "isInlineArray": false,
                                             "isLValue": false,
@@ -5452,7 +5452,7 @@
                                               "typeString": "uint256"
                                             }
                                           },
-                                          "id": 10065,
+                                          "id": 10049,
                                           "isConstant": false,
                                           "isLValue": false,
                                           "isPure": false,
@@ -5466,7 +5466,7 @@
                                             "typeString": "function (uint256,uint256) pure returns (uint256)"
                                           }
                                         },
-                                        "id": 10067,
+                                        "id": 10051,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
@@ -5481,7 +5481,7 @@
                                           "typeString": "uint256"
                                         }
                                       },
-                                      "id": 10068,
+                                      "id": 10052,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
@@ -5495,7 +5495,7 @@
                                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                                       }
                                     },
-                                    "id": 10070,
+                                    "id": 10054,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
@@ -5510,7 +5510,7 @@
                                       "typeString": "uint256"
                                     }
                                   },
-                                  "id": 10071,
+                                  "id": 10055,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -5524,7 +5524,7 @@
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 10073,
+                                "id": 10057,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -5539,7 +5539,7 @@
                                   "typeString": "uint256"
                                 }
                               },
-                              "id": 10074,
+                              "id": 10058,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -5553,7 +5553,7 @@
                                 "typeString": "function (uint256,uint256) pure returns (uint256)"
                               }
                             },
-                            "id": 10076,
+                            "id": 10060,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -5574,7 +5574,7 @@
                             "typeString": "uint256"
                           }
                         },
-                        "id": 10078,
+                        "id": 10062,
                         "nodeType": "ExpressionStatement",
                         "src": "2796:158:42"
                       }
@@ -5584,13 +5584,13 @@
               ]
             },
             "documentation": {
-              "id": 10042,
+              "id": 10026,
               "nodeType": "StructuredDocumentation",
               "src": "2092:350:42",
               "text": "@notice Calculate time multiplier based on duration committed\n @dev For Zorro staking vault, returns 1e12 no matter what\n @param _durationInWeeks number of weeks committed into Vault\n @param _isTimeMultiplierActive Whether or not the time multiplier is active\n @return timeMultiplier Time multiplier factor, times 1e12"
             },
             "functionSelector": "c25bf107",
-            "id": 10082,
+            "id": 10066,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -5598,17 +5598,17 @@
             "nameLocation": "2456:17:42",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 10047,
+              "id": 10031,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 10044,
+                  "id": 10028,
                   "mutability": "mutable",
                   "name": "_durationInWeeks",
                   "nameLocation": "2491:16:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10082,
+                  "scope": 10066,
                   "src": "2483:24:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5617,7 +5617,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 10043,
+                    "id": 10027,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2483:7:42",
@@ -5630,12 +5630,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 10046,
+                  "id": 10030,
                   "mutability": "mutable",
                   "name": "_isTimeMultiplierActive",
                   "nameLocation": "2522:23:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10082,
+                  "scope": 10066,
                   "src": "2517:28:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5644,7 +5644,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 10045,
+                    "id": 10029,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "2517:4:42",
@@ -5659,17 +5659,17 @@
               "src": "2473:78:42"
             },
             "returnParameters": {
-              "id": 10050,
+              "id": 10034,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 10049,
+                  "id": 10033,
                   "mutability": "mutable",
                   "name": "timeMultiplier",
                   "nameLocation": "2605:14:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10082,
+                  "scope": 10066,
                   "src": "2597:22:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5678,7 +5678,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 10048,
+                    "id": 10032,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2597:7:42",
@@ -5692,7 +5692,7 @@
               ],
               "src": "2596:24:42"
             },
-            "scope": 10102,
+            "scope": 10086,
             "src": "2447:524:42",
             "stateMutability": "pure",
             "virtual": false,
@@ -5700,7 +5700,7 @@
           },
           {
             "body": {
-              "id": 10100,
+              "id": 10084,
               "nodeType": "Block",
               "src": "3426:74:42",
               "statements": [
@@ -5709,7 +5709,7 @@
                     "arguments": [
                       {
                         "hexValue": "31653132",
-                        "id": 10097,
+                        "id": 10081,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -5734,11 +5734,11 @@
                       "expression": {
                         "arguments": [
                           {
-                            "id": 10094,
+                            "id": 10078,
                             "name": "_timeMultiplier",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10087,
+                            "referencedDeclaration": 10071,
                             "src": "3467:15:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -5754,18 +5754,18 @@
                             }
                           ],
                           "expression": {
-                            "id": 10092,
+                            "id": 10076,
                             "name": "_liquidityCommitted",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10085,
+                            "referencedDeclaration": 10069,
                             "src": "3443:19:42",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
                               "typeString": "uint256"
                             }
                           },
-                          "id": 10093,
+                          "id": 10077,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -5779,7 +5779,7 @@
                             "typeString": "function (uint256,uint256) pure returns (uint256)"
                           }
                         },
-                        "id": 10095,
+                        "id": 10079,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -5794,7 +5794,7 @@
                           "typeString": "uint256"
                         }
                       },
-                      "id": 10096,
+                      "id": 10080,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -5808,7 +5808,7 @@
                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                       }
                     },
-                    "id": 10098,
+                    "id": 10082,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -5823,21 +5823,21 @@
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 10091,
-                  "id": 10099,
+                  "functionReturnParameters": 10075,
+                  "id": 10083,
                   "nodeType": "Return",
                   "src": "3436:57:42"
                 }
               ]
             },
             "documentation": {
-              "id": 10083,
+              "id": 10067,
               "nodeType": "StructuredDocumentation",
               "src": "2977:309:42",
               "text": "@notice The contribution of the user, meant to be used in rewards allocations\n @param _liquidityCommitted How many tokens staked (e.g. LP tokens)\n @param _timeMultiplier Time multiplier value (from getTimeMultiplier())\n @return uint256 The relative contribution of the user (unitless)"
             },
             "functionSelector": "a80bee07",
-            "id": 10101,
+            "id": 10085,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -5845,17 +5845,17 @@
             "nameLocation": "3300:19:42",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 10088,
+              "id": 10072,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 10085,
+                  "id": 10069,
                   "mutability": "mutable",
                   "name": "_liquidityCommitted",
                   "nameLocation": "3337:19:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10101,
+                  "scope": 10085,
                   "src": "3329:27:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5864,7 +5864,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 10084,
+                    "id": 10068,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3329:7:42",
@@ -5877,12 +5877,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 10087,
+                  "id": 10071,
                   "mutability": "mutable",
                   "name": "_timeMultiplier",
                   "nameLocation": "3374:15:42",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10101,
+                  "scope": 10085,
                   "src": "3366:23:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5891,7 +5891,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 10086,
+                    "id": 10070,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3366:7:42",
@@ -5906,17 +5906,17 @@
               "src": "3319:76:42"
             },
             "returnParameters": {
-              "id": 10091,
+              "id": 10075,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 10090,
+                  "id": 10074,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 10101,
+                  "scope": 10085,
                   "src": "3417:7:42",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5925,7 +5925,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 10089,
+                    "id": 10073,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3417:7:42",
@@ -5939,14 +5939,14 @@
               ],
               "src": "3416:9:42"
             },
-            "scope": 10102,
+            "scope": 10086,
             "src": "3291:209:42",
             "stateMutability": "pure",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 10103,
+        "scope": 10087,
         "src": "435:3069:42",
         "usedErrors": []
       }
@@ -5959,7 +5959,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-11-26T23:10:34.978Z",
+  "updatedAt": "2022-12-04T00:12:12.926Z",
   "devdoc": {
     "kind": "dev",
     "methods": {

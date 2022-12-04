@@ -79,7 +79,7 @@ interface IZorroControllerAnalytics is IZorroControllerBase {
         int256 _trancheId
     ) external view returns (uint256);
 
-    function stakedWantTokens(
+    function shares(
         uint256 _pid,
         address _account,
         int256 _trancheId

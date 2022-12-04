@@ -20,120 +20,101 @@ abstract contract VaultActionsLending is VaultActions {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
 
-    /* Structs */
-
-    struct ExchangeUSDForWantParams {
-        address token0Address;
-        address stablecoin;
-        address tokenZorroAddress;
-        address poolAddress;
-        AggregatorV3Interface token0PriceFeed;
-        AggregatorV3Interface stablecoinPriceFeed;
-        address[] stablecoinToToken0Path;
-    }
-
-    struct ExchangeWantTokenForUSDParams {
-        address token0Address;
-        address stablecoin;
-        address poolAddress;
-        AggregatorV3Interface token0PriceFeed;
-        AggregatorV3Interface stablecoinPriceFeed;
-        address[] token0ToStablecoinPath;
-    }
-
     /* Functions */
+
+    /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
+    /// @param _vault The vault address
+    /// @return positionVal Position value, in units of Want token
+    function currentWantEquity(address _vault)
+        public
+        view
+        override
+        returns (uint256 positionVal)
+    {
+        // TODO: Fill
+    }
+
+    /// @notice Calculates accumulated unrealized profits on a vault
+    /// @param _vault The vault address
+    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
+    /// @return harvestableProfit Amount of immediately harvestable profits
+    function unrealizedProfits(address _vault)
+        public
+        view
+        override
+        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
+    {
+        // TODO: Fill
+    }
 
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
-    /// @param _params A ExchangeUSDForWantParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return wantObtained Amount of Want token obtained
-    function exchangeUSDForWantToken(
+    function _exchangeUSDForWantToken(
         uint256 _amountUSD,
-        ExchangeUSDForWantParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256 wantObtained) {
-        // Safe transfer IN
-        IERC20Upgradeable(_params.stablecoin).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amountUSD
-        );
+    ) internal override returns (uint256 wantObtained) {
+        // Prep
+        IVault _vault = IVault(_msgSender());
+        address _stablecoin = _vault.defaultStablecoin();
+        address _token0Address = _vault.token0Address();
 
         // Swap USD for token0
         // Single asset. Swap from USD directly to Token0
-        if (_params.token0Address != _params.stablecoin) {
+        if (_token0Address != _stablecoin) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD,
-                    priceToken0: _params.stablecoinPriceFeed.getExchangeRate(),
-                    priceToken1: _params.token0PriceFeed.getExchangeRate(),
-                    token0: _params.stablecoin,
-                    token1: _params.token0Address,
+                    priceToken0: _vault.priceFeeds(_stablecoin).getExchangeRate(),
+                    priceToken1: _vault.priceFeeds(_token0Address).getExchangeRate(),
+                    token0: _stablecoin,
+                    token1: _token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.stablecoinToToken0Path,
+                    path: _getSwapPath(_stablecoin, _token0Address),
                     destination: address(this)
                 })
             );
         }
 
         // Get new Token0 balance
-        wantObtained = IERC20Upgradeable(_params.token0Address).balanceOf(
+        wantObtained = IERC20Upgradeable(_token0Address).balanceOf(
             address(this)
-        );
-
-        // Transfer back to sender
-        IERC20Upgradeable(_params.token0Address).safeTransfer(
-            msg.sender,
-            wantObtained
         );
     }
 
-    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
+    /// @notice Converts Want token back into USD to be ready for withdrawal
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
-    /// @param _params A ExchangeWantTokenForUSDParams struct
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
     /// @return usdObtained Amount of USD token obtained
-    function exchangeWantTokenForUSD(
+    function _exchangeWantTokenForUSD(
         uint256 _amount,
-        ExchangeWantTokenForUSDParams memory _params,
         uint256 _maxMarketMovementAllowed
-    ) public returns (uint256 usdObtained) {
-        // Preflight checks
-        require(_amount > 0, "negWant");
+    ) internal override returns (uint256 usdObtained) {
+        // Prep
+        IVault _vault = IVault(_msgSender());
+        address _stablecoin = _vault.defaultStablecoin();
+        address _token0Address = _vault.token0Address();
 
-        // Safely transfer Want/Underlying token from sender
-        IERC20Upgradeable(_params.token0Address).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-
-        // Swap Token0 -> BUSD
-        if (_params.token0Address != _params.stablecoin) {
+        // Swap Token0 -> USD
+        if (_token0Address != _stablecoin) {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amount,
-                    priceToken0: _params.token0PriceFeed.getExchangeRate(),
-                    priceToken1: _params.stablecoinPriceFeed.getExchangeRate(),
-                    token0: _params.token0Address,
-                    token1: _params.stablecoin,
+                    priceToken0: _vault.priceFeeds(_token0Address).getExchangeRate(),
+                    priceToken1: _vault.priceFeeds(_stablecoin).getExchangeRate(),
+                    token0: _token0Address,
+                    token1: _stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _params.token0ToStablecoinPath,
+                    path: _getSwapPath(_token0Address, _stablecoin),
                     destination: address(this)
                 })
             );
         }
 
         // Calculate USD balance
-        usdObtained = IERC20Upgradeable(_params.stablecoin).balanceOf(
+        usdObtained = IERC20Upgradeable(_stablecoin).balanceOf(
             address(this)
-        );
-
-        // Transfer to sender
-        IERC20Upgradeable(_params.stablecoin).safeTransfer(
-            msg.sender,
-            usdObtained
         );
     }
 
@@ -265,48 +246,5 @@ abstract contract VaultActionsLending is VaultActions {
             _vault
         );
         amtLocked = _wantBal + _supplyBal - _borrowBal;
-    }
-
-    // TODO: Docstrings
-    function _convertRemainingEarnedToWant(
-        uint256 _remainingEarnAmt,
-        uint256 _maxMarketMovementAllowed,
-        address _destination
-    ) internal override returns (uint256 wantObtained) {
-        // Prep
-        IVault _vault = IVaultLending(msg.sender);
-
-        address _earnedAddress = _vault.earnedAddress();
-        address _token0Address = _vault.token0Address();
-        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0Address);
-        AggregatorV3Interface _earnTokenPriceFeed = _vault.priceFeeds(_earnedAddress);
-
-        // Swap earn to token0 if token0 is not earn
-        if (_token0Address != _earnedAddress) {
-            // Swap
-            _safeSwap(
-                SafeSwapUni.SafeSwapParams({
-                    amountIn: _remainingEarnAmt,
-                    priceToken0: _earnTokenPriceFeed.getExchangeRate(),
-                    priceToken1: _token0PriceFeed.getExchangeRate(),
-                    token0: _earnedAddress,
-                    token1: _token0Address,
-                    maxMarketMovementAllowed: _maxMarketMovementAllowed,
-                    path: _getSwapPath(_earnedAddress, _token0Address),
-                    destination: address(this)
-                })
-            );
-        }
-
-        // Get new Token0 balance
-        wantObtained = IERC20Upgradeable(_token0Address).balanceOf(
-            address(this)
-        );
-
-        // Transfer want token to destination
-        IERC20Upgradeable(_token0Address).safeTransfer(
-            _destination,
-            wantObtained
-        );
     }
 }

@@ -12,6 +12,9 @@ import "../interfaces/IZorroController.sol";
 
 import "./actions/ZorroControllerActions.sol";
 
+// TODO: Replace this with the interface for VaultActions, once it's created
+import "../vaults/actions/_VaultActions.sol";
+
 contract ZorroControllerInvestment is
     IZorroControllerInvestment,
     ZorroControllerBase
@@ -130,9 +133,7 @@ contract ZorroControllerInvestment is
             .getUserContribution(sharesAdded, _timeMultiplier);
 
         // Update pool info: Increment the pool's total contributions by the contribution added
-        pool.totalTrancheContributions =
-            pool.totalTrancheContributions +
-            _contributionAdded;
+        pool.totalTrancheContributions += _contributionAdded;
 
         // Create tranche
         _createTranche(
@@ -469,40 +470,46 @@ contract ZorroControllerInvestment is
         if (!_harvestOnly) {
             // Perform the actual withdrawal function on the underlying Vault contract and get the number of shares to remove
 
-            // Get local (on-chain) account
-            address _resolvedLocalAcct = _getLocalAccount(
-                _localAccount,
-                _foreignAccount
-            );
+            // Separate block to make stack shallow
+            {
+                // Get local (on-chain) account
+                address _resolvedLocalAcct = _getLocalAccount(
+                    _localAccount,
+                    _foreignAccount
+                );
 
-            // Get vault
-            IVault _vault = IVault(poolInfo[_pid].vault);
+                // Sub block
+                {
+                    // Get vault
+                    address _vaultAddr = poolInfo[_pid].vault;
+                    IVault _vault = IVault(_vaultAddr);
 
-            // Get staked want tokens
-            // TODO: This MUST be based on shares and NOT want tokens,
-            // Because the quantity of want owed to the user will likely increase
-            // over time..... << END TODO
-            uint256 _stakedWantAmt = (_tranche.contribution *
-                1e12 *
-                _vault.wantLockedTotal()) /
-                (_tranche.timeMultiplier * _vault.sharesTotal());
+                    // Get staked want tokens
+                    uint256 _stakedWantAmt = (_tranche.contribution *
+                        1e12 *
+                        VaultActions(_vault.vaultActions()).currentWantEquity(
+                            _vaultAddr
+                        )) / (_tranche.timeMultiplier * _vault.sharesTotal());
 
-            // Withdraw the want token for this account
-            _vault.withdrawWantToken(_stakedWantAmt);
+                    // Withdraw the want token for this account
+                    _vault.withdrawWantToken(_stakedWantAmt);
+                }
 
-            // Update shares safely
-            _pool.totalTrancheContributions =
-                _pool.totalTrancheContributions -
-                _tranche.contribution;
+                // Update shares safely
+                _pool.totalTrancheContributions =
+                    _pool.totalTrancheContributions -
+                    _tranche.contribution;
 
-            // Calculate Want token balance
-            _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(
-                address(this)
-            );
+                // Calculate Want token balance
+                _res.wantAmt = IERC20Upgradeable(_pool.want).balanceOf(
+                    address(this)
+                );
 
-            // Mark tranche as exited
-            trancheInfo[_pid][_resolvedLocalAcct][_trancheId]
-                .exitedVaultAt = block.timestamp;
+                // Mark tranche as exited
+                trancheInfo[_pid][_resolvedLocalAcct][_trancheId]
+                    .exitedVaultAt = block.timestamp;
+            }
+            
 
             // Emit withdrawal event and return want balance
             emit Withdraw(

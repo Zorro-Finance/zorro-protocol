@@ -33,14 +33,14 @@ contract VaultZorro is IVaultZorro, VaultBase {
 
     /// @notice Receives new deposits from user
     /// @param _wantAmt amount of Want token to deposit/stake
-    /// @return uint256 Number of shares added
+    /// @return sharesAdded Number of shares added
     function depositWantToken(uint256 _wantAmt)
         public
         override(IVault, VaultBase)
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256)
+        returns (uint256 sharesAdded)
     {
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
@@ -53,52 +53,78 @@ contract VaultZorro is IVaultZorro, VaultBase {
         );
 
         // Set sharesAdded to the Want token amount specified
-        uint256 sharesAdded = _wantAmt;
-        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
-        // discounted by the entrance fee
-        if (wantLockedTotal > 0 && sharesTotal > 0) {
-            sharesAdded =
-                (_wantAmt * sharesTotal * entranceFeeFactor) /
-                (wantLockedTotal * feeDenominator);
-        }
-        // Increment the shares
-        sharesTotal = sharesTotal + sharesAdded;
+        sharesAdded = _wantAmt;
 
-        // Update want locked total
-        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(
+        // Calc current want equity
+        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 
-        return sharesAdded;
+        // If the total number of shares and want tokens locked both exceed 0, the shares added is the proportion of Want tokens locked,
+        // discounted by the entrance fee
+        if (_wantEquity > 0 && sharesTotal > 0) {
+            sharesAdded =
+                (_wantAmt * sharesTotal * entranceFeeFactor) /
+                (_wantEquity * feeDenominator);
+        }
+
+        // Increment the shares
+        sharesTotal = sharesTotal + sharesAdded;
+
+        // Increment principal debt to account for cash flow
+        principalDebt += _wantAmt;
     }
 
-    /// @notice Performs necessary operations to convert USD into Want token
-    /// @param _amountUSD The USD quantity to exchange
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            vaultActions,
-            _amountUSD
+    /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
+    /// @param _wantAmt The amount of Want token to withdraw
+    /// @return sharesRemoved The number of shares removed
+    function withdrawWantToken(uint256 _wantAmt)
+        public
+        override(IVault, VaultBase)
+        onlyZorroController
+        nonReentrant
+        whenNotPaused
+        returns (uint256 sharesRemoved)
+    {
+        // Preflight checks
+        require(_wantAmt > 0, "negWant");
+
+        // Calc current want equity
+        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+            address(this)
         );
 
-        // Exchange
-        return
-            VaultActionsZorro(vaultActions).exchangeUSDForWantToken(
-                _amountUSD,
-                VaultActionsZorro.ExchangeUSDForWantParams({
-                    stablecoin: defaultStablecoin,
-                    tokenZorroAddress: token0Address,
-                    zorroPriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToZorroPath: swapPaths[defaultStablecoin][ZORROAddress]
-                }),
-                _maxMarketMovementAllowed
-            );
+        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
+        sharesRemoved = (_wantAmt * sharesTotal) / _wantEquity;
+
+        // Safety: cap the shares to the total number of shares
+        if (sharesRemoved > sharesTotal) {
+            sharesRemoved = sharesTotal;
+        }
+        // Decrement the total shares by the sharesRemoved
+        sharesTotal -= sharesRemoved;
+
+        // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
+        if (withdrawFeeFactor < feeDenominator) {
+            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
+        }
+
+        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
+        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+            address(this)
+        );
+        if (_wantAmt > _wantBal) {
+            _wantAmt = _wantBal;
+        }
+
+        // Decrement principal debt to account for cash flow
+        principalDebt -= _wantAmt;
+
+        // Finally, transfer the want amount from this contract, back to the ZorroController contract
+        IERC20Upgradeable(wantAddress).safeTransfer(
+            zorroControllerAddress,
+            _wantAmt
+        );
     }
 
     /// @notice Public function for farming Want token.
@@ -109,35 +135,6 @@ contract VaultZorro is IVaultZorro, VaultBase {
 
     /// @notice Implement dummy _unfarm function to satisfy abstract contract 
     function _unfarm(uint256 _amount) internal override {}
-
-    /// @notice Converts Want token back into USD to be ready for withdrawal
-    /// @param _amount The Want token quantity to exchange
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. (included here just to implement interface; otherwise unused)
-    /// @return uint256 Amount of  token obtained
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    ) public virtual override onlyZorroController returns (uint256) {
-        // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Exchange
-        return
-            VaultActionsZorro(vaultActions).exchangeWantTokenForUSD(
-                _amount,
-                VaultActionsZorro.ExchangeWantTokenForUSDParams({
-                    tokenZorroAddress: token0Address,
-                    stablecoin: defaultStablecoin,
-                    zorroPriceFeed: priceFeeds[ZORROAddress],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    zorroToStablecoinPath: swapPaths[ZORROAddress][defaultStablecoin]
-                }),
-                _maxMarketMovementAllowed
-            );
-    }
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
     /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
@@ -159,10 +156,5 @@ contract VaultZorro is IVaultZorro, VaultBase {
 
         // Update last earned block
         lastEarnBlock = block.number;
-
-        // Update want locked total
-        wantLockedTotal = IERC20Upgradeable(token0Address).balanceOf(
-            address(this)
-        );
     }
 }

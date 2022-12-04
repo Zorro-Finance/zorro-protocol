@@ -42,6 +42,7 @@ contract VaultStargate is IVaultStargate, VaultBase {
 
     address public stargateRouter; // Stargate Router for adding/removing liquidity etc.
     uint16 public stargatePoolId; // Stargate Pool that tokens shall be lent to
+    address public lpToken; // Address of SG LP token TODO: Constructor, setter
 
     /* Setters */
 
@@ -55,39 +56,6 @@ contract VaultStargate is IVaultStargate, VaultBase {
 
     /* Investment Actions */
 
-    /// @notice Performs necessary operations to convert USD into Want token
-    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public onlyZorroController whenNotPaused returns (uint256) {
-        // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            vaultActions,
-            _amountUSD
-        );
-
-        // Exchange
-        return
-            VaultActionsStargate(vaultActions).exchangeUSDForWantToken(
-                _amountUSD,
-                VaultActionsStargate.ExchangeUSDForWantParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    tokenZorroAddress: ZORROAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
-                    stargateRouter: stargateRouter,
-                    wantAddress: wantAddress,
-                    stargatePoolId: stargatePoolId
-                }),
-                _maxMarketMovementAllowed
-            );
-    }
-
     /// @notice Public function for farming Want token.
     function farm() public virtual nonReentrant {
         _farm();
@@ -95,21 +63,35 @@ contract VaultStargate is IVaultStargate, VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal override {
-        require(isFarmable, "!farmable");
-
         // Get the Want token stored on this contract
-        uint256 wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
+        uint256 _wantAmt = IERC20Upgradeable(wantAddress).balanceOf(
             address(this)
         );
+
+        // Increase allowance
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+            stargateRouter,
+            _wantAmt
+        );
+
+        // Deposit token to get Want token
+        IStargateRouter(stargateRouter).addLiquidity(
+            stargatePoolId,
+            _wantAmt,
+            address(this)
+        );
+
+        // Calc LP balance
+        uint256 _lpBal = IERC20Upgradeable(lpToken).balanceOf(address(this));
 
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             farmContractAddress,
-            wantAmt
+            _lpBal
         );
 
         // Deposit the Want tokens in the Farm contract
-        IStargateLPStaking(farmContractAddress).deposit(pid, wantAmt);
+        IStargateLPStaking(farmContractAddress).deposit(pid, _lpBal);
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
@@ -117,43 +99,22 @@ contract VaultStargate is IVaultStargate, VaultBase {
     function _unfarm(uint256 _wantAmt) internal override {
         // Withdraw the Want tokens from the Farm contract
         IStargateLPStaking(farmContractAddress).withdraw(pid, _wantAmt);
-    }
 
-    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
-    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    )
-        public
-        onlyZorroController
-        whenNotPaused
-        returns (uint256)
-    {
-        // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
+        // Calc lp balance
+        uint256 _lpBal = IERC20Upgradeable(lpToken).balanceOf(address(this));
+
+        // Approve
+        IERC20Upgradeable(lpToken).safeIncreaseAllowance(
+            stargateRouter,
+            _lpBal
         );
 
-        // Exchange
-        return
-            VaultActionsStargate(vaultActions).exchangeWantTokenForUSD(
-                _amount,
-                VaultActionsStargate.ExchangeWantTokenForUSDParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    wantAddress: wantAddress,
-                    stargateRouter: stargateRouter,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin],
-                    stargatePoolId: stargatePoolId
-                }),
-                _maxMarketMovementAllowed
-            );
+        // Withdraw Want token to get Token0
+        IStargateRouter(stargateRouter).instantRedeemLocal(
+            stargatePoolId,
+            _lpBal,
+            address(this)
+        );
     }
 }
 

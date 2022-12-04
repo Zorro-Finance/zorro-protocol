@@ -49,7 +49,10 @@ abstract contract VaultLending is IVaultLending, VaultBase {
 
     /* Setters */
 
-    function setTargetBorrowLimits(uint256 _targetBorrowLimit, uint256 _hysteresis) external onlyOwner {
+    function setTargetBorrowLimits(
+        uint256 _targetBorrowLimit,
+        uint256 _hysteresis
+    ) external onlyOwner {
         // Set target borrow limit settings
         targetBorrowLimit = _targetBorrowLimit;
         targetBorrowLimitHysteresis = _hysteresis;
@@ -63,37 +66,6 @@ abstract contract VaultLending is IVaultLending, VaultBase {
     }
 
     /* Investment Actions */
-
-    /// @notice Performs necessary operations to convert USD into Want token
-    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Allow spending
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
-            vaultActions,
-            _amountUSD
-        );
-
-        // Exchange
-        return
-            VaultActionsLending(vaultActions).exchangeUSDForWantToken(
-                _amountUSD,
-                VaultActionsLending.ExchangeUSDForWantParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    tokenZorroAddress: ZORROAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToToken0Path: swapPaths[defaultStablecoin][token0Address],
-                    poolAddress: poolAddress
-                }),
-                _maxMarketMovementAllowed
-            );
-    }
 
     /// @notice Withdraws specified amount of underlying and rebalances
     /// @param _amount Amount of underlying to withdraw
@@ -114,43 +86,6 @@ abstract contract VaultLending is IVaultLending, VaultBase {
             ILendingToken(poolAddress).redeemUnderlying(_amount) == 0,
             "_withdrawSome: redeem failed"
         );
-    }
-
-    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
-    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of USD token obtained
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    )
-        public
-        virtual
-        override
-        onlyZorroController
-        whenNotPaused
-        returns (uint256)
-    {
-        // Approve spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
-        );
-
-        // Exchange
-        return
-            VaultActionsLending(vaultActions).exchangeWantTokenForUSD(
-                _amount,
-                VaultActionsLending.ExchangeWantTokenForUSDParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    poolAddress: poolAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    token0ToStablecoinPath: swapPaths[token0Address][defaultStablecoin]
-                }),
-                _maxMarketMovementAllowed
-            );
     }
 
     /// @notice Public function for farming Want token.
@@ -240,8 +175,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         } else {
             // If ABOVE leverage target, iteratively deleverage until within hysteresis envelope
             while (
-                _currentL > _L &&
-                (_currentL - _L) > targetBorrowLimitHysteresis
+                _currentL > _L && (_currentL - _L) > targetBorrowLimitHysteresis
             ) {
                 // Calculate incremental amount to borrow:
                 uint256 _dy = VaultActionsBenqiLending(vaultActions)
@@ -280,21 +214,10 @@ abstract contract VaultLending is IVaultLending, VaultBase {
                 _y = _y - _dy;
 
                 // Update current leverage (borrowed / supplied)
-                _currentL = _y * 1e18 / _x;
+                _currentL = (_y * 1e18) / _x;
                 // Update current liquidity of underlying pool
                 _liquidityAvailable = ILendingToken(poolAddress).getCash();
             }
         }
-    }
-
-    /// @notice Calc want token locked, accounting for leveraged supply/borrow
-    /// @return amtLocked The adjusted wantLockedTotal quantity
-    function wantTokenLockedAdj() public returns (uint256 amtLocked) {
-        return
-            VaultActionsLending(vaultActions).wantTokenLockedAdj(
-                address(this),
-                token0Address,
-                poolAddress
-            );
     }
 }

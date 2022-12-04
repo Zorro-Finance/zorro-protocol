@@ -109,10 +109,6 @@ contract ZorroControllerXChainEarn is
         // Calculate total USD to transfer
         uint256 _totalUSD = _buybackAmountUSD + _revShareAmountUSD;
 
-        // TODO: check the funds flow. Is safetransferfrom required
-        // if we transfer funds into this contract already?
-        // This is called from VaultBase.
-
         // Transfer USD into this contract
         IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
             msg.sender,

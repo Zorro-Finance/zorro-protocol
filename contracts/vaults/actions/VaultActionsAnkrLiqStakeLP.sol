@@ -25,12 +25,12 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
     /// @param _token0 The base (underlying) token to supply
     /// @param _liqStakeToken The liquid staking synthetic token returned after staking the underlying
     /// @param _liqStakePool The liquid staking pool address
-    function _liquidStake(
+    function liquidStake(
         uint256 _amount,
         address _token0,
         address _liqStakeToken,
         address _liqStakePool
-    ) internal override {
+    ) public override {
         // Preflight checks
         require(_amount >= 0.5 ether, "minLiqStake");
 
@@ -72,7 +72,7 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
 
     /// @notice Withdraws liquid stake on protocol
     /// @param _swapParams The SafeSwapParams object with swap information
-    function _liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) internal override {
+    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams) public override {
         // Transfer amount IN
         IERC20Upgradeable(_swapParams.token0).safeTransferFrom(
             msg.sender,

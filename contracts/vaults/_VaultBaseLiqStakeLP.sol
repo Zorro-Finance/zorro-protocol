@@ -39,10 +39,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Price feeds
-        _setPriceFeed(
-            liquidStakeToken,
-            _initValue.liquidStakeTokenPriceFeed
-        );
+        _setPriceFeed(liquidStakeToken, _initValue.liquidStakeTokenPriceFeed);
 
         // Super call
         VaultBase.initialize(_timelockOwner, _initValue.baseInit);
@@ -61,8 +58,27 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         _farm();
     }
 
-    /// @notice Internal function for farming LP token. Responsible for staking LP token in a MasterChef/MasterApe-like contract
+    /// @notice Internal function for farming
     function _farm() internal override {
+        // Calculate balance
+        uint256 _token0Bal = IERC20Upgradeable(token0Address).balanceOf(
+            address(this)
+        );
+
+        // Approve spending
+        IERC20Upgradeable(token0Address).safeIncreaseAllowance(
+            vaultActions,
+            _token0Bal
+        );
+
+        // Stake ETH (liquid staking)
+        VaultActionsLiqStakeLP(vaultActions).liquidStake(
+            _token0Bal,
+            token0Address,
+            liquidStakeToken,
+            liquidStakingPool
+        );
+
         // Calc balance of sETH on this contract
         uint256 _synthBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
             address(this)
@@ -89,29 +105,30 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             maxMarketMovementAllowed
         );
 
-        // Get the LP token stored on this contract
-        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
-            address(this)
-        );
-
-        // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
-        IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
-            farmContractAddress,
-            _lpBal
-        );
-
         // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID) IF AMM Masterchef allocates rewards
         if (isFarmable) {
+            // Get the LP token stored on this contract
+            uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
+                address(this)
+            );
+
+            // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
+            IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
+                farmContractAddress,
+                _lpBal
+            );
+
+            // Farm
             IAMMFarm(farmContractAddress).deposit(pid, _lpBal);
         }
     }
 
-    /// @notice Internal function for unfarming LP token. Responsible for unstaking LP token from MasterChef/MasterApe contracts
-    /// @param _lpAmt the amount of LP tokens to withdraw. If 0, will only harvest and not withdraw
-    function _unfarm(uint256 _lpAmt) internal override {
+    /// @notice Internal function for unfarming LP token.
+    /// @param _amount the amount of earned tokens to withdraw. If 0, will only harvest and not withdraw
+    function _unfarm(uint256 _amount) internal override {
         // Withdraw the LP tokens from the Farm contract pool (IF AMM Masterchef allocates rewards)
         if (isFarmable) {
-            IAMMFarm(farmContractAddress).withdraw(pid, _lpAmt);
+            IAMMFarm(farmContractAddress).withdraw(pid, _amount);
         }
 
         // Calc balance
@@ -125,103 +142,47 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             _balLPToken
         );
 
-        // Convert LP tokens to sETH + ETH and swap to sETH (want token), deliver back to this contract
-        VaultActionsLiqStakeLP(vaultActions).unStakeFromLPPool(
-            _balLPToken,
-            VaultActionsLiqStakeLP.UnstakeLiqTokenFromLPPoolParams({
-                liquidStakeToken: liquidStakeToken,
-                nativeToken: token0Address,
-                lpPoolToken: poolAddress,
-                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                nativeTokenPriceFeed: priceFeeds[token0Address],
-                nativeToLiquidStakePath: swapPaths[token0Address][
-                    liquidStakeToken
-                ]
-            }),
-            maxMarketMovementAllowed
-        );
-    }
+        // TODO: The next few funcs involve a lot of back and forth
+        // between actions and vault. To save gas fees it may make sense
+        // to combine these all into actions
 
-    /// @notice Performs necessary operations to convert USD into Want token
-    /// @param _amountUSD The USD quantity to exchange (must already be deposited)
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return uint256 Amount of Want token obtained
-    function exchangeUSDForWantToken(
-        uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
-    ) public override onlyZorroController whenNotPaused returns (uint256) {
-        // Increase allowance
-        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+        // Exit LP pool and get back sETH, WETH
+        VaultActionsLiqStakeLP(vaultActions).exitPool(
+            _amount,
+            maxMarketMovementAllowed,
+            address(this),
+            VaultActions.ExitPoolParams({
+                token0: liquidStakeToken,
+                token1: token0Address,
+                poolAddress: poolAddress,
+                lpTokenAddress: poolAddress
+            })
+        );
+
+        // Calc sETH balance
+        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
+            address(this)
+        );
+
+        // Approve spending
+        IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
             vaultActions,
-            _amountUSD
+            _synthTokenBal
         );
 
-        // Exchange
-        return
-            VaultActionsLiqStakeLP(vaultActions).exchangeUSDForWantToken(
-                _amountUSD,
-                VaultActionsLiqStakeLP.ExchangeUSDForWantParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    liquidStakeToken: liquidStakeToken,
-                    liquidStakePool: liquidStakingPool,
-                    poolAddress: poolAddress,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToToken0Path: swapPaths[defaultStablecoin][
-                        token0Address
-                    ],
-                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][
-                        token0Address
-                    ]
-                }),
-                _maxMarketMovementAllowed
-            );
-    }
-
-    /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
-    /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
-    /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
-    /// @return returnedUSD Amount of USD token obtained
-    function exchangeWantTokenForUSD(
-        uint256 _amount,
-        uint256 _maxMarketMovementAllowed
-    )
-        public
-        virtual
-        override
-        onlyZorroController
-        whenNotPaused
-        returns (uint256 returnedUSD)
-    {
-        // Allow spending
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            vaultActions,
-            _amount
+        // Unstake sETH to get ETH
+        VaultActionsLiqStakeLP(vaultActions).liquidUnstake(
+            SafeSwapUni.SafeSwapParams({
+                amountIn: _synthTokenBal,
+                priceToken0: priceFeeds[liquidStakeToken].getExchangeRate(),
+                priceToken1: priceFeeds[token0Address].getExchangeRate(),
+                token0: liquidStakeToken,
+                token1: token0Address,
+                maxMarketMovementAllowed: maxMarketMovementAllowed,
+                path: swapPaths[liquidStakeToken][token0Address],
+                destination: address(this)
+            })
         );
-
-        // Spending
-        return
-            VaultActionsLiqStakeLP(vaultActions).exchangeWantTokenForUSD(
-                _amount,
-                VaultActionsLiqStakeLP.ExchangeWantTokenForUSDParams({
-                    token0Address: token0Address,
-                    stablecoin: defaultStablecoin,
-                    poolAddress: poolAddress,
-                    liquidStakeToken: liquidStakeToken,
-                    token0PriceFeed: priceFeeds[token0Address],
-                    liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                    stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    liquidStakeToToken0Path: swapPaths[liquidStakeToken][
-                        token0Address
-                    ],
-                    token0ToStablecoinPath: swapPaths[token0Address][
-                        defaultStablecoin
-                    ]
-                }),
-                _maxMarketMovementAllowed
-            );
     }
 }
 
