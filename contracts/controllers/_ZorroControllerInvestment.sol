@@ -485,6 +485,8 @@ contract ZorroControllerInvestment is
                     IVault _vault = IVault(_vaultAddr);
 
                     // Get staked want tokens
+                    // TODO: Need to call updateSupply() first, or else the currentWantEquity could be out of date
+                    // OR: Do it based on number of shares. Why not? 
                     uint256 _stakedWantAmt = (_tranche.contribution *
                         1e12 *
                         VaultActions(_vault.vaultActions()).currentWantEquity(

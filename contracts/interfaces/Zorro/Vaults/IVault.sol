@@ -95,6 +95,7 @@ interface IVault {
     function earnedAddress() external view returns (address);
     function token0Address() external view returns (address);
     function token1Address() external view returns (address);
+    function ZORROAddress() external view returns (address);
     function swapPaths(address _startToken, address _endToken, uint256 _index) external view returns (address); 
     function swapPathLength(address _startToken, address _endToken) external view returns (uint16);
     function priceFeeds(address _token) external view returns (AggregatorV3Interface);

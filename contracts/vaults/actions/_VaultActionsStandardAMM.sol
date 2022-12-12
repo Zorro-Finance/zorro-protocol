@@ -27,20 +27,28 @@ contract VaultActionsStandardAMM is VaultActions {
         public
         view
         override
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit) {
-            // TODO: Fill
-        }
+        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
+    {
+        // TODO: Fill
+    }
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
-        returns (uint256 positionVal) {
-            // TODO: Fill
-        }
+        returns (uint256 positionVal)
+    {
+        // Prep
+        IVaultStandardAMM _vault = IVaultStandardAMM(_vaultAddr);
+        address _lpToken = _vault.wantAddress();
+
+        // Get LP token quantity
+        // TODO: This is not complete. Need other layers of the stack, priced in Want
+        return IERC20Upgradeable(_lpToken).balanceOf(_vaultAddr);
+    }
 
     /// @notice Performs necessary operations to convert USD into Want token and transfer back to sender
     /// @dev NOTE: Requires caller to approve spending beforehand
@@ -63,8 +71,12 @@ contract VaultActionsStandardAMM is VaultActions {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD / 2,
-                    priceToken0: _vault.priceFeeds(_stablecoin).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_token0Address).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_token0Address)
+                        .getExchangeRate(),
                     token0: _stablecoin,
                     token1: _token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -79,8 +91,12 @@ contract VaultActionsStandardAMM is VaultActions {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD / 2,
-                    priceToken0: _vault.priceFeeds(_stablecoin).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_token1Address).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_token1Address)
+                        .getExchangeRate(),
                     token0: _stablecoin,
                     token1: _token1Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -109,9 +125,7 @@ contract VaultActionsStandardAMM is VaultActions {
         );
 
         // Calculate resulting want token balance
-        wantObtained = IERC20Upgradeable(_want).balanceOf(
-            msg.sender
-        );
+        wantObtained = IERC20Upgradeable(_want).balanceOf(msg.sender);
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender
@@ -158,8 +172,12 @@ contract VaultActionsStandardAMM is VaultActions {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _token0Amt,
-                    priceToken0: _vault.priceFeeds(_token0Address).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_stablecoin).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_token0Address)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
                     token0: _token0Address,
                     token1: _stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -174,8 +192,12 @@ contract VaultActionsStandardAMM is VaultActions {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _token1Amt,
-                    priceToken0: _vault.priceFeeds(_token1Address).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_stablecoin).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_token1Address)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
                     token0: _token1Address,
                     token1: _stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -186,8 +208,6 @@ contract VaultActionsStandardAMM is VaultActions {
         }
 
         // Calculate USD balance
-        usdObtained = IERC20Upgradeable(_stablecoin).balanceOf(
-            address(this)
-        );
+        usdObtained = IERC20Upgradeable(_stablecoin).balanceOf(address(this));
     }
 }

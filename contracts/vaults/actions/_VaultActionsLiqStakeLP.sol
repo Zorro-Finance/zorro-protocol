@@ -71,14 +71,23 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
         }
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
         returns (uint256 positionVal) {
-            // TODO: Fill
+            // Prep
+            // TODO: Be mindful of double counting. LP token, once locked in masterchef, should not be counted for example
+            IVaultLiqStakeLP _vault = IVaultLiqStakeLP(_vaultAddr);
+            address _token0 = _vault.token0Address(); // Underlying token
+            address _liqStakeToken = _vault.liquidStakeToken(); // Amount of synth token (e.g. sETH token)
+            address _lpToken = _vault.lpToken(); // Amount of synth token (e.g. sETH token)
+            address _earned = _vault.earnedAddress(); // Amount of farm token (e.g. Qi)
+
+            // TODO Get balances of each
+            // TODO Express balances in terms of token0 and sum them all up
         }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender

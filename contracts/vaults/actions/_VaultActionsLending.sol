@@ -23,15 +23,26 @@ abstract contract VaultActionsLending is VaultActions {
     /* Functions */
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
         returns (uint256 positionVal)
     {
-        // TODO: Fill
+        // Prep
+        IVaultLending _vault = IVaultLending(_vaultAddr);
+        address _earnToken = _vault.earnedAddress();
+
+        // Get the difference of total amount supplied vs borrowed
+        uint256 _token0Bal = _vault.supplyBal() - _vault.borrowBal();
+        uint256 _earnedBal = IERC20Upgradeable(_earnToken).balanceOf(_vaultAddr);
+
+        // TODO: Get the exchange rate of earned to token0. Maybe create a library func for this on the base contract?
+
+        // TODO: Return the sum of token0 and earn (in units of token0)
+
     }
 
     /// @notice Calculates accumulated unrealized profits on a vault

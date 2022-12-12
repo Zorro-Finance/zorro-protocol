@@ -8,6 +8,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "../../interfaces/Zorro/Vaults/IVaultZorro.sol";
+
 import "../../libraries/PriceFeed.sol";
 
 import "./_VaultActions.sol";
@@ -21,15 +23,20 @@ contract VaultActionsZorro is VaultActions {
     /* Functions */
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
         returns (uint256 positionVal)
     {
-        // TODO: Fill
+        // Prep
+        IVaultZorro _vault = IVaultZorro(_vaultAddr);
+        address _zor = _vault.ZORROAddress();
+
+        // Return ZOR balance
+        positionVal = IERC20Upgradeable(_zor).balanceOf(address(this));
     }
 
     /// @notice Calculates accumulated unrealized profits on a vault

@@ -46,6 +46,9 @@ abstract contract VaultLending is IVaultLending, VaultBase {
     uint256 public targetBorrowLimit; // Max borrow rate % (1e18 = 100%)
     uint256 public targetBorrowLimitHysteresis; // +/- envelope (1% = 1e16)
     address public comptrollerAddress; // Unitroller address
+    address public lendingToken; // Lending contract address (e.g. vToken) TODO: Constructor, Setter
+    uint256 public supplyBal; // Aggregate supply balance of underlying token on lending contract, by this vault
+    uint256 public borrowBal; // Aggregate borrow balance of underlying token on lending contract, by this vault
 
     /* Setters */
 
@@ -65,7 +68,53 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         comptrollerAddress = _comptroller;
     }
 
+    /// @notice Update balance of supply and borrow
+    function updateBalance() public {
+        supplyBal = ILendingToken(lendingToken).balanceOfUnderlying(
+            address(this)
+        ); // a payable function because of acrueInterest()
+        borrowBal = ILendingToken(lendingToken).borrowBalanceCurrent(
+            address(this)
+        );
+    }
+
     /* Investment Actions */
+
+    /// @notice Receives new deposits from user
+    /// @param _wantAmt amount of underlying token to deposit/stake
+    /// @return sharesAdded uint256 Number of shares added
+    function depositWantToken(uint256 _wantAmt)
+        public
+        override(IVault, VaultBase)
+        onlyZorroController
+        nonReentrant
+        whenNotPaused
+        returns (uint256 sharesAdded)
+    {
+        // Update balance
+        updateBalance();
+
+        // Deposit
+        return super.depositWantToken(_wantAmt);
+    }
+
+    /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
+    /// @param _wantAmt The amount of Want token to withdraw
+    /// @return sharesRemoved The number of shares removed
+    function withdrawWantToken(uint256 _wantAmt)
+        public
+        override(IVault, VaultBase)
+        onlyZorroController
+        nonReentrant
+        whenNotPaused
+        returns (uint256 sharesRemoved)
+    {
+        // Update balance
+        updateBalance();
+
+        // Withdraw
+        return super.withdrawWantToken(_wantAmt);
+    }
 
     /// @notice Withdraws specified amount of underlying and rebalances
     /// @param _amount Amount of underlying to withdraw

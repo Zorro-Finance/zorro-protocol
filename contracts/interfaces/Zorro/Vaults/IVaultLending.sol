@@ -22,4 +22,9 @@ interface IVaultLending is IVault {
     function targetBorrowLimit() external view returns (uint256);
     function targetBorrowLimitHysteresis() external view returns (uint256);
     function comptrollerAddress() external view returns (address);
+
+    // State
+    function lendingToken() external view returns (address);
+    function supplyBal() external view returns (uint256);
+    function borrowBal() external view returns (uint256);
 }

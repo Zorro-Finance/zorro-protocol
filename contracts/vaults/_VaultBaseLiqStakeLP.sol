@@ -49,6 +49,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 
     address public liquidStakeToken; // Synth token for liquid staking (e.g. sETH)
     address public liquidStakingPool; // Liquid staking pool (can sometimes be the same as liquidStakeToken)
+    address public lpToken; // LP token that includes liquidStakeToken and token0Address
     AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sETH
 
     /* Investment Actions */

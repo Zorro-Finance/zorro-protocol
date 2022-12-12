@@ -118,15 +118,23 @@ contract VaultActionsAlpaca is VaultActions {
     }
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
         returns (uint256 positionVal)
     {
-        // TODO: Fill
+        // Prep
+        IVaultAlpaca _vault = IVaultAlpaca(_vaultAddr);
+        address _token0 = _vault.token0Address(); // Underlying token
+        address _iToken = _vault.wantAddress(); // Amount of LP token (e.g. iBNB)
+        address _alpaca = _vault.earnedAddress(); // Amount of farm token (ALPACA)
+
+        // TODO Get balances of each
+        // TODO Express balances in terms of token0 and sum them all up
+        
     }
 
     /// @notice Calculates accumulated unrealized profits on a vault

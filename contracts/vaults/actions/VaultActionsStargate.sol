@@ -19,15 +19,22 @@ contract VaultActionsStargate is VaultActions {
     /* Functions */
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
-    function currentWantEquity(address _vault)
+    function currentWantEquity(address _vaultAddr)
         public
         view
         override
         returns (uint256 positionVal)
     {
-        // TODO: Fill
+        // Prep
+        IVaultStargate _vault = IVaultStargate(_vaultAddr);
+        address _token0 = _vault.token0Address(); // Underlying token
+        address _lpToken = _vault.wantAddress(); // Amount of LP token (e.g. SG LP token)
+        address _stg = _vault.earnedAddress(); // Amount of farm token (STG)
+
+        // TODO Get balances of each
+        // TODO Express balances in terms of token0 and sum them all up
     }
 
     /// @notice Calculates accumulated unrealized profits on a vault
