@@ -18,64 +18,20 @@ import "../../interfaces/IAMMRouter02.sol";
 
 import "../../interfaces/Zorro/Vaults/IVault.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActions.sol";
+
 import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
 // TODO: Unit tests
 
-abstract contract VaultActions is OwnableUpgradeable {
+abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeSwapUni for IAMMRouter02;
     using PriceFeed for AggregatorV3Interface;
-
-    /* Structs */
-
-    struct ExitPoolParams {
-        address token0;
-        address token1;
-        address poolAddress;
-        address lpTokenAddress;
-    }
-
-    struct DistributeEarningsParams {
-        address ZORROAddress;
-        address rewardsAddress;
-        address stablecoin;
-        address zorroStakingVault;
-        address zorroLPPoolOtherToken;
-        AggregatorV3Interface ZORPriceFeed;
-        AggregatorV3Interface lpPoolOtherTokenPriceFeed;
-        AggregatorV3Interface stablecoinPriceFeed;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToZORLPPoolOtherTokenPath;
-        uint16 controllerFeeBP; // BP = basis points
-        uint16 buybackBP;
-        uint16 revShareBP;
-        bool isHomeChain;
-    }
-
-    struct BuybackBurnLPParams {
-        address stablecoin;
-        address ZORROAddress;
-        address zorroLPPoolOtherToken;
-        address[] stablecoinToZORROPath;
-        address[] stablecoinToZORLPPoolOtherTokenPath;
-        AggregatorV3Interface stablecoinPriceFeed;
-        AggregatorV3Interface ZORPriceFeed;
-        AggregatorV3Interface lpPoolOtherTokenPriceFeed;
-    }
-
-    struct RevShareParams {
-        address stablecoin;
-        address ZORROAddress;
-        address zorroStakingVault;
-        address[] stablecoinToZORROPath;
-        AggregatorV3Interface stablecoinPriceFeed;
-        AggregatorV3Interface ZORPriceFeed;
-    }
 
     /* Constructor */
 

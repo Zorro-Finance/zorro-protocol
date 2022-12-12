@@ -12,34 +12,17 @@ import "../../interfaces/IAMMRouter02.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol";
+
 import "../../libraries/PriceFeed.sol";
 
 import "./_VaultActions.sol";
 
-abstract contract VaultActionsLiqStakeLP is VaultActions {
+abstract contract VaultActionsLiqStakeLP is IVaultActionsLiqStakeLP, VaultActions {
     /* Libs */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
-
-    /* Structs */
-
-    struct StakeLiqTokenInLPPoolParams {
-        address liquidStakeToken;
-        address nativeToken;
-        AggregatorV3Interface liquidStakeTokenPriceFeed;
-        AggregatorV3Interface nativeTokenPriceFeed;
-        address[] liquidStakeToNativePath;
-    }
-
-    struct UnstakeLiqTokenFromLPPoolParams {
-        address liquidStakeToken;
-        address nativeToken;
-        address lpPoolToken;
-        AggregatorV3Interface liquidStakeTokenPriceFeed;
-        AggregatorV3Interface nativeTokenPriceFeed;
-        address[] nativeToLiquidStakePath;
-    }
 
     /* Functions */
 
@@ -65,7 +48,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
     function unrealizedProfits(address _vault)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 accumulatedProfit, uint256 harvestableProfit) {
             // TODO: Fill
         }
@@ -76,7 +59,7 @@ abstract contract VaultActionsLiqStakeLP is VaultActions {
     function currentWantEquity(address _vaultAddr)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 positionVal) {
             // Prep
             // TODO: Be mindful of double counting. LP token, once locked in masterchef, should not be counted for example

@@ -56,7 +56,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
         sharesAdded = _wantAmt;
 
         // Calc current want equity
-        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+        uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 
@@ -90,7 +90,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
         require(_wantAmt > 0, "negWant");
 
         // Calc current want equity
-        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+        uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 

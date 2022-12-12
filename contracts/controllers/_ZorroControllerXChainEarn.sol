@@ -192,12 +192,12 @@ contract ZorroControllerXChainEarn is
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(controllerActions, _amountUSDBuyback + _amountUSDRevShare);
         
         // Perform distribution
-        ZorroControllerXChainActions(controllerActions).distributeEarnings(
+        IZorroControllerXChainActions(controllerActions).distributeEarnings(
             defaultStablecoin,
             _amountUSDBuyback,
             _amountUSDRevShare,
             _maxMarketMovement,
-            ZorroControllerXChainActions.EarningsBuybackParams({
+            IZorroControllerXChainActions.EarningsBuybackParams({
                 stablecoin: defaultStablecoin,
                 ZORRO: ZORRO,
                 zorroLPPoolOtherToken: zorroLPPoolOtherToken,
@@ -208,7 +208,7 @@ contract ZorroControllerXChainEarn is
                 stablecoinToZorroPath: stablecoinToZorroPath, 
                 stablecoinToZorroLPPoolOtherTokenPath: stablecoinToZorroLPPoolOtherTokenPath
             }),
-            ZorroControllerXChainActions.EarningsRevshareParams({
+            IZorroControllerXChainActions.EarningsRevshareParams({
                 stablecoin: defaultStablecoin,
                 ZORRO: ZORRO,
                 zorroLPPoolOtherToken: zorroLPPoolOtherToken, 

@@ -10,11 +10,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../../interfaces/Zorro/Vaults/IVaultZorro.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsZorro.sol";
+
 import "../../libraries/PriceFeed.sol";
 
 import "./_VaultActions.sol";
 
-contract VaultActionsZorro is VaultActions {
+contract VaultActionsZorro is IVaultActionsZorro, VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -28,7 +30,7 @@ contract VaultActionsZorro is VaultActions {
     function currentWantEquity(address _vaultAddr)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 positionVal)
     {
         // Prep
@@ -46,7 +48,7 @@ contract VaultActionsZorro is VaultActions {
     function unrealizedProfits(address _vault)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 accumulatedProfit, uint256 harvestableProfit)
     {
         // TODO: Fill

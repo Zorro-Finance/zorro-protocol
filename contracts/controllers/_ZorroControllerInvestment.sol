@@ -8,12 +8,13 @@ import "./_ZorroControllerBase.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
+import "../interfaces/Zorro/Vaults/Actions/IVaultActions.sol";
+
+import "../interfaces/Zorro/Controllers/Actions/IZorroControllerActions.sol";
+
 import "../interfaces/IZorroController.sol";
 
 import "./actions/ZorroControllerActions.sol";
-
-// TODO: Replace this with the interface for VaultActions, once it's created
-import "../vaults/actions/_VaultActions.sol";
 
 contract ZorroControllerInvestment is
     IZorroControllerInvestment,
@@ -125,11 +126,11 @@ contract ZorroControllerInvestment is
         );
 
         // Determine time multiplier value.
-        uint256 _timeMultiplier = ZorroControllerActions(controllerActions)
+        uint256 _timeMultiplier = IZorroControllerActions(controllerActions)
             .getTimeMultiplier(_weeksCommitted, isTimeMultiplierActive);
 
         // Determine the individual user contribution based on the quantity of tokens to stake and the time multiplier
-        uint256 _contributionAdded = ZorroControllerActions(controllerActions)
+        uint256 _contributionAdded = IZorroControllerActions(controllerActions)
             .getUserContribution(sharesAdded, _timeMultiplier);
 
         // Update pool info: Increment the pool's total contributions by the contribution added
@@ -416,7 +417,7 @@ contract ZorroControllerInvestment is
             (
                 uint256 _rewardsDue,
                 uint256 _slashedRewards
-            ) = ZorroControllerActions(controllerActions).getAdjustedRewards(
+            ) = IZorroControllerActions(controllerActions).getAdjustedRewards(
                     _tranche,
                     _pendingRewards
                 );
@@ -489,7 +490,7 @@ contract ZorroControllerInvestment is
                     // OR: Do it based on number of shares. Why not? 
                     uint256 _stakedWantAmt = (_tranche.contribution *
                         1e12 *
-                        VaultActions(_vault.vaultActions()).currentWantEquity(
+                        IVaultActions(_vault.vaultActions()).currentWantEquity(
                             _vaultAddr
                         )) / (_tranche.timeMultiplier * _vault.sharesTotal());
 

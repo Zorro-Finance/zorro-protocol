@@ -192,7 +192,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
             uint256 _L,
             uint256 _currentL,
             uint256 _liquidityAvailable
-        ) = VaultActionsLending(vaultActions).levLendingParams(
+        ) = IVaultActionsLending(vaultActions).levLendingParams(
                 _withdrawAmt,
                 _ox,
                 comptrollerAddress,
@@ -206,7 +206,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
             // If BELOW leverage target and below hysteresis envelope
 
             // Calculate incremental amount to borrow:
-            uint256 _dy = VaultActionsLending(vaultActions)
+            uint256 _dy = IVaultActionsLending(vaultActions)
                 .calcIncBorrowBelowTarget(
                     _x,
                     _y,
@@ -227,7 +227,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
                 _currentL > _L && (_currentL - _L) > targetBorrowLimitHysteresis
             ) {
                 // Calculate incremental amount to borrow:
-                uint256 _dy = VaultActionsBenqiLending(vaultActions)
+                uint256 _dy = IVaultActionsLending(vaultActions)
                     .calcIncBorrowAboveTarget(
                         _x,
                         _y,

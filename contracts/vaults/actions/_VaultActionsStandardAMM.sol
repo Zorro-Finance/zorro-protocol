@@ -8,9 +8,11 @@ import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultStandardAMM.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsStandardAMM.sol";
+
 import "./_VaultActions.sol";
 
-contract VaultActionsStandardAMM is VaultActions {
+contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -26,7 +28,7 @@ contract VaultActionsStandardAMM is VaultActions {
     function unrealizedProfits(address _vault)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 accumulatedProfit, uint256 harvestableProfit)
     {
         // TODO: Fill
@@ -38,7 +40,7 @@ contract VaultActionsStandardAMM is VaultActions {
     function currentWantEquity(address _vaultAddr)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 positionVal)
     {
         // Prep

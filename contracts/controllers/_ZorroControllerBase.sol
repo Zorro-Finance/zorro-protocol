@@ -80,7 +80,7 @@ contract ZorroControllerBase is
     // Oracles
     address public zorroControllerOracle;
     // Other
-    address public controllerActions; // TODO: Setter and constructor
+    address public controllerActions;
 
     /* Setters */
 
@@ -118,6 +118,11 @@ contract ZorroControllerBase is
         // Set start block only if it hasn't been set previously
         require(startBlock == 0, "blockParams immutable");
         startBlock = _startBlock;
+    }
+
+    /// @notice Setter: Set controller actions contract address
+    function setControllerActions(address _controllerActions) external onlyOwner {
+        controllerActions = _controllerActions;
     }
 
     /// @notice Setter: Reward params (See Tokenomics paper for more details)

@@ -8,9 +8,11 @@ import "../../interfaces/Stargate/IStargateLPStaking.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultStargate.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsStargate.sol";
+
 import "./_VaultActions.sol";
 
-contract VaultActionsStargate is VaultActions {
+contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -24,7 +26,7 @@ contract VaultActionsStargate is VaultActions {
     function currentWantEquity(address _vaultAddr)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 positionVal)
     {
         // Prep
@@ -44,7 +46,7 @@ contract VaultActionsStargate is VaultActions {
     function unrealizedProfits(address _vault)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 accumulatedProfit, uint256 harvestableProfit)
     {
         // TODO: Fill

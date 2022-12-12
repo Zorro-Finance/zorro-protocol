@@ -38,6 +38,7 @@ contract ZorroController is
         publicPool = _initValue.publicPool;
         zorroStakingVault = _initValue.zorroStakingVault;
         burnAddress = 0x000000000000000000000000000000000000dEaD;
+        controllerActions = _initValue.controllerActions;
 
         // Rewards
         ZORRODailyDistributionFactorBasisPointsMin = 1;
@@ -87,6 +88,7 @@ contract ZorroController is
         address defaultStablecoin;
         address publicPool;
         address zorroStakingVault;
+        address controllerActions;
         ZorroControllerRewards rewards;
         ZorroControllerXChainParams xChain;
     }

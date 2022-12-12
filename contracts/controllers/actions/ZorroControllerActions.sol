@@ -12,9 +12,9 @@ import "../../libraries/Math.sol";
 
 import "../../interfaces/IZorroController.sol";
 
-// TODO: Create interface for this contract
+import "../../interfaces/Zorro/Controllers/Actions/IZorroControllerActions.sol";
 
-contract ZorroControllerActions is OwnableUpgradeable {
+contract ZorroControllerActions is IZorroControllerActions, OwnableUpgradeable {
     /* Libraries */
     using SafeMathUpgradeable for uint256;
     using SignedSafeMathUpgradeable for int256;

@@ -33,7 +33,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         // Swap paths
         _setSwapPaths(_initValue.liquidStakeToToken0Path);
         _setSwapPaths(
-            VaultActions(vaultActions).reversePath(
+            IVaultActions(vaultActions).reversePath(
                 _initValue.liquidStakeToToken0Path
             )
         );
@@ -73,7 +73,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Stake ETH (liquid staking)
-        VaultActionsLiqStakeLP(vaultActions).liquidStake(
+        IVaultActionsLiqStakeLP(vaultActions).liquidStake(
             _token0Bal,
             token0Address,
             liquidStakeToken,
@@ -92,9 +92,9 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Swap 1/2 sETH, to ETH and add liquidity to an LP Pool (sends LP token back to this address)
-        VaultActionsLiqStakeLP(vaultActions).stakeInLPPool(
+        IVaultActionsLiqStakeLP(vaultActions).stakeInLPPool(
             _synthBal,
-            VaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams({
+            IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams({
                 liquidStakeToken: liquidStakeToken,
                 nativeToken: token0Address,
                 liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
@@ -148,11 +148,11 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         // to combine these all into actions
 
         // Exit LP pool and get back sETH, WETH
-        VaultActionsLiqStakeLP(vaultActions).exitPool(
+        IVaultActionsLiqStakeLP(vaultActions).exitPool(
             _amount,
             maxMarketMovementAllowed,
             address(this),
-            VaultActions.ExitPoolParams({
+            IVaultActions.ExitPoolParams({
                 token0: liquidStakeToken,
                 token1: token0Address,
                 poolAddress: poolAddress,
@@ -172,7 +172,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Unstake sETH to get ETH
-        VaultActionsLiqStakeLP(vaultActions).liquidUnstake(
+        IVaultActionsLiqStakeLP(vaultActions).liquidUnstake(
             SafeSwapUni.SafeSwapParams({
                 amountIn: _synthTokenBal,
                 priceToken0: priceFeeds[liquidStakeToken].getExchangeRate(),

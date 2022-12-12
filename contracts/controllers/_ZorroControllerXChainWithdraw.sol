@@ -55,7 +55,7 @@ contract ZorroControllerXChainWithdraw is
                 payload: _payload,
                 refundAddress: payable(msg.sender),
                 _zroPaymentAddress: address(0),
-                adapterParams: ZorroControllerXChainActions(controllerActions).getLZAdapterParamsForWithdraw(
+                adapterParams: IZorroControllerXChainActions(controllerActions).getLZAdapterParamsForWithdraw(
                     _gasForDestinationLZReceive
                 )
             })
@@ -216,7 +216,7 @@ contract ZorroControllerXChainWithdraw is
         uint256 _rewardsDue
     ) internal virtual {
         // Get EVM address (decode)
-        address _destination = ZorroControllerXChainActions(controllerActions).bytesToAddress(_originRecipient);
+        address _destination = IZorroControllerXChainActions(controllerActions).bytesToAddress(_originRecipient);
 
         // Emit repatriation event
         emit XChainRepatriation(_pid, _destination, _trancheId, _originChainId);

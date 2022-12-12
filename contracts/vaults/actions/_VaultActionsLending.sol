@@ -12,9 +12,11 @@ import "../../interfaces/Lending/ILendingToken.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultLending.sol";
 
+import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsLending.sol";
+
 import "./_VaultActions.sol";
 
-abstract contract VaultActionsLending is VaultActions {
+abstract contract VaultActionsLending is IVaultActions, VaultActions {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -28,7 +30,7 @@ abstract contract VaultActionsLending is VaultActions {
     function currentWantEquity(address _vaultAddr)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 positionVal)
     {
         // Prep
@@ -52,7 +54,7 @@ abstract contract VaultActionsLending is VaultActions {
     function unrealizedProfits(address _vault)
         public
         view
-        override
+        override(IVaultActions, VaultActions)
         returns (uint256 accumulatedProfit, uint256 harvestableProfit)
     {
         // TODO: Fill

@@ -16,13 +16,13 @@ import "../../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 import "../../interfaces/IZorroControllerXChain.sol";
 
+import "../../interfaces/Zorro/Controllers/Actions/IZorroControllerXChainActions.sol";
+
 import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
-// TODO: Create interface for this contract
-
-contract ZorroControllerXChainActions is OwnableUpgradeable {
+contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableUpgradeable {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -43,30 +43,6 @@ contract ZorroControllerXChainActions is OwnableUpgradeable {
         stargateRouter = _stargateRouter;
         layerZeroEndpoint = _lzEndpoint;
         uniRouterAddress = _uniRouter;
-    }
-
-    /* Structs */
-
-    struct EarningsBuybackParams {
-        address stablecoin;
-        address ZORRO;
-        address zorroLPPoolOtherToken;
-        address burnAddress;
-        AggregatorV3Interface priceFeedStablecoin;
-        AggregatorV3Interface priceFeedZOR;
-        AggregatorV3Interface priceFeedLPPoolOtherToken;
-        address[] stablecoinToZorroPath;
-        address[] stablecoinToZorroLPPoolOtherTokenPath;
-    }
-
-    struct EarningsRevshareParams {
-        address stablecoin;
-        address ZORRO;
-        address zorroLPPoolOtherToken;
-        address zorroStakingVault;
-        AggregatorV3Interface priceFeedStablecoin;
-        AggregatorV3Interface priceFeedZOR;
-        address[] stablecoinToZorroPath;
     }
 
     /* State */

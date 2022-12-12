@@ -82,12 +82,12 @@ abstract contract VaultBase is
         _setSwapPaths(_initValue.swapPaths.stablecoinToZORROPath);
         _setSwapPaths(_initValue.swapPaths.stablecoinToLPPoolOtherTokenPath);
         _setSwapPaths(
-            VaultActions(vaultActions).reversePath(
+            IVaultActions(vaultActions).reversePath(
                 _initValue.swapPaths.stablecoinToToken0Path
             )
         );
         _setSwapPaths(
-            VaultActions(vaultActions).reversePath(
+            IVaultActions(vaultActions).reversePath(
                 _initValue.swapPaths.stablecoinToToken1Path
             )
         );
@@ -373,7 +373,7 @@ abstract contract VaultBase is
         sharesAdded = _wantAmt;
 
         // Calc current want equity
-        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+        uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 
@@ -410,7 +410,7 @@ abstract contract VaultBase is
         require(_wantAmt > 0, "negWant");
 
         // Calc current want equity
-        uint256 _wantEquity = VaultActions(vaultActions).currentWantEquity(
+        uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 
@@ -518,10 +518,10 @@ abstract contract VaultBase is
             uint256 _wantRemaining,
             uint256 _xChainBuybackAmt,
             uint256 _xChainRevShareAmt
-        ) = VaultActions(vaultActions).distributeAndReinvestEarnings(
+        ) = IVaultActions(vaultActions).distributeAndReinvestEarnings(
                 _wantBal,
                 _maxMarketMovementAllowed,
-                VaultActions.DistributeEarningsParams({
+                IVaultActions.DistributeEarningsParams({
                     ZORROAddress: ZORROAddress,
                     rewardsAddress: rewardsAddress,
                     stablecoin: defaultStablecoin,
@@ -591,7 +591,7 @@ abstract contract VaultBase is
         );
 
         // Exchange
-        wantObtained = VaultActions(vaultActions).exchangeUSDForWantToken(
+        wantObtained = IVaultActions(vaultActions).exchangeUSDForWantToken(
             _amountUSD,
             _maxMarketMovementAllowed
         );
@@ -612,7 +612,7 @@ abstract contract VaultBase is
         );
 
         // Exchange
-        usdObtained = VaultActions(vaultActions).exchangeWantTokenForUSD(
+        usdObtained = IVaultActions(vaultActions).exchangeWantTokenForUSD(
             _amount,
             _maxMarketMovementAllowed
         );
