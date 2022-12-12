@@ -14,7 +14,7 @@ import "../../interfaces/Stargate/IStargateRouter.sol";
 
 import "../../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
-import "../../interfaces/IZorroControllerXChain.sol";
+import "../../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 import "../../interfaces/Zorro/Controllers/Actions/IZorroControllerXChainActions.sol";
 

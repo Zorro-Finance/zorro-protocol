@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerInvestment.sol";
 
-import "../interfaces/IAMMRouter02.sol";
+import "../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
@@ -14,7 +14,7 @@ import "../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 import "../interfaces/Stargate/IStargateRouter.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -74,6 +74,7 @@ contract ZorroControllerXChain is
         // Contracts
         zorroStakingVault = _initValue.zorroStakingVault;
         uniRouterAddress = _initValue.uniRouterAddress;
+        controllerActions = _initValue.controllerActions;
         // Swaps
         stablecoinToZorroPath = _initValue.swaps.stablecoinToZorroPath;
         stablecoinToZorroLPPoolOtherTokenPath = _initValue
@@ -130,6 +131,7 @@ contract ZorroControllerXChain is
         address homeChainZorroController;
         address currentChainController;
         address publicPool;
+        address controllerActions;
         // Bridge
         ZorroControllerXChainBridgeParams bridge;
         // Swaps

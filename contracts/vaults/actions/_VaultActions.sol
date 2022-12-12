@@ -14,7 +14,7 @@ import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
 
 import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
-import "../../interfaces/IAMMRouter02.sol";
+import "../../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "../../interfaces/Zorro/Vaults/IVault.sol";
 

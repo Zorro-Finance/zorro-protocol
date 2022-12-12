@@ -6,7 +6,7 @@ import "./_ZorroControllerBase.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
 contract ZorroControllerAnalytics is
     IZorroControllerAnalytics,

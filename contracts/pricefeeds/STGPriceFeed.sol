@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAMMRouter02.sol";
+import "../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "./_PriceFeedAggBase.sol";
 

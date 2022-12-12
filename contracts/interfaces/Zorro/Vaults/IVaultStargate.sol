@@ -6,8 +6,6 @@ import "../../../vaults/actions/_VaultActions.sol";
 
 import "./IVault.sol";
 
-// TODO: Hygiene - group all Vault interfaces into their own directory
-
 interface IVaultStargate is IVault {
     /* Structs */
 

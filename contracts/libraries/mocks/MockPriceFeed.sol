@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../PriceFeed.sol";
 
-import "../../interfaces/IAMMRouter02.sol";
+import "../../interfaces/Uniswap/IAMMRouter02.sol";
 
 /// @title MockPriceFeed: Mock contract for testing the PriceFeed library
 contract MockPriceFeed {

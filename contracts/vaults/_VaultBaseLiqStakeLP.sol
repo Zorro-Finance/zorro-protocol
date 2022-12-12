@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAMMFarm.sol";
+import "../interfaces/Uniswap/IAMMFarm.sol";
 
 import "../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
 

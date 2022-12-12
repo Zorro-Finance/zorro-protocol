@@ -14,7 +14,7 @@ import "../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 import "../interfaces/Stargate/IStargateRouter.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 contract ZorroControllerXChainBase is
     IZorroControllerXChainBase,
@@ -44,7 +44,7 @@ contract ZorroControllerXChainBase is
     address public homeChainZorroController;
     address public currentChainController;
     address public publicPool;
-    address public controllerActions; // TODO: Setter and constructor
+    address public controllerActions;
     // Chain config
     uint256 public chainId;
     uint256 public homeChainId;
@@ -67,6 +67,10 @@ contract ZorroControllerXChainBase is
     function setChains(uint256[] calldata _chainIds) external onlyOwner {
         chainId = _chainIds[0];
         homeChainId = _chainIds[1];
+    }
+
+    function setControllerActions(address _controllerActions) external onlyOwner {
+        controllerActions = _controllerActions;
     }
 
     /// @notice Setter: Controller contract for each chain

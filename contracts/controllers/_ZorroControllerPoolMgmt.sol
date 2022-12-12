@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerBase.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
 contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBase {
     /* Pool management */

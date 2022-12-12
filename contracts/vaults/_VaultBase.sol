@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 import "../libraries/SafeSwap.sol";
 

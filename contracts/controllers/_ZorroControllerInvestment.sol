@@ -12,7 +12,7 @@ import "../interfaces/Zorro/Vaults/Actions/IVaultActions.sol";
 
 import "../interfaces/Zorro/Controllers/Actions/IZorroControllerActions.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
 import "./actions/ZorroControllerActions.sol";
 

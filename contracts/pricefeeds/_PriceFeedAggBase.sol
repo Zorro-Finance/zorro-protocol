@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "../interfaces/IAMMRouter02.sol";
+import "../interfaces/Uniswap/IAMMRouter02.sol";
 
 abstract contract PriceFeedAggBase is AggregatorV3Interface, OwnableUpgradeable {
     /* State */

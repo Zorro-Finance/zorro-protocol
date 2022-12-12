@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerXChainBase.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 import "./actions/ZorroControllerXChainActions.sol";
 

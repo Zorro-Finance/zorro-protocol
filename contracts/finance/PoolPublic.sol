@@ -36,9 +36,11 @@ contract PoolPublic is Initializable, OwnableUpgradeable {
     address public controller; // ZorroController contract address
 
     /* Events */
+
     event SetController(address indexed _controller);
 
     /* Functions */
+    
     /// @notice Increases spending allowance to max amount for Zorro Controller
     function _allowControllerToSpend() internal {
         IERC20Upgradeable(ZORRO).safeIncreaseAllowance(controller, type(uint256).max);

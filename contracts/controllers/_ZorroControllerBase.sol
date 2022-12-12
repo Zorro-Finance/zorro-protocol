@@ -7,9 +7,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../interfaces/IZorro.sol";
+import "../interfaces/Zorro/IZorro.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 

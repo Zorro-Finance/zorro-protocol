@@ -8,9 +8,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
-import "../interfaces/IZorroController.sol";
+import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 /// @title ControllerTimelock: A contract that owns all deployed Zorro controllers for safety
 contract ControllerTimelock is TimelockControllerUpgradeable {

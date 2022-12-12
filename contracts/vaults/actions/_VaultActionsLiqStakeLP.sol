@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import "../../interfaces/IAMMRouter02.sol";
+import "../../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
 

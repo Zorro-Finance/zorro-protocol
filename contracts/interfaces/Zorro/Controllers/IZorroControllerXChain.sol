@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./LayerZero/ILayerZeroReceiver.sol";
+import "../../LayerZero/ILayerZeroReceiver.sol";
 
-import "./Stargate/IStargateReceiver.sol";
+import "../../Stargate/IStargateReceiver.sol";
 
 /// @title IZorroControllerXChain
 interface IZorroControllerXChainBase {
@@ -84,7 +84,6 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
         uint256 indexed _revShareAmountUSD
     );
 
-    // TODO: Move all events, structs to interfaces -- globally
     event RemovedSlashedRewards(uint256 indexed _amountZOR);
 
     /* Functions */

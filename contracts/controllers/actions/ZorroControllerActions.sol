@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable
 
 import "../../libraries/Math.sol";
 
-import "../../interfaces/IZorroController.sol";
+import "../../interfaces/Zorro/Controllers/IZorroController.sol";
 
 import "../../interfaces/Zorro/Controllers/Actions/IZorroControllerActions.sol";
 

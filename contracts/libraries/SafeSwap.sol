@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAMMRouter02.sol";
+import "../interfaces/Uniswap/IAMMRouter02.sol";
 
 /// @title SafeSwapUni: Library for safe swapping of ERC20 tokens for Uniswap/Pancakeswap style protocols
 library SafeSwapUni {

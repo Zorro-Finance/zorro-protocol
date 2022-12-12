@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../../../IZorroController.sol";
+import "../IZorroController.sol";
 
 interface IZorroControllerActions {
     /* Functions */

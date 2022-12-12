@@ -6,11 +6,11 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "./_ZorroControllerXChainBase.sol";
 
-import "../interfaces/IZorroControllerXChain.sol";
+import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
-import "../interfaces/IAMMRouter02.sol";
+import "../interfaces/Zorro/IZorro.sol";
 
-import "../interfaces/IZorro.sol";
+import "../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "../libraries/PriceFeed.sol";
 

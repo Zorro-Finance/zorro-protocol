@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import "../interfaces/IAMMFarm.sol";
+import "../interfaces/Uniswap/IAMMFarm.sol";
 
 import "../interfaces/Zorro/Vaults/IVaultStandardAMM.sol";
 
