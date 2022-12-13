@@ -5,6 +5,8 @@ import "./_ZorroControllerBase.sol";
 
 import "../interfaces/Zorro/Controllers/IZorroController.sol";
 
+// TODO: Consider changing pid, "pool" info nomenclature to "vault", "vid"
+
 contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBase {
     /* Pool management */
 
@@ -24,12 +26,15 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
         if (_withUpdate) {
             massUpdatePools();
         }
+
         // Last reward block set to current block, or the start block if the startBlock hasn't been provided
         uint256 lastRewardBlock = block.number > startBlock
             ? block.number
             : startBlock;
+
         // Increment the total allocation points by the provided _allocPoint
         totalAllocPoint = totalAllocPoint + _allocPoint;
+
         // Push to the poolInfo array
         poolInfo.push(
             PoolInfo({
@@ -41,6 +46,9 @@ contract ZorroControllerPoolMgmt is IZorroControllerPoolMgmt, ZorroControllerBas
                 vault: _vault
             })
         );
+
+        // Update vault mapping
+        vaultMapping[_vault] = poolLength() - 1;
     }
 
     /// @notice Update the given pool's ZORRO allocation point. Can only be called by the owner.

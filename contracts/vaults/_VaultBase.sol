@@ -63,6 +63,7 @@ abstract contract VaultBase is
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
         defaultStablecoin = _initValue.keyAddresses.defaultStablecoin;
+        vaultActions = _initValue.keyAddresses.vaultActions;
 
         // Fees
         controllerFee = _initValue.fees.controllerFee;
@@ -138,7 +139,7 @@ abstract contract VaultBase is
     address public zorroXChainController; // Address of ZorroControllerXChain contract
     address public ZORROAddress; // Address of Zorro ERC20 token
     address public zorroStakingVault; // Address of ZOR single staking vault
-    address public vaultActions; // Address of VaultActions contract TODO: Need setter, constructor etc.
+    address public vaultActions; // Address of VaultActions contract
     // Pool/farm/token IDs/addresses
     address public wantAddress; // Address of contract that represents the staked token (e.g. PancakePair Contract / LP token on Pancakeswap)
     address public token0Address; // Address of first (or only) token
@@ -236,6 +237,8 @@ abstract contract VaultBase is
             zorroXChainController = _addr;
         } else if (_index == 14) {
             zorroStakingVault = _addr;
+        } else if (_index == 15) {
+            vaultActions = _addr;
         } else {
             // Safety: Revert if unrecognized index provided
             revert("urecogContractIdx");
@@ -559,7 +562,6 @@ abstract contract VaultBase is
             // Call distributeEarningsXChain on controller contract
             IZorroControllerXChainEarn(zorroXChainController)
                 .sendXChainDistributeEarningsRequest(
-                    pid, // TODO: Is this the Pool PID or vault PID?
                     _xChainBuybackAmt,
                     _xChainRevShareAmt,
                     _maxMarketMovementAllowed

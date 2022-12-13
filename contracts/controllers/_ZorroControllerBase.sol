@@ -72,6 +72,7 @@ contract ZorroControllerBase is
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing. "address" type because it's on the EVM
     // Info of each pool
     PoolInfo[] public poolInfo;
+    mapping(address => uint256) public vaultMapping; // Maps vault address to the pid of that vault
     // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address on-chain => list of tranches
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo;
     // Map of account address on chain for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => Mapping(tranche ID => local account address)

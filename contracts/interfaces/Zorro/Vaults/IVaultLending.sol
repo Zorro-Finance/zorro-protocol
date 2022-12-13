@@ -14,6 +14,7 @@ interface IVaultLending is IVault {
         uint256 targetBorrowLimit;
         uint256 targetBorrowLimitHysteresis;
         address comptrollerAddress;
+        address lendingToken;
     }
 
     /* Functions */

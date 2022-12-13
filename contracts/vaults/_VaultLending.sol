@@ -36,6 +36,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
 
         // Addresses
         comptrollerAddress = _initValue.comptrollerAddress;
+        lendingToken = _initValue.lendingToken;
 
         // Super call
         VaultBase.initialize(_timelockOwner, _initValue.baseInit);
@@ -46,7 +47,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
     uint256 public targetBorrowLimit; // Max borrow rate % (1e18 = 100%)
     uint256 public targetBorrowLimitHysteresis; // +/- envelope (1% = 1e16)
     address public comptrollerAddress; // Unitroller address
-    address public lendingToken; // Lending contract address (e.g. vToken) TODO: Constructor, Setter
+    address public lendingToken; // Lending contract address (e.g. vToken)
     uint256 public supplyBal; // Aggregate supply balance of underlying token on lending contract, by this vault
     uint256 public borrowBal; // Aggregate borrow balance of underlying token on lending contract, by this vault
 
@@ -66,6 +67,10 @@ abstract contract VaultLending is IVaultLending, VaultBase {
 
     function setComptrollerAddress(address _comptroller) external onlyOwner {
         comptrollerAddress = _comptroller;
+    }
+
+    function setLendingToken(address _lendingToken) external onlyOwner {
+        lendingToken = _lendingToken;
     }
 
     /// @notice Update balance of supply and borrow

@@ -59,9 +59,6 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
 
     /* Functions */
 
-    // TODO: DRY: Convert all .addLiquidity() and .removeLiquidity() across the protocol
-    // to use joinPool, exitPool, below.
-
     /// @notice Adds liquidity to the pool of this contract
     /// @dev NOTE: Requires spending approval by caller
     /// @param _token0 The address of Token0

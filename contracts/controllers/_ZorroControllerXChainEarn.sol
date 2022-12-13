@@ -30,9 +30,9 @@ contract ZorroControllerXChainEarn is
     /* Modifiers */
 
     /// @notice Only can be called from a registered vault
-    /// @param _pid The pool ID
-    modifier onlyRegisteredVault(uint256 _pid) {
-        (, , , , , address _vault) = ZorroControllerInvestment(
+    modifier onlyRegisteredVault() {
+        uint256 _pid = IZorroControllerInvestment(currentChainController).vaultMapping(_msgSender());
+        (,,,,, address _vault) = IZorroControllerInvestment(
             currentChainController
         ).poolInfo(_pid);
         require(_msgSender() == _vault, "only reg vault");
@@ -93,16 +93,14 @@ contract ZorroControllerXChainEarn is
     /* Sending */
 
     /// @notice Sends a request back to the home chain to distribute earnings
-    /// @param _pid Pool ID
     /// @param _buybackAmountUSD Amount in USD to buy back
     /// @param _revShareAmountUSD Amount in USD to revshare w/ ZOR single staking vault
     /// @param _maxMarketMovement Acceptable slippage (950 = 5%, 990 = 1% etc.)
     function sendXChainDistributeEarningsRequest(
-        uint256 _pid,
         uint256 _buybackAmountUSD,
         uint256 _revShareAmountUSD,
         uint256 _maxMarketMovement
-    ) public payable nonReentrant onlyRegisteredVault(_pid) {
+    ) public payable nonReentrant onlyRegisteredVault {
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
 

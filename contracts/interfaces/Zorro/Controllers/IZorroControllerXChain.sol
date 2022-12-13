@@ -102,7 +102,6 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
     function setPriceFeeds(address[] calldata _priceFeeds) external;
 
     function sendXChainDistributeEarningsRequest(
-        uint256 _pid,
         uint256 _buybackAmountUSD,
         uint256 _revShareAmountUSD,
         uint256 _maxMarketMovement

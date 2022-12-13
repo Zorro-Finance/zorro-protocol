@@ -111,7 +111,6 @@ abstract contract VaultActionsLiqStakeLP is IVaultActionsLiqStakeLP, VaultAction
         returnedUSD = IERC20Upgradeable(_stablecoin).balanceOf(address(this));
     }
 
-    // TODO: Docstrings
     function _exchangeUSDForWantToken(
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed

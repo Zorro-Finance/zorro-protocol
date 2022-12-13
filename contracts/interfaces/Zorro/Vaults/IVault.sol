@@ -39,6 +39,7 @@ interface IVault {
         address zorroLPPool;
         address zorroLPPoolOtherToken;
         address defaultStablecoin;
+        address vaultActions;
     }
 
     struct VaultSwapPaths {

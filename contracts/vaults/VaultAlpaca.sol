@@ -26,10 +26,20 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
     ) public initializer {
         // Super call
         VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+
+        // Addresses
+        lendingToken = _initValue.lendingToken;
     }
 
     /* State */
-    address public lendingToken; // Lending token exchanged for supplying underlying asset (e.g. vToken) TODO: Constructor, setter
+
+    address public lendingToken; // Lending token exchanged for supplying underlying asset (e.g. vToken)
+
+    /* Setters */
+
+    function setLendingToken(address _lendingToken) external onlyOwner {
+        lendingToken = _lendingToken;
+    }
 
     /* Investment Actions */
 

@@ -42,7 +42,6 @@ contract VaultStargate is IVaultStargate, VaultBase {
 
     address public stargateRouter; // Stargate Router for adding/removing liquidity etc.
     uint16 public stargatePoolId; // Stargate Pool that tokens shall be lent to
-    address public lpToken; // Address of SG LP token TODO: Constructor, setter
 
     /* Setters */
 
@@ -82,7 +81,7 @@ contract VaultStargate is IVaultStargate, VaultBase {
         );
 
         // Calc LP balance
-        uint256 _lpBal = IERC20Upgradeable(lpToken).balanceOf(address(this));
+        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(address(this));
 
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
@@ -101,10 +100,10 @@ contract VaultStargate is IVaultStargate, VaultBase {
         IStargateLPStaking(farmContractAddress).withdraw(pid, _wantAmt);
 
         // Calc lp balance
-        uint256 _lpBal = IERC20Upgradeable(lpToken).balanceOf(address(this));
+        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(address(this));
 
         // Approve
-        IERC20Upgradeable(lpToken).safeIncreaseAllowance(
+        IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
             stargateRouter,
             _lpBal
         );

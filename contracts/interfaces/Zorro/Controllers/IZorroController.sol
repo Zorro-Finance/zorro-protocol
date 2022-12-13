@@ -61,6 +61,10 @@ interface IZorroControllerBase {
 
     function poolLength() external view returns (uint256);
 
+    function poolInfo(uint256 _i) external view returns (IERC20Upgradeable, uint256, uint256, uint256, uint256, address);
+
+    function vaultMapping(address _vault) external view returns (uint256);
+
     function trancheLength(uint256 _pid, address _user)
         external
         view

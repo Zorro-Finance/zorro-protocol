@@ -12,5 +12,6 @@ interface IVaultAlpaca is IVault {
 
     struct VaultAlpacaInit {
         VaultBaseInit baseInit;
+        address lendingToken;
     }
 }
