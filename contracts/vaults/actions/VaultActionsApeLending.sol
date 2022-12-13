@@ -10,7 +10,7 @@ contract VaultActionsApeLending is VaultActionsLending {
     /* Utilities */
 
     /// @notice Gets loan collateral factor from lending protocol
-    /// @return collFactor The collateral factor %. TODO: Specify denominator (1e18?) Check against consuming logic.
+    /// @return collFactor The collateral factor %. (1e18 = 100%)
     /// @param _comptrollerAddress Address of the ApeLending Unitroller proxy
     /// @param _poolAddress Address of the lending pool
     function collateralFactor(address _comptrollerAddress, address _poolAddress)
