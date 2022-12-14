@@ -28,8 +28,21 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
         address _timelockOwner,
         VaultStandardAMMInit memory _initValue
     ) public initializer {
+        // Vault config
+        isLPFarmable = _initValue.isLPFarmable;
+
         // Super call
         VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+    }
+
+    /* State */
+
+    bool public isLPFarmable; // If true, will farm LP tokens
+
+    /* Setters */
+
+    function setIsFarmable(bool _isFarmable) external onlyOwner {
+        isLPFarmable = _isFarmable;
     }
 
     /* Investment Actions */
@@ -41,27 +54,30 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
 
     /// @notice Internal function for farming Want token. Responsible for staking Want token in a MasterChef/MasterApe-like contract
     function _farm() internal override {
-        require(isFarmable, "!farmable");
-        // Get the Want token stored on this contract
-        uint256 wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
+        if (isLPFarmable) {
+            // Get the Want token stored on this contract
+            uint256 wantBal = IERC20Upgradeable(wantAddress).balanceOf(
+                address(this)
+            );
 
-        // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
-            farmContractAddress,
-            wantBal
-        );
+            // Allow the farm contract (e.g. MasterChef/MasterApe) the ability to transfer up to the Want amount
+            IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+                farmContractAddress,
+                wantBal
+            );
 
-        // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
-        IAMMFarm(farmContractAddress).deposit(pid, wantBal);
+            // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID)
+            IAMMFarm(farmContractAddress).deposit(pid, wantBal);
+        }
     }
 
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal override {
-        // Withdraw the Want tokens from the Farm contract pool
-        IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
+        if (isLPFarmable) {
+            // Withdraw the Want tokens from the Farm contract pool
+            IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
+        }
     }
 }
 

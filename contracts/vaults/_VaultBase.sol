@@ -44,7 +44,6 @@ abstract contract VaultBase is
         // Vault config
         pid = _initValue.config.pid;
         isHomeChain = _initValue.config.isHomeChain;
-        isFarmable = _initValue.config.isFarmable;
 
         // Addresses
         govAddress = _initValue.keyAddresses.govAddress;
@@ -129,8 +128,6 @@ abstract contract VaultBase is
     // Vault characteristics
     bool public isHomeChain; // Whether this is deployed on the home chain
     uint256 public pid; // Pid of pool in farmContractAddress (e.g. the LP pool)
-    bool public isFarmable; // If true, will farm LP tokens
-    // TODO: Do an audit of all vaults to make sure they are using isFarmable correctly!
     // Governance
     address public govAddress; // Timelock controller contract
     bool public onlyGov; // Enforce gov only access on certain functions
@@ -197,10 +194,6 @@ abstract contract VaultBase is
 
     function setPid(uint256 _pid) external onlyOwner {
         pid = _pid;
-    }
-
-    function setIsFarmable(bool _isFarmable) external onlyOwner {
-        isFarmable = _isFarmable;
     }
 
     function setContractAddress(uint16 _index, address _addr)

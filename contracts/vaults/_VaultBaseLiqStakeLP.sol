@@ -29,6 +29,9 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         // Addresses
         liquidStakeToken = _initValue.liquidStakeToken;
         liquidStakingPool = _initValue.liquidStakingPool;
+        
+        // Vault config
+        isLPFarmable = _initValue.isLPFarmable;
 
         // Swap paths
         _setSwapPaths(_initValue.liquidStakeToToken0Path);
@@ -51,6 +54,13 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
     address public liquidStakingPool; // Liquid staking pool (can sometimes be the same as liquidStakeToken)
     address public lpToken; // LP token that includes liquidStakeToken and token0Address
     AggregatorV3Interface public liquidStakeTokenPriceFeed; // Price feed for sETH
+    bool public isLPFarmable; // If true, will farm LP tokens
+
+    /* Setters */
+
+    function setIsFarmable(bool _isFarmable) external onlyOwner {
+        isLPFarmable = _isFarmable;
+    }
 
     /* Investment Actions */
 
@@ -107,7 +117,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         );
 
         // Deposit the Want tokens in the Farm contract for the appropriate pool ID (PID) IF AMM Masterchef allocates rewards
-        if (isFarmable) {
+        if (isLPFarmable) {
             // Get the LP token stored on this contract
             uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
                 address(this)
@@ -128,7 +138,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
     /// @param _amount the amount of earned tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _amount) internal override {
         // Withdraw the LP tokens from the Farm contract pool (IF AMM Masterchef allocates rewards)
-        if (isFarmable) {
+        if (isLPFarmable) {
             IAMMFarm(farmContractAddress).withdraw(pid, _amount);
         }
 

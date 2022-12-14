@@ -19,7 +19,6 @@ interface IVault {
     struct VaultConfig {
         uint256 pid;
         bool isHomeChain;
-        bool isFarmable;
     }
 
     struct VaultAddresses {

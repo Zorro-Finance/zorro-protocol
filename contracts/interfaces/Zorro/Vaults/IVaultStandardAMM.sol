@@ -11,5 +11,6 @@ interface IVaultStandardAMM is IVault {
 
     struct VaultStandardAMMInit {
         VaultBaseInit baseInit;
+        bool isLPFarmable;
     }
 }

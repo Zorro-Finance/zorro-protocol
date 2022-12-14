@@ -16,6 +16,7 @@ interface IVaultLiqStakeLP is IVault {
         address liquidStakingPool;
         address liquidStakeTokenPriceFeed;
         address[] liquidStakeToToken0Path;
+        bool isLPFarmable;
     }
 
     /* Functions */
