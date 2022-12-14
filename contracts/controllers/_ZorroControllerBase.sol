@@ -70,12 +70,12 @@ contract ZorroControllerBase is
     uint256 public chainId; // The ID/index of the chain that this contract is on
     uint256 public homeChainId; // The chain ID of the home chain
     address public homeChainZorroController; // Address of the home chain ZorroController contract. For cross chain routing. "address" type because it's on the EVM
-    // Info of each pool
-    PoolInfo[] public poolInfo;
-    mapping(address => uint256) public vaultMapping; // Maps vault address to the pid of that vault
-    // List of active tranches that stakes Want tokens. Mapping: pool ID/index => user wallet address on-chain => list of tranches
+    // Info of each vault
+    VaultInfo[] public vaultInfo;
+    mapping(address => uint256) public vaultMapping; // Maps vault address to the id of that vault
+    // List of active tranches that stakes Want tokens. Mapping: vault ID/index => user wallet address on-chain => list of tranches
     mapping(uint256 => mapping(address => TrancheInfo[])) public trancheInfo;
-    // Map of account address on chain for a given foreign account and pool. Mapping: pool index => foreign chain wallet address => Mapping(tranche ID => local account address)
+    // Map of account address on chain for a given foreign account and vault. Mapping: vault index => foreign chain wallet address => Mapping(tranche ID => local account address)
     mapping(uint256 => mapping(bytes => mapping(uint256 => address)))
         public foreignTrancheInfo;
     // Oracles
@@ -183,22 +183,22 @@ contract ZorroControllerBase is
 
     /* View functions */
 
-    /// @notice Number of pools in the Zorro protocol
-    /// @return Number of pools
-    function poolLength() public view returns (uint256) {
-        return poolInfo.length;
+    /// @notice Number of vaults in the Zorro protocol
+    /// @return vaultCount number of vaults
+    function vaultLength() public view returns (uint256 vaultCount) {
+        return vaultInfo.length;
     }
 
-    /// @notice Number of tranches invested by a given user into a given pool
-    /// @param _pid Index of pool
+    /// @notice Number of tranches invested by a given user into a given vault
+    /// @param _vid Index of vault in vaultInfo array
     /// @param _user wallet address of user
     /// @return Number of tranches
-    function trancheLength(uint256 _pid, address _user)
+    function trancheLength(uint256 _vid, address _user)
         public
         view
         returns (uint256)
     {
-        return trancheInfo[_pid][_user].length;
+        return trancheInfo[_vid][_user].length;
     }
 
     /* Zorro Rewards */
@@ -246,38 +246,38 @@ contract ZorroControllerBase is
             (10000 * _totalChainMultipliers * blocksPerDay);
     }
 
-    /* Pool Management */
+    /* Vault Management */
 
-    /// @notice Update reward variables of the given pool to be up-to-date.
-    /// @param _pid index of pool
+    /// @notice Update reward variables of the given vault to be up-to-date.
+    /// @param _vid index of vault in vaultInfo array
     /// @return mintedZOR Amount of ZOR rewards minted (useful for cross chain)
-    function updatePool(uint256 _pid) public returns (uint256 mintedZOR) {
-        // Get the pool matching the given index
-        PoolInfo storage pool = poolInfo[_pid];
+    function updateVault(uint256 _vid) public returns (uint256 mintedZOR) {
+        // Get the vault matching the given index
+        VaultInfo storage _vault = vaultInfo[_vid];
 
         // If current block is <= last reward block, exit
-        if (block.number <= pool.lastRewardBlock) {
+        if (block.number <= _vault.lastRewardBlock) {
             return 0;
         }
 
         // If underlying vault's shares are zero, skip
-        uint256 sharesTotal = IVault(pool.vault).sharesTotal();
+        uint256 sharesTotal = IVault(_vault.vault).sharesTotal();
         if (sharesTotal == 0) {
-            pool.lastRewardBlock = block.number;
+            _vault.lastRewardBlock = block.number;
             return 0;
         }
 
-        // Determine how many blocks have elapsed since the last updatePool() operation for this pool
-        uint256 elapsedBlocks = block.number - pool.lastRewardBlock;
+        // Determine how many blocks have elapsed since the last updateVault() operation for this vault
+        uint256 elapsedBlocks = block.number - _vault.lastRewardBlock;
 
-        // Finally, multiply rewards/block by the number of elapsed blocks and the pool weighting
+        // Finally, multiply rewards/block by the number of elapsed blocks and the vault weighting
         uint256 ZORROReward = (elapsedBlocks *
             ZORROPerBlock *
-            pool.allocPoint) / totalAllocPoint;
+            _vault.allocPoint) / totalAllocPoint;
 
         // Check whether this function requires cross chain activity or not
         if (address(this) == homeChainZorroController) {
-            // On Home chain. NO cross chain pool updates required
+            // On Home chain. NO cross chain vault updates required
 
             // Transfer Zorro rewards to this contract from the Public Pool
             _fetchFundsFromPublicPool(ZORROReward, address(this));
@@ -298,9 +298,9 @@ contract ZorroControllerBase is
         }
 
         // Increment this pool's accumulated Zorro per share value by the reward amount
-        pool.accZORRORewards = pool.accZORRORewards + ZORROReward;
+        _vault.accZORRORewards = _vault.accZORRORewards + ZORROReward;
         // Update the pool's last reward block to the current block
-        pool.lastRewardBlock = block.number;
+        _vault.lastRewardBlock = block.number;
     }
 
     /// @notice Stores cumulative total of minted rewards on a non-home chain, for future burning.
@@ -366,7 +366,7 @@ contract ZorroControllerBase is
 
     /* Safety functions */
 
-    /// @notice Safe ZORRO transfer function, just in case if rounding error causes pool to not have enough
+    /// @notice Safe ZORRO transfer function, just in case if rounding error causes vault to not have enough
     /// @param _to destination for funds
     /// @param _ZORROAmt quantity of Zorro tokens to send
     function _safeZORROTransfer(address _to, uint256 _ZORROAmt) internal {

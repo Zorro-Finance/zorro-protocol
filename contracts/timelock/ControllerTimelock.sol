@@ -20,15 +20,15 @@ contract ControllerTimelock is TimelockControllerUpgradeable {
 
     // Base
 
-    function updatePool(address _controllerAddress, uint256 _pid)
+    function updateVault(address _controllerAddress, uint256 _vid)
         public
         onlyRole(EXECUTOR_ROLE)
         returns (uint256)
     {
-        return IZorroController(_controllerAddress).updatePool(_pid);
+        return IZorroController(_controllerAddress).updateVault(_vid);
     }
 
-    // PoolMgmt
+    // VaultMgmt
 
     function add(
         address _controllerAddress, 
@@ -45,12 +45,12 @@ contract ControllerTimelock is TimelockControllerUpgradeable {
         );
     }
 
-    function massUpdatePools(address _controllerAddress)
+    function massUpdateVaults(address _controllerAddress)
         public
         onlyRole(EXECUTOR_ROLE)
         returns (uint256)
     {
-        return IZorroController(_controllerAddress).massUpdatePools();
+        return IZorroController(_controllerAddress).massUpdateVaults();
     }
 
     /* ZorroControllerXChain */

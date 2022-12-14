@@ -103,7 +103,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
     }
 
     /// @notice Encodes payload for making cross chan deposit
-    /// @param _pid Pool ID on remote chain
+    /// @param _vid Vault ID on remote chain
     /// @param _valueUSD Amount in USD to deposit
     /// @param _weeksCommitted Number of weeks to commit deposit for in vault
     /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
@@ -111,7 +111,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
     /// @param _destWallet Optional wallet address on destination chain that will be receiving deposit. If not provided, will use a truncated address based on the _originWallet
     /// @return payload The ABI encoded payload
     function encodeXChainDepositPayload(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -125,7 +125,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
 
         // Calculate abi encoded bytes for input args
         bytes memory _inputs = abi.encode(
-            _pid,
+            _vid,
             _valueUSD,
             _weeksCommitted,
             _maxMarketMovement,
@@ -299,7 +299,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         );
     }
 
-    /// @notice Pays the ZOR single staking pool the revenue share amount specified
+    /// @notice Pays the ZOR single staking vault the revenue share amount specified
     /// @param _amountUSD Amount of USD to send as ZOR revenue share
     /// @param _maxMarketMovement factor to account for max market movement/slippage.
     /// @param _params A EarningsRevshareParams struct
@@ -365,14 +365,14 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
     /// @notice Encodes payload for making cross chan withdrawal
     /// @param _originChainId Chain that withdrawal request originated from
     /// @param _originAccount Account on origin chain that withdrawal request originated from
-    /// @param _pid Pool ID on remote chain
+    /// @param _vid Vault ID on remote chain
     /// @param _trancheId Tranche ID on remote chain
     /// @param _maxMarketMovement Slippage parameter (e.g. 950 = 5%, 990 = 1%, etc.)
     /// @return bytes ABI encoded payload
     function encodeXChainWithdrawalPayload(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) public pure returns (bytes memory) {
@@ -385,7 +385,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         bytes memory _inputs = abi.encode(
             _originChainId,
             _originAccount,
-            _pid,
+            _vid,
             _trancheId,
             _maxMarketMovement
         );
@@ -419,14 +419,14 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
 
     /// @notice Encodes payload for making cross chain repatriation
     /// @param _originChainId Zorro chain ID of chain that funds shall be repatriated back to
-    /// @param _pid Pool ID on current chain that withdrawal came from
+    /// @param _vid Vault ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriated funds shall be sent to
     /// @param _rewardsDue ZOR rewards due to the recipient
     /// @return bytes ABI encoded payload
     function encodeXChainRepatriationPayload(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
@@ -439,7 +439,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         // Calculate abi encoded bytes for input args
         bytes memory _inputs = abi.encode(
             _originChainId,
-            _pid,
+            _vid,
             _trancheId,
             _originRecipient,
             _rewardsDue
@@ -498,7 +498,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         );
     }
 
-    /// @notice Adds liquidity to the pool of this contract
+    /// @notice Adds liquidity
     /// @dev NOTE: Requires spending approval by caller
     /// @param _token0 The address of Token0
     /// @param _token1 The address of Token1
@@ -537,7 +537,7 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         );
     }
 
-    /// @notice Internal function for adding liquidity to the pool of this contract
+    /// @notice Internal function for adding liquidity
     /// @dev NOTE: Unlike public function, does not transfer tokens into contract (assumes already tokens already present)
     /// @param _token0 The address of Token0
     /// @param _token1 The address of Token1

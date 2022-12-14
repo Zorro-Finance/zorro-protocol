@@ -11,32 +11,32 @@ import "../../tokens/mocks/MockToken.sol";
 import "../../vaults/actions/_VaultActions.sol";
 
 contract MockZorroController is ZorroController {
-    event UpdatedPool(uint256 indexed _amount);
+    event UpdatedVault(uint256 indexed _amount);
     event HandledRewards(uint256 indexed _rewardsDue);
 
     function addTranche(
-        uint256 _pid,
+        uint256 _vid,
         address _account,
         TrancheInfo memory _trancheInfo
     ) public {
-        trancheInfo[_pid][_account].push(_trancheInfo);
-        poolInfo[_pid].totalTrancheContributions =
-            poolInfo[_pid].totalTrancheContributions +
+        trancheInfo[_vid][_account].push(_trancheInfo);
+        vaultInfo[_vid].totalTrancheContributions =
+            vaultInfo[_vid].totalTrancheContributions +
             _trancheInfo.contribution;
     }
 
-    function setLastRewardBlock(uint256 _pid, uint256 _block) public {
-        poolInfo[_pid].lastRewardBlock = _block;
+    function setLastRewardBlock(uint256 _vid, uint256 _block) public {
+        vaultInfo[_vid].lastRewardBlock = _block;
     }
 
-    function updatePoolMod(uint256 _pid) public {
-        uint256 _res = updatePool(_pid);
+    function updateVaultMod(uint256 _vid) public {
+        uint256 _res = updateVault(_vid);
 
-        emit UpdatedPool(_res);
+        emit UpdatedVault(_res);
     }
 
     function withdrawMod(
-        uint256 _pid,
+        uint256 _vid,
         address _localAccount,
         bytes memory _foreignAccount,
         uint256 _trancheId,
@@ -44,7 +44,7 @@ contract MockZorroController is ZorroController {
         bool _xChainRepatriation
     ) public returns (WithdrawalResult memory _res) {
         _res = _withdraw(
-            _pid,
+            _vid,
             _localAccount,
             _foreignAccount,
             _trancheId,

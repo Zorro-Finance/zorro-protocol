@@ -57,7 +57,7 @@ interface IZorroControllerXChainBase {
 interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -65,7 +65,7 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
     ) external payable;
 
     function receiveXChainDepositRequest(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -121,7 +121,7 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
     /* Events */
     
     event XChainRepatriation(
-        uint256 indexed _pid,
+        uint256 indexed _vid,
         address indexed _originRecipient,
         uint256 _trancheId,
         uint256 _originChainId
@@ -131,7 +131,7 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
 
     function sendXChainWithdrawalRequest(
         uint256 _destZorroChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement,
         uint256 _gasForDestinationLZReceive
@@ -140,14 +140,14 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
     function receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) external;
 
     function receiveXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue

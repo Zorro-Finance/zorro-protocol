@@ -67,7 +67,7 @@ contract ZorroControllerXChainReceiver is
         if (this.receiveXChainDepositRequest.selector == _funcSig) {
             // Decode params
             (
-                uint256 _pid,
+                uint256 _vid,
                 ,
                 uint256 _weeksCommitted,
                 uint256 _maxMarketMovement,
@@ -81,7 +81,7 @@ contract ZorroControllerXChainReceiver is
             // Call receiving function for cross chain deposits
             // Replace _valueUSD to account for any slippage during bridging
             _receiveXChainDepositRequest(
-                _pid,
+                _vid,
                 amountLD,
                 _weeksCommitted,
                 block.timestamp,
@@ -93,7 +93,7 @@ contract ZorroControllerXChainReceiver is
             // Decode params from payload
             (
                 uint256 _originChainId,
-                uint256 _pid,
+                uint256 _vid,
                 uint256 _trancheId,
                 bytes memory _originRecipient,
                 uint256 _rewardsDue
@@ -104,7 +104,7 @@ contract ZorroControllerXChainReceiver is
             // Forward request to repatriation function
             _receiveXChainRepatriationRequest(
                 _originChainId,
-                _pid,
+                _vid,
                 _trancheId,
                 _originRecipient,
                 _rewardsDue
@@ -155,7 +155,7 @@ contract ZorroControllerXChainReceiver is
             (
                 uint256 _originChainId,
                 bytes memory _originAccount,
-                uint256 _pid,
+                uint256 _vid,
                 uint256 _trancheId,
                 uint256 _maxMarketMovement
             ) = abi.decode(
@@ -168,7 +168,7 @@ contract ZorroControllerXChainReceiver is
             _receiveXChainWithdrawalRequest(
                 _originChainId,
                 _originAccount,
-                _pid,
+                _vid,
                 _trancheId,
                 _maxMarketMovement
             );

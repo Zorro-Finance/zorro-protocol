@@ -23,14 +23,14 @@ contract ZorroControllerXChainDeposit is
     /// @notice Prepares and sends a cross chain deposit request. Takes care of necessary financial ops (transfer/locking USD)
     /// @dev Requires appropriate fee to be paid via msg.value (use checkXChainDepositFee() above)
     /// @param _zorroChainId The Zorro Chain ID (not the LayerZero one)
-    /// @param _pid The pool ID on the remote chain
+    /// @param _vid The vault ID on the remote chain
     /// @param _valueUSD The amount of  to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _destWallet A valid address on the remote chain that can claim ownership
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -54,7 +54,7 @@ contract ZorroControllerXChainDeposit is
         // Generate payload
         bytes memory _payload = ZorroControllerXChainActions(controllerActions)
             .encodeXChainDepositPayload(
-                _pid,
+                _vid,
                 _balUSD,
                 _weeksCommitted,
                 _maxMarketMovement,
@@ -82,7 +82,7 @@ contract ZorroControllerXChainDeposit is
     /// @notice Dummy func to allow .selector call above and guarantee typesafety for abi calls.
     /// @dev Should never ever be actually called.
     function receiveXChainDepositRequest(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -94,7 +94,7 @@ contract ZorroControllerXChainDeposit is
 
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainDepositRequest(
-            _pid,
+            _vid,
             _valueUSD,
             _weeksCommitted,
             block.timestamp,
@@ -106,14 +106,14 @@ contract ZorroControllerXChainDeposit is
 
     /// @notice Receives a cross chain deposit request from the contract layer of the XchainEndpoint contract
     /// @dev For params, see _depositFullService() function declaration above
-    /// @param _pid The pool ID on the remote chain
+    /// @param _vid The vault ID on the remote chain
     /// @param _valueUSD The amount of USD to deposit
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _originAccount The address on the origin chain to associate the deposit with (mandatory)
     /// @param _destAccount The address on the current chain to additionally associate the deposit with (allows on-chain withdrawals of the deposit) (if not provided, will truncate origin address to uint160 i.e. Solidity address type)
     function _receiveXChainDepositRequest(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
@@ -130,7 +130,7 @@ contract ZorroControllerXChainDeposit is
         // Call deposit function
         IZorroControllerInvestment(currentChainController)
             .depositFullServiceFromXChain(
-                _pid,
+                _vid,
                 _destAccount,
                 _originAccount,
                 _valueUSD,

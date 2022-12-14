@@ -31,10 +31,10 @@ contract ZorroControllerXChainEarn is
 
     /// @notice Only can be called from a registered vault
     modifier onlyRegisteredVault() {
-        uint256 _pid = IZorroControllerInvestment(currentChainController).vaultMapping(_msgSender());
+        uint256 _vid = IZorroControllerInvestment(currentChainController).vaultMapping(_msgSender());
         (,,,,, address _vault) = IZorroControllerInvestment(
             currentChainController
-        ).poolInfo(_pid);
+        ).vaultInfo(_vid);
         require(_msgSender() == _vault, "only reg vault");
         _;
     }

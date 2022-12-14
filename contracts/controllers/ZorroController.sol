@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./_ZorroControllerBase.sol";
 
-import "./_ZorroControllerPoolMgmt.sol";
+import "./_ZorroControllerVaultMgmt.sol";
 
 import "./_ZorroControllerInvestment.sol";
 
@@ -21,7 +21,7 @@ import "./_ZorroControllerXChainEarn.sol";
 /// @title ZorroController: The main controller of the Zorro yield farming protocol. Used for cash flow operations (deposit/withdrawal), managing vaults, and rewards allocations, among other things.
 contract ZorroController is
     ZorroControllerBase,
-    ZorroControllerPoolMgmt,
+    ZorroControllerVaultMgmt,
     ZorroControllerAnalytics,
     ZorroControllerInvestment
 {

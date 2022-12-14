@@ -23,13 +23,13 @@ contract ZorroControllerXChainWithdraw is
     /// @notice Prepares and sends a cross chain withdrwal request.
     /// @dev Requires value to be submitted to pay for cross chain transaction. Use checkXChainWithdrawalFee() to estimate fees
     /// @param _destZorroChainId The Zorro chain ID of the remote chain to withdraw from
-    /// @param _pid The pool ID on the remote chain
-    /// @param _trancheId The ID of the tranche for the given user and pool
+    /// @param _vid The vault ID on the remote chain
+    /// @param _trancheId The ID of the tranche for the given user and vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _gasForDestinationLZReceive How much additional gas to provide at destination contract
     function sendXChainWithdrawalRequest(
         uint256 _destZorroChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement,
         uint256 _gasForDestinationLZReceive
@@ -39,7 +39,7 @@ contract ZorroControllerXChainWithdraw is
             .encodeXChainWithdrawalPayload(
                 chainId,
                 abi.encodePacked(msg.sender),
-                _pid,
+                _vid,
                 _trancheId,
                 _maxMarketMovement
             );
@@ -66,7 +66,7 @@ contract ZorroControllerXChainWithdraw is
 
     /// @notice Prepares and sends cross chain repatriation request via Stargate
     /// @param _originChainId Zorro chain ID of origin chain that repatriation shall go to
-    /// @param _pid Pool ID on current chain that withdrawal came from
+    /// @param _vid Vault ID on current chain that withdrawal came from
     /// @param _trancheId Tranche ID on current chain that withdrawal came from
     /// @param _originRecipient Recipient on home chain that repatriate funds shall go to
     /// @param _amountUSD Amount withdrawn, to be repatriated
@@ -74,7 +74,7 @@ contract ZorroControllerXChainWithdraw is
     /// @param _maxMarketMovementAllowed Acceptable slippage (950 = 5%, 990 = 1%, etc.)
     function _sendXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _amountUSD,
@@ -85,7 +85,7 @@ contract ZorroControllerXChainWithdraw is
         bytes memory _payload = ZorroControllerXChainActions(controllerActions)
             .encodeXChainRepatriationPayload(
                 _originChainId,
-                _pid,
+                _vid,
                 _trancheId,
                 _originRecipient,
                 _rewardsDue
@@ -114,7 +114,7 @@ contract ZorroControllerXChainWithdraw is
     function receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) public {
@@ -125,7 +125,7 @@ contract ZorroControllerXChainWithdraw is
         _receiveXChainWithdrawalRequest(
             _originChainId,
             _originAccount,
-            _pid,
+            _vid,
             _trancheId,
             _maxMarketMovement
         );
@@ -134,19 +134,19 @@ contract ZorroControllerXChainWithdraw is
     /// @notice Handler for receiving withdrawal requests
     /// @param _originChainId Zorro Chain ID of the chain that this request came from
     /// @param _originAccount Wallet address of sender who initiated this request on the origin chain
-    /// @param _pid Pool ID to withdraw from
+    /// @param _vid Vault ID to withdraw from
     /// @param _trancheId Tranche ID to withdraw from
     /// @param _maxMarketMovement Slippage factor (e.g. 950 = 5%, 990 = 1%, etc.)
     function _receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) internal virtual {
         // Get on-chain account using foreign account as guide
         address _account = ZorroControllerInvestment(currentChainController)
-            .foreignTrancheInfo(_pid, _originAccount, _trancheId);
+            .foreignTrancheInfo(_vid, _originAccount, _trancheId);
 
         // Withdraw funds
         (, uint256 _rewardsDue) = IZorroControllerInvestment(
@@ -154,7 +154,7 @@ contract ZorroControllerXChainWithdraw is
         ).withdrawalFullServiceFromXChain(
                 _account,
                 _originAccount,
-                _pid,
+                _vid,
                 _trancheId,
                 false,
                 _maxMarketMovement
@@ -169,7 +169,7 @@ contract ZorroControllerXChainWithdraw is
         // Repatriate funds
         _sendXChainRepatriationRequest(
             _originChainId,
-            _pid,
+            _vid,
             _trancheId,
             _originAccount,
             _balUSD,
@@ -184,7 +184,7 @@ contract ZorroControllerXChainWithdraw is
     /// @dev Should never ever be actually called.
     function receiveXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
@@ -195,7 +195,7 @@ contract ZorroControllerXChainWithdraw is
         // But still include the function call here anyway to satisfy type safety requirements in case there is a change
         _receiveXChainRepatriationRequest(
             _originChainId,
-            _pid,
+            _vid,
             _trancheId,
             _originRecipient,
             _rewardsDue
@@ -204,13 +204,13 @@ contract ZorroControllerXChainWithdraw is
 
     /// @notice Receives a repatriation request from another chain and takes care of all financial operations (unlock/mint/burn) to pay the user their withdrawn funds from another chain
     /// @param _originChainId The Chain ID of the investment being repatriated
-    /// @param _pid The pid of the investment being repatriated
+    /// @param _vid The vault index of the investment being repatriated
     /// @param _trancheId The tranche ID of the investment being repatriated
     /// @param _originRecipient The wallet address on this chain that funds are being repatriated to
     /// @param _rewardsDue ZOR rewards due to the recipient
     function _receiveXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
@@ -219,7 +219,7 @@ contract ZorroControllerXChainWithdraw is
         address _destination = IZorroControllerXChainActions(controllerActions).bytesToAddress(_originRecipient);
 
         // Emit repatriation event
-        emit XChainRepatriation(_pid, _destination, _trancheId, _originChainId);
+        emit XChainRepatriation(_vid, _destination, _trancheId, _originChainId);
 
         // Repatriate rewards
         IZorroControllerInvestment(currentChainController).repatriateRewards(

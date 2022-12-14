@@ -8,7 +8,7 @@ import "../../interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 contract MockZorroControllerXChain is ZorroControllerXChain {
     event ReceiveXChainDepositReq(
-        uint256 indexed _pid,
+        uint256 indexed _vid,
         uint256 indexed _valueUSD,
         address indexed _destAccount
     );
@@ -26,12 +26,12 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     event ReceiveXChainWithdrawalReq(
         uint256 indexed _originChainId,
-        uint256 indexed _pid,
+        uint256 indexed _vid,
         uint256 indexed _trancheId
     );
 
     function mockReceiveXChainDepositRequest(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -39,7 +39,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         address _destAccount
     ) public {
         _receiveXChainDepositRequest(
-            _pid,
+            _vid,
             _valueUSD,
             _weeksCommitted,
             block.timestamp,
@@ -50,7 +50,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     }
 
     function _receiveXChainDepositRequest(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _vaultEnteredAt,
@@ -64,19 +64,19 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_maxMarketMovement > 0);
         require(_originAccount.length >= 0);
         // TODO: Consider making this an actual event like for repatriation, instead of one just for test
-        emit ReceiveXChainDepositReq(_pid, _valueUSD, _destAccount);
+        emit ReceiveXChainDepositReq(_vid, _valueUSD, _destAccount);
     }
 
     function mockReceiveXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
     ) public {
         _receiveXChainRepatriationRequest(
             _originChainId,
-            _pid,
+            _vid,
             _trancheId,
             _originRecipient,
             _rewardsDue
@@ -85,13 +85,13 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
 
     function _receiveXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
     ) internal override {
         // Requirements
-        require(_pid >= 0);
+        require(_vid >= 0);
         require(_trancheId >= 0);
         require(_originRecipient.length >= 0);
 
@@ -138,14 +138,14 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     function mockReceiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) public {
         _receiveXChainWithdrawalRequest(
             _originChainId,
             _originAccount,
-            _pid,
+            _vid,
             _trancheId,
             _maxMarketMovement
         );
@@ -154,7 +154,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     function _receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) internal override {
@@ -162,12 +162,12 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_originAccount.length >= 0);
         require(_maxMarketMovement > 0);
 
-        emit ReceiveXChainWithdrawalReq(_originChainId, _pid, _trancheId);
+        emit ReceiveXChainWithdrawalReq(_originChainId, _vid, _trancheId);
     }
 
     function sendXChainRepatriationRequest(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _amountUSD,
@@ -176,7 +176,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
     ) public payable {
         _sendXChainRepatriationRequest(
             _originChainId,
-            _pid,
+            _vid,
             _trancheId,
             _originRecipient,
             _amountUSD,

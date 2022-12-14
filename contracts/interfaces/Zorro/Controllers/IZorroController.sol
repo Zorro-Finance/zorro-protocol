@@ -10,21 +10,21 @@ interface IZorroControllerBase {
 
     // Info of each tranche.
     struct TrancheInfo {
-        uint256 contribution; // The tranche-specific contribution for a given pool (Cx). Equivalent to the product of their contributed deposit and a time multiplier
+        uint256 contribution; // The tranche-specific contribution for a given vault (Cx). Equivalent to the product of their contributed deposit and a time multiplier
         uint256 timeMultiplier; // The time multiplier factor for rewards
-        uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the pool to date (see README)
+        uint256 rewardDebt; // The tranche's share of the amount of rewards accumulated in the vault to date (see README)
         uint256 durationCommittedInWeeks; // How many weeks the user committed to at the time of deposit for this tranche
         uint256 enteredVaultAt; // The block timestamp for which the user deposited into a Vault.
         uint256 exitedVaultAt; // The block timestamp for which the user finished withdrawal
     }
 
-    // Info of each pool
-    struct PoolInfo {
+    // Info of each vault
+    struct VaultInfo {
         IERC20Upgradeable want; // Want token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool.
+        uint256 allocPoint; // How many allocation points assigned to this vault.
         uint256 lastRewardBlock; // Last block number that ZORRO distribution occurs.
-        uint256 accZORRORewards; // Accumulated ZORRO rewards in this pool
-        uint256 totalTrancheContributions; // Sum of all user contributions in this pool
+        uint256 accZORRORewards; // Accumulated ZORRO rewards in this vault
+        uint256 totalTrancheContributions; // Sum of all user contributions in this vault
         address vault; // Address of the Vault
     }
 
@@ -59,18 +59,18 @@ interface IZorroControllerBase {
 
     /* Functions */
 
-    function poolLength() external view returns (uint256);
+    function vaultLength() external view returns (uint256);
 
-    function poolInfo(uint256 _i) external view returns (IERC20Upgradeable, uint256, uint256, uint256, uint256, address);
+    function vaultInfo(uint256 _i) external view returns (IERC20Upgradeable, uint256, uint256, uint256, uint256, address);
 
     function vaultMapping(address _vault) external view returns (uint256);
 
-    function trancheLength(uint256 _pid, address _user)
+    function trancheLength(uint256 _vid, address _user)
         external
         view
         returns (uint256);
 
-    function updatePool(uint256 _pid) external returns (uint256);
+    function updateVault(uint256 _vid) external returns (uint256);
 
     function inCaseTokensGetStuck(address _token, uint256 _amount) external;
 }
@@ -78,13 +78,13 @@ interface IZorroControllerBase {
 /// @title IZorroControllerAnalytics
 interface IZorroControllerAnalytics is IZorroControllerBase {
     function pendingZORRORewards(
-        uint256 _pid,
+        uint256 _vid,
         address _account,
         int256 _trancheId
     ) external view returns (uint256);
 
     function shares(
-        uint256 _pid,
+        uint256 _vid,
         address _account,
         int256 _trancheId
     ) external view returns (uint256);
@@ -104,22 +104,22 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     event Deposit(
         address indexed account,
         bytes indexed foreignAccount,
-        uint256 indexed pid,
+        uint256 indexed vid,
         uint256 wantAmount
     );
 
     event Withdraw(
         address indexed account,
         bytes indexed foreignAccount,
-        uint256 indexed pid,
+        uint256 indexed vid,
         uint256 trancheId,
         uint256 wantAmount
     );
     event TransferInvestment(
         address account,
-        uint256 indexed fromPid,
+        uint256 indexed fromVid,
         uint256 indexed fromTrancheId,
-        uint256 indexed toPid
+        uint256 indexed toVid
     );
 
     /* Functions */
@@ -129,20 +129,20 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     function setZorroXChainEndpoint(address _contract) external;
 
     function deposit(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _wantAmt,
         uint256 _weeksCommitted
     ) external;
 
     function depositFullService(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement
     ) external;
 
     function depositFullServiceFromXChain(
-        uint256 _pid,
+        uint256 _vid,
         address _account,
         bytes memory _foreignAccount,
         uint256 _valueUSD,
@@ -152,13 +152,13 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     ) external;
 
     function withdraw(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bool _harvestOnly
     ) external returns (uint256);
 
     function withdrawalFullService(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bool _harvestOnly,
         uint256 _maxMarketMovement
@@ -167,7 +167,7 @@ interface IZorroControllerInvestment is IZorroControllerBase {
     function withdrawalFullServiceFromXChain(
         address _account,
         bytes memory _foreignAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bool _harvestOnly,
         uint256 _maxMarketMovement
@@ -179,21 +179,21 @@ interface IZorroControllerInvestment is IZorroControllerBase {
         );
 
     function transferInvestment(
-        uint256 _fromPid,
+        uint256 _fromVid,
         uint256 _fromTrancheId,
-        uint256 _toPid,
+        uint256 _toVid,
         uint256 _maxMarketMovement
     ) external;
 
-    function withdrawAll(uint256 _pid) external;
+    function withdrawAll(uint256 _vid) external;
 
     function repatriateRewards(uint256 _rewardsDue, address _destination) external;
 
     function handleAccXChainRewards(uint256 _totalMinted, uint256 _totalSlashed) external;
 }
 
-/// @title IZorroControllerPoolMgmt
-interface IZorroControllerPoolMgmt is IZorroControllerBase {
+/// @title IZorroControllerVaultMgmt
+interface IZorroControllerVaultMgmt is IZorroControllerBase {
     function add(
         uint256 _allocPoint,
         IERC20Upgradeable _want,
@@ -202,18 +202,18 @@ interface IZorroControllerPoolMgmt is IZorroControllerBase {
     ) external;
 
     function set(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _allocPoint,
         bool _withUpdate
     ) external;
 
-    function massUpdatePools() external returns (uint256);
+    function massUpdateVaults() external returns (uint256);
 }
 
 /// @title IZorroController: Interface for Zorro Controller
 interface IZorroController is
     IZorroControllerBase,
-    IZorroControllerPoolMgmt,
+    IZorroControllerVaultMgmt,
     IZorroControllerInvestment,
     IZorroControllerAnalytics
 {

@@ -58,7 +58,7 @@ interface IZorroControllerXChainActions {
     ) external view returns (uint256 nativeFee);
 
     function encodeXChainDepositPayload(
-        uint256 _pid,
+        uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
@@ -103,7 +103,7 @@ interface IZorroControllerXChainActions {
     function encodeXChainWithdrawalPayload(
         uint256 _originChainId,
         bytes memory _originAccount,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         uint256 _maxMarketMovement
     ) external pure returns (bytes memory);
@@ -116,7 +116,7 @@ interface IZorroControllerXChainActions {
 
     function encodeXChainRepatriationPayload(
         uint256 _originChainId,
-        uint256 _pid,
+        uint256 _vid,
         uint256 _trancheId,
         bytes memory _originRecipient,
         uint256 _rewardsDue
