@@ -16,7 +16,7 @@ import "./PoolTeam.sol";
 
 /// @title PoolAdvisory: The advisory pool contract (for advisors).
 /// @dev Follows a factory method to create vesting wallets for each new advisor
-contract PoolAdvisory is Initializable, OwnableUpgradeable {
+contract PoolAdvisory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

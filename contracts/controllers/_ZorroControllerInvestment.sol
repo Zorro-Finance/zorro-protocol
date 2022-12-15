@@ -757,6 +757,7 @@ contract ZorroControllerInvestment is
     function repatriateRewards(uint256 _rewardsDue, address _destination)
         public
         onlyZorroXChain
+        nonReentrant
     {
         // Get rewards based on chain type
         if (chainId == homeChainId) {
@@ -776,6 +777,7 @@ contract ZorroControllerInvestment is
         public
         onlyAllowZorroControllerOracle
         onlyHomeChain
+        nonReentrant
     {
         // Burn shares that were minted on other chains so that
         // the total tokens minted across all chains is constant

@@ -10,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
@@ -17,7 +19,7 @@ import "@openzeppelin/contracts/finance/VestingWallet.sol";
 // TODO: Unit tests needed
 
 /// @title PoolTeam: The team pool contract (for founders).
-contract PoolTeam is Initializable, OwnableUpgradeable {
+contract PoolTeam is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -46,15 +48,14 @@ contract PoolTeam is Initializable, OwnableUpgradeable {
     /// @param _token The ERC20 token to withdraw
     /// @param _recipient The recipient of the withdrawn funds
     /// @param _quantity The amount of token to withdraw
-    function withdraw(address _token, address _recipient, uint256 _quantity) public onlyOwner {
+    function withdraw(address _token, address _recipient, uint256 _quantity) public onlyOwner nonReentrant {
         IERC20Upgradeable(_token).safeTransfer(_recipient, _quantity);
     }
 
     /// @notice Withdraws any native ETH from this contract
     /// @param _recipient The recipient of the withdrawn funds
     /// @param _quantity The amount of token to withdraw
-    function withdraw(address payable _recipient, uint256 _quantity) public onlyOwner {
-        // TODO: Do we need reentrancy protection?
+    function withdraw(address payable _recipient, uint256 _quantity) public onlyOwner nonReentrant {
         AddressUpgradeable.sendValue(_recipient, _quantity);
     }
 

@@ -251,7 +251,7 @@ contract ZorroControllerBase is
     /// @notice Update reward variables of the given vault to be up-to-date.
     /// @param _vid index of vault in vaultInfo array
     /// @return mintedZOR Amount of ZOR rewards minted (useful for cross chain)
-    function updateVault(uint256 _vid) public returns (uint256 mintedZOR) {
+    function updateVault(uint256 _vid) public nonReentrant returns (uint256 mintedZOR) {
         // Get the vault matching the given index
         VaultInfo storage _vault = vaultInfo[_vid];
 

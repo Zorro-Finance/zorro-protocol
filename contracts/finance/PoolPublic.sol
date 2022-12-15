@@ -8,8 +8,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 /// @title PoolPublic: The public pool contract. Hold all Zorro tokens deemed for public pool at inception and gradually emits to ZorroController contract based on market conditions
-contract PoolPublic is Initializable, OwnableUpgradeable {
+contract PoolPublic is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* Constructor */
