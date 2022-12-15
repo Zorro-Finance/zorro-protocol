@@ -400,7 +400,7 @@
         },
         {
           "internalType": "address",
-          "name": "_token0",
+          "name": "_token",
           "type": "address"
         },
         {
@@ -412,64 +412,14 @@
           "internalType": "address",
           "name": "_liqStakePool",
           "type": "address"
-        }
-      ],
-      "name": "liquidStake",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
+        },
         {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "amountIn",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "priceToken0",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "priceToken1",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "token0",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "token1",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "maxMarketMovementAllowed",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address[]",
-              "name": "path",
-              "type": "address[]"
-            },
-            {
-              "internalType": "address",
-              "name": "destination",
-              "type": "address"
-            }
-          ],
-          "internalType": "struct SafeSwapUni.SafeSwapParams",
-          "name": "_swapParams",
-          "type": "tuple"
+          "internalType": "uint256",
+          "name": "_maxMarketMovementAllowed",
+          "type": "uint256"
         }
       ],
-      "name": "liquidUnstake",
+      "name": "liquidStakeAndAddLiq",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -482,36 +432,19 @@
           "type": "uint256"
         },
         {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "liquidStakeToken",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "nativeToken",
-              "type": "address"
-            },
-            {
-              "internalType": "contract AggregatorV3Interface",
-              "name": "liquidStakeTokenPriceFeed",
-              "type": "address"
-            },
-            {
-              "internalType": "contract AggregatorV3Interface",
-              "name": "nativeTokenPriceFeed",
-              "type": "address"
-            },
-            {
-              "internalType": "address[]",
-              "name": "liquidStakeToNativePath",
-              "type": "address[]"
-            }
-          ],
-          "internalType": "struct IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams",
-          "name": "_params",
-          "type": "tuple"
+          "internalType": "address",
+          "name": "_nativeToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_liquidStakeToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_lpToken",
+          "type": "address"
         },
         {
           "internalType": "uint256",
@@ -519,13 +452,13 @@
           "type": "uint256"
         }
       ],
-      "name": "stakeInLPPool",
+      "name": "removeLiqAndliquidUnstake",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"burnAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"currentWantEquity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"positionVal\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"ZORROAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"rewardsAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"stablecoin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroStakingVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroLPPoolOtherToken\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"ZORPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"lpPoolOtherTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"stablecoinPriceFeed\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORROPath\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORLPPoolOtherTokenPath\",\"type\":\"address[]\"},{\"internalType\":\"uint16\",\"name\":\"controllerFeeBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"buybackBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"revShareBP\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"isHomeChain\",\"type\":\"bool\"}],\"internalType\":\"struct IVaultActions.DistributeEarningsParams\",\"name\":\"_params\",\"type\":\"tuple\"}],\"name\":\"distributeAndReinvestEarnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSD\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeUSDForWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeWantTokenForUSD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"usdObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountLP\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"poolAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"lpTokenAddress\",\"type\":\"address\"}],\"internalType\":\"struct IVaultActions.ExitPoolParams\",\"name\":\"_exitPoolParams\",\"type\":\"tuple\"}],\"name\":\"exitPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_token0Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_token1Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liqStakeToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liqStakePool\",\"type\":\"address\"}],\"name\":\"liquidStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken1\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"path\",\"type\":\"address[]\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"internalType\":\"struct SafeSwapUni.SafeSwapParams\",\"name\":\"_swapParams\",\"type\":\"tuple\"}],\"name\":\"liquidUnstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_path\",\"type\":\"address[]\"}],\"name\":\"reversePath\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"newPath\",\"type\":\"address[]\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken1\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"path\",\"type\":\"address[]\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"internalType\":\"struct SafeSwapUni.SafeSwapParams\",\"name\":\"_swapParams\",\"type\":\"tuple\"}],\"name\":\"safeSwap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"liquidStakeToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"nativeToken\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"liquidStakeTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"nativeTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"liquidStakeToNativePath\",\"type\":\"address[]\"}],\"internalType\":\"struct IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams\",\"name\":\"_params\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"stakeInLPPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"uniRouterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"unrealizedProfits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"accumulatedProfit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"harvestableProfit\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol\":\"IVaultActionsLiqStakeLP\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter01.sol\":{\"keccak256\":\"0xedff0a1c8dd8eac392692f031406c459891a88a09d996629e3a56a9b8e003915\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7bb31e6c73608c55b6a40f6a4ccb4d592acb6f402fad3b12e78f6314e6da491e\",\"dweb:/ipfs/QmVTMhwncB1MwGJabKKtfcRzyHtnkueAx8XrB4yLrv6Xci\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter02.sol\":{\"keccak256\":\"0x6ff071388c7b300cb602534f249a4a1e63e97ae3870945ebc477d8cf03d36e24\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://32dbfb0f88caff1dc0859b430d30b9bc8c301ce073d26d3c1d92eea481007d12\",\"dweb:/ipfs/QmP8giHQSDYVt9qxyMjnVawFCi8gTCrgCKhZrywiwCiZ9x\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActions.sol\":{\"keccak256\":\"0x816005771e6f06fc6a18a41af8671d7ebe99681d8cb2c9babbf26bb32200c4a4\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3bd5cee78aa86e75195e8e268b4025720e04472d5339b6482ee517a9f6328caf\",\"dweb:/ipfs/QmTMDQxGE2Sh4nnpPjwweupjA88i6JTxsctxNjTRj7pU4Z\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol\":{\"keccak256\":\"0xa558a24cf670f28f0b016cc6dae636d1a20aba6e4c0dada660db69e880ea10c3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://ba5ec7a21d9a625181f455174d4ecb1153b2af4bbb3a03acd6f4009b61e276c8\",\"dweb:/ipfs/QmZa6m3Y2XExToMyiKBeDRFzp5qkfZsrHgcWMrdv1Ft5Bb\"]},\"project:/contracts/libraries/SafeSwap.sol\":{\"keccak256\":\"0x12474ac6678158bda55a1ce0fb982a920253ab3b72084bb8b3219f1bbdf66a02\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a157fa3130e187f4354a5398eb8271ba2733642b3e7e49bfd51d24de874d6c25\",\"dweb:/ipfs/QmXT3Z4rEHhJLzVZpccJeseefLQXkxXRcvc76KhvSDby68\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"burnAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"currentWantEquity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"positionVal\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"ZORROAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"rewardsAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"stablecoin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroStakingVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroLPPoolOtherToken\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"ZORPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"lpPoolOtherTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"stablecoinPriceFeed\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORROPath\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORLPPoolOtherTokenPath\",\"type\":\"address[]\"},{\"internalType\":\"uint16\",\"name\":\"controllerFeeBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"buybackBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"revShareBP\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"isHomeChain\",\"type\":\"bool\"}],\"internalType\":\"struct IVaultActions.DistributeEarningsParams\",\"name\":\"_params\",\"type\":\"tuple\"}],\"name\":\"distributeAndReinvestEarnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSD\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeUSDForWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeWantTokenForUSD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"usdObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountLP\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"poolAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"lpTokenAddress\",\"type\":\"address\"}],\"internalType\":\"struct IVaultActions.ExitPoolParams\",\"name\":\"_exitPoolParams\",\"type\":\"tuple\"}],\"name\":\"exitPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_token0Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_token1Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liqStakeToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liqStakePool\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"liquidStakeAndAddLiq\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_nativeToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liquidStakeToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_lpToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"removeLiqAndliquidUnstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_path\",\"type\":\"address[]\"}],\"name\":\"reversePath\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"newPath\",\"type\":\"address[]\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken1\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"path\",\"type\":\"address[]\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"internalType\":\"struct SafeSwapUni.SafeSwapParams\",\"name\":\"_swapParams\",\"type\":\"tuple\"}],\"name\":\"safeSwap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"uniRouterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"unrealizedProfits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"accumulatedProfit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"harvestableProfit\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol\":\"IVaultActionsLiqStakeLP\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter01.sol\":{\"keccak256\":\"0xedff0a1c8dd8eac392692f031406c459891a88a09d996629e3a56a9b8e003915\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7bb31e6c73608c55b6a40f6a4ccb4d592acb6f402fad3b12e78f6314e6da491e\",\"dweb:/ipfs/QmVTMhwncB1MwGJabKKtfcRzyHtnkueAx8XrB4yLrv6Xci\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter02.sol\":{\"keccak256\":\"0x6ff071388c7b300cb602534f249a4a1e63e97ae3870945ebc477d8cf03d36e24\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://32dbfb0f88caff1dc0859b430d30b9bc8c301ce073d26d3c1d92eea481007d12\",\"dweb:/ipfs/QmP8giHQSDYVt9qxyMjnVawFCi8gTCrgCKhZrywiwCiZ9x\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActions.sol\":{\"keccak256\":\"0x816005771e6f06fc6a18a41af8671d7ebe99681d8cb2c9babbf26bb32200c4a4\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3bd5cee78aa86e75195e8e268b4025720e04472d5339b6482ee517a9f6328caf\",\"dweb:/ipfs/QmTMDQxGE2Sh4nnpPjwweupjA88i6JTxsctxNjTRj7pU4Z\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol\":{\"keccak256\":\"0x4038479478c66dec1a0ae7f4acd7355944f93e2a590bc99b26c7c6203e753ab3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3cdf784a880619fd54d3e731a778998ab742b626dfca5fb8b95bee6263b8c38c\",\"dweb:/ipfs/QmWNsxyFqjP1vbRoECyBuopzta2sSW7MiQNC58vW98jzrD\"]},\"project:/contracts/libraries/SafeSwap.sol\":{\"keccak256\":\"0x12474ac6678158bda55a1ce0fb982a920253ab3b72084bb8b3219f1bbdf66a02\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a157fa3130e187f4354a5398eb8271ba2733642b3e7e49bfd51d24de874d6c25\",\"dweb:/ipfs/QmXT3Z4rEHhJLzVZpccJeseefLQXkxXRcvc76KhvSDby68\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -533,7 +466,7 @@
   "deployedGeneratedSources": [],
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\nimport \"./IVaultActions.sol\";\n\ninterface IVaultActionsLiqStakeLP is IVaultActions {\n    /* Structs */\n\n    struct StakeLiqTokenInLPPoolParams {\n        address liquidStakeToken;\n        address nativeToken;\n        AggregatorV3Interface liquidStakeTokenPriceFeed;\n        AggregatorV3Interface nativeTokenPriceFeed;\n        address[] liquidStakeToNativePath;\n    }\n\n    struct UnstakeLiqTokenFromLPPoolParams {\n        address liquidStakeToken;\n        address nativeToken;\n        address lpPoolToken;\n        AggregatorV3Interface liquidStakeTokenPriceFeed;\n        AggregatorV3Interface nativeTokenPriceFeed;\n        address[] nativeToLiquidStakePath;\n    }\n\n    /* Functions */\n\n    function liquidStake(\n        uint256 _amount,\n        address _token0,\n        address _liqStakeToken,\n        address _liqStakePool\n    ) external;\n\n    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams)\n        external;\n\n    function stakeInLPPool(\n        uint256 _amount,\n        StakeLiqTokenInLPPoolParams memory _params,\n        uint256 _maxMarketMovementAllowed\n    ) external;\n}\n",
+  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\nimport \"./IVaultActions.sol\";\n\ninterface IVaultActionsLiqStakeLP is IVaultActions {\n    /* Structs */\n\n    struct StakeLiqTokenInLPPoolParams {\n        address liquidStakeToken;\n        address nativeToken;\n        AggregatorV3Interface liquidStakeTokenPriceFeed;\n        AggregatorV3Interface nativeTokenPriceFeed;\n        address[] liquidStakeToNativePath;\n    }\n\n    struct UnstakeLiqTokenFromLPPoolParams {\n        address liquidStakeToken;\n        address nativeToken;\n        address lpPoolToken;\n        AggregatorV3Interface liquidStakeTokenPriceFeed;\n        AggregatorV3Interface nativeTokenPriceFeed;\n        address[] nativeToLiquidStakePath;\n    }\n\n    /* Functions */\n\n    function liquidStakeAndAddLiq(\n        uint256 _amount,\n        address _token,\n        address _liqStakeToken,\n        address _liqStakePool,\n        uint256 _maxMarketMovementAllowed\n    ) external;\n\n    function removeLiqAndliquidUnstake(\n        uint256 _amount,\n        address _nativeToken,\n        address _liquidStakeToken,\n        address _lpToken,\n        uint256 _maxMarketMovementAllowed\n    ) external;\n}\n",
   "sourcePath": "/Users/kristophm/Documents/workspace/zorro-protocol/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol",
   "ast": {
     "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol",
@@ -551,13 +484,13 @@
         15546
       ],
       "IVaultActionsLiqStakeLP": [
-        15700
+        15699
       ],
       "SafeSwapUni": [
-        16460
+        16459
       ]
     },
-    "id": 15701,
+    "id": 15700,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
@@ -578,7 +511,7 @@
         "id": 15640,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 15701,
+        "scope": 15700,
         "sourceUnit": 15547,
         "src": "58:29:81",
         "symbolAliases": [],
@@ -604,9 +537,9 @@
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 15700,
+        "id": 15699,
         "linearizedBaseContracts": [
-          15700,
+          15699,
           15546
         ],
         "name": "IVaultActionsLiqStakeLP",
@@ -782,7 +715,7 @@
             "name": "StakeLiqTokenInLPPoolParams",
             "nameLocation": "172:27:81",
             "nodeType": "StructDefinition",
-            "scope": 15700,
+            "scope": 15699,
             "src": "165:257:81",
             "visibility": "public"
           },
@@ -983,21 +916,21 @@
             "name": "UnstakeLiqTokenFromLPPoolParams",
             "nameLocation": "435:31:81",
             "nodeType": "StructDefinition",
-            "scope": 15700,
+            "scope": 15699,
             "src": "428:290:81",
             "visibility": "public"
           },
           {
-            "functionSelector": "c99bbd81",
-            "id": 15683,
+            "functionSelector": "265be497",
+            "id": 15685,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
-            "name": "liquidStake",
-            "nameLocation": "754:11:81",
+            "name": "liquidStakeAndAddLiq",
+            "nameLocation": "754:20:81",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 15681,
+              "id": 15683,
               "nodeType": "ParameterList",
               "parameters": [
                 {
@@ -1005,10 +938,10 @@
                   "id": 15674,
                   "mutability": "mutable",
                   "name": "_amount",
-                  "nameLocation": "783:7:81",
+                  "nameLocation": "792:7:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15683,
-                  "src": "775:15:81",
+                  "scope": 15685,
+                  "src": "784:15:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1019,7 +952,7 @@
                     "id": 15673,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "775:7:81",
+                    "src": "784:7:81",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -1031,11 +964,11 @@
                   "constant": false,
                   "id": 15676,
                   "mutability": "mutable",
-                  "name": "_token0",
-                  "nameLocation": "808:7:81",
+                  "name": "_token",
+                  "nameLocation": "817:6:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15683,
-                  "src": "800:15:81",
+                  "scope": 15685,
+                  "src": "809:14:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1046,7 +979,7 @@
                     "id": 15675,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "800:7:81",
+                    "src": "809:7:81",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -1060,10 +993,10 @@
                   "id": 15678,
                   "mutability": "mutable",
                   "name": "_liqStakeToken",
-                  "nameLocation": "833:14:81",
+                  "nameLocation": "841:14:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15683,
-                  "src": "825:22:81",
+                  "scope": 15685,
+                  "src": "833:22:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1074,7 +1007,7 @@
                     "id": 15677,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "825:7:81",
+                    "src": "833:7:81",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -1088,10 +1021,10 @@
                   "id": 15680,
                   "mutability": "mutable",
                   "name": "_liqStakePool",
-                  "nameLocation": "865:13:81",
+                  "nameLocation": "873:13:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15683,
-                  "src": "857:21:81",
+                  "scope": 15685,
+                  "src": "865:21:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1102,7 +1035,7 @@
                     "id": 15679,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "857:7:81",
+                    "src": "865:7:81",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -1110,167 +1043,182 @@
                     }
                   },
                   "visibility": "internal"
-                }
-              ],
-              "src": "765:119:81"
-            },
-            "returnParameters": {
-              "id": 15682,
-              "nodeType": "ParameterList",
-              "parameters": [],
-              "src": "893:0:81"
-            },
-            "scope": 15700,
-            "src": "745:149:81",
-            "stateMutability": "nonpayable",
-            "virtual": false,
-            "visibility": "external"
-          },
-          {
-            "functionSelector": "193d7ade",
-            "id": 15689,
-            "implemented": false,
-            "kind": "function",
-            "modifiers": [],
-            "name": "liquidUnstake",
-            "nameLocation": "909:13:81",
-            "nodeType": "FunctionDefinition",
-            "parameters": {
-              "id": 15687,
-              "nodeType": "ParameterList",
-              "parameters": [
+                },
                 {
                   "constant": false,
-                  "id": 15686,
+                  "id": 15682,
                   "mutability": "mutable",
-                  "name": "_swapParams",
-                  "nameLocation": "957:11:81",
+                  "name": "_maxMarketMovementAllowed",
+                  "nameLocation": "904:25:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15689,
-                  "src": "923:45:81",
+                  "scope": 15685,
+                  "src": "896:33:81",
                   "stateVariable": false,
-                  "storageLocation": "memory",
+                  "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_SafeSwapParams_$16276_memory_ptr",
-                    "typeString": "struct SafeSwapUni.SafeSwapParams"
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 15685,
-                    "nodeType": "UserDefinedTypeName",
-                    "pathNode": {
-                      "id": 15684,
-                      "name": "SafeSwapUni.SafeSwapParams",
-                      "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 16276,
-                      "src": "923:26:81"
-                    },
-                    "referencedDeclaration": 16276,
-                    "src": "923:26:81",
+                    "id": 15681,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "896:7:81",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_SafeSwapParams_$16276_storage_ptr",
-                      "typeString": "struct SafeSwapUni.SafeSwapParams"
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
                     }
                   },
                   "visibility": "internal"
                 }
               ],
-              "src": "922:47:81"
+              "src": "774:161:81"
             },
             "returnParameters": {
-              "id": 15688,
+              "id": 15684,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "986:0:81"
+              "src": "944:0:81"
             },
-            "scope": 15700,
-            "src": "900:87:81",
+            "scope": 15699,
+            "src": "745:200:81",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "functionSelector": "bb81a18d",
-            "id": 15699,
+            "functionSelector": "c78bb217",
+            "id": 15698,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
-            "name": "stakeInLPPool",
-            "nameLocation": "1002:13:81",
+            "name": "removeLiqAndliquidUnstake",
+            "nameLocation": "960:25:81",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 15697,
+              "id": 15696,
               "nodeType": "ParameterList",
               "parameters": [
+                {
+                  "constant": false,
+                  "id": 15687,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "1003:7:81",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 15698,
+                  "src": "995:15:81",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 15686,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "995:7:81",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 15689,
+                  "mutability": "mutable",
+                  "name": "_nativeToken",
+                  "nameLocation": "1028:12:81",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 15698,
+                  "src": "1020:20:81",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 15688,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1020:7:81",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
                 {
                   "constant": false,
                   "id": 15691,
                   "mutability": "mutable",
-                  "name": "_amount",
-                  "nameLocation": "1033:7:81",
+                  "name": "_liquidStakeToken",
+                  "nameLocation": "1058:17:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15699,
-                  "src": "1025:15:81",
+                  "scope": 15698,
+                  "src": "1050:25:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_uint256",
-                    "typeString": "uint256"
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
                   },
                   "typeName": {
                     "id": 15690,
-                    "name": "uint256",
+                    "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1025:7:81",
+                    "src": "1050:7:81",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_uint256",
-                      "typeString": "uint256"
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
                     }
                   },
                   "visibility": "internal"
                 },
                 {
                   "constant": false,
-                  "id": 15694,
+                  "id": 15693,
                   "mutability": "mutable",
-                  "name": "_params",
-                  "nameLocation": "1085:7:81",
+                  "name": "_lpToken",
+                  "nameLocation": "1093:8:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15699,
-                  "src": "1050:42:81",
+                  "scope": 15698,
+                  "src": "1085:16:81",
                   "stateVariable": false,
-                  "storageLocation": "memory",
+                  "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_StakeLiqTokenInLPPoolParams_$15656_memory_ptr",
-                    "typeString": "struct IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams"
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
                   },
                   "typeName": {
-                    "id": 15693,
-                    "nodeType": "UserDefinedTypeName",
-                    "pathNode": {
-                      "id": 15692,
-                      "name": "StakeLiqTokenInLPPoolParams",
-                      "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 15656,
-                      "src": "1050:27:81"
-                    },
-                    "referencedDeclaration": 15656,
-                    "src": "1050:27:81",
+                    "id": 15692,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1085:7:81",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_StakeLiqTokenInLPPoolParams_$15656_storage_ptr",
-                      "typeString": "struct IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams"
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
                     }
                   },
                   "visibility": "internal"
                 },
                 {
                   "constant": false,
-                  "id": 15696,
+                  "id": 15695,
                   "mutability": "mutable",
                   "name": "_maxMarketMovementAllowed",
-                  "nameLocation": "1110:25:81",
+                  "nameLocation": "1119:25:81",
                   "nodeType": "VariableDeclaration",
-                  "scope": 15699,
-                  "src": "1102:33:81",
+                  "scope": 15698,
+                  "src": "1111:33:81",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1278,10 +1226,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 15695,
+                    "id": 15694,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1102:7:81",
+                    "src": "1111:7:81",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -1290,27 +1238,27 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "1015:126:81"
+              "src": "985:165:81"
             },
             "returnParameters": {
-              "id": 15698,
+              "id": 15697,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1150:0:81"
+              "src": "1159:0:81"
             },
-            "scope": 15700,
-            "src": "993:158:81",
+            "scope": 15699,
+            "src": "951:209:81",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 15701,
-        "src": "89:1064:81",
+        "scope": 15700,
+        "src": "89:1073:81",
         "usedErrors": []
       }
     ],
-    "src": "33:1121:81"
+    "src": "33:1130:81"
   },
   "compiler": {
     "name": "solc",
@@ -1318,7 +1266,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-12-14T17:42:59.132Z",
+  "updatedAt": "2022-12-15T02:09:55.989Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

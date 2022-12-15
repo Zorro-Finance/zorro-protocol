@@ -26,19 +26,19 @@ interface IVaultActionsLiqStakeLP is IVaultActions {
 
     /* Functions */
 
-    function liquidStake(
+    function liquidStakeAndAddLiq(
         uint256 _amount,
-        address _token0,
+        address _token,
         address _liqStakeToken,
-        address _liqStakePool
+        address _liqStakePool,
+        uint256 _maxMarketMovementAllowed
     ) external;
 
-    function liquidUnstake(SafeSwapUni.SafeSwapParams memory _swapParams)
-        external;
-
-    function stakeInLPPool(
+    function removeLiqAndliquidUnstake(
         uint256 _amount,
-        StakeLiqTokenInLPPoolParams memory _params,
+        address _nativeToken,
+        address _liquidStakeToken,
+        address _lpToken,
         uint256 _maxMarketMovementAllowed
     ) external;
 }

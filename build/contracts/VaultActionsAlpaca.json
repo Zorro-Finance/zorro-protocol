@@ -4146,7 +4146,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_struct$_SafeSwapParams_$16276_memory_ptr",
+            "name": "abi_decode_tuple_t_struct$_SafeSwapParams_$16275_memory_ptr",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -17984,7 +17984,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function validator_revert_address(value)\n    {\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_address(value)\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_3072() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0100)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3074() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x01c0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory(size) -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(size, 31), not(31)))\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$15371_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        if slt(add(_1, not(95)), 0x80) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x80)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        let value_1 := calldataload(add(headStart, 96))\n        validator_revert_address(value_1)\n        mstore(memPtr, value_1)\n        let value_2 := calldataload(add(headStart, 0x80))\n        validator_revert_address(value_2)\n        mstore(add(memPtr, 32), value_2)\n        let value_3 := calldataload(add(headStart, 160))\n        validator_revert_address(value_3)\n        mstore(add(memPtr, 64), value_3)\n        let value_4 := calldataload(add(headStart, 192))\n        validator_revert_address(value_4)\n        mstore(add(memPtr, 96), value_4)\n        value3 := memPtr\n    }\n    function array_allocation_size_array_address_dyn(length) -> size\n    {\n        if gt(length, 0xffffffffffffffff) { panic_error_0x41() }\n        size := add(mul(length, 0x20), 0x20)\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_1))\n        let dst_1 := dst\n        mstore(dst, _1)\n        dst := add(dst, _2)\n        let srcEnd := add(add(offset, mul(_1, _2)), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            let value := calldataload(src)\n            validator_revert_address(value)\n            mstore(dst, value)\n            dst := add(dst, _2)\n        }\n        array := dst_1\n    }\n    function abi_decode_tuple_t_struct$_SafeSwapParams_$16276_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0100) { revert(0, 0) }\n        let value := allocate_memory_3072()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), calldataload(add(_2, 32)))\n        mstore(add(value, 64), calldataload(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), calldataload(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        value0 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_uint256t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        let value_2 := calldataload(add(headStart, 160))\n        validator_revert_address(value_2)\n        value5 := value_2\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function validator_revert_uint16(value)\n    {\n        if iszero(eq(value, and(value, 0xffff))) { revert(0, 0) }\n    }\n    function abi_decode_uint16(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_uint16(value)\n    }\n    function validator_revert_bool(value)\n    {\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_bool(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_bool(value)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_struct$_DistributeEarningsParams_$15405_memory_ptr(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let offset := calldataload(add(headStart, 64))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x01c0) { revert(0, 0) }\n        let value := allocate_memory_3074()\n        mstore(value, abi_decode_address(_2))\n        mstore(add(value, 32), abi_decode_address(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_address(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), abi_decode_address(add(_2, 160)))\n        mstore(add(value, 192), abi_decode_address(add(_2, 192)))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        let _3 := 256\n        let offset_1 := calldataload(add(_2, _3))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, _3), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        let _4 := 288\n        let offset_2 := calldataload(add(_2, _4))\n        if gt(offset_2, _1) { revert(0, 0) }\n        mstore(add(value, _4), abi_decode_array_address_dyn(add(_2, offset_2), dataEnd))\n        let _5 := 320\n        mstore(add(value, _5), abi_decode_uint16(add(_2, _5)))\n        let _6 := 352\n        mstore(add(value, _6), abi_decode_uint16(add(_2, _6)))\n        let _7 := 384\n        mstore(add(value, _7), abi_decode_uint16(add(_2, _7)))\n        let _8 := 416\n        mstore(add(value, _8), abi_decode_bool(add(_2, _8)))\n        value2 := value\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_decode_tuple_t_array$_t_address_$dyn_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value0 := abi_decode_array_address_dyn(add(headStart, offset), dataEnd)\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), 0xffffffffffffffffffffffffffffffffffffffff))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_tuple_t_array$_t_address_$dyn_memory_ptr__to_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        tail := abi_encode_array_address_dyn(value0, add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_869a81434170bf1000300fd22bf6ea05da16d1d14b21ddcb3fa8ec273453ac05__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 7)\n        mstore(add(headStart, 64), \"negWant\")\n        tail := add(headStart, 96)\n    }\n    function abi_decode_tuple_t_address_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function increment_t_uint16(value) -> ret\n    {\n        let _1 := 0xffff\n        let value_1 := and(value, _1)\n        if eq(value_1, _1) { panic_error_0x11() }\n        ret := add(value_1, 1)\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n        mstore(add(headStart, 192), value6)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint8_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        if iszero(eq(value, and(value, 0xff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value7, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 256)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n        mstore(add(headStart, 192), and(value6, _1))\n        mstore(add(headStart, 224), value7)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_contract$_AggregatorV3Interface_$45_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_ae9749dd51684a9bfa2aae7f6df94626a600df20204fc3d562dff4de90da0c6b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"invalid dec\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__to_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__fromStack_reversed(headStart, value4, value3, value2, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), 160)\n        tail := abi_encode_array_address_dyn(value2, add(headStart, 160))\n        mstore(add(headStart, 96), and(value3, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 128), value4)\n    }\n    function abi_decode_uint80_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint80t_int256t_uint256t_uint256t_uint80_fromMemory(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := abi_decode_uint80_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n        value3 := mload(add(headStart, 96))\n        value4 := abi_decode_uint80_fromMemory(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_stringliteral_4813dba0f997fcf98efb8a1f547325c010bceec392f7bce0213eb7a0a0101425__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"neg prices not allowed\")\n        tail := add(headStart, 96)\n    }\n    function checked_exp_helper(_base, exponent) -> power, base\n    {\n        let power_1 := 1\n        power := power_1\n        base := _base\n        for { } gt(exponent, power_1) { }\n        {\n            if gt(base, div(not(0), base)) { panic_error_0x11() }\n            if and(exponent, power_1) { power := mul(power, base) }\n            base := mul(base, base)\n            exponent := div(exponent, 0x02)\n        }\n    }\n    function checked_exp_unsigned(base, exponent) -> power\n    {\n        if iszero(exponent)\n        {\n            power := 1\n            leave\n        }\n        if iszero(base)\n        {\n            power := 0\n            leave\n        }\n        switch base\n        case 1 {\n            power := 1\n            leave\n        }\n        case 2 {\n            if gt(exponent, 255) { panic_error_0x11() }\n            power := exp(2, exponent)\n            leave\n        }\n        if or(and(lt(base, 11), lt(exponent, 78)), and(lt(base, 307), lt(exponent, 32)))\n        {\n            power := exp(base, exponent)\n            leave\n        }\n        let power_1, base_1 := checked_exp_helper(base, exponent)\n        if gt(power_1, div(not(0), base_1)) { panic_error_0x11() }\n        power := mul(power_1, base_1)\n    }\n    function checked_exp_t_uint256_t_uint8(base, exponent) -> power\n    {\n        power := checked_exp_unsigned(base, and(exponent, 0xff))\n    }\n    function abi_decode_tuple_t_uint16_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_uint16(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint16__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), and(value2, 0xffff))\n    }\n    function abi_encode_tuple_t_uint256_t_array$_t_address_$dyn_memory_ptr__to_t_uint256_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), 64)\n        tail := abi_encode_array_address_dyn(value1, add(headStart, 64))\n    }\n    function abi_decode_tuple_t_array$_t_uint256_$dyn_memory_ptr_fromMemory(headStart, dataEnd) -> value0\n    {\n        let _1 := 32\n        if slt(sub(dataEnd, headStart), _1) { revert(0, 0) }\n        let offset := mload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let _3 := mload(_2)\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_3))\n        let dst_1 := dst\n        mstore(dst, _3)\n        dst := add(dst, _1)\n        let srcEnd := add(add(_2, mul(_3, _1)), _1)\n        if gt(srcEnd, dataEnd) { revert(0, 0) }\n        let src := add(_2, _1)\n        for { } lt(src, srcEnd) { src := add(src, _1) }\n        {\n            mstore(dst, mload(src))\n            dst := add(dst, _1)\n        }\n        value0 := dst_1\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
+      "contents": "{\n    { }\n    function validator_revert_address(value)\n    {\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_address(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_address(value)\n    }\n    function panic_error_0x41()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x41)\n        revert(0, 0x24)\n    }\n    function allocate_memory_3072() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x0100)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory_3074() -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x01c0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function allocate_memory(size) -> memPtr\n    {\n        memPtr := mload(64)\n        let newFreePtr := add(memPtr, and(add(size, 31), not(31)))\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_addresst_struct$_ExitPoolParams_$15371_memory_ptr(headStart, dataEnd) -> value0, value1, value2, value3\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let value := calldataload(add(headStart, 64))\n        validator_revert_address(value)\n        value2 := value\n        if slt(add(_1, not(95)), 0x80) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0x80)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr)) { panic_error_0x41() }\n        mstore(64, newFreePtr)\n        let value_1 := calldataload(add(headStart, 96))\n        validator_revert_address(value_1)\n        mstore(memPtr, value_1)\n        let value_2 := calldataload(add(headStart, 0x80))\n        validator_revert_address(value_2)\n        mstore(add(memPtr, 32), value_2)\n        let value_3 := calldataload(add(headStart, 160))\n        validator_revert_address(value_3)\n        mstore(add(memPtr, 64), value_3)\n        let value_4 := calldataload(add(headStart, 192))\n        validator_revert_address(value_4)\n        mstore(add(memPtr, 96), value_4)\n        value3 := memPtr\n    }\n    function array_allocation_size_array_address_dyn(length) -> size\n    {\n        if gt(length, 0xffffffffffffffff) { panic_error_0x41() }\n        size := add(mul(length, 0x20), 0x20)\n    }\n    function abi_decode_array_address_dyn(offset, end) -> array\n    {\n        if iszero(slt(add(offset, 0x1f), end)) { revert(0, 0) }\n        let _1 := calldataload(offset)\n        let _2 := 0x20\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_1))\n        let dst_1 := dst\n        mstore(dst, _1)\n        dst := add(dst, _2)\n        let srcEnd := add(add(offset, mul(_1, _2)), _2)\n        if gt(srcEnd, end) { revert(0, 0) }\n        let src := add(offset, _2)\n        for { } lt(src, srcEnd) { src := add(src, _2) }\n        {\n            let value := calldataload(src)\n            validator_revert_address(value)\n            mstore(dst, value)\n            dst := add(dst, _2)\n        }\n        array := dst_1\n    }\n    function abi_decode_tuple_t_struct$_SafeSwapParams_$16275_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x0100) { revert(0, 0) }\n        let value := allocate_memory_3072()\n        mstore(value, calldataload(_2))\n        mstore(add(value, 32), calldataload(add(_2, 32)))\n        mstore(add(value, 64), calldataload(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), calldataload(add(_2, 160)))\n        let offset_1 := calldataload(add(_2, 192))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, 192), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        value0 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_decode_tuple_t_addresst_addresst_uint256t_uint256t_uint256t_address(headStart, dataEnd) -> value0, value1, value2, value3, value4, value5\n    {\n        if slt(sub(dataEnd, headStart), 192) { revert(0, 0) }\n        let value := calldataload(headStart)\n        validator_revert_address(value)\n        value0 := value\n        let value_1 := calldataload(add(headStart, 32))\n        validator_revert_address(value_1)\n        value1 := value_1\n        value2 := calldataload(add(headStart, 64))\n        value3 := calldataload(add(headStart, 96))\n        value4 := calldataload(add(headStart, 128))\n        let value_2 := calldataload(add(headStart, 160))\n        validator_revert_address(value_2)\n        value5 := value_2\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function validator_revert_uint16(value)\n    {\n        if iszero(eq(value, and(value, 0xffff))) { revert(0, 0) }\n    }\n    function abi_decode_uint16(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_uint16(value)\n    }\n    function validator_revert_bool(value)\n    {\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n    }\n    function abi_decode_bool(offset) -> value\n    {\n        value := calldataload(offset)\n        validator_revert_bool(value)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_struct$_DistributeEarningsParams_$15405_memory_ptr(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n        let offset := calldataload(add(headStart, 64))\n        let _1 := 0xffffffffffffffff\n        if gt(offset, _1) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if slt(sub(dataEnd, _2), 0x01c0) { revert(0, 0) }\n        let value := allocate_memory_3074()\n        mstore(value, abi_decode_address(_2))\n        mstore(add(value, 32), abi_decode_address(add(_2, 32)))\n        mstore(add(value, 64), abi_decode_address(add(_2, 64)))\n        mstore(add(value, 96), abi_decode_address(add(_2, 96)))\n        mstore(add(value, 128), abi_decode_address(add(_2, 128)))\n        mstore(add(value, 160), abi_decode_address(add(_2, 160)))\n        mstore(add(value, 192), abi_decode_address(add(_2, 192)))\n        mstore(add(value, 224), abi_decode_address(add(_2, 224)))\n        let _3 := 256\n        let offset_1 := calldataload(add(_2, _3))\n        if gt(offset_1, _1) { revert(0, 0) }\n        mstore(add(value, _3), abi_decode_array_address_dyn(add(_2, offset_1), dataEnd))\n        let _4 := 288\n        let offset_2 := calldataload(add(_2, _4))\n        if gt(offset_2, _1) { revert(0, 0) }\n        mstore(add(value, _4), abi_decode_array_address_dyn(add(_2, offset_2), dataEnd))\n        let _5 := 320\n        mstore(add(value, _5), abi_decode_uint16(add(_2, _5)))\n        let _6 := 352\n        mstore(add(value, _6), abi_decode_uint16(add(_2, _6)))\n        let _7 := 384\n        mstore(add(value, _7), abi_decode_uint16(add(_2, _7)))\n        let _8 := 416\n        mstore(add(value, _8), abi_decode_bool(add(_2, _8)))\n        value2 := value\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_uint256__to_t_uint256_t_uint256_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_decode_tuple_t_array$_t_address_$dyn_memory_ptr(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let offset := calldataload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        value0 := abi_decode_array_address_dyn(add(headStart, offset), dataEnd)\n    }\n    function abi_encode_array_address_dyn(value, pos) -> end\n    {\n        let length := mload(value)\n        mstore(pos, length)\n        let _1 := 0x20\n        pos := add(pos, _1)\n        let srcPtr := add(value, _1)\n        let i := 0\n        for { } lt(i, length) { i := add(i, 1) }\n        {\n            mstore(pos, and(mload(srcPtr), 0xffffffffffffffffffffffffffffffffffffffff))\n            pos := add(pos, _1)\n            srcPtr := add(srcPtr, _1)\n        }\n        end := pos\n    }\n    function abi_encode_tuple_t_array$_t_address_$dyn_memory_ptr__to_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        tail := abi_encode_array_address_dyn(value0, add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_869a81434170bf1000300fd22bf6ea05da16d1d14b21ddcb3fa8ec273453ac05__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 7)\n        mstore(add(headStart, 64), \"negWant\")\n        tail := add(headStart, 96)\n    }\n    function abi_decode_tuple_t_address_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function abi_decode_tuple_t_uint256_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        value0 := mload(headStart)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function panic_error_0x32()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x32)\n        revert(0, 0x24)\n    }\n    function increment_t_uint16(value) -> ret\n    {\n        let _1 := 0xffff\n        let value_1 := and(value, _1)\n        if eq(value_1, _1) { panic_error_0x11() }\n        ret := add(value_1, 1)\n    }\n    function abi_encode_tuple_t_stringliteral_7a2a4e26842155ea933fe6eb6e3137eb5a296dcdf55721c552be7b4c3cc23759__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 46)\n        mstore(add(headStart, 64), \"Initializable: contract is alrea\")\n        mstore(add(headStart, 96), \"dy initialized\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 224)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), and(value5, _1))\n        mstore(add(headStart, 192), value6)\n    }\n    function abi_decode_tuple_t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n    }\n    function abi_decode_tuple_t_uint8_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        if iszero(eq(value, and(value, 0xff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__to_t_address_t_address_t_uint256_t_uint256_t_uint256_t_uint256_t_address_t_uint256__fromStack_reversed(headStart, value7, value6, value5, value4, value3, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 256)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), value2)\n        mstore(add(headStart, 96), value3)\n        mstore(add(headStart, 128), value4)\n        mstore(add(headStart, 160), value5)\n        mstore(add(headStart, 192), and(value6, _1))\n        mstore(add(headStart, 224), value7)\n    }\n    function abi_decode_tuple_t_uint256t_uint256t_uint256_fromMemory(headStart, dataEnd) -> value0, value1, value2\n    {\n        if slt(sub(dataEnd, headStart), 96) { revert(0, 0) }\n        value0 := mload(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n    }\n    function abi_decode_tuple_t_contract$_AggregatorV3Interface_$45_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_address(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_uint256__to_t_address_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_decode_tuple_t_bool_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_bool(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_e11ad79d1e4a7f2e5f376964cb99e8e8f7904e3fc16a109f7a7ecb9aa7956dcd__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 42)\n        mstore(add(headStart, 64), \"SafeERC20: ERC20 operation did n\")\n        mstore(add(headStart, 96), \"ot succeed\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_address_t_address__to_t_address_t_address__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n    }\n    function abi_encode_tuple_t_stringliteral_ae9749dd51684a9bfa2aae7f6df94626a600df20204fc3d562dff4de90da0c6b__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 11)\n        mstore(add(headStart, 64), \"invalid dec\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__to_t_uint256_t_uint256_t_array$_t_address_$dyn_memory_ptr_t_address_t_uint256__fromStack_reversed(headStart, value4, value3, value2, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n        mstore(add(headStart, 64), 160)\n        tail := abi_encode_array_address_dyn(value2, add(headStart, 160))\n        mstore(add(headStart, 96), and(value3, 0xffffffffffffffffffffffffffffffffffffffff))\n        mstore(add(headStart, 128), value4)\n    }\n    function abi_decode_uint80_fromMemory(offset) -> value\n    {\n        value := mload(offset)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffff))) { revert(0, 0) }\n    }\n    function abi_decode_tuple_t_uint80t_int256t_uint256t_uint256t_uint80_fromMemory(headStart, dataEnd) -> value0, value1, value2, value3, value4\n    {\n        if slt(sub(dataEnd, headStart), 160) { revert(0, 0) }\n        value0 := abi_decode_uint80_fromMemory(headStart)\n        value1 := mload(add(headStart, 32))\n        value2 := mload(add(headStart, 64))\n        value3 := mload(add(headStart, 96))\n        value4 := abi_decode_uint80_fromMemory(add(headStart, 128))\n    }\n    function abi_encode_tuple_t_stringliteral_4813dba0f997fcf98efb8a1f547325c010bceec392f7bce0213eb7a0a0101425__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 22)\n        mstore(add(headStart, 64), \"neg prices not allowed\")\n        tail := add(headStart, 96)\n    }\n    function checked_exp_helper(_base, exponent) -> power, base\n    {\n        let power_1 := 1\n        power := power_1\n        base := _base\n        for { } gt(exponent, power_1) { }\n        {\n            if gt(base, div(not(0), base)) { panic_error_0x11() }\n            if and(exponent, power_1) { power := mul(power, base) }\n            base := mul(base, base)\n            exponent := div(exponent, 0x02)\n        }\n    }\n    function checked_exp_unsigned(base, exponent) -> power\n    {\n        if iszero(exponent)\n        {\n            power := 1\n            leave\n        }\n        if iszero(base)\n        {\n            power := 0\n            leave\n        }\n        switch base\n        case 1 {\n            power := 1\n            leave\n        }\n        case 2 {\n            if gt(exponent, 255) { panic_error_0x11() }\n            power := exp(2, exponent)\n            leave\n        }\n        if or(and(lt(base, 11), lt(exponent, 78)), and(lt(base, 307), lt(exponent, 32)))\n        {\n            power := exp(base, exponent)\n            leave\n        }\n        let power_1, base_1 := checked_exp_helper(base, exponent)\n        if gt(power_1, div(not(0), base_1)) { panic_error_0x11() }\n        power := mul(power_1, base_1)\n    }\n    function checked_exp_t_uint256_t_uint8(base, exponent) -> power\n    {\n        power := checked_exp_unsigned(base, and(exponent, 0xff))\n    }\n    function abi_decode_tuple_t_uint16_fromMemory(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := mload(headStart)\n        validator_revert_uint16(value)\n        value0 := value\n    }\n    function abi_encode_tuple_t_address_t_address_t_uint16__to_t_address_t_address_t_uint256__fromStack_reversed(headStart, value2, value1, value0) -> tail\n    {\n        tail := add(headStart, 96)\n        let _1 := 0xffffffffffffffffffffffffffffffffffffffff\n        mstore(headStart, and(value0, _1))\n        mstore(add(headStart, 32), and(value1, _1))\n        mstore(add(headStart, 64), and(value2, 0xffff))\n    }\n    function abi_encode_tuple_t_uint256_t_array$_t_address_$dyn_memory_ptr__to_t_uint256_t_array$_t_address_$dyn_memory_ptr__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), 64)\n        tail := abi_encode_array_address_dyn(value1, add(headStart, 64))\n    }\n    function abi_decode_tuple_t_array$_t_uint256_$dyn_memory_ptr_fromMemory(headStart, dataEnd) -> value0\n    {\n        let _1 := 32\n        if slt(sub(dataEnd, headStart), _1) { revert(0, 0) }\n        let offset := mload(headStart)\n        if gt(offset, 0xffffffffffffffff) { revert(0, 0) }\n        let _2 := add(headStart, offset)\n        if iszero(slt(add(_2, 0x1f), dataEnd)) { revert(0, 0) }\n        let _3 := mload(_2)\n        let dst := allocate_memory(array_allocation_size_array_address_dyn(_3))\n        let dst_1 := dst\n        mstore(dst, _3)\n        dst := add(dst, _1)\n        let srcEnd := add(add(_2, mul(_3, _1)), _1)\n        if gt(srcEnd, dataEnd) { revert(0, 0) }\n        let src := add(_2, _1)\n        for { } lt(src, srcEnd) { src := add(src, _1) }\n        {\n            mstore(dst, mload(src))\n            dst := add(dst, _1)\n        }\n        value0 := dst_1\n    }\n    function abi_encode_tuple_t_stringliteral_565f1a77334fc4792800921178c71e4521acffab18ff9e7885b49377ee80ab4c__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Address: insufficient balance fo\")\n        mstore(add(headStart, 96), \"r call\")\n        tail := add(headStart, 128)\n    }\n    function abi_encode_tuple_t_stringliteral_cc2e4e38850b7c0a3e942cfed89b71c77302df25bcb2ec297a0c4ff9ff6b90ad__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 29)\n        mstore(add(headStart, 64), \"Address: call to non-contract\")\n        tail := add(headStart, 96)\n    }\n    function copy_memory_to_memory(src, dst, length)\n    {\n        let i := 0\n        for { } lt(i, length) { i := add(i, 32) }\n        {\n            mstore(add(dst, i), mload(add(src, i)))\n        }\n        if gt(i, length) { mstore(add(dst, length), 0) }\n    }\n    function abi_encode_tuple_packed_t_bytes_memory_ptr__to_t_bytes_memory_ptr__nonPadded_inplace_fromStack_reversed(pos, value0) -> end\n    {\n        let length := mload(value0)\n        copy_memory_to_memory(add(value0, 0x20), pos, length)\n        end := add(pos, length)\n    }\n    function abi_encode_tuple_t_string_memory_ptr__to_t_string_memory_ptr__fromStack_reversed(headStart, value0) -> tail\n    {\n        mstore(headStart, 32)\n        let length := mload(value0)\n        mstore(add(headStart, 32), length)\n        copy_memory_to_memory(add(value0, 32), add(headStart, 64), length)\n        tail := add(add(headStart, and(add(length, 31), not(31))), 64)\n    }\n}",
       "id": 127,
       "language": "Yul",
       "name": "#utility.yul"
@@ -18028,7 +18028,7 @@
         12544
       ],
       "IVault": [
-        16004
+        16003
       ],
       "IVaultActions": [
         15546
@@ -18037,7 +18037,7 @@
         15552
       ],
       "IVaultAlpaca": [
-        16017
+        16016
       ],
       "Initializable": [
         1774
@@ -18046,27 +18046,27 @@
         571
       ],
       "PriceFeed": [
-        16254
+        16253
       ],
       "SafeERC20Upgradeable": [
         2884
       ],
       "SafeSwapUni": [
-        16460
+        16459
       ],
       "VaultActions": [
-        23484
+        23341
       ],
       "VaultActionsAlpaca": [
-        21491
+        21389
       ]
     },
-    "id": 21492,
+    "id": 21390,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 21229,
+        "id": 21127,
         "literals": [
           "solidity",
           "^",
@@ -18079,10 +18079,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
-        "id": 21230,
+        "id": 21128,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 2636,
         "src": "58:79:116",
         "symbolAliases": [],
@@ -18091,10 +18091,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol",
-        "id": 21231,
+        "id": 21129,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 2558,
         "src": "139:78:116",
         "symbolAliases": [],
@@ -18103,10 +18103,10 @@
       {
         "absolutePath": "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol",
-        "id": 21232,
+        "id": 21130,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 2885,
         "src": "219:88:116",
         "symbolAliases": [],
@@ -18115,10 +18115,10 @@
       {
         "absolutePath": "project:/contracts/interfaces/Alpaca/IAlpacaFairLaunch.sol",
         "file": "../../interfaces/Alpaca/IAlpacaFairLaunch.sol",
-        "id": 21233,
+        "id": 21131,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 12545,
         "src": "309:55:116",
         "symbolAliases": [],
@@ -18127,10 +18127,10 @@
       {
         "absolutePath": "project:/contracts/interfaces/Alpaca/IAlpacaVault.sol",
         "file": "../../interfaces/Alpaca/IAlpacaVault.sol",
-        "id": 21234,
+        "id": 21132,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 12580,
         "src": "366:50:116",
         "symbolAliases": [],
@@ -18139,10 +18139,10 @@
       {
         "absolutePath": "project:/contracts/interfaces/Uniswap/IAMMRouter02.sol",
         "file": "../../interfaces/Uniswap/IAMMRouter02.sol",
-        "id": 21235,
+        "id": 21133,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 14174,
         "src": "418:51:116",
         "symbolAliases": [],
@@ -18151,11 +18151,11 @@
       {
         "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/IVaultAlpaca.sol",
         "file": "../../interfaces/Zorro/Vaults/IVaultAlpaca.sol",
-        "id": 21236,
+        "id": 21134,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
-        "sourceUnit": 16018,
+        "scope": 21390,
+        "sourceUnit": 16017,
         "src": "471:56:116",
         "symbolAliases": [],
         "unitAlias": ""
@@ -18163,10 +18163,10 @@
       {
         "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsAlpaca.sol",
         "file": "../../interfaces/Zorro/Vaults/Actions/IVaultActionsAlpaca.sol",
-        "id": 21237,
+        "id": 21135,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
+        "scope": 21390,
         "sourceUnit": 15553,
         "src": "529:71:116",
         "symbolAliases": [],
@@ -18175,11 +18175,11 @@
       {
         "absolutePath": "project:/contracts/libraries/SafeSwap.sol",
         "file": "../../libraries/SafeSwap.sol",
-        "id": 21238,
+        "id": 21136,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
-        "sourceUnit": 16461,
+        "scope": 21390,
+        "sourceUnit": 16460,
         "src": "602:38:116",
         "symbolAliases": [],
         "unitAlias": ""
@@ -18187,11 +18187,11 @@
       {
         "absolutePath": "project:/contracts/libraries/PriceFeed.sol",
         "file": "../../libraries/PriceFeed.sol",
-        "id": 21239,
+        "id": 21137,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
-        "sourceUnit": 16255,
+        "scope": 21390,
+        "sourceUnit": 16254,
         "src": "642:39:116",
         "symbolAliases": [],
         "unitAlias": ""
@@ -18199,11 +18199,11 @@
       {
         "absolutePath": "project:/contracts/vaults/actions/_VaultActions.sol",
         "file": "./_VaultActions.sol",
-        "id": 21240,
+        "id": 21138,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 21492,
-        "sourceUnit": 23485,
+        "scope": 21390,
+        "sourceUnit": 23342,
         "src": "683:29:116",
         "symbolAliases": [],
         "unitAlias": ""
@@ -18213,25 +18213,25 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 21241,
+              "id": 21139,
               "name": "IVaultActionsAlpaca",
               "nodeType": "IdentifierPath",
               "referencedDeclaration": 15552,
               "src": "745:19:116"
             },
-            "id": 21242,
+            "id": 21140,
             "nodeType": "InheritanceSpecifier",
             "src": "745:19:116"
           },
           {
             "baseName": {
-              "id": 21243,
+              "id": 21141,
               "name": "VaultActions",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 23484,
+              "referencedDeclaration": 23341,
               "src": "766:12:116"
             },
-            "id": 21244,
+            "id": 21142,
             "nodeType": "InheritanceSpecifier",
             "src": "766:12:116"
           }
@@ -18240,10 +18240,10 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 21491,
+        "id": 21389,
         "linearizedBaseContracts": [
-          21491,
-          23484,
+          21389,
+          23341,
           571,
           3169,
           1774,
@@ -18255,9 +18255,9 @@
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "id": 21248,
+            "id": 21146,
             "libraryName": {
-              "id": 21245,
+              "id": 21143,
               "name": "SafeERC20Upgradeable",
               "nodeType": "IdentifierPath",
               "referencedDeclaration": 2884,
@@ -18266,10 +18266,10 @@
             "nodeType": "UsingForDirective",
             "src": "806:49:116",
             "typeName": {
-              "id": 21247,
+              "id": 21145,
               "nodeType": "UserDefinedTypeName",
               "pathNode": {
-                "id": 21246,
+                "id": 21144,
                 "name": "IERC20Upgradeable",
                 "nodeType": "IdentifierPath",
                 "referencedDeclaration": 2635,
@@ -18284,21 +18284,21 @@
             }
           },
           {
-            "id": 21252,
+            "id": 21150,
             "libraryName": {
-              "id": 21249,
+              "id": 21147,
               "name": "SafeSwapUni",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 16460,
+              "referencedDeclaration": 16459,
               "src": "866:11:116"
             },
             "nodeType": "UsingForDirective",
             "src": "860:35:116",
             "typeName": {
-              "id": 21251,
+              "id": 21149,
               "nodeType": "UserDefinedTypeName",
               "pathNode": {
-                "id": 21250,
+                "id": 21148,
                 "name": "IAMMRouter02",
                 "nodeType": "IdentifierPath",
                 "referencedDeclaration": 14173,
@@ -18313,21 +18313,21 @@
             }
           },
           {
-            "id": 21256,
+            "id": 21154,
             "libraryName": {
-              "id": 21253,
+              "id": 21151,
               "name": "PriceFeed",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 16254,
+              "referencedDeclaration": 16253,
               "src": "906:9:116"
             },
             "nodeType": "UsingForDirective",
             "src": "900:42:116",
             "typeName": {
-              "id": 21255,
+              "id": 21153,
               "nodeType": "UserDefinedTypeName",
               "pathNode": {
-                "id": 21254,
+                "id": 21152,
                 "name": "AggregatorV3Interface",
                 "nodeType": "IdentifierPath",
                 "referencedDeclaration": 45,
@@ -18343,61 +18343,61 @@
           },
           {
             "baseFunctions": [
-              23365
+              23222
             ],
             "body": {
-              "id": 21340,
+              "id": 21238,
               "nodeType": "Block",
               "src": "1444:1202:116",
               "statements": [
                 {
                   "assignments": [
-                    21269
+                    21167
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21269,
+                      "id": 21167,
                       "mutability": "mutable",
                       "name": "_vault",
                       "nameLocation": "1477:6:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21340,
+                      "scope": 21238,
                       "src": "1470:13:116",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IVault_$16004",
+                        "typeIdentifier": "t_contract$_IVault_$16003",
                         "typeString": "contract IVault"
                       },
                       "typeName": {
-                        "id": 21268,
+                        "id": 21166,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 21267,
+                          "id": 21165,
                           "name": "IVault",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 16004,
+                          "referencedDeclaration": 16003,
                           "src": "1470:6:116"
                         },
-                        "referencedDeclaration": 16004,
+                        "referencedDeclaration": 16003,
                         "src": "1470:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21274,
+                  "id": 21172,
                   "initialValue": {
                     "arguments": [
                       {
                         "arguments": [],
                         "expression": {
                           "argumentTypes": [],
-                          "id": 21271,
+                          "id": 21169,
                           "name": "_msgSender",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -18408,7 +18408,7 @@
                             "typeString": "function () view returns (address)"
                           }
                         },
-                        "id": 21272,
+                        "id": 21170,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -18431,18 +18431,18 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 21270,
+                      "id": 21168,
                       "name": "IVault",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 16004,
+                      "referencedDeclaration": 16003,
                       "src": "1486:6:116",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_type$_t_contract$_IVault_$16004_$",
+                        "typeIdentifier": "t_type$_t_contract$_IVault_$16003_$",
                         "typeString": "type(contract IVault)"
                       }
                     },
-                    "id": 21273,
+                    "id": 21171,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -18453,7 +18453,7 @@
                     "src": "1486:20:116",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IVault_$16004",
+                      "typeIdentifier": "t_contract$_IVault_$16003",
                       "typeString": "contract IVault"
                     }
                   },
@@ -18462,17 +18462,17 @@
                 },
                 {
                   "assignments": [
-                    21276
+                    21174
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21276,
+                      "id": 21174,
                       "mutability": "mutable",
                       "name": "_stablecoin",
                       "nameLocation": "1524:11:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21340,
+                      "scope": 21238,
                       "src": "1516:19:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -18481,7 +18481,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21275,
+                        "id": 21173,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "1516:7:116",
@@ -18494,38 +18494,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21280,
+                  "id": 21178,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21277,
+                        "id": 21175,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21269,
+                        "referencedDeclaration": 21167,
                         "src": "1538:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
-                      "id": 21278,
+                      "id": 21176,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "defaultStablecoin",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15875,
+                      "referencedDeclaration": 15874,
                       "src": "1538:24:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21279,
+                    "id": 21177,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -18545,17 +18545,17 @@
                 },
                 {
                   "assignments": [
-                    21282
+                    21180
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21282,
+                      "id": 21180,
                       "mutability": "mutable",
                       "name": "_token0Address",
                       "nameLocation": "1582:14:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21340,
+                      "scope": 21238,
                       "src": "1574:22:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -18564,7 +18564,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21281,
+                        "id": 21179,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "1574:7:116",
@@ -18577,38 +18577,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21286,
+                  "id": 21184,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21283,
+                        "id": 21181,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21269,
+                        "referencedDeclaration": 21167,
                         "src": "1599:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
-                      "id": 21284,
+                      "id": 21182,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "token0Address",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15890,
+                      "referencedDeclaration": 15889,
                       "src": "1599:20:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21285,
+                    "id": 21183,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -18628,17 +18628,17 @@
                 },
                 {
                   "assignments": [
-                    21288
+                    21186
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21288,
+                      "id": 21186,
                       "mutability": "mutable",
                       "name": "_pool",
                       "nameLocation": "1639:5:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21340,
+                      "scope": 21238,
                       "src": "1631:13:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -18647,7 +18647,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21287,
+                        "id": 21185,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "1631:7:116",
@@ -18660,38 +18660,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21292,
+                  "id": 21190,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21289,
+                        "id": 21187,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21269,
+                        "referencedDeclaration": 21167,
                         "src": "1647:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
-                      "id": 21290,
+                      "id": 21188,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "poolAddress",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15880,
+                      "referencedDeclaration": 15879,
                       "src": "1647:18:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21291,
+                    "id": 21189,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -18715,17 +18715,17 @@
                       "typeIdentifier": "t_address",
                       "typeString": "address"
                     },
-                    "id": 21295,
+                    "id": 21193,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
-                      "id": 21293,
+                      "id": 21191,
                       "name": "_token0Address",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21282,
+                      "referencedDeclaration": 21180,
                       "src": "1771:14:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -18735,11 +18735,11 @@
                     "nodeType": "BinaryOperation",
                     "operator": "!=",
                     "rightExpression": {
-                      "id": 21294,
+                      "id": 21192,
                       "name": "_stablecoin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21276,
+                      "referencedDeclaration": 21174,
                       "src": "1789:11:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -18752,11 +18752,11 @@
                       "typeString": "bool"
                     }
                   },
-                  "id": 21327,
+                  "id": 21225,
                   "nodeType": "IfStatement",
                   "src": "1767:733:116",
                   "trueBody": {
-                    "id": 21326,
+                    "id": 21224,
                     "nodeType": "Block",
                     "src": "1802:698:116",
                     "statements": [
@@ -18766,11 +18766,11 @@
                             {
                               "arguments": [
                                 {
-                                  "id": 21299,
+                                  "id": 21197,
                                   "name": "_amountUSD",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21259,
+                                  "referencedDeclaration": 21157,
                                   "src": "1902:10:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -18784,11 +18784,11 @@
                                     "expression": {
                                       "arguments": [
                                         {
-                                          "id": 21302,
+                                          "id": 21200,
                                           "name": "_stablecoin",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21276,
+                                          "referencedDeclaration": 21174,
                                           "src": "1990:11:116",
                                           "typeDescriptions": {
                                             "typeIdentifier": "t_address",
@@ -18804,32 +18804,32 @@
                                           }
                                         ],
                                         "expression": {
-                                          "id": 21300,
+                                          "id": 21198,
                                           "name": "_vault",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21269,
+                                          "referencedDeclaration": 21167,
                                           "src": "1947:6:116",
                                           "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IVault_$16004",
+                                            "typeIdentifier": "t_contract$_IVault_$16003",
                                             "typeString": "contract IVault"
                                           }
                                         },
-                                        "id": 21301,
+                                        "id": 21199,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "memberName": "priceFeeds",
                                         "nodeType": "MemberAccess",
-                                        "referencedDeclaration": 15928,
+                                        "referencedDeclaration": 15927,
                                         "src": "1947:42:116",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_contract$_AggregatorV3Interface_$45_$",
                                           "typeString": "function (address) view external returns (contract AggregatorV3Interface)"
                                         }
                                       },
-                                      "id": 21303,
+                                      "id": 21201,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
@@ -18844,21 +18844,21 @@
                                         "typeString": "contract AggregatorV3Interface"
                                       }
                                     },
-                                    "id": 21304,
+                                    "id": 21202,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "getExchangeRate",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 16253,
+                                    "referencedDeclaration": 16252,
                                     "src": "1947:96:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_contract$_AggregatorV3Interface_$45_$returns$_t_uint256_$bound_to$_t_contract$_AggregatorV3Interface_$45_$",
                                       "typeString": "function (contract AggregatorV3Interface) view returns (uint256)"
                                     }
                                   },
-                                  "id": 21305,
+                                  "id": 21203,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -18880,11 +18880,11 @@
                                     "expression": {
                                       "arguments": [
                                         {
-                                          "id": 21308,
+                                          "id": 21206,
                                           "name": "_token0Address",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21282,
+                                          "referencedDeclaration": 21180,
                                           "src": "2123:14:116",
                                           "typeDescriptions": {
                                             "typeIdentifier": "t_address",
@@ -18900,32 +18900,32 @@
                                           }
                                         ],
                                         "expression": {
-                                          "id": 21306,
+                                          "id": 21204,
                                           "name": "_vault",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21269,
+                                          "referencedDeclaration": 21167,
                                           "src": "2080:6:116",
                                           "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IVault_$16004",
+                                            "typeIdentifier": "t_contract$_IVault_$16003",
                                             "typeString": "contract IVault"
                                           }
                                         },
-                                        "id": 21307,
+                                        "id": 21205,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "memberName": "priceFeeds",
                                         "nodeType": "MemberAccess",
-                                        "referencedDeclaration": 15928,
+                                        "referencedDeclaration": 15927,
                                         "src": "2080:42:116",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_contract$_AggregatorV3Interface_$45_$",
                                           "typeString": "function (address) view external returns (contract AggregatorV3Interface)"
                                         }
                                       },
-                                      "id": 21309,
+                                      "id": 21207,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
@@ -18940,21 +18940,21 @@
                                         "typeString": "contract AggregatorV3Interface"
                                       }
                                     },
-                                    "id": 21310,
+                                    "id": 21208,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "getExchangeRate",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 16253,
+                                    "referencedDeclaration": 16252,
                                     "src": "2080:99:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_contract$_AggregatorV3Interface_$45_$returns$_t_uint256_$bound_to$_t_contract$_AggregatorV3Interface_$45_$",
                                       "typeString": "function (contract AggregatorV3Interface) view returns (uint256)"
                                     }
                                   },
-                                  "id": 21311,
+                                  "id": 21209,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -18970,11 +18970,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21312,
+                                  "id": 21210,
                                   "name": "_stablecoin",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21276,
+                                  "referencedDeclaration": 21174,
                                   "src": "2211:11:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
@@ -18982,11 +18982,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21313,
+                                  "id": 21211,
                                   "name": "_token0Address",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21282,
+                                  "referencedDeclaration": 21180,
                                   "src": "2252:14:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
@@ -18994,11 +18994,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21314,
+                                  "id": 21212,
                                   "name": "_maxMarketMovementAllowed",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21261,
+                                  "referencedDeclaration": 21159,
                                   "src": "2314:25:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -19008,11 +19008,11 @@
                                 {
                                   "arguments": [
                                     {
-                                      "id": 21316,
+                                      "id": 21214,
                                       "name": "_stablecoin",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 21276,
+                                      "referencedDeclaration": 21174,
                                       "src": "2380:11:116",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_address",
@@ -19020,11 +19020,11 @@
                                       }
                                     },
                                     {
-                                      "id": 21317,
+                                      "id": 21215,
                                       "name": "_token0Address",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 21282,
+                                      "referencedDeclaration": 21180,
                                       "src": "2393:14:116",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_address",
@@ -19043,18 +19043,18 @@
                                         "typeString": "address"
                                       }
                                     ],
-                                    "id": 21315,
+                                    "id": 21213,
                                     "name": "_getSwapPath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 23483,
+                                    "referencedDeclaration": 23340,
                                     "src": "2367:12:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_address_$_t_address_$returns$_t_array$_t_address_$dyn_memory_ptr_$",
                                       "typeString": "function (address,address) view returns (address[] memory)"
                                     }
                                   },
-                                  "id": 21318,
+                                  "id": 21216,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -19072,14 +19072,14 @@
                                 {
                                   "arguments": [
                                     {
-                                      "id": 21321,
+                                      "id": 21219,
                                       "name": "this",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
                                       "referencedDeclaration": 4294967268,
                                       "src": "2451:4:116",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                         "typeString": "contract VaultActionsAlpaca"
                                       }
                                     }
@@ -19087,11 +19087,11 @@
                                   "expression": {
                                     "argumentTypes": [
                                       {
-                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                         "typeString": "contract VaultActionsAlpaca"
                                       }
                                     ],
-                                    "id": 21320,
+                                    "id": 21218,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": true,
@@ -19103,14 +19103,14 @@
                                       "typeString": "type(address)"
                                     },
                                     "typeName": {
-                                      "id": 21319,
+                                      "id": 21217,
                                       "name": "address",
                                       "nodeType": "ElementaryTypeName",
                                       "src": "2443:7:116",
                                       "typeDescriptions": {}
                                     }
                                   },
-                                  "id": 21322,
+                                  "id": 21220,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -19162,32 +19162,32 @@
                                   }
                                 ],
                                 "expression": {
-                                  "id": 21297,
+                                  "id": 21195,
                                   "name": "SafeSwapUni",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 16460,
+                                  "referencedDeclaration": 16459,
                                   "src": "1843:11:116",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_type$_t_contract$_SafeSwapUni_$16460_$",
+                                    "typeIdentifier": "t_type$_t_contract$_SafeSwapUni_$16459_$",
                                     "typeString": "type(library SafeSwapUni)"
                                   }
                                 },
-                                "id": 21298,
+                                "id": 21196,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "memberName": "SafeSwapParams",
                                 "nodeType": "MemberAccess",
-                                "referencedDeclaration": 16276,
+                                "referencedDeclaration": 16275,
                                 "src": "1843:26:116",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_struct$_SafeSwapParams_$16276_storage_ptr_$",
+                                  "typeIdentifier": "t_type$_t_struct$_SafeSwapParams_$16275_storage_ptr_$",
                                   "typeString": "type(struct SafeSwapUni.SafeSwapParams storage pointer)"
                                 }
                               },
-                              "id": 21323,
+                              "id": 21221,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -19207,7 +19207,7 @@
                               "src": "1843:632:116",
                               "tryCall": false,
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_SafeSwapParams_$16276_memory_ptr",
+                                "typeIdentifier": "t_struct$_SafeSwapParams_$16275_memory_ptr",
                                 "typeString": "struct SafeSwapUni.SafeSwapParams memory"
                               }
                             }
@@ -19215,22 +19215,22 @@
                           "expression": {
                             "argumentTypes": [
                               {
-                                "typeIdentifier": "t_struct$_SafeSwapParams_$16276_memory_ptr",
+                                "typeIdentifier": "t_struct$_SafeSwapParams_$16275_memory_ptr",
                                 "typeString": "struct SafeSwapUni.SafeSwapParams memory"
                               }
                             ],
-                            "id": 21296,
+                            "id": 21194,
                             "name": "_safeSwap",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 22762,
+                            "referencedDeclaration": 22619,
                             "src": "1816:9:116",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_SafeSwapParams_$16276_memory_ptr_$returns$__$",
+                              "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_SafeSwapParams_$16275_memory_ptr_$returns$__$",
                               "typeString": "function (struct SafeSwapUni.SafeSwapParams memory)"
                             }
                           },
-                          "id": 21324,
+                          "id": 21222,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -19245,7 +19245,7 @@
                             "typeString": "tuple()"
                           }
                         },
-                        "id": 21325,
+                        "id": 21223,
                         "nodeType": "ExpressionStatement",
                         "src": "1816:673:116"
                       }
@@ -19254,17 +19254,17 @@
                 },
                 {
                   "expression": {
-                    "id": 21338,
+                    "id": 21236,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 21328,
+                      "id": 21226,
                       "name": "wantObtained",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21265,
+                      "referencedDeclaration": 21163,
                       "src": "2544:12:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -19278,14 +19278,14 @@
                         {
                           "arguments": [
                             {
-                              "id": 21335,
+                              "id": 21233,
                               "name": "this",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
                               "referencedDeclaration": 4294967268,
                               "src": "2624:4:116",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                 "typeString": "contract VaultActionsAlpaca"
                               }
                             }
@@ -19293,11 +19293,11 @@
                           "expression": {
                             "argumentTypes": [
                               {
-                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                 "typeString": "contract VaultActionsAlpaca"
                               }
                             ],
-                            "id": 21334,
+                            "id": 21232,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -19309,14 +19309,14 @@
                               "typeString": "type(address)"
                             },
                             "typeName": {
-                              "id": 21333,
+                              "id": 21231,
                               "name": "address",
                               "nodeType": "ElementaryTypeName",
                               "src": "2616:7:116",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 21336,
+                          "id": 21234,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -19342,11 +19342,11 @@
                         "expression": {
                           "arguments": [
                             {
-                              "id": 21330,
+                              "id": 21228,
                               "name": "_token0Address",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 21282,
+                              "referencedDeclaration": 21180,
                               "src": "2577:14:116",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_address",
@@ -19361,7 +19361,7 @@
                                 "typeString": "address"
                               }
                             ],
-                            "id": 21329,
+                            "id": 21227,
                             "name": "IERC20Upgradeable",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -19372,7 +19372,7 @@
                               "typeString": "type(contract IERC20Upgradeable)"
                             }
                           },
-                          "id": 21331,
+                          "id": 21229,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -19387,7 +19387,7 @@
                             "typeString": "contract IERC20Upgradeable"
                           }
                         },
-                        "id": 21332,
+                        "id": 21230,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -19401,7 +19401,7 @@
                           "typeString": "function (address) view external returns (uint256)"
                         }
                       },
-                      "id": 21337,
+                      "id": 21235,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -19422,19 +19422,19 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 21339,
+                  "id": 21237,
                   "nodeType": "ExpressionStatement",
                   "src": "2544:95:116"
                 }
               ]
             },
             "documentation": {
-              "id": 21257,
+              "id": 21155,
               "nodeType": "StructuredDocumentation",
               "src": "969:310:116",
               "text": "@notice Performs necessary operations to convert USD into Want token\n @param _amountUSD The USD quantity to exchange (must already be deposited)\n @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.\n @return wantObtained Amount of Want token obtained"
             },
-            "id": 21341,
+            "id": 21239,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -19442,23 +19442,23 @@
             "nameLocation": "1293:24:116",
             "nodeType": "FunctionDefinition",
             "overrides": {
-              "id": 21263,
+              "id": 21161,
               "nodeType": "OverrideSpecifier",
               "overrides": [],
               "src": "1404:8:116"
             },
             "parameters": {
-              "id": 21262,
+              "id": 21160,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21259,
+                  "id": 21157,
                   "mutability": "mutable",
                   "name": "_amountUSD",
                   "nameLocation": "1335:10:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21341,
+                  "scope": 21239,
                   "src": "1327:18:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -19467,7 +19467,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21258,
+                    "id": 21156,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1327:7:116",
@@ -19480,12 +19480,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 21261,
+                  "id": 21159,
                   "mutability": "mutable",
                   "name": "_maxMarketMovementAllowed",
                   "nameLocation": "1363:25:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21341,
+                  "scope": 21239,
                   "src": "1355:33:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -19494,7 +19494,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21260,
+                    "id": 21158,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1355:7:116",
@@ -19509,17 +19509,17 @@
               "src": "1317:77:116"
             },
             "returnParameters": {
-              "id": 21266,
+              "id": 21164,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21265,
+                  "id": 21163,
                   "mutability": "mutable",
                   "name": "wantObtained",
                   "nameLocation": "1430:12:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21341,
+                  "scope": 21239,
                   "src": "1422:20:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -19528,7 +19528,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21264,
+                    "id": 21162,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1422:7:116",
@@ -19542,7 +19542,7 @@
               ],
               "src": "1421:22:116"
             },
-            "scope": 21491,
+            "scope": 21389,
             "src": "1284:1362:116",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -19550,10 +19550,10 @@
           },
           {
             "baseFunctions": [
-              23375
+              23232
             ],
             "body": {
-              "id": 21438,
+              "id": 21336,
               "nodeType": "Block",
               "src": "3162:1282:116",
               "statements": [
@@ -19565,17 +19565,17 @@
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
                         },
-                        "id": 21355,
+                        "id": 21253,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 21353,
+                          "id": 21251,
                           "name": "_amount",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 21344,
+                          "referencedDeclaration": 21242,
                           "src": "3208:7:116",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -19586,7 +19586,7 @@
                         "operator": ">",
                         "rightExpression": {
                           "hexValue": "30",
-                          "id": 21354,
+                          "id": 21252,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -19608,7 +19608,7 @@
                       },
                       {
                         "hexValue": "6e656757616e74",
-                        "id": 21356,
+                        "id": 21254,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -19634,7 +19634,7 @@
                           "typeString": "literal_string \"negWant\""
                         }
                       ],
-                      "id": 21352,
+                      "id": 21250,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -19648,7 +19648,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 21357,
+                    "id": 21255,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -19663,58 +19663,58 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 21358,
+                  "id": 21256,
                   "nodeType": "ExpressionStatement",
                   "src": "3200:31:116"
                 },
                 {
                   "assignments": [
-                    21361
+                    21259
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21361,
+                      "id": 21259,
                       "mutability": "mutable",
                       "name": "_vault",
                       "nameLocation": "3265:6:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21438,
+                      "scope": 21336,
                       "src": "3258:13:116",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IVault_$16004",
+                        "typeIdentifier": "t_contract$_IVault_$16003",
                         "typeString": "contract IVault"
                       },
                       "typeName": {
-                        "id": 21360,
+                        "id": 21258,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 21359,
+                          "id": 21257,
                           "name": "IVault",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 16004,
+                          "referencedDeclaration": 16003,
                           "src": "3258:6:116"
                         },
-                        "referencedDeclaration": 16004,
+                        "referencedDeclaration": 16003,
                         "src": "3258:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21366,
+                  "id": 21264,
                   "initialValue": {
                     "arguments": [
                       {
                         "arguments": [],
                         "expression": {
                           "argumentTypes": [],
-                          "id": 21363,
+                          "id": 21261,
                           "name": "_msgSender",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -19725,7 +19725,7 @@
                             "typeString": "function () view returns (address)"
                           }
                         },
-                        "id": 21364,
+                        "id": 21262,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -19748,18 +19748,18 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 21362,
+                      "id": 21260,
                       "name": "IVault",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 16004,
+                      "referencedDeclaration": 16003,
                       "src": "3274:6:116",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_type$_t_contract$_IVault_$16004_$",
+                        "typeIdentifier": "t_type$_t_contract$_IVault_$16003_$",
                         "typeString": "type(contract IVault)"
                       }
                     },
-                    "id": 21365,
+                    "id": 21263,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -19770,7 +19770,7 @@
                     "src": "3274:20:116",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IVault_$16004",
+                      "typeIdentifier": "t_contract$_IVault_$16003",
                       "typeString": "contract IVault"
                     }
                   },
@@ -19779,17 +19779,17 @@
                 },
                 {
                   "assignments": [
-                    21368
+                    21266
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21368,
+                      "id": 21266,
                       "mutability": "mutable",
                       "name": "_token0Address",
                       "nameLocation": "3312:14:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21438,
+                      "scope": 21336,
                       "src": "3304:22:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -19798,7 +19798,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21367,
+                        "id": 21265,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "3304:7:116",
@@ -19811,38 +19811,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21372,
+                  "id": 21270,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21369,
+                        "id": 21267,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21361,
+                        "referencedDeclaration": 21259,
                         "src": "3329:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
-                      "id": 21370,
+                      "id": 21268,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "token0Address",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15890,
+                      "referencedDeclaration": 15889,
                       "src": "3329:20:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21371,
+                    "id": 21269,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -19862,17 +19862,17 @@
                 },
                 {
                   "assignments": [
-                    21374
+                    21272
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21374,
+                      "id": 21272,
                       "mutability": "mutable",
                       "name": "_stablecoin",
                       "nameLocation": "3369:11:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21438,
+                      "scope": 21336,
                       "src": "3361:19:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -19881,7 +19881,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21373,
+                        "id": 21271,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "3361:7:116",
@@ -19894,38 +19894,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21378,
+                  "id": 21276,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21375,
+                        "id": 21273,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21361,
+                        "referencedDeclaration": 21259,
                         "src": "3383:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVault_$16004",
+                          "typeIdentifier": "t_contract$_IVault_$16003",
                           "typeString": "contract IVault"
                         }
                       },
-                      "id": 21376,
+                      "id": 21274,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "defaultStablecoin",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15875,
+                      "referencedDeclaration": 15874,
                       "src": "3383:24:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21377,
+                    "id": 21275,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -19945,17 +19945,17 @@
                 },
                 {
                   "assignments": [
-                    21380
+                    21278
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21380,
+                      "id": 21278,
                       "mutability": "mutable",
                       "name": "_token0Bal",
                       "nameLocation": "3458:10:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21438,
+                      "scope": 21336,
                       "src": "3450:18:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -19964,7 +19964,7 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 21379,
+                        "id": 21277,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
                         "src": "3450:7:116",
@@ -19976,20 +19976,20 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21390,
+                  "id": 21288,
                   "initialValue": {
                     "arguments": [
                       {
                         "arguments": [
                           {
-                            "id": 21387,
+                            "id": 21285,
                             "name": "this",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 4294967268,
                             "src": "3536:4:116",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                              "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                               "typeString": "contract VaultActionsAlpaca"
                             }
                           }
@@ -19997,11 +19997,11 @@
                         "expression": {
                           "argumentTypes": [
                             {
-                              "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                              "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                               "typeString": "contract VaultActionsAlpaca"
                             }
                           ],
-                          "id": 21386,
+                          "id": 21284,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -20013,14 +20013,14 @@
                             "typeString": "type(address)"
                           },
                           "typeName": {
-                            "id": 21385,
+                            "id": 21283,
                             "name": "address",
                             "nodeType": "ElementaryTypeName",
                             "src": "3528:7:116",
                             "typeDescriptions": {}
                           }
                         },
-                        "id": 21388,
+                        "id": 21286,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -20046,11 +20046,11 @@
                       "expression": {
                         "arguments": [
                           {
-                            "id": 21382,
+                            "id": 21280,
                             "name": "_token0Address",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 21368,
+                            "referencedDeclaration": 21266,
                             "src": "3489:14:116",
                             "typeDescriptions": {
                               "typeIdentifier": "t_address",
@@ -20065,7 +20065,7 @@
                               "typeString": "address"
                             }
                           ],
-                          "id": 21381,
+                          "id": 21279,
                           "name": "IERC20Upgradeable",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -20076,7 +20076,7 @@
                             "typeString": "type(contract IERC20Upgradeable)"
                           }
                         },
-                        "id": 21383,
+                        "id": 21281,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -20091,7 +20091,7 @@
                           "typeString": "contract IERC20Upgradeable"
                         }
                       },
-                      "id": 21384,
+                      "id": 21282,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -20105,7 +20105,7 @@
                         "typeString": "function (address) view external returns (uint256)"
                       }
                     },
-                    "id": 21389,
+                    "id": 21287,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -20129,17 +20129,17 @@
                       "typeIdentifier": "t_address",
                       "typeString": "address"
                     },
-                    "id": 21393,
+                    "id": 21291,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
-                      "id": 21391,
+                      "id": 21289,
                       "name": "_token0Address",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21368,
+                      "referencedDeclaration": 21266,
                       "src": "3596:14:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -20149,11 +20149,11 @@
                     "nodeType": "BinaryOperation",
                     "operator": "!=",
                     "rightExpression": {
-                      "id": 21392,
+                      "id": 21290,
                       "name": "_stablecoin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21374,
+                      "referencedDeclaration": 21272,
                       "src": "3614:11:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -20166,11 +20166,11 @@
                       "typeString": "bool"
                     }
                   },
-                  "id": 21425,
+                  "id": 21323,
                   "nodeType": "IfStatement",
                   "src": "3592:733:116",
                   "trueBody": {
-                    "id": 21424,
+                    "id": 21322,
                     "nodeType": "Block",
                     "src": "3627:698:116",
                     "statements": [
@@ -20180,11 +20180,11 @@
                             {
                               "arguments": [
                                 {
-                                  "id": 21397,
+                                  "id": 21295,
                                   "name": "_token0Bal",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21380,
+                                  "referencedDeclaration": 21278,
                                   "src": "3727:10:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -20198,11 +20198,11 @@
                                     "expression": {
                                       "arguments": [
                                         {
-                                          "id": 21400,
+                                          "id": 21298,
                                           "name": "_token0Address",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21368,
+                                          "referencedDeclaration": 21266,
                                           "src": "3815:14:116",
                                           "typeDescriptions": {
                                             "typeIdentifier": "t_address",
@@ -20218,32 +20218,32 @@
                                           }
                                         ],
                                         "expression": {
-                                          "id": 21398,
+                                          "id": 21296,
                                           "name": "_vault",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21361,
+                                          "referencedDeclaration": 21259,
                                           "src": "3772:6:116",
                                           "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IVault_$16004",
+                                            "typeIdentifier": "t_contract$_IVault_$16003",
                                             "typeString": "contract IVault"
                                           }
                                         },
-                                        "id": 21399,
+                                        "id": 21297,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "memberName": "priceFeeds",
                                         "nodeType": "MemberAccess",
-                                        "referencedDeclaration": 15928,
+                                        "referencedDeclaration": 15927,
                                         "src": "3772:42:116",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_contract$_AggregatorV3Interface_$45_$",
                                           "typeString": "function (address) view external returns (contract AggregatorV3Interface)"
                                         }
                                       },
-                                      "id": 21401,
+                                      "id": 21299,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
@@ -20258,21 +20258,21 @@
                                         "typeString": "contract AggregatorV3Interface"
                                       }
                                     },
-                                    "id": 21402,
+                                    "id": 21300,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "getExchangeRate",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 16253,
+                                    "referencedDeclaration": 16252,
                                     "src": "3772:99:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_contract$_AggregatorV3Interface_$45_$returns$_t_uint256_$bound_to$_t_contract$_AggregatorV3Interface_$45_$",
                                       "typeString": "function (contract AggregatorV3Interface) view returns (uint256)"
                                     }
                                   },
-                                  "id": 21403,
+                                  "id": 21301,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -20294,11 +20294,11 @@
                                     "expression": {
                                       "arguments": [
                                         {
-                                          "id": 21406,
+                                          "id": 21304,
                                           "name": "_stablecoin",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21374,
+                                          "referencedDeclaration": 21272,
                                           "src": "3951:11:116",
                                           "typeDescriptions": {
                                             "typeIdentifier": "t_address",
@@ -20314,32 +20314,32 @@
                                           }
                                         ],
                                         "expression": {
-                                          "id": 21404,
+                                          "id": 21302,
                                           "name": "_vault",
                                           "nodeType": "Identifier",
                                           "overloadedDeclarations": [],
-                                          "referencedDeclaration": 21361,
+                                          "referencedDeclaration": 21259,
                                           "src": "3908:6:116",
                                           "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IVault_$16004",
+                                            "typeIdentifier": "t_contract$_IVault_$16003",
                                             "typeString": "contract IVault"
                                           }
                                         },
-                                        "id": 21405,
+                                        "id": 21303,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "memberName": "priceFeeds",
                                         "nodeType": "MemberAccess",
-                                        "referencedDeclaration": 15928,
+                                        "referencedDeclaration": 15927,
                                         "src": "3908:42:116",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_contract$_AggregatorV3Interface_$45_$",
                                           "typeString": "function (address) view external returns (contract AggregatorV3Interface)"
                                         }
                                       },
-                                      "id": 21407,
+                                      "id": 21305,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
@@ -20354,21 +20354,21 @@
                                         "typeString": "contract AggregatorV3Interface"
                                       }
                                     },
-                                    "id": 21408,
+                                    "id": 21306,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "getExchangeRate",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 16253,
+                                    "referencedDeclaration": 16252,
                                     "src": "3908:96:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_contract$_AggregatorV3Interface_$45_$returns$_t_uint256_$bound_to$_t_contract$_AggregatorV3Interface_$45_$",
                                       "typeString": "function (contract AggregatorV3Interface) view returns (uint256)"
                                     }
                                   },
-                                  "id": 21409,
+                                  "id": 21307,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -20384,11 +20384,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21410,
+                                  "id": 21308,
                                   "name": "_token0Address",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21368,
+                                  "referencedDeclaration": 21266,
                                   "src": "4036:14:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
@@ -20396,11 +20396,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21411,
+                                  "id": 21309,
                                   "name": "_stablecoin",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21374,
+                                  "referencedDeclaration": 21272,
                                   "src": "4080:11:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
@@ -20408,11 +20408,11 @@
                                   }
                                 },
                                 {
-                                  "id": 21412,
+                                  "id": 21310,
                                   "name": "_maxMarketMovementAllowed",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 21346,
+                                  "referencedDeclaration": 21244,
                                   "src": "4139:25:116",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
@@ -20422,11 +20422,11 @@
                                 {
                                   "arguments": [
                                     {
-                                      "id": 21414,
+                                      "id": 21312,
                                       "name": "_token0Address",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 21368,
+                                      "referencedDeclaration": 21266,
                                       "src": "4205:14:116",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_address",
@@ -20434,11 +20434,11 @@
                                       }
                                     },
                                     {
-                                      "id": 21415,
+                                      "id": 21313,
                                       "name": "_stablecoin",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 21374,
+                                      "referencedDeclaration": 21272,
                                       "src": "4221:11:116",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_address",
@@ -20457,18 +20457,18 @@
                                         "typeString": "address"
                                       }
                                     ],
-                                    "id": 21413,
+                                    "id": 21311,
                                     "name": "_getSwapPath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 23483,
+                                    "referencedDeclaration": 23340,
                                     "src": "4192:12:116",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_view$_t_address_$_t_address_$returns$_t_array$_t_address_$dyn_memory_ptr_$",
                                       "typeString": "function (address,address) view returns (address[] memory)"
                                     }
                                   },
-                                  "id": 21416,
+                                  "id": 21314,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -20486,14 +20486,14 @@
                                 {
                                   "arguments": [
                                     {
-                                      "id": 21419,
+                                      "id": 21317,
                                       "name": "this",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
                                       "referencedDeclaration": 4294967268,
                                       "src": "4276:4:116",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                         "typeString": "contract VaultActionsAlpaca"
                                       }
                                     }
@@ -20501,11 +20501,11 @@
                                   "expression": {
                                     "argumentTypes": [
                                       {
-                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                        "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                         "typeString": "contract VaultActionsAlpaca"
                                       }
                                     ],
-                                    "id": 21418,
+                                    "id": 21316,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": true,
@@ -20517,14 +20517,14 @@
                                       "typeString": "type(address)"
                                     },
                                     "typeName": {
-                                      "id": 21417,
+                                      "id": 21315,
                                       "name": "address",
                                       "nodeType": "ElementaryTypeName",
                                       "src": "4268:7:116",
                                       "typeDescriptions": {}
                                     }
                                   },
-                                  "id": 21420,
+                                  "id": 21318,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -20576,32 +20576,32 @@
                                   }
                                 ],
                                 "expression": {
-                                  "id": 21395,
+                                  "id": 21293,
                                   "name": "SafeSwapUni",
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
-                                  "referencedDeclaration": 16460,
+                                  "referencedDeclaration": 16459,
                                   "src": "3668:11:116",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_type$_t_contract$_SafeSwapUni_$16460_$",
+                                    "typeIdentifier": "t_type$_t_contract$_SafeSwapUni_$16459_$",
                                     "typeString": "type(library SafeSwapUni)"
                                   }
                                 },
-                                "id": 21396,
+                                "id": 21294,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "memberName": "SafeSwapParams",
                                 "nodeType": "MemberAccess",
-                                "referencedDeclaration": 16276,
+                                "referencedDeclaration": 16275,
                                 "src": "3668:26:116",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_struct$_SafeSwapParams_$16276_storage_ptr_$",
+                                  "typeIdentifier": "t_type$_t_struct$_SafeSwapParams_$16275_storage_ptr_$",
                                   "typeString": "type(struct SafeSwapUni.SafeSwapParams storage pointer)"
                                 }
                               },
-                              "id": 21421,
+                              "id": 21319,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -20621,7 +20621,7 @@
                               "src": "3668:632:116",
                               "tryCall": false,
                               "typeDescriptions": {
-                                "typeIdentifier": "t_struct$_SafeSwapParams_$16276_memory_ptr",
+                                "typeIdentifier": "t_struct$_SafeSwapParams_$16275_memory_ptr",
                                 "typeString": "struct SafeSwapUni.SafeSwapParams memory"
                               }
                             }
@@ -20629,22 +20629,22 @@
                           "expression": {
                             "argumentTypes": [
                               {
-                                "typeIdentifier": "t_struct$_SafeSwapParams_$16276_memory_ptr",
+                                "typeIdentifier": "t_struct$_SafeSwapParams_$16275_memory_ptr",
                                 "typeString": "struct SafeSwapUni.SafeSwapParams memory"
                               }
                             ],
-                            "id": 21394,
+                            "id": 21292,
                             "name": "_safeSwap",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 22762,
+                            "referencedDeclaration": 22619,
                             "src": "3641:9:116",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_SafeSwapParams_$16276_memory_ptr_$returns$__$",
+                              "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_SafeSwapParams_$16275_memory_ptr_$returns$__$",
                               "typeString": "function (struct SafeSwapUni.SafeSwapParams memory)"
                             }
                           },
-                          "id": 21422,
+                          "id": 21320,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -20659,7 +20659,7 @@
                             "typeString": "tuple()"
                           }
                         },
-                        "id": 21423,
+                        "id": 21321,
                         "nodeType": "ExpressionStatement",
                         "src": "3641:673:116"
                       }
@@ -20668,17 +20668,17 @@
                 },
                 {
                   "expression": {
-                    "id": 21436,
+                    "id": 21334,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 21426,
+                      "id": 21324,
                       "name": "usdObtained",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 21350,
+                      "referencedDeclaration": 21248,
                       "src": "4368:11:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -20692,14 +20692,14 @@
                         {
                           "arguments": [
                             {
-                              "id": 21433,
+                              "id": 21331,
                               "name": "this",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
                               "referencedDeclaration": 4294967268,
                               "src": "4431:4:116",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                 "typeString": "contract VaultActionsAlpaca"
                               }
                             }
@@ -20707,11 +20707,11 @@
                           "expression": {
                             "argumentTypes": [
                               {
-                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21491",
+                                "typeIdentifier": "t_contract$_VaultActionsAlpaca_$21389",
                                 "typeString": "contract VaultActionsAlpaca"
                               }
                             ],
-                            "id": 21432,
+                            "id": 21330,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -20723,14 +20723,14 @@
                               "typeString": "type(address)"
                             },
                             "typeName": {
-                              "id": 21431,
+                              "id": 21329,
                               "name": "address",
                               "nodeType": "ElementaryTypeName",
                               "src": "4423:7:116",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 21434,
+                          "id": 21332,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -20756,11 +20756,11 @@
                         "expression": {
                           "arguments": [
                             {
-                              "id": 21428,
+                              "id": 21326,
                               "name": "_stablecoin",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 21374,
+                              "referencedDeclaration": 21272,
                               "src": "4400:11:116",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_address",
@@ -20775,7 +20775,7 @@
                                 "typeString": "address"
                               }
                             ],
-                            "id": 21427,
+                            "id": 21325,
                             "name": "IERC20Upgradeable",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -20786,7 +20786,7 @@
                               "typeString": "type(contract IERC20Upgradeable)"
                             }
                           },
-                          "id": 21429,
+                          "id": 21327,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -20801,7 +20801,7 @@
                             "typeString": "contract IERC20Upgradeable"
                           }
                         },
-                        "id": 21430,
+                        "id": 21328,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -20815,7 +20815,7 @@
                           "typeString": "function (address) view external returns (uint256)"
                         }
                       },
-                      "id": 21435,
+                      "id": 21333,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -20836,19 +20836,19 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 21437,
+                  "id": 21335,
                   "nodeType": "ExpressionStatement",
                   "src": "4368:69:116"
                 }
               ]
             },
             "documentation": {
-              "id": 21342,
+              "id": 21240,
               "nodeType": "StructuredDocumentation",
               "src": "2652:349:116",
               "text": "@notice Converts Want token back into USD to be ready for withdrawal and transfers to sender\n @param _amount The Want token quantity to exchange (must be deposited beforehand)\n @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.\n @return usdObtained Amount of USD token obtained"
             },
-            "id": 21439,
+            "id": 21337,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -20856,23 +20856,23 @@
             "nameLocation": "3015:24:116",
             "nodeType": "FunctionDefinition",
             "overrides": {
-              "id": 21348,
+              "id": 21246,
               "nodeType": "OverrideSpecifier",
               "overrides": [],
               "src": "3123:8:116"
             },
             "parameters": {
-              "id": 21347,
+              "id": 21245,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21344,
+                  "id": 21242,
                   "mutability": "mutable",
                   "name": "_amount",
                   "nameLocation": "3057:7:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21439,
+                  "scope": 21337,
                   "src": "3049:15:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -20881,7 +20881,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21343,
+                    "id": 21241,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3049:7:116",
@@ -20894,12 +20894,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 21346,
+                  "id": 21244,
                   "mutability": "mutable",
                   "name": "_maxMarketMovementAllowed",
                   "nameLocation": "3082:25:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21439,
+                  "scope": 21337,
                   "src": "3074:33:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -20908,7 +20908,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21345,
+                    "id": 21243,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3074:7:116",
@@ -20923,17 +20923,17 @@
               "src": "3039:74:116"
             },
             "returnParameters": {
-              "id": 21351,
+              "id": 21249,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21350,
+                  "id": 21248,
                   "mutability": "mutable",
                   "name": "usdObtained",
                   "nameLocation": "3149:11:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21439,
+                  "scope": 21337,
                   "src": "3141:19:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -20942,7 +20942,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21349,
+                    "id": 21247,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3141:7:116",
@@ -20956,7 +20956,7 @@
               ],
               "src": "3140:21:116"
             },
-            "scope": 21491,
+            "scope": 21389,
             "src": "3006:1438:116",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -20965,62 +20965,62 @@
           {
             "baseFunctions": [
               15536,
-              23355
+              23212
             ],
             "body": {
-              "id": 21475,
+              "id": 21373,
               "nodeType": "Block",
               "src": "4836:433:116",
               "statements": [
                 {
                   "assignments": [
-                    21452
+                    21350
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21452,
+                      "id": 21350,
                       "mutability": "mutable",
                       "name": "_vault",
                       "nameLocation": "4875:6:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21475,
+                      "scope": 21373,
                       "src": "4862:19:116",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                        "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                         "typeString": "contract IVaultAlpaca"
                       },
                       "typeName": {
-                        "id": 21451,
+                        "id": 21349,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 21450,
+                          "id": 21348,
                           "name": "IVaultAlpaca",
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 16017,
+                          "referencedDeclaration": 16016,
                           "src": "4862:12:116"
                         },
-                        "referencedDeclaration": 16017,
+                        "referencedDeclaration": 16016,
                         "src": "4862:12:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                           "typeString": "contract IVaultAlpaca"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21456,
+                  "id": 21354,
                   "initialValue": {
                     "arguments": [
                       {
-                        "id": 21454,
+                        "id": 21352,
                         "name": "_vaultAddr",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21442,
+                        "referencedDeclaration": 21340,
                         "src": "4897:10:116",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
@@ -21035,18 +21035,18 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 21453,
+                      "id": 21351,
                       "name": "IVaultAlpaca",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 16017,
+                      "referencedDeclaration": 16016,
                       "src": "4884:12:116",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_type$_t_contract$_IVaultAlpaca_$16017_$",
+                        "typeIdentifier": "t_type$_t_contract$_IVaultAlpaca_$16016_$",
                         "typeString": "type(contract IVaultAlpaca)"
                       }
                     },
-                    "id": 21455,
+                    "id": 21353,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -21057,7 +21057,7 @@
                     "src": "4884:24:116",
                     "tryCall": false,
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                      "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                       "typeString": "contract IVaultAlpaca"
                     }
                   },
@@ -21066,17 +21066,17 @@
                 },
                 {
                   "assignments": [
-                    21458
+                    21356
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21458,
+                      "id": 21356,
                       "mutability": "mutable",
                       "name": "_token0",
                       "nameLocation": "4926:7:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21475,
+                      "scope": 21373,
                       "src": "4918:15:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -21085,7 +21085,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21457,
+                        "id": 21355,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "4918:7:116",
@@ -21098,38 +21098,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21462,
+                  "id": 21360,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21459,
+                        "id": 21357,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21452,
+                        "referencedDeclaration": 21350,
                         "src": "4936:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                           "typeString": "contract IVaultAlpaca"
                         }
                       },
-                      "id": 21460,
+                      "id": 21358,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "token0Address",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15890,
+                      "referencedDeclaration": 15889,
                       "src": "4936:20:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21461,
+                    "id": 21359,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -21149,17 +21149,17 @@
                 },
                 {
                   "assignments": [
-                    21464
+                    21362
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21464,
+                      "id": 21362,
                       "mutability": "mutable",
                       "name": "_iToken",
                       "nameLocation": "4996:7:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21475,
+                      "scope": 21373,
                       "src": "4988:15:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -21168,7 +21168,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21463,
+                        "id": 21361,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "4988:7:116",
@@ -21181,38 +21181,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21468,
+                  "id": 21366,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21465,
+                        "id": 21363,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21452,
+                        "referencedDeclaration": 21350,
                         "src": "5006:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                           "typeString": "contract IVaultAlpaca"
                         }
                       },
-                      "id": 21466,
+                      "id": 21364,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "wantAddress",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15870,
+                      "referencedDeclaration": 15869,
                       "src": "5006:18:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21467,
+                    "id": 21365,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -21232,17 +21232,17 @@
                 },
                 {
                   "assignments": [
-                    21470
+                    21368
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 21470,
+                      "id": 21368,
                       "mutability": "mutable",
                       "name": "_alpaca",
                       "nameLocation": "5078:7:116",
                       "nodeType": "VariableDeclaration",
-                      "scope": 21475,
+                      "scope": 21373,
                       "src": "5070:15:116",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -21251,7 +21251,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 21469,
+                        "id": 21367,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "5070:7:116",
@@ -21264,38 +21264,38 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 21474,
+                  "id": 21372,
                   "initialValue": {
                     "arguments": [],
                     "expression": {
                       "argumentTypes": [],
                       "expression": {
-                        "id": 21471,
+                        "id": 21369,
                         "name": "_vault",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 21452,
+                        "referencedDeclaration": 21350,
                         "src": "5088:6:116",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16017",
+                          "typeIdentifier": "t_contract$_IVaultAlpaca_$16016",
                           "typeString": "contract IVaultAlpaca"
                         }
                       },
-                      "id": 21472,
+                      "id": 21370,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "earnedAddress",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 15885,
+                      "referencedDeclaration": 15884,
                       "src": "5088:20:116",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$__$returns$_t_address_$",
                         "typeString": "function () view external returns (address)"
                       }
                     },
-                    "id": 21473,
+                    "id": 21371,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -21316,13 +21316,13 @@
               ]
             },
             "documentation": {
-              "id": 21440,
+              "id": 21338,
               "nodeType": "StructuredDocumentation",
               "src": "4450:218:116",
               "text": "@notice Measures the current (unrealized) position value (measured in Want token) of the provided vault\n @param _vaultAddr The vault address\n @return positionVal Position value, in units of Want token"
             },
             "functionSelector": "f55850b4",
-            "id": 21476,
+            "id": 21374,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -21330,38 +21330,38 @@
             "nameLocation": "4682:17:116",
             "nodeType": "FunctionDefinition",
             "overrides": {
-              "id": 21446,
+              "id": 21344,
               "nodeType": "OverrideSpecifier",
               "overrides": [
                 {
-                  "id": 21444,
+                  "id": 21342,
                   "name": "IVaultActions",
                   "nodeType": "IdentifierPath",
                   "referencedDeclaration": 15546,
                   "src": "4765:13:116"
                 },
                 {
-                  "id": 21445,
+                  "id": 21343,
                   "name": "VaultActions",
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 23484,
+                  "referencedDeclaration": 23341,
                   "src": "4780:12:116"
                 }
               ],
               "src": "4756:37:116"
             },
             "parameters": {
-              "id": 21443,
+              "id": 21341,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21442,
+                  "id": 21340,
                   "mutability": "mutable",
                   "name": "_vaultAddr",
                   "nameLocation": "4708:10:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21476,
+                  "scope": 21374,
                   "src": "4700:18:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21370,7 +21370,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 21441,
+                    "id": 21339,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "4700:7:116",
@@ -21386,17 +21386,17 @@
               "src": "4699:20:116"
             },
             "returnParameters": {
-              "id": 21449,
+              "id": 21347,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21448,
+                  "id": 21346,
                   "mutability": "mutable",
                   "name": "positionVal",
                   "nameLocation": "4819:11:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21476,
+                  "scope": 21374,
                   "src": "4811:19:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21405,7 +21405,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21447,
+                    "id": 21345,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "4811:7:116",
@@ -21419,7 +21419,7 @@
               ],
               "src": "4810:21:116"
             },
-            "scope": 21491,
+            "scope": 21389,
             "src": "4673:596:116",
             "stateMutability": "view",
             "virtual": false,
@@ -21428,22 +21428,22 @@
           {
             "baseFunctions": [
               15529,
-              23347
+              23204
             ],
             "body": {
-              "id": 21489,
+              "id": 21387,
               "nodeType": "Block",
               "src": "5774:29:116",
               "statements": []
             },
             "documentation": {
-              "id": 21477,
+              "id": 21375,
               "nodeType": "StructuredDocumentation",
               "src": "5275:302:116",
               "text": "@notice Calculates accumulated unrealized profits on a vault\n @param _vault The vault address\n @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)\n @return harvestableProfit Amount of immediately harvestable profits"
             },
             "functionSelector": "a0e16faf",
-            "id": 21490,
+            "id": 21388,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -21451,38 +21451,38 @@
             "nameLocation": "5591:17:116",
             "nodeType": "FunctionDefinition",
             "overrides": {
-              "id": 21483,
+              "id": 21381,
               "nodeType": "OverrideSpecifier",
               "overrides": [
                 {
-                  "id": 21481,
+                  "id": 21379,
                   "name": "IVaultActions",
                   "nodeType": "IdentifierPath",
                   "referencedDeclaration": 15546,
                   "src": "5670:13:116"
                 },
                 {
-                  "id": 21482,
+                  "id": 21380,
                   "name": "VaultActions",
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 23484,
+                  "referencedDeclaration": 23341,
                   "src": "5685:12:116"
                 }
               ],
               "src": "5661:37:116"
             },
             "parameters": {
-              "id": 21480,
+              "id": 21378,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21479,
+                  "id": 21377,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "5617:6:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21490,
+                  "scope": 21388,
                   "src": "5609:14:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21491,7 +21491,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 21478,
+                    "id": 21376,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "5609:7:116",
@@ -21507,17 +21507,17 @@
               "src": "5608:16:116"
             },
             "returnParameters": {
-              "id": 21488,
+              "id": 21386,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 21485,
+                  "id": 21383,
                   "mutability": "mutable",
                   "name": "accumulatedProfit",
                   "nameLocation": "5724:17:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21490,
+                  "scope": 21388,
                   "src": "5716:25:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21526,7 +21526,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21484,
+                    "id": 21382,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "5716:7:116",
@@ -21539,12 +21539,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 21487,
+                  "id": 21385,
                   "mutability": "mutable",
                   "name": "harvestableProfit",
                   "nameLocation": "5751:17:116",
                   "nodeType": "VariableDeclaration",
-                  "scope": 21490,
+                  "scope": 21388,
                   "src": "5743:25:116",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -21553,7 +21553,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 21486,
+                    "id": 21384,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "5743:7:116",
@@ -21567,14 +21567,14 @@
               ],
               "src": "5715:54:116"
             },
-            "scope": 21491,
+            "scope": 21389,
             "src": "5582:221:116",
             "stateMutability": "view",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 21492,
+        "scope": 21390,
         "src": "714:5091:116",
         "usedErrors": []
       }
@@ -21587,7 +21587,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-12-14T17:42:59.436Z",
+  "updatedAt": "2022-12-15T02:09:56.223Z",
   "devdoc": {
     "kind": "dev",
     "methods": {

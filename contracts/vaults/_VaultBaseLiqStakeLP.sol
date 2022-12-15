@@ -29,7 +29,7 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         // Addresses
         liquidStakeToken = _initValue.liquidStakeToken;
         liquidStakingPool = _initValue.liquidStakingPool;
-        
+
         // Vault config
         isLPFarmable = _initValue.isLPFarmable;
 
@@ -82,37 +82,12 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             _token0Bal
         );
 
-        // Stake ETH (liquid staking)
-        IVaultActionsLiqStakeLP(vaultActions).liquidStake(
+        // Perform liquid stake and add liquidity, sending LP token back to this address
+        IVaultActionsLiqStakeLP(vaultActions).liquidStakeAndAddLiq(
             _token0Bal,
             token0Address,
             liquidStakeToken,
-            liquidStakingPool
-        );
-
-        // Calc balance of sETH on this contract
-        uint256 _synthBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
-            address(this)
-        );
-
-        // Approve spending
-        IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
-            vaultActions,
-            _synthBal
-        );
-
-        // Swap 1/2 sETH, to ETH and add liquidity to an LP Pool (sends LP token back to this address)
-        IVaultActionsLiqStakeLP(vaultActions).stakeInLPPool(
-            _synthBal,
-            IVaultActionsLiqStakeLP.StakeLiqTokenInLPPoolParams({
-                liquidStakeToken: liquidStakeToken,
-                nativeToken: token0Address,
-                liquidStakeTokenPriceFeed: liquidStakeTokenPriceFeed,
-                nativeTokenPriceFeed: priceFeeds[token0Address],
-                liquidStakeToNativePath: swapPaths[liquidStakeToken][
-                    token0Address
-                ]
-            }),
+            liquidStakingPool,
             maxMarketMovementAllowed
         );
 
@@ -153,46 +128,13 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             _balLPToken
         );
 
-        // TODO: The next few funcs involve a lot of back and forth
-        // between actions and vault. To save gas fees it may make sense
-        // to combine these all into actions
-
-        // Exit LP pool and get back sETH, WETH
-        IVaultActionsLiqStakeLP(vaultActions).exitPool(
-            _amount,
-            maxMarketMovementAllowed,
-            address(this),
-            IVaultActions.ExitPoolParams({
-                token0: liquidStakeToken,
-                token1: token0Address,
-                poolAddress: poolAddress,
-                lpTokenAddress: poolAddress
-            })
-        );
-
-        // Calc sETH balance
-        uint256 _synthTokenBal = IERC20Upgradeable(liquidStakeToken).balanceOf(
-            address(this)
-        );
-
-        // Approve spending
-        IERC20Upgradeable(liquidStakeToken).safeIncreaseAllowance(
-            vaultActions,
-            _synthTokenBal
-        );
-
-        // Unstake sETH to get ETH
-        IVaultActionsLiqStakeLP(vaultActions).liquidUnstake(
-            SafeSwapUni.SafeSwapParams({
-                amountIn: _synthTokenBal,
-                priceToken0: priceFeeds[liquidStakeToken].getExchangeRate(),
-                priceToken1: priceFeeds[token0Address].getExchangeRate(),
-                token0: liquidStakeToken,
-                token1: token0Address,
-                maxMarketMovementAllowed: maxMarketMovementAllowed,
-                path: swapPaths[liquidStakeToken][token0Address],
-                destination: address(this)
-            })
+        // Remove liquidity from LP pool and unstake sETH
+        IVaultActionsLiqStakeLP(vaultActions).removeLiqAndliquidUnstake(
+            _balLPToken,
+            token0Address,
+            liquidStakeToken,
+            poolAddress,
+            maxMarketMovementAllowed
         );
     }
 }
