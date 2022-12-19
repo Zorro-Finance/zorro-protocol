@@ -486,16 +486,10 @@ contract ZorroControllerInvestment is
                     IVault _vault = IVault(_vaultAddr);
 
                     // Get staked want tokens
-                    // TODO: Need to call updateSupply() first, or else the currentWantEquity could be out of date
-                    // OR: Do it based on number of shares. Why not? 
-                    uint256 _stakedWantAmt = (_tranche.contribution *
-                        1e12 *
-                        IVaultActions(_vault.vaultActions()).currentWantEquity(
-                            _vaultAddr
-                        )) / (_tranche.timeMultiplier * _vault.sharesTotal());
+                    uint256 _shares = _tranche.contribution * 1e12 / _tranche.timeMultiplier;
 
                     // Withdraw the want token for this account
-                    _vault.withdrawWantToken(_stakedWantAmt);
+                    _vault.withdrawWantToken(_shares);
                 }
 
                 // Update shares safely

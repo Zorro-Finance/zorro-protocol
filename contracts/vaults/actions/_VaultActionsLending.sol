@@ -35,29 +35,22 @@ abstract contract VaultActionsLending is IVaultActions, VaultActions {
     {
         // Prep
         IVaultLending _vault = IVaultLending(_vaultAddr);
+        address _token0 = _vault.token0Address();
         address _earnToken = _vault.earnedAddress();
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
+        AggregatorV3Interface _earnPriceFeed = _vault.priceFeeds(_earnToken);
 
-        // Get the difference of total amount supplied vs borrowed
+        // Get the difference of total amount supplied vs borrowed.
         uint256 _token0Bal = _vault.supplyBal() - _vault.borrowBal();
+
+        // Get amount of farm tokens earned
         uint256 _earnedBal = IERC20Upgradeable(_earnToken).balanceOf(_vaultAddr);
 
-        // TODO: Get the exchange rate of earned to token0. Maybe create a library func for this on the base contract?
+        // Express farm token in units of Token0
+        uint256 _earnedBalInToken0 = _earnedBal * _earnPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
 
-        // TODO: Return the sum of token0 and earn (in units of token0)
-
-    }
-
-    /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
-    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
-    /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
-        public
-        view
-        override(IVaultActions, VaultActions)
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
-    {
-        // TODO: Fill
+        // Sum up total equity (in units of Token0)
+        positionVal = _token0Bal + _earnedBalInToken0;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token

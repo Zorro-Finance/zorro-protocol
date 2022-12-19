@@ -16,8 +16,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
-// TODO: Unit tests needed
-
 /// @title PoolTeam: The team pool contract (for founders).
 contract PoolTeam is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */

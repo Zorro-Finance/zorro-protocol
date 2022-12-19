@@ -13,4 +13,7 @@ interface IVaultStandardAMM is IVault {
         VaultBaseInit baseInit;
         bool isLPFarmable;
     }
+
+    /* Functions */
+    function isLPFarmable() external view returns (bool);
 }

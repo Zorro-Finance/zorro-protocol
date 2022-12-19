@@ -34,22 +34,29 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
         address _token0 = _vault.token0Address(); // Underlying token
         address _lpToken = _vault.wantAddress(); // Amount of LP token (e.g. SG LP token)
         address _stg = _vault.earnedAddress(); // Amount of farm token (STG)
+        address _sgPoolAddr = _vault.poolAddress(); // Stargate LP Pool address
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
+        AggregatorV3Interface _earnPriceFeed = _vault.priceFeeds(_stg);
 
-        // TODO Get balances of each
-        // TODO Express balances in terms of token0 and sum them all up
-    }
+        // Get balance of Token0
+        uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
-    /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
-    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
-    /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
-        public
-        view
-        override(IVaultActions, VaultActions)
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
-    {
-        // TODO: Fill
+        // Get balance of LP token
+        uint256 _balLPToken = IERC20Upgradeable(_lpToken).balanceOf(_sgPoolAddr);
+
+        // Rebase balance of LP token in Token0 units
+        uint256 _totalSupplyLPPool = IERC20Upgradeable(_sgPoolAddr).totalSupply();
+        uint256 _balToken0LPPool = IERC20Upgradeable(_token0).balanceOf(_sgPoolAddr);
+        uint256 _balLPTokenInToken0 = _balLPToken * _balToken0LPPool / _totalSupplyLPPool;
+
+        // Get earn equity
+        uint256 _pendingEarn = IStargateLPStaking(_sgPoolAddr).pendingStargate(pid, _vaultAddr);
+
+        // Rebase earn equity into Token0 units
+        uint256 _pendingEarnToken0 = _pendingEarn * _earnPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
+
+        // Sum equities
+        positionVal = _balToken0 + _balLPTokenInToken0 + _pendingEarnToken0;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token

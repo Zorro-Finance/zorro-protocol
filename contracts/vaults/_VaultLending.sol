@@ -274,4 +274,33 @@ abstract contract VaultLending is IVaultLending, VaultBase {
             }
         }
     }
+
+    /// @notice Hook for before deposit
+    function _beforeDeposit() internal override {
+        // Updates supply and borrow balances
+        this.updateBalance();
+    }
+
+    /// @notice Hook for after deposit
+    function _afterDeposit() internal override {
+        // Updates supply and borrow balances
+        this.updateBalance();
+    }
+
+    /// @notice Hook for before withdrawal
+    function _beforeWithdrawal() internal override {
+        // Updates supply and borrow balances
+        this.updateBalance();
+    }
+
+    /// @notice Hook for after withdrawal
+    function _afterWithdrawal() internal override {
+        // Updates supply and borrow balances
+        this.updateBalance();
+    }
+
+    /* Abstract functions */
+
+    /// @notice Claim pending lending protocol rewards
+    function claimLendingRewards() public virtual;
 }

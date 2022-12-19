@@ -8,20 +8,43 @@ import "../interfaces/ApeLending/IRainMaker.sol";
 
 /// @title Vault contract for ApeLending leveraged lending strategies
 contract VaultApeLending is VaultLending {
+    /* Libraries */
+    
+    using PriceFeed for AggregatorV3Interface;
+
     /* Functions */
 
     /// @notice Claims unclaimed rewards from lending protocols
     /// @param _amount Amount to unfarm
     function _unfarm(uint256 _amount) internal override {
-        // Claim any outstanding rewards
-        IRainMaker(farmContractAddress).claimComp(address(this));
+        // Preflight check (unused - just here to satisfy compiler)
+        require(_amount>=0);
 
-        // TODO: Based on the new logic, we should probably be convering the earn to want. 
+        // Get Earn balance that has been accumulated
+        uint256 _balEarn = IERC20Upgradeable(earnedAddress).balanceOf(address(this));
+
+        // Convert earn to underlying token, if applicable
+        if (_balEarn > 0) {
+            IVaultActions(vaultActions).safeSwap(SafeSwapUni.SafeSwapParams({
+                amountIn: _balEarn,
+                priceToken0: priceFeeds[earnedAddress].getExchangeRate(),
+                priceToken1: priceFeeds[token0Address].getExchangeRate(),
+                token0: token0Address,
+                token1: token1Address,
+                maxMarketMovementAllowed: maxMarketMovementAllowed,
+                path: swapPaths[earnedAddress][token0Address],
+                destination: address(this)
+            }));
+        }
 
         // Withdraw appropriate amount
         _withdrawSome(_amount);
+    }
 
-        // TODO: Need to re-supply/rebalance after (farm())? Check Acryptos
+    /// @notice Claim pending lending protocol rewards
+    function claimLendingRewards() public override onlyAllowGov {
+        // Claim any outstanding rewards
+        IRainMaker(farmContractAddress).claimComp(address(this));
     }
 }
 

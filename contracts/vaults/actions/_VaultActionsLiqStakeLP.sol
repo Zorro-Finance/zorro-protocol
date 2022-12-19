@@ -44,19 +44,6 @@ abstract contract VaultActionsLiqStakeLP is
         internal
         virtual;
 
-    /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
-    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
-    /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
-        public
-        view
-        override(IVaultActions, VaultActions)
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
-    {
-        // TODO: Fill
-    }
-
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
     /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
@@ -67,15 +54,60 @@ abstract contract VaultActionsLiqStakeLP is
         returns (uint256 positionVal)
     {
         // Prep
-        // TODO: Be mindful of double counting. LP token, once locked in masterchef, should not be counted for example
         IVaultLiqStakeLP _vault = IVaultLiqStakeLP(_vaultAddr);
         address _token0 = _vault.token0Address(); // Underlying token
         address _liqStakeToken = _vault.liquidStakeToken(); // Amount of synth token (e.g. sETH token)
         address _lpToken = _vault.lpToken(); // Amount of synth token (e.g. sETH token)
         address _earned = _vault.earnedAddress(); // Amount of farm token (e.g. Qi)
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
+        AggregatorV3Interface _liqStakeTokenPriceFeed = _vault.priceFeeds(
+            _liqStakeToken
+        );
+        AggregatorV3Interface _earnPriceFeed = _vault.priceFeeds(_earned);
+        bool _isFarmable = _vault.isLPFarmable();
+        address _farm = _vault.farmContract();
 
-        // TODO Get balances of each
-        // TODO Express balances in terms of token0 and sum them all up
+        // Get balance of underlying (Token0)
+        uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
+
+        // Get balance of sETH
+        uint256 _balLiqStakeToken = IERC20Upgradeable(_liqStakeToken).balanceOf(
+            _vaultAddr
+        );
+
+        // Express balance of sETH in ETH
+        uint256 _balLiqStakeTokenToken0 = (_balLiqStakeToken *
+            _liqStakeTokenPriceFeed.getExchangeRate()) /
+            _token0PriceFeed.getExchangeRate();
+
+        // Get balance of sETH-ETH LP token
+        uint256 _balLPToken = IERC20Upgradeable(_lpToken).balanceOf(_vaultAddr);
+
+        // Express balance in ETH
+        uint256 _totalSupplyLP = IERC20Upgradeable(_lpToken).totalSupply();
+        uint256 _balToken0LP = IERC20Upgradeable(_token0).balanceOf(_lpToken);
+        uint256 _balLPTokenToken0 = _balLPToken * _balToken0LP / _totalSupplyLP;
+
+        // Farm activity (if applicable)
+        uint256 _stakedLPToken0;
+        uint256 _pendingEarnToken0;
+
+        if (_isFarmable) {
+            // Get balance of sETH-ETH LP token staked on Masterchef (if isFarmable)
+            (uint256 _amtLPStaked, ) = IAMMFarm(_farm).user(pid, _vaultAddr);
+
+            // Express in Token0 units
+            _stakedLPToken0 = _amtLPStaked * _balToken0LP / _totalSupplyLP;
+
+            // Get pending Earn
+            uint256 _pendingEarn = IAMMFarm(_farm).pendingCake(pid, _vaultAddr);
+
+            // Express in Token0 units
+            _pendingEarnToken0 = _pendingEarn * _earnPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
+        }
+
+        // Sum up all equities
+        positionVal = _balToken0 + _balLiqStakeTokenToken0 + _balLPTokenToken0 + _stakedLPToken0 + _pendingEarnToken0;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -241,8 +273,12 @@ abstract contract VaultActionsLiqStakeLP is
 
         // Prep swap variables
         IVaultLiqStakeLP _vault = IVaultLiqStakeLP(msg.sender);
-        AggregatorV3Interface _nativeTokenPriceFeed = _vault.priceFeeds(_nativeToken);
-        AggregatorV3Interface _liqStakeTokenPriceFeed = _vault.priceFeeds(_liquidStakeToken);
+        AggregatorV3Interface _nativeTokenPriceFeed = _vault.priceFeeds(
+            _nativeToken
+        );
+        AggregatorV3Interface _liqStakeTokenPriceFeed = _vault.priceFeeds(
+            _liquidStakeToken
+        );
 
         // Unstake sETH to get ETH
         _liquidUnstake(

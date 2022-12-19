@@ -21,19 +21,6 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
 
     /* Functions */
 
-    /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
-    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
-    /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
-        public
-        view
-        override(IVaultActions, VaultActions)
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
-    {
-        // TODO: Fill
-    }
-
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
     /// @param _vaultAddr The vault address
     /// @return positionVal Position value, in units of Want token
@@ -46,10 +33,39 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
         // Prep
         IVaultStandardAMM _vault = IVaultStandardAMM(_vaultAddr);
         address _lpToken = _vault.wantAddress();
+        address _earnToken = _vault.earnedAddress();
+        address _token0 = _vault.token0Address();
+        bool _isFarmable = _vault.isLPFarmable();
 
-        // Get LP token quantity
-        // TODO: This is not complete. Need other layers of the stack, priced in Want
-        return IERC20Upgradeable(_lpToken).balanceOf(_vaultAddr);
+        // Farm activity (if applicable)
+        uint256 _stakedLP;
+        uint256 _pendingEarnLP;
+
+        if (_isFarmable) {
+            // Get balance of LP token staked on Masterchef (if isFarmable)
+            (uint256 _amtLPStaked, ) = IAMMFarm(_farm).user(pid, _vaultAddr);
+
+            // Express in Token0 units
+            uint256 _totalSupplyLP = IERC20Upgradeable(_lpToken).totalSupply();
+            uint256 _balToken0LP = IERC20Upgradeable(_token0).balanceOf(_lpToken);
+            _stakedLP = _amtLPStaked * _balToken0LP / _totalSupplyLP;
+
+            // Get pending Earn
+            uint256 _pendingEarn = IAMMFarm(_farm).pendingCake(pid, _vaultAddr);
+
+            // Convert to equivalent in Want token
+            uint256 _earnEquityInToken0 = (_pendingEarn *
+                _vault.priceFeeds(_earnToken).getExchangeRate()) /
+                (2 * _vault.priceFeeds(_token0).getExchangeRate());
+
+            // Calculate earn balance in units of LP (earn bal in units of Token 0 * total LP token supply / balance of token 0 on LP pool contract)
+            uint256 _earnEquityInLP = (_earnEquityInToken0 *
+                IERC20Upgradeable(_lpToken).totalSupply()) /
+                IERC20Upgradeable(_token0).balanceOf(_lpToken);
+            }
+
+        // Sum up all equity in the units of the Want token
+        positionVal = _stakedLP + _pendingEarnLP;
     }
 
     /// @notice Performs necessary operations to convert USD into Want token and transfer back to sender

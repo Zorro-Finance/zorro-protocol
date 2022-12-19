@@ -133,22 +133,29 @@ contract VaultActionsAlpaca is IVaultActionsAlpaca, VaultActions {
         address _token0 = _vault.token0Address(); // Underlying token
         address _iToken = _vault.wantAddress(); // Amount of LP token (e.g. iBNB)
         address _alpaca = _vault.earnedAddress(); // Amount of farm token (ALPACA)
+        address _farm = _vault.farmContractAddress(); // Address of Farm contract
+        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
+        AggregatorV3Interface _alpacaPriceFeed = _vault.priceFeeds(_alpaca);
 
-        // TODO Get balances of each
-        // TODO Express balances in terms of token0 and sum them all up
-        
-    }
+        // Get balance of underlying (want)
+        uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
-    /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
-    /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
-    /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
-        public
-        view
-        override(IVaultActions, VaultActions)
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
-    {
-        // TODO: Fill
+        // Get balance of LP token
+        uint256 _balIToken = IERC20Upgradeable(_iToken).balanceOf(_vaultAddr);
+
+        // Express balance of LP token in Want token units
+        uint256 _totalSupplyLP = IERC20Upgradeable(_iToken).totalSupply();
+        uint256 _balToken0LP = IERC20Upgradeable(_token0).balanceOf(_iToken);
+        uint256 _balITokenToken0 = _balIToken * _balToken0LP / _totalSupplyLP;
+
+
+        // Get pending Earn
+        uint256 _pendingAlpaca = IFairLaunch(_farm).pendingAlpaca(_pid, _vaultAddr);
+
+        // Express Earn token quantity in Want token units
+        uint256 _pendingAlpacaToken0 = _pendingAlpaca * _alpacaPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
+
+        // Sum up equities
+        positionVal = _balToken0 + _balITokenToken0 + _pendingAlpacaToken0;
     }
 }

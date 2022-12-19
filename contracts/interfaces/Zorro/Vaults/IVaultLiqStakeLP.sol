@@ -25,4 +25,5 @@ interface IVaultLiqStakeLP is IVault {
     function liquidStakeToken() external view returns (address);
     function liquidStakingPool() external view returns (address);
     function lpToken() external view returns (address);
+    function isLPFarmable() external view returns (bool);
 }

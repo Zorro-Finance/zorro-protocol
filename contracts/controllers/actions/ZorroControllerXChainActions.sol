@@ -196,10 +196,6 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
         return bytes.concat(_sig, _inputs);
     }
 
-    // TODO: For all controller and vault actions contracts, make sure
-    // functions have a modifier that restricts access to controllers and
-    // vaults only.
-
     /// @notice Receives an authorized request from remote chains to perform earnings fee distribution events, such as: buyback + LP + burn, and revenue share
     /// @param _stablecoin Address of the stablecoin to distribute
     /// @param _amountUSDBuyback The amount in USD that should be minted for LP + burn

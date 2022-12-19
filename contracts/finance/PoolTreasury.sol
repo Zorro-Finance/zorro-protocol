@@ -14,8 +14,6 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-// TODO: Unit tests needed
-
 /// @title PoolTreasury: The treasury pool contract.
 contract PoolTreasury is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */

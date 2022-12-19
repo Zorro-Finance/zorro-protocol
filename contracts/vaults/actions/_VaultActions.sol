@@ -178,23 +178,18 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         // Init
         uint256 _amount0Min;
         uint256 _amount1Min;
-        // Get total supply and calculate min amounts desired based on slippage
-        uint256 _totalSupply = IERC20Upgradeable(_exitPoolParams.poolAddress)
-            .totalSupply();
 
         {
             _amount0Min = _calcMinAmt(
                 _amountLP,
                 _exitPoolParams.token0,
                 _exitPoolParams.poolAddress,
-                _totalSupply,
                 _maxMarketMovementAllowed
             );
             _amount1Min = _calcMinAmt(
                 _amountLP,
                 _exitPoolParams.token1,
                 _exitPoolParams.poolAddress,
-                _totalSupply,
                 _maxMarketMovementAllowed
             );
         }
@@ -221,16 +216,20 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
     /// @param _amountLP LP token qty
     /// @param _token Address of one of the tokens in the pair
     /// @param _poolAddress Address of LP pair
-    /// @param _totalSupply Total supply of LP tokens
     /// @param _maxMarketMovementAllowed Slippage (990 = 1% etc.)
     function _calcMinAmt(
         uint256 _amountLP,
         address _token,
         address _poolAddress,
-        uint256 _totalSupply,
         uint256 _maxMarketMovementAllowed
     ) internal view returns (uint256) {
+        // Get total supply and calculate min amounts desired based on slippage
+        uint256 _totalSupply = IERC20Upgradeable(_poolAddress).totalSupply();
+
+        // Get balance of token in pool
         uint256 _balance = IERC20Upgradeable(_token).balanceOf(_poolAddress);
+
+        // Return min token amount out
         return
             (_amountLP * _balance * _maxMarketMovementAllowed) /
             (1000 * _totalSupply);
@@ -323,24 +322,25 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         ) = _distributeEarnings(_amount, _maxMarketMovementAllowed, _params);
 
         // Change USD (not including cross chain earnings) back to Want
-        wantRemaining = _exchangeUSDForWantToken(_usdRemaining - xChainBuybackAmt - xChainRevShareAmt, _maxMarketMovementAllowed);
-
-        // Send remaining Want back to sender
-        IERC20Upgradeable(_want).safeTransfer(
-            msg.sender,
-            wantRemaining
+        wantRemaining = _exchangeUSDForWantToken(
+            _usdRemaining - xChainBuybackAmt - xChainRevShareAmt,
+            _maxMarketMovementAllowed
         );
 
+        // Send remaining Want back to sender
+        IERC20Upgradeable(_want).safeTransfer(msg.sender, wantRemaining);
+
         // Readjust USD amounts in case of slippage
-        uint256 _balUSD = IERC20Upgradeable(_stablecoin).balanceOf(address(this));
-        xChainBuybackAmt = xChainBuybackAmt * _balUSD / (xChainBuybackAmt + xChainRevShareAmt);
+        uint256 _balUSD = IERC20Upgradeable(_stablecoin).balanceOf(
+            address(this)
+        );
+        xChainBuybackAmt =
+            (xChainBuybackAmt * _balUSD) /
+            (xChainBuybackAmt + xChainRevShareAmt);
         xChainRevShareAmt = _balUSD - xChainBuybackAmt;
 
         // Send USD back to sender
-        IERC20Upgradeable(_want).safeTransfer(
-            msg.sender,
-            _balUSD
-        );
+        IERC20Upgradeable(_want).safeTransfer(msg.sender, _balUSD);
     }
 
     /// @notice Takes earnings (in Want) and distributes fees, buyback, revshare etc.
@@ -364,7 +364,10 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         )
     {
         // Convert want to USD
-        uint256 _balUSD = _exchangeWantTokenForUSD(_amount, _maxMarketMovementAllowed);
+        uint256 _balUSD = _exchangeWantTokenForUSD(
+            _amount,
+            _maxMarketMovementAllowed
+        );
 
         // Collect protocol fees
         uint256 _controllerFee = _collectProtocolFees(
@@ -417,11 +420,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         }
 
         // Return remainder after distribution
-        usdRemaining =
-            _balUSD -
-            _controllerFee -
-            _buybackAmt -
-            _revShareAmt;
+        usdRemaining = _balUSD - _controllerFee - _buybackAmt - _revShareAmt;
     }
 
     /// @notice Distribute controller (performance) fees
@@ -489,7 +488,9 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         }
 
         // Prep
-        uint256 _stablecoinPrice = _params.stablecoinPriceFeed.getExchangeRate();
+        uint256 _stablecoinPrice = _params
+            .stablecoinPriceFeed
+            .getExchangeRate();
 
         // Swap to ZOR Token
         if (_params.stablecoin != _params.ZORROAddress) {
@@ -563,13 +564,13 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         );
 
         // Perform exchange
-        wantObtained = _exchangeUSDForWantToken(_amountUSD, _maxMarketMovementAllowed);
+        wantObtained = _exchangeUSDForWantToken(
+            _amountUSD,
+            _maxMarketMovementAllowed
+        );
 
         // Transfer back to sender
-        IERC20Upgradeable(_want).safeTransfer(
-            msg.sender,
-            wantObtained
-        );
+        IERC20Upgradeable(_want).safeTransfer(msg.sender, wantObtained);
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
@@ -595,26 +596,35 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         );
 
         // Perform exchange
-        usdObtained = _exchangeWantTokenForUSD(_amount, _maxMarketMovementAllowed);
+        usdObtained = _exchangeWantTokenForUSD(
+            _amount,
+            _maxMarketMovementAllowed
+        );
 
         // Transfer back to sender
-        IERC20Upgradeable(_stablecoin).safeTransfer(
-            msg.sender,
-            usdObtained
-        );
+        IERC20Upgradeable(_stablecoin).safeTransfer(msg.sender, usdObtained);
     }
 
-    /* Abstract functions */
-
     /// @notice Calculates accumulated unrealized profits on a vault
-    /// @param _vault The vault address
+    /// @param _vaultAddr The vault address
     /// @return accumulatedProfit Amount of unrealized profit accumulated on the vault (not accounting for past harvests)
     /// @return harvestableProfit Amount of immediately harvestable profits
-    function unrealizedProfits(address _vault)
+    function unrealizedProfits(address _vaultAddr)
         public
         view
         virtual
-        returns (uint256 accumulatedProfit, uint256 harvestableProfit);
+        returns (uint256 accumulatedProfit, uint256 harvestableProfit)
+    {
+        // Accumulated profit
+        uint256 _principalDebt = IVault(_vaultAddr).principalDebt();
+        accumulatedProfit = this.currentWantEquity(_vaultAddr) - _principalDebt;
+
+        // Harvestable earnings
+        uint256 _profitDebt = IVault(_vaultAddr).profitDebt();
+        harvestableProfit = accumulatedProfit - _profitDebt;
+    }
+
+    /* Abstract functions */
 
     /// @notice Measures the current (unrealized) position value (measured in Want token) of the provided vault
     /// @param _vault The vault address

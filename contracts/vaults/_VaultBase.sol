@@ -358,6 +358,9 @@ abstract contract VaultBase is
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
+        // Hook 
+        _beforeDeposit();
+
         // Transfer Want token from sender
         IERC20Upgradeable(wantAddress).safeTransferFrom(
             msg.sender,
@@ -389,62 +392,83 @@ abstract contract VaultBase is
 
         // Farm the want token if applicable.
         _farm();
+
+        // Hook
+        _afterDeposit();
     }
 
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
-    /// @param _wantAmt The amount of Want token to withdraw
-    /// @return sharesRemoved The number of shares removed
-    function withdrawWantToken(uint256 _wantAmt)
+    /// @param _shares The number of shares to withdraw
+    /// @return wantRemoved The amount of Want tokens withdrawn
+    function withdrawWantToken(uint256 _shares)
         public
         virtual
         onlyZorroController
         nonReentrant
         whenNotPaused
-        returns (uint256 sharesRemoved)
+        returns (uint256 wantRemoved)
     {
         // Preflight checks
-        require(_wantAmt > 0, "negWant");
+        require(_shares > 0, "negShares");
+
+        // Hook
+        _beforeWithdrawal();
 
         // Calc current want equity
         uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
             address(this)
         );
 
-        // Shares removed is proportional to the % of total Want tokens locked that _wantAmt represents
-        sharesRemoved = (_wantAmt * sharesTotal) / _wantEquity;
-
         // Safety: cap the shares to the total number of shares
-        if (sharesRemoved > sharesTotal) {
-            sharesRemoved = sharesTotal;
+        if (_shares > sharesTotal) {
+            _shares = sharesTotal;
         }
-        // Decrement the total shares by the sharesRemoved
-        sharesTotal -= sharesRemoved;
 
-        // If a withdrawal fee is specified, discount the _wantAmt by the withdrawal fee
-        if (withdrawFeeFactor < feeDenominator) {
-            _wantAmt = (_wantAmt * withdrawFeeFactor) / feeDenominator;
-        }
+        // Calculate proportional amount of Want
+        uint256 _wantRemovable = _wantEquity * _shares / sharesTotal;
+
+        // Decrement the total shares by the sharesRemoved
+        sharesTotal -= _shares;
 
         // Unfarm Want token if applicable
-        _unfarm(_wantAmt);
+        _unfarm(_wantRemovable);
 
-        // Safety: Check balance of this contract's Want tokens held, and cap _wantAmt to that value
-        uint256 _wantBal = IERC20Upgradeable(wantAddress).balanceOf(
-            address(this)
-        );
-        if (_wantAmt > _wantBal) {
-            _wantAmt = _wantBal;
+        // Calculate actual Want unfarmed
+        wantRemoved = IERC20Upgradeable(wantAddress).balanceOf(address(this));
+
+        // Collect withdrawal fee and deduct from Want, if applicable
+        if (withdrawFeeFactor < feeDenominator) {
+            wantRemoved *= withdrawFeeFactor / feeDenominator;
         }
 
         // Decrement principal debt to account for cash flow
-        principalDebt -= _wantAmt;
+        principalDebt -= wantRemoved;
 
         // Finally, transfer the want amount from this contract, back to the ZorroController contract
         IERC20Upgradeable(wantAddress).safeTransfer(
             zorroControllerAddress,
-            _wantAmt
+            wantRemoved
         );
+
+        // Hook
+        _afterWithdrawal();
     }
+
+    /// @notice Executes arbitrary logic before deposit is run
+    /// @dev To be optionally overridden
+    function _beforeDeposit() internal virtual {}
+
+    /// @notice Executes arbitrary logic after deposit is run
+    /// @dev To be optionally overridden
+    function _afterDeposit() internal virtual {}
+
+    /// @notice Executes arbitrary logic before withdrawal is run
+    /// @dev To be optionally overridden
+    function _beforeWithdrawal() internal virtual {}
+
+    /// @notice Executes arbitrary logic after withdrawal is run
+    /// @dev To be optionally overridden
+    function _afterWithdrawal() internal virtual {}
 
     /* Maintenance Functions */
 
@@ -484,7 +508,7 @@ abstract contract VaultBase is
         nonReentrant
         whenNotPaused
     {
-        // TODO: Be able to specify amount of Want to harvest
+        // TODO: Be able to specify amount of Want to harvest, take out maxMarketMovementallowed
 
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
