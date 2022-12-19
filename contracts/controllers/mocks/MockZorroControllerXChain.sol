@@ -63,7 +63,6 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_vaultEnteredAt >= 0);
         require(_maxMarketMovement > 0);
         require(_originAccount.length >= 0);
-        // TODO: Consider making this an actual event like for repatriation, instead of one just for test
         emit ReceiveXChainDepositReq(_vid, _valueUSD, _destAccount);
     }
 

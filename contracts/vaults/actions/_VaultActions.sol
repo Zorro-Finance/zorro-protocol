@@ -24,8 +24,6 @@ import "../../libraries/SafeSwap.sol";
 
 import "../../libraries/PriceFeed.sol";
 
-// TODO: Unit tests
-
 abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
     /* Libraries */
 
@@ -341,6 +339,9 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
 
         // Send USD back to sender
         IERC20Upgradeable(_want).safeTransfer(msg.sender, _balUSD);
+
+        // Emit log
+        emit DistributedEarnings(wantRemaining, xChainBuybackAmt, xChainRevShareAmt);
     }
 
     /// @notice Takes earnings (in Want) and distributes fees, buyback, revshare etc.

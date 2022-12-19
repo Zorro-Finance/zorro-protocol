@@ -151,7 +151,7 @@ contract MockInvestmentVault is VaultBase {
         return _amount;
     }
 
-    function earn(uint256 _maxMarketMovementAllowed) public override {}
+    function earn() public override {}
 
     function farm() external {}
 

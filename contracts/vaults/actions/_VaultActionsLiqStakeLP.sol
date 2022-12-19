@@ -10,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import "../../interfaces/Uniswap/IAMMRouter02.sol";
 
+import "../../interfaces/Uniswap/IAMMFarm.sol";
+
 import "../../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
 
 import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsLiqStakeLP.sol";
@@ -58,56 +60,41 @@ abstract contract VaultActionsLiqStakeLP is
         address _token0 = _vault.token0Address(); // Underlying token
         address _liqStakeToken = _vault.liquidStakeToken(); // Amount of synth token (e.g. sETH token)
         address _lpToken = _vault.lpToken(); // Amount of synth token (e.g. sETH token)
-        address _earned = _vault.earnedAddress(); // Amount of farm token (e.g. Qi)
         AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
-        AggregatorV3Interface _liqStakeTokenPriceFeed = _vault.priceFeeds(
-            _liqStakeToken
-        );
-        AggregatorV3Interface _earnPriceFeed = _vault.priceFeeds(_earned);
-        bool _isFarmable = _vault.isLPFarmable();
-        address _farm = _vault.farmContract();
 
-        // Get balance of underlying (Token0)
-        uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
+        // Get balance of underlying (Token0), increment positionVal
+        positionVal += IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
-        // Get balance of sETH
-        uint256 _balLiqStakeToken = IERC20Upgradeable(_liqStakeToken).balanceOf(
-            _vaultAddr
-        );
-
-        // Express balance of sETH in ETH
-        uint256 _balLiqStakeTokenToken0 = (_balLiqStakeToken *
-            _liqStakeTokenPriceFeed.getExchangeRate()) /
+        // Get balance of sETH and express balance of sETH in ETH, increment positionVal
+        positionVal +=
+            (IERC20Upgradeable(_liqStakeToken).balanceOf(_vaultAddr) *
+                _vault.priceFeeds(_liqStakeToken).getExchangeRate()) /
             _token0PriceFeed.getExchangeRate();
 
-        // Get balance of sETH-ETH LP token
-        uint256 _balLPToken = IERC20Upgradeable(_lpToken).balanceOf(_vaultAddr);
-
-        // Express balance in ETH
+        // Get balance of sETH-ETH LP token and express balance in ETH. Then increment positionVal
         uint256 _totalSupplyLP = IERC20Upgradeable(_lpToken).totalSupply();
         uint256 _balToken0LP = IERC20Upgradeable(_token0).balanceOf(_lpToken);
-        uint256 _balLPTokenToken0 = _balLPToken * _balToken0LP / _totalSupplyLP;
+        positionVal +=
+            (IERC20Upgradeable(_lpToken).balanceOf(_vaultAddr) * _balToken0LP) /
+            _totalSupplyLP;
 
         // Farm activity (if applicable)
-        uint256 _stakedLPToken0;
-        uint256 _pendingEarnToken0;
-
-        if (_isFarmable) {
+        if (_vault.isLPFarmable()) {
             // Get balance of sETH-ETH LP token staked on Masterchef (if isFarmable)
-            (uint256 _amtLPStaked, ) = IAMMFarm(_farm).user(pid, _vaultAddr);
+            (uint256 _amtLPStaked, ) = IAMMFarm(_vault.farmContractAddress())
+                .userInfo(_vault.pid(), _vaultAddr);
 
-            // Express in Token0 units
-            _stakedLPToken0 = _amtLPStaked * _balToken0LP / _totalSupplyLP;
+            // Express in Token0 units, increment positionVal
+            positionVal += (_amtLPStaked * _balToken0LP) / _totalSupplyLP;
 
-            // Get pending Earn
-            uint256 _pendingEarn = IAMMFarm(_farm).pendingCake(pid, _vaultAddr);
-
-            // Express in Token0 units
-            _pendingEarnToken0 = _pendingEarn * _earnPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
+            // Get pending Earn, express in Token0 units, increment positionval
+            positionVal +=
+                (_vault.pendingLPFarmRewards() *
+                    _vault
+                        .priceFeeds(_vault.earnedAddress())
+                        .getExchangeRate()) /
+                _token0PriceFeed.getExchangeRate();
         }
-
-        // Sum up all equities
-        positionVal = _balToken0 + _balLiqStakeTokenToken0 + _balLPTokenToken0 + _stakedLPToken0 + _pendingEarnToken0;
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender

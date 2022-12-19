@@ -2,10 +2,12 @@
 
 pragma solidity >=0.6.12 <0.9.0;
 
+// TODO: Create versions of this for PCS, TJ instead of having a single generic version (Uniswap doesn't even have Masterchef)
+
 interface IAMMFarm {
     function poolLength() external view returns (uint256);
 
-    function userInfo() external view returns (uint256);
+    function userInfo(uint256 _pid, address _user) external view returns (uint256 amount, uint256 rewardDebt);
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)

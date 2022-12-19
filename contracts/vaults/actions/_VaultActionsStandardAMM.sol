@@ -8,6 +8,8 @@ import "../../interfaces/Alpaca/IAlpacaVault.sol";
 
 import "../../interfaces/Zorro/Vaults/IVaultStandardAMM.sol";
 
+import "../../interfaces/Uniswap/IAMMFarm.sol";
+
 import "../../interfaces/Zorro/Vaults/Actions/IVaultActionsStandardAMM.sol";
 
 import "./_VaultActions.sol";
@@ -33,33 +35,29 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
         // Prep
         IVaultStandardAMM _vault = IVaultStandardAMM(_vaultAddr);
         address _lpToken = _vault.wantAddress();
-        address _earnToken = _vault.earnedAddress();
         address _token0 = _vault.token0Address();
-        bool _isFarmable = _vault.isLPFarmable();
 
         // Farm activity (if applicable)
         uint256 _stakedLP;
         uint256 _pendingEarnLP;
 
-        if (_isFarmable) {
+        if (_vault.isLPFarmable()) {
             // Get balance of LP token staked on Masterchef (if isFarmable)
-            (uint256 _amtLPStaked, ) = IAMMFarm(_farm).user(pid, _vaultAddr);
+            (uint256 _amtLPStaked, ) = IAMMFarm(_vault.farmContractAddress()).userInfo(_vault.pid(), _vaultAddr);
 
             // Express in Token0 units
-            uint256 _totalSupplyLP = IERC20Upgradeable(_lpToken).totalSupply();
-            uint256 _balToken0LP = IERC20Upgradeable(_token0).balanceOf(_lpToken);
-            _stakedLP = _amtLPStaked * _balToken0LP / _totalSupplyLP;
+            _stakedLP = _amtLPStaked * IERC20Upgradeable(_token0).balanceOf(_lpToken) / IERC20Upgradeable(_lpToken).totalSupply();
 
             // Get pending Earn
-            uint256 _pendingEarn = IAMMFarm(_farm).pendingCake(pid, _vaultAddr);
+            uint256 _pendingEarn = IVaultStandardAMM(_vaultAddr).pendingFarmRewards();
 
             // Convert to equivalent in Want token
             uint256 _earnEquityInToken0 = (_pendingEarn *
-                _vault.priceFeeds(_earnToken).getExchangeRate()) /
+                _vault.priceFeeds(_vault.earnedAddress()).getExchangeRate()) /
                 (2 * _vault.priceFeeds(_token0).getExchangeRate());
 
             // Calculate earn balance in units of LP (earn bal in units of Token 0 * total LP token supply / balance of token 0 on LP pool contract)
-            uint256 _earnEquityInLP = (_earnEquityInToken0 *
+            _pendingEarnLP = (_earnEquityInToken0 *
                 IERC20Upgradeable(_lpToken).totalSupply()) /
                 IERC20Upgradeable(_token0).balanceOf(_lpToken);
             }

@@ -12,8 +12,6 @@ import "@openzeppelin/contracts-upgradeable/finance/VestingWalletUpgradeable.sol
 
 import "./PoolTeam.sol";
 
-// TODO: Unit tests needed
-
 /// @title PoolAdvisory: The advisory pool contract (for advisors).
 /// @dev Follows a factory method to create vesting wallets for each new advisor
 contract PoolAdvisory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {

@@ -358,7 +358,7 @@ abstract contract VaultBase is
         // Preflight checks
         require(_wantAmt > 0, "Want token deposit must be > 0");
 
-        // Hook 
+        // Hook
         _beforeDeposit();
 
         // Transfer Want token from sender
@@ -425,7 +425,7 @@ abstract contract VaultBase is
         }
 
         // Calculate proportional amount of Want
-        uint256 _wantRemovable = _wantEquity * _shares / sharesTotal;
+        uint256 _wantRemovable = (_wantEquity * _shares) / sharesTotal;
 
         // Decrement the total shares by the sharesRemoved
         sharesTotal -= _shares;
@@ -501,15 +501,7 @@ abstract contract VaultBase is
     /* Earnings */
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
-    function earn(uint256 _maxMarketMovementAllowed)
-        public
-        virtual
-        nonReentrant
-        whenNotPaused
-    {
-        // TODO: Be able to specify amount of Want to harvest, take out maxMarketMovementallowed
-
+    function earn() public virtual nonReentrant whenNotPaused {
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");
@@ -532,6 +524,8 @@ abstract contract VaultBase is
             _wantBal
         );
 
+        // TODO: Resolve all these unused local vars
+
         // Perform fee distribution (fees + buyback + revshare)
         // and obtain Want token with remainder
         (
@@ -540,7 +534,7 @@ abstract contract VaultBase is
             uint256 _xChainRevShareAmt
         ) = IVaultActions(vaultActions).distributeAndReinvestEarnings(
                 _wantBal,
-                _maxMarketMovementAllowed,
+                maxMarketMovementAllowed,
                 IVaultActions.DistributeEarningsParams({
                     ZORROAddress: ZORROAddress,
                     rewardsAddress: rewardsAddress,
@@ -566,7 +560,6 @@ abstract contract VaultBase is
                     isHomeChain: isHomeChain
                 })
             );
-        // TODO: Emit event that logs want intended, want actual, bb, revshare, controller
 
         // Distribute earnings cross chain if applicable
         if (_xChainBuybackAmt > 0 || _xChainRevShareAmt > 0) {
@@ -581,7 +574,7 @@ abstract contract VaultBase is
                 .sendXChainDistributeEarningsRequest(
                     _xChainBuybackAmt,
                     _xChainRevShareAmt,
-                    _maxMarketMovementAllowed
+                    maxMarketMovementAllowed
                 );
         }
 

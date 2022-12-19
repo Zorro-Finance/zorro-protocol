@@ -90,6 +90,7 @@ interface IVault {
 
     // Config variables
     function wantAddress() external view returns (address);
+    function farmContractAddress() external view returns (address);
     function defaultStablecoin() external view returns (address);
     function poolAddress() external view returns (address);
     function earnedAddress() external view returns (address);
@@ -100,6 +101,7 @@ interface IVault {
     function swapPathLength(address _startToken, address _endToken) external view returns (uint16);
     function priceFeeds(address _token) external view returns (AggregatorV3Interface);
     function vaultActions() external view returns (address);
+    function pid() external view returns (uint256);
 
     // Sum of all shares of users to wantLockedTotal
     function sharesTotal() external view returns (uint256);
@@ -129,9 +131,7 @@ interface IVault {
     ) external returns (uint256);
 
     // Compounding
-    function earn(
-        uint256 _maxMarketMovementAllowed
-    ) external;
+    function earn() external;
 
     function farm() external;
 

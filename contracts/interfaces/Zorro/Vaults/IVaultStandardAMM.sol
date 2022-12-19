@@ -15,5 +15,8 @@ interface IVaultStandardAMM is IVault {
     }
 
     /* Functions */
+
     function isLPFarmable() external view returns (bool);
+
+    function pendingFarmRewards() external view returns (uint256 pendingRewards);
 }

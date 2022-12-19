@@ -13,7 +13,7 @@ import "./actions/_VaultActionsStandardAMM.sol";
 import "./_VaultBase.sol";
 
 /// @title VaultStandardAMM: abstract base class for all PancakeSwap style AMM contracts. Maximizes yield in AMM.
-contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
+abstract contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -79,8 +79,19 @@ contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
             IAMMFarm(farmContractAddress).withdraw(pid, _wantAmt);
         }
     }
+
+    /* Abstract Functions */
+
+    /// @notice Fetches the pending rewards from the underlying protocol's MasterChef contract
+    /// @dev Every protocol has a different function name for this, so the implementing contract must conform to this abstraction
+    /// @return pendingRewards The quantity of rewards tokens available for harvest
+    function pendingFarmRewards() public view virtual returns (uint256 pendingRewards);
 }
 
-contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {}
+import "../interfaces/TraderJoe/IMasterChefJoeV3.sol"; 
 
-contract TraderJoe_WAVAX_USDC is VaultStandardAMM {}
+contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {
+    function pendingFarmRewards() public view override returns (uint256 pendingRewards) {
+        (pendingRewards,,,) = IMasterChefJoeV3(farmContractAddress).pendingTokens(pid, address(this));
+    }
+}

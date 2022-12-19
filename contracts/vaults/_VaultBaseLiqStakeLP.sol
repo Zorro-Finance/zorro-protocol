@@ -11,7 +11,7 @@ import "./actions/_VaultActionsLiqStakeLP.sol";
 import "./_VaultBase.sol";
 
 /// @title Vault base contract for liquid staking + LP strategy
-contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
+abstract contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
     /* Libraries */
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -137,8 +137,23 @@ contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
             maxMarketMovementAllowed
         );
     }
+
+    /* Abstract Functions */
+
+    /// @notice Fetches the pending rewards from the underlying protocol's MasterChef contract
+    /// @dev Every protocol has a different function name for this, so the implementing contract must conform to this abstraction
+    /// @return pendingRewards The quantity of rewards tokens available for harvest
+    function pendingLPFarmRewards() public view virtual returns (uint256 pendingRewards);
 }
 
-contract VaultAnkrBNBLiqStakeLP is VaultBaseLiqStakeLP {}
+contract VaultAnkrBNBLiqStakeLP is VaultBaseLiqStakeLP {
+    function pendingLPFarmRewards() public view override returns (uint256 pendingRewards) {
+        // TODO (PCS)
+    }
+}
 
-contract VaultBenqiAVAXLiqStakeLP is VaultBaseLiqStakeLP {}
+contract VaultBenqiAVAXLiqStakeLP is VaultBaseLiqStakeLP {
+    function pendingLPFarmRewards() public view override returns (uint256 pendingRewards) {
+        // TODO (TraderJoe)
+    }
+}

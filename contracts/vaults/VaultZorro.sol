@@ -137,16 +137,12 @@ contract VaultZorro is IVaultZorro, VaultBase {
     function _unfarm(uint256 _amount) internal override {}
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
-    /// @param _maxMarketMovementAllowed The max slippage allowed. (included here just to implement interface; otherwise unused)
-    function earn(uint256 _maxMarketMovementAllowed)
+    function earn()
         public
         override(IVault, VaultBase)
         nonReentrant
         whenNotPaused
     {
-        // Reqs
-        require(_maxMarketMovementAllowed >= 0); // Satisfy compiler warnings of unused var
-
         // If onlyGov is set to true, only allow to proceed if the current caller is the govAddress
         if (onlyGov) {
             require(msg.sender == govAddress, "!gov");

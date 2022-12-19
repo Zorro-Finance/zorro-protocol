@@ -32,28 +32,26 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
         // Prep
         IVaultStargate _vault = IVaultStargate(_vaultAddr);
         address _token0 = _vault.token0Address(); // Underlying token
-        address _lpToken = _vault.wantAddress(); // Amount of LP token (e.g. SG LP token)
-        address _stg = _vault.earnedAddress(); // Amount of farm token (STG)
         address _sgPoolAddr = _vault.poolAddress(); // Stargate LP Pool address
-        AggregatorV3Interface _token0PriceFeed = _vault.priceFeeds(_token0);
-        AggregatorV3Interface _earnPriceFeed = _vault.priceFeeds(_stg);
 
         // Get balance of Token0
         uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
         // Get balance of LP token
-        uint256 _balLPToken = IERC20Upgradeable(_lpToken).balanceOf(_sgPoolAddr);
+        uint256 _balLPToken = IERC20Upgradeable(_vault.wantAddress()).balanceOf(
+            _sgPoolAddr
+        );
 
         // Rebase balance of LP token in Token0 units
-        uint256 _totalSupplyLPPool = IERC20Upgradeable(_sgPoolAddr).totalSupply();
-        uint256 _balToken0LPPool = IERC20Upgradeable(_token0).balanceOf(_sgPoolAddr);
-        uint256 _balLPTokenInToken0 = _balLPToken * _balToken0LPPool / _totalSupplyLPPool;
+        uint256 _balLPTokenInToken0 = (_balLPToken *
+            IERC20Upgradeable(_token0).balanceOf(_sgPoolAddr)) /
+            IERC20Upgradeable(_sgPoolAddr).totalSupply();
 
-        // Get earn equity
-        uint256 _pendingEarn = IStargateLPStaking(_sgPoolAddr).pendingStargate(pid, _vaultAddr);
-
-        // Rebase earn equity into Token0 units
-        uint256 _pendingEarnToken0 = _pendingEarn * _earnPriceFeed.getExchangeRate() / _token0PriceFeed.getExchangeRate();
+        // Get Earn and rebase equity into Token0 units
+        uint256 _pendingEarnToken0 = (IStargateLPStaking(_sgPoolAddr)
+            .pendingStargate(_vault.pid(), _vaultAddr) *
+            _vault.priceFeeds(_vault.earnedAddress()).getExchangeRate()) /
+            _vault.priceFeeds(_token0).getExchangeRate();
 
         // Sum equities
         positionVal = _balToken0 + _balLPTokenInToken0 + _pendingEarnToken0;
@@ -78,8 +76,12 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _amountUSD,
-                    priceToken0: _vault.priceFeeds(_stablecoin).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_token0Address).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_token0Address)
+                        .getExchangeRate(),
                     token0: _stablecoin,
                     token1: _token0Address,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -113,15 +115,20 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
 
         if (_token0Address != _stablecoin) {
             // Get Token0 balance
-            uint256 _token0Bal = IERC20Upgradeable(_token0Address)
-                .balanceOf(address(this));
+            uint256 _token0Bal = IERC20Upgradeable(_token0Address).balanceOf(
+                address(this)
+            );
 
             // Swap Token0 -> USD
             _safeSwap(
                 SafeSwapUni.SafeSwapParams({
                     amountIn: _token0Bal,
-                    priceToken0: _vault.priceFeeds(_token0Address).getExchangeRate(),
-                    priceToken1: _vault.priceFeeds(_stablecoin).getExchangeRate(),
+                    priceToken0: _vault
+                        .priceFeeds(_token0Address)
+                        .getExchangeRate(),
+                    priceToken1: _vault
+                        .priceFeeds(_stablecoin)
+                        .getExchangeRate(),
                     token0: _token0Address,
                     token1: _stablecoin,
                     maxMarketMovementAllowed: _maxMarketMovementAllowed,
@@ -132,8 +139,6 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
         }
 
         // Calculate USD balance
-        usdObtained = IERC20Upgradeable(_stablecoin).balanceOf(
-            address(this)
-        );
+        usdObtained = IERC20Upgradeable(_stablecoin).balanceOf(address(this));
     }
 }

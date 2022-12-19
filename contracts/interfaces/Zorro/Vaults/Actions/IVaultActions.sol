@@ -53,6 +53,14 @@ interface IVaultActions {
         AggregatorV3Interface ZORPriceFeed;
     }
 
+    /* Events */
+
+    event DistributedEarnings(
+        uint256 indexed wantRemaining,
+        uint256 indexed xChainBuybackAmt,
+        uint256 indexed xChainRevShareAmt
+    );
+
     /* Config */
 
     function uniRouterAddress() external view returns (address);

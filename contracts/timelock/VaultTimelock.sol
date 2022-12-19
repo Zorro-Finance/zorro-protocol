@@ -9,11 +9,11 @@ import "../interfaces/Zorro/Vaults/IVault.sol";
 /// @title VaultTimelock: A contract that owns all deployed implementations of IVault for safety
 contract VaultTimelock is TimelockControllerUpgradeable {
     /* No timelock functions */
+    
     function earn(
-        address _vaultAddress,
-        uint256 _maxMarketMovement
+        address _vaultAddress
     ) public onlyRole(EXECUTOR_ROLE) {
-        IVault(_vaultAddress).earn(_maxMarketMovement);
+        IVault(_vaultAddress).earn();
     }
 
     function farm(address _vaultAddress) public onlyRole(EXECUTOR_ROLE) {
