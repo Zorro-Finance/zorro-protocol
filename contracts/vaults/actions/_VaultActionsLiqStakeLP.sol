@@ -115,10 +115,15 @@ abstract contract VaultActionsLiqStakeLP is
             address(this)
         );
 
+        // Check amount
+        if (_amount > _token0Bal) {
+            _amount = _token0Bal;
+        }
+
         // Swap ETH to USD
         _safeSwap(
             SafeSwapUni.SafeSwapParams({
-                amountIn: _token0Bal,
+                amountIn: _amount,
                 priceToken0: _vault
                     .priceFeeds(_token0Address)
                     .getExchangeRate(),

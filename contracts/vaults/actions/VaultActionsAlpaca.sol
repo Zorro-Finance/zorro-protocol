@@ -45,7 +45,6 @@ contract VaultActionsAlpaca is IVaultActionsAlpaca, VaultActions {
         IVault _vault = IVault(_msgSender());
         address _stablecoin = _vault.defaultStablecoin();
         address _token0Address = _vault.token0Address();
-        address _pool = _vault.poolAddress();
 
         // Swap USD for token0
         // Single asset. Swap from USD directly to Token0

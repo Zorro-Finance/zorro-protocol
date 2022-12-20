@@ -524,12 +524,10 @@ abstract contract VaultBase is
             _wantBal
         );
 
-        // TODO: Resolve all these unused local vars
-
         // Perform fee distribution (fees + buyback + revshare)
         // and obtain Want token with remainder
         (
-            uint256 _wantRemaining,
+            ,
             uint256 _xChainBuybackAmt,
             uint256 _xChainRevShareAmt
         ) = IVaultActions(vaultActions).distributeAndReinvestEarnings(
