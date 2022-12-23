@@ -374,7 +374,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         uint256 _controllerFee = _collectProtocolFees(
             _amount,
             _params.stablecoin,
-            _params.rewardsAddress,
+            _params.rewardsAddress, // TODO: Consider globally renaming this to treasuryAddress
             _params.controllerFeeBP
         );
 

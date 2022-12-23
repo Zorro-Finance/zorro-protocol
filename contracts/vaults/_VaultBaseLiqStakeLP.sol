@@ -145,19 +145,3 @@ abstract contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
     /// @return pendingRewards The quantity of rewards tokens available for harvest
     function pendingLPFarmRewards() public view virtual returns (uint256 pendingRewards);
 }
-
-import "../interfaces/PancakeSwap/IMasterChef.sol";
-
-contract VaultAnkrBNBLiqStakeLP is VaultBaseLiqStakeLP {
-    function pendingLPFarmRewards() public view override returns (uint256 pendingRewards) {
-        pendingRewards = IPCSMasterChef(farmContractAddress).pendingCake(pid, address(this));
-    }
-}
-
-import "../interfaces/TraderJoe/IMasterChefJoeV3.sol";
-
-contract VaultBenqiAVAXLiqStakeLP is VaultBaseLiqStakeLP {
-    function pendingLPFarmRewards() public view override returns (uint256 pendingRewards) {
-        (pendingRewards,,,) = IMasterChefJoeV3(farmContractAddress).pendingTokens(pid, address(this));
-    }
-}

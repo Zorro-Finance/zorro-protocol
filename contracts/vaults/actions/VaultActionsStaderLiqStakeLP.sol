@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../../interfaces/Ankr/IBinancePool_R1.sol";
+import "../../interfaces/Stader/IStakeManager.sol";
 
 import "../../interfaces/IWETH.sol";
 
@@ -12,7 +12,7 @@ import "../../libraries/SafeSwap.sol";
 
 import "./_VaultActionsLiqStakeLP.sol";
 
-contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
+contract VaultActionsStaderLiqStakeLP is VaultActionsLiqStakeLP {
     /* Libraries */
 
     using PriceFeed for AggregatorV3Interface;
@@ -40,16 +40,11 @@ contract VaultActionsAnkrLiqStakeLP is VaultActionsLiqStakeLP {
         // Get native ETH balance
         uint256 _bal = address(this).balance;
 
-        // Require balance to be > amount
-        require(_bal > _amount, "insufficientLiqStakeBal");
-
-        // Get relayer fee
-        uint256 _relayerFee = IBinancePool_R1(_liqStakeToken).getRelayerFee();
+        // Require balance to be >= amount
+        require(_bal >= _amount, "insufficientLiqStakeBal");
 
         // Call deposit func
-        IBinancePool_R1(_liqStakePool).stakeAndClaimCerts{
-            value: _amount + _relayerFee
-        }();
+        IStakeManager(_liqStakePool).deposit{value: _amount}();
 
         // Calc balance of liquid staking token
         uint256 _balLiqToken = IERC20Upgradeable(_liqStakeToken).balanceOf(
