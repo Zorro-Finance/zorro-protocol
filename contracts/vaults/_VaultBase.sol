@@ -57,7 +57,7 @@ abstract contract VaultBase is
         token1Address = _initValue.keyAddresses.token1Address;
         earnedAddress = _initValue.keyAddresses.earnedAddress;
         farmContractAddress = _initValue.keyAddresses.farmContractAddress;
-        rewardsAddress = _initValue.keyAddresses.rewardsAddress;
+        treasury = _initValue.keyAddresses.treasury;
         poolAddress = _initValue.keyAddresses.poolAddress;
         zorroLPPool = _initValue.keyAddresses.zorroLPPool;
         zorroLPPoolOtherToken = _initValue.keyAddresses.zorroLPPoolOtherToken;
@@ -146,7 +146,7 @@ abstract contract VaultBase is
     address public defaultStablecoin; // usually USDC token address
     // Other addresses
     address public burnAddress; // Address to send funds to, to burn them
-    address public rewardsAddress; // The TimelockController RewardsDistributor contract
+    address public treasury; // The treasury contract address
     // Routers/Pools
     address public poolAddress; // Address of LP Pool address (e.g. PancakeV2Pair)
     // Zorro LP pool
@@ -217,7 +217,7 @@ abstract contract VaultBase is
         } else if (_index == 7) {
             farmContractAddress = _addr;
         } else if (_index == 8) {
-            rewardsAddress = _addr;
+            treasury = _addr;
         } else if (_index == 9) {
             burnAddress = _addr;
         } else if (_index == 10) {
@@ -535,7 +535,7 @@ abstract contract VaultBase is
                 maxMarketMovementAllowed,
                 IVaultActions.DistributeEarningsParams({
                     ZORROAddress: ZORROAddress,
-                    rewardsAddress: rewardsAddress,
+                    treasury: treasury,
                     stablecoin: defaultStablecoin,
                     zorroStakingVault: zorroStakingVault,
                     zorroLPPoolOtherToken: zorroLPPoolOtherToken,

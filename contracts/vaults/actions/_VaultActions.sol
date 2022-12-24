@@ -374,7 +374,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         uint256 _controllerFee = _collectProtocolFees(
             _amount,
             _params.stablecoin,
-            _params.rewardsAddress, // TODO: Consider globally renaming this to treasuryAddress
+            _params.treasury,
             _params.controllerFeeBP
         );
 
@@ -427,13 +427,13 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
     /// @notice Distribute controller (performance) fees
     /// @param _amount The amount earned (profits) (in USD)
     /// @param _stablecoin The address of the stablecoin on this contract
-    /// @param _rewardsAddress The treasury address
+    /// @param _treasury The treasury address
     /// @param _controllerFeeBP The controller fee in BP
     /// @return fee The amount of controller fees collected for the treasury (in Want token)
     function _collectProtocolFees(
         uint256 _amount,
         address _stablecoin,
-        address _rewardsAddress,
+        address _treasury,
         uint16 _controllerFeeBP
     ) internal virtual returns (uint256 fee) {
         if (_amount > 0) {
@@ -444,7 +444,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
 
                 // Transfer the fee to the rewards address
                 IERC20Upgradeable(_stablecoin).safeTransfer(
-                    _rewardsAddress,
+                    _treasury,
                     fee
                 );
             }

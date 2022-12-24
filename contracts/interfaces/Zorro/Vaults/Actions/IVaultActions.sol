@@ -18,7 +18,7 @@ interface IVaultActions {
 
     struct DistributeEarningsParams {
         address ZORROAddress;
-        address rewardsAddress;
+        address treasury;
         address stablecoin;
         address zorroStakingVault;
         address zorroLPPoolOtherToken;

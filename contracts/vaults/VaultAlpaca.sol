@@ -99,4 +99,4 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
     }
 }
 
-contract VaultAlpacaLeveragedBTCB is VaultAlpaca {}
+contract VaultAlpacaBNB is VaultAlpaca {}

@@ -32,7 +32,7 @@ interface IVault {
         address token1Address;
         address earnedAddress;
         address farmContractAddress;
-        address rewardsAddress;
+        address treasury;
         address poolAddress;
         address uniRouterAddress;
         address zorroLPPool;
@@ -82,7 +82,7 @@ interface IVault {
     event SetGov(address _govAddress);
     event SetOnlyGov(bool _onlyGov);
     event SetUniRouterAddress(address _uniRouterAddress);
-    event SetRewardsAddress(address _rewardsAddress);
+    event SetTreasury(address _treasuryAddress);
     event Buyback(uint256 indexed _amount);
     event RevShare(uint256 indexed _amount);
 

@@ -16,6 +16,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
+// TODO: No need for PoolTeam contract. Just instantiate two vesting wallets
+
 /// @title PoolTeam: The team pool contract (for founders).
 contract PoolTeam is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* Libraries */
