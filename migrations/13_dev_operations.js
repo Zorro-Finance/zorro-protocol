@@ -1,5 +1,5 @@
 // Imports 
-const { getKeyParams, getSynthNetwork } = require('../chains');
+const { getKeyParams, getSynthNetwork } = require('../helpers/chains');
 
 // Contracts
 const Migrations = artifacts.require("Migrations");
@@ -14,6 +14,8 @@ const Zorro = artifacts.require("Zorro");
 const IERC20 = artifacts.require("IERC20");
 const IUniswapV2Factory = artifacts.require("IUniswapV2Factory");
 const IStargateRouter = artifacts.require("IStargateRouter");
+
+// TODO: Do we even need this migration file anymore?
 
 module.exports = async function (deployer, network, accounts) {
     // Web3
@@ -102,7 +104,7 @@ module.exports = async function (deployer, network, accounts) {
         await vaultAvaxUSDC.setGov(newOwner);
     }
 
-    if (network === 'bscfork') {
+    if (network === 'bnbfork') {
         // TODO
     }
 };

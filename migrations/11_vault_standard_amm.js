@@ -8,7 +8,7 @@ const {
   getSynthNetwork, 
   testNets,
   wavaxOnAvax
-} = require('../chains');
+} = require('../helpers/chains');
 
 // Vaults
 const TraderJoe_ZOR_WAVAX = artifacts.require("TraderJoe_ZOR_WAVAX");
@@ -114,7 +114,7 @@ module.exports = async function (deployer, network, accounts) {
         token1Address: wavaxOnAvax,
         earnedAddress: tokenJoe,
         farmContractAddress: masterChefJoe,
-        rewardsAddress: accounts[2],
+        treasury: accounts[2],
         poolAddress: pairAddr,
         uniRouterAddress,
         zorroLPPool: pairAddr,
@@ -241,3 +241,5 @@ module.exports = async function (deployer, network, accounts) {
     });
   }
 };
+
+// TODO: For all vaults!: call the addVault() func with appropriate multiplier

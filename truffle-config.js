@@ -72,7 +72,7 @@ module.exports = {
        url: process.env.GANACHE_CLOUD_URL,
        network_id: 43114,
      },
-     bscfork: {
+     bnbfork: {
        url: process.env.GANACHE_CLOUD_URL,
        network_id: 56,
      },
@@ -103,8 +103,8 @@ module.exports = {
     //   network_id: 2111,   // This network is yours, in the cloud.
     //   production: true    // Treats this network as if it was a public net. (default: false)
     // }
-    bsc: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC_BSC, ''),
+    bnb: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_BNB, ''),
       network_id: 56,
       gas: 8500000,
       gasPrice: 20000000000,

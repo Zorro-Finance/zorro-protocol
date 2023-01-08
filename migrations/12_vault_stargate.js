@@ -6,7 +6,7 @@ const {
   getSynthNetwork, 
   testNets,
   wavaxOnAvax,
-} = require('../chains');
+} = require('../helpers/chains');
 
 // Vaults
 const StargateUSDCOnAVAX = artifacts.require("StargateUSDCOnAVAX");
@@ -76,7 +76,7 @@ module.exports = async function (deployer, network, accounts) {
       token1Address: zeroAddress,
       earnedAddress: bridge.tokenSTG,
       farmContractAddress: sgLPStaking,
-      rewardsAddress: accounts[2],
+      treasury: accounts[2],
       poolAddress: sgUSDCPool,
       uniRouterAddress,
       zorroLPPool,

@@ -88,13 +88,13 @@ contract('MockVaultStandardAMM', async accounts => {
     it('sets rewards address', async () => {
         // Normal
         const rewards = web3.utils.toChecksumAddress(web3.utils.randomHex(20));
-        await instance.setRewardsAddress(rewards);
+        await instance.setTreasury(rewards);
 
-        assert.equal(web3.utils.toChecksumAddress(await instance.rewardsAddress.call()), rewards);
+        assert.equal(web3.utils.toChecksumAddress(await instance.treasury.call()), rewards);
 
         // Only by owner
         try {
-            await instance.setRewardsAddress(rewards, { from: accounts[1] });
+            await instance.setTreasury(rewards, { from: accounts[1] });
         } catch (err) {
             assert.include(err.message, 'caller is not the owner');
         }

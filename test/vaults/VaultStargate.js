@@ -57,7 +57,7 @@ const setupContracts = async (accounts) => {
     await instance.setFarmContractAddress(farmContract.address); 
     await instance.setZorroStakingVault(zorroStakingVault.address);
     await instance.setEarnedAddress(stg.address);
-    await instance.setRewardsAddress(accounts[3]);
+    await instance.setTreasury(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setToken0Address(usdc.address);

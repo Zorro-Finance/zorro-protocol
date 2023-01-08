@@ -10,7 +10,7 @@ import "../interfaces/Benqi/IUnitroller.sol";
 
 import "../interfaces/Zorro/Vaults/IVaultLending.sol";
 
-import "./actions/VaultActionsBenqiLending.sol";
+import "./actions/_VaultActionsLending.sol";
 
 import "./_VaultBase.sol";
 

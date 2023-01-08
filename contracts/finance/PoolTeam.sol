@@ -16,58 +16,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
-// TODO: No need for PoolTeam contract. Just instantiate two vesting wallets
-
-/// @title PoolTeam: The team pool contract (for founders).
-contract PoolTeam is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
-    /* Libraries */
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-
-    /* Constructor */
-    /// @notice Constructor
-    /// @param _zorroTokenAddress The Zorro token address
-    function initialize(
-        address _zorroTokenAddress
-    ) public initializer {
-        // Set Zorro token address
-        ZORRO = _zorroTokenAddress;
-    }
-
-    /* State */
-    address payable public vestingWallet; // Address of TeamVestingWallet
-    address public ZORRO; // Address of ZOR token
-
-    /* Setters */
-    function setVestingWallet(address payable _vestingWallet) external onlyOwner {
-        vestingWallet = _vestingWallet;
-    }
-
-    /* Functions */
-
-    /// @notice Withdraws any ERC20 tokens from this contract
-    /// @param _token The ERC20 token to withdraw
-    /// @param _recipient The recipient of the withdrawn funds
-    /// @param _quantity The amount of token to withdraw
-    function withdraw(address _token, address _recipient, uint256 _quantity) public onlyOwner nonReentrant {
-        IERC20Upgradeable(_token).safeTransfer(_recipient, _quantity);
-    }
-
-    /// @notice Withdraws any native ETH from this contract
-    /// @param _recipient The recipient of the withdrawn funds
-    /// @param _quantity The amount of token to withdraw
-    function withdraw(address payable _recipient, uint256 _quantity) public onlyOwner nonReentrant {
-        AddressUpgradeable.sendValue(_recipient, _quantity);
-    }
-
-    /// @notice Redeems vested ZOR token on the TeamVestingWallet contract to this contract
-    function redeemZOR() public onlyOwner {
-        TeamVestingWallet(vestingWallet).release(ZORRO);
-    }
-
-    /// @notice Allow this contract to receive ETH
-    receive() external payable virtual {}
-}
-
 /// @title TreasuryVestingWallet: The vesting wallet for ZOR tokens, redeemable by PoolTeam
 contract TeamVestingWallet is VestingWallet, Ownable {
     /* Constructor */

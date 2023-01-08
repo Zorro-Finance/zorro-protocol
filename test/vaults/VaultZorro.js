@@ -27,7 +27,7 @@ const setupContracts = async (accounts) => {
     const instance = await MockVaultZorro.deployed();
     await instance.setWantAddress(ZORToken.address);
     await instance.setToken0Address(ZORToken.address);
-    await instance.setRewardsAddress(accounts[3]);
+    await instance.setTreasury(accounts[3]);
     await instance.setBurnAddress(accounts[4]);
     await instance.setUniRouterAddress(router.address);
     await instance.setDefaultStablecoin(usdc.address);
