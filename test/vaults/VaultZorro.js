@@ -58,15 +58,4 @@ contract('VaultZorro :: Investments', async accounts => {
         /* THEN
         */
     });
-
-    it('Autocompounds and earns', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
 });
