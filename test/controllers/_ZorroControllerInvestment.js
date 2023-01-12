@@ -1,7 +1,7 @@
 // ZorroControllerInvestment contract
 // Includes all tests for deposits, withdrawals, transfers, and their cross chain counterparts
 
-contract('ZorroController :: Setters', async accounts => {
+contract('ZorroControllerInvestment :: Setters', async accounts => {
     it('Only owner can set X chain endpoint contract address', async () => {
         /* Case 1: Authorized call should succeed */
 
@@ -63,7 +63,7 @@ contract('ZorroController :: Setters', async accounts => {
     });
 });
 
-contract('ZorroController :: Deposits', async accounts => {
+contract('ZorroControllerInvestment :: Deposits', async accounts => {
     it('Deposits Want token directly into a vault (aka "Core deposit")', async () => {
         /* GIVEN
         - As a public user
@@ -98,7 +98,7 @@ contract('ZorroController :: Deposits', async accounts => {
     });
 });
 
-contract('ZorroController :: Withdrawals', async accounts => {
+contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
     it('Withdraws Want token directly from a vault (aka "Core withdrawal")', async () => {
         /* GIVEN
         - As a public user who has deposited into a vault already (and thus own a tranche on that vault)
@@ -148,7 +148,7 @@ contract('ZorroController :: Withdrawals', async accounts => {
     });
 });
 
-contract('ZorroController :: Transfers', async accounts => {
+contract('ZorroControllerInvestment :: Transfers', async accounts => {
     it('Transfers assets from one tranche to another vault', async () => {
         /* GIVEN 
         - As a public user who has deposited into a vault already
@@ -165,7 +165,7 @@ contract('ZorroController :: Transfers', async accounts => {
     });
 });
 
-contract('ZorroController :: XChain', async accounts => {
+contract('ZorroControllerInvestment :: XChain', async accounts => {
     it('Accepts X Chain withdrawal request to Stablecoin', async () => {
         /* GIVEN 
         - A deposited tranche associated with a foreign wallet account exists on this chain already

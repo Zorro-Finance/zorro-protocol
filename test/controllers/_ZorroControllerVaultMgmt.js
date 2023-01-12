@@ -1,7 +1,7 @@
 // ZorroControllerVaultMgmt contract
 // Includes all tests for adding and updating vaults
 
-contract('ZorroController :: VaultMgmt', async accounts => {
+contract('ZorroControllerVaultMgmt :: Vaults', async accounts => {
     it('Adds a new vault', async () => {
         /* GIVEN
         - As an owner (timelock) of the contract

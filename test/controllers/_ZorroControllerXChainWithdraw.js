@@ -4,36 +4,15 @@
 contract('ZorroControllerXChainWithdraw :: Sending', async accounts => {
     it('Sends cross chain withdrawal request', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - I initiate a cross chain withdrawal
         */
 
         /* THEN
-        */
-    });
-});
-
-contract('ZorroControllerXChainWithdraw :: Receiving', async accounts => {
-    it('Receives cross chain withdrawal request', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
-    it('Receives cross chain repatriation request', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
+        - A LayerZero message should be sent with the appropriate payload
         */
     });
 });

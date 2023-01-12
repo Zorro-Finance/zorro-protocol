@@ -327,7 +327,7 @@ contract ZorroControllerBase is
         );
 
         // Reset
-        accSynthRewardsMinted = 0;
+        accSynthRewardsSlashed = 0;
     }
 
     /// @notice Stores cumulative total of slashed rewards on a non-home chain, for future burning.
