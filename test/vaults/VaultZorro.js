@@ -15,7 +15,7 @@ contract('VaultZorro :: Setters', async accounts => {
 });
 
 contract('VaultZorro :: Investments', async accounts => {
-    it('Deposits want token', async () => {
+    it('Deposits', async () => {
         /* GIVEN
         */
 
@@ -26,7 +26,29 @@ contract('VaultZorro :: Investments', async accounts => {
         */
     });
 
-    it('Withdraws Want token', async () => {
+    it('Exchanges USD to Want', async () => {
+        /* GIVEN
+        */
+
+        /* WHEN
+        */
+
+        /* THEN
+        */
+    });
+
+    it('Withdraws', async () => {
+        /* GIVEN
+        */
+
+        /* WHEN
+        */
+
+        /* THEN
+        */
+    });
+
+    it('Exchanges Want to USD', async () => {
         /* GIVEN
         */
 
@@ -49,6 +71,19 @@ contract('VaultZorro :: Investments', async accounts => {
     });
 
     it('Unfarms', async () => {
+        /* GIVEN
+        */
+
+        /* WHEN
+        */
+
+        /* THEN
+        */
+    });
+});
+
+contract('VaultBase :: Earnings', async accounts => {
+    it('Autocompounds successfullly', async () => {
         /* GIVEN
         */
 

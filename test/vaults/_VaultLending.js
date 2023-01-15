@@ -48,50 +48,6 @@ contract('VaultLending :: Setters', async accounts => {
 });
 
 contract('VaultLending :: Investments', async accounts => {
-    it('Deposits want token', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
-    it('Withdraws want token', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
-    it('Farms', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
-    it('Unfarms', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
     it('Rebalances when above target borrow envelope', async () => {
         /* GIVEN
         */
