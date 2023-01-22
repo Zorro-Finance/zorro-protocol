@@ -4,14 +4,15 @@
 contract('VaultActions :: Setters', async accounts => {
     it('Sets key addresses', async () => {
         /* GIVEN
-
+        - As the owner (timelock) of the contract
         */
 
         /* WHEN
-        
+        - I set the Uni router address or the burn address
         */
 
         /* THEN
+        - Their values update correctly
         */
     });
 });
@@ -19,34 +20,43 @@ contract('VaultActions :: Setters', async accounts => {
 contract('VaultActions :: Utilities', async accounts => {
     it('Adds liquidity to LP pool', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - I join a liquidity pool with the specified input tokens and amounts
         */
 
         /* THEN
+        - I expect the correct amount of LP token to be send to the specified recipient
         */
     });
 
     it('Removes liquidity from LP pools', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - I exit an LP pool with the provided LP token and amount
         */
 
         /* THEN
+        - I expect to receive the corresponding underlying tokens back, at the recipient address
         */
     });
 
     it('Safely performs swaps', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - Performing a safeSwap operation and providing an input token
         */
 
         /* THEN
+        - I expect the correct amount of the output token to be delivered to the specified destination address
         */
     });
 });
@@ -54,34 +64,17 @@ contract('VaultActions :: Utilities', async accounts => {
 contract('VaultActions :: Finance', async accounts => {
     it('Distributes and reinvests earnings', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - Invoking the function to distribute and reinvest earnings
         */
 
         /* THEN
-        */
-    });
-
-    it('Exchanges USD to Want token', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-
-    it('Exchanges Want token to USD', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
+        - The appropriate want token remaining, x-chain buyback amount, and x-chain revshare amount is returned to me
+        - The appropriate amount of earnings is bought back, used to add liquidity, and the resulting LP token is burned
+        - The appropriate amount of earnings is shared as revenue to the Zorro Staking Vault
         */
     });
 });
@@ -89,12 +82,15 @@ contract('VaultActions :: Finance', async accounts => {
 contract('VaultActions :: Analytics', async accounts => {
     it('Calculates unrealized profits', async () => {
         /* GIVEN
+        - As a public user
         */
 
         /* WHEN
+        - Calling unrealizedProfits()
         */
 
         /* THEN
+        - I expect to receive both the accumulated profit and the harvestable earnings amounts in return
         */
     });
 });
