@@ -128,6 +128,7 @@ contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
         - I expect to receive the entirety of my investment in that tranche back to my wallet in the form of USDC
         - I should not have any shares left in the vault
         - There should not be any active tranches left
+        - I automatically harvest any pending ZORRO rewards
         */
     });
 
@@ -161,6 +162,8 @@ contract('ZorroControllerInvestment :: Transfers', async accounts => {
         /* THEN 
         - I expect the entirety of my funds to be withdrawn from vault A and deposited into vault B
         - I should not have any shares left in vault A, but should have shares in vault B, in a new tranche
+        - I should not be penalized for an early withdrawal
+        - ZOR rewards are automatically harvested
         */
     });
 });
