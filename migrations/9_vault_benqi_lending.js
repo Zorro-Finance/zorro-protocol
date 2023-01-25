@@ -16,6 +16,8 @@ const VaultActionsBenqiLending = artifacts.require('VaultActionsBenqiLending');
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
+const VaultTimelock = artifacts.require('VaultTimelock');
+const PoolTreasury = artifacts.require('PoolTreasury');
 
 module.exports = async function (deployer, network, accounts) {
   /* Production */
@@ -31,72 +33,71 @@ module.exports = async function (deployer, network, accounts) {
     tokens,
     priceFeeds,
     infra,
+    protocols,
   } = avax;
 
-  if (getSynthNetwork(network) === 'avax') {
-    /* Home chain */
+  const {benqi} = protocols;
 
+  if (getSynthNetwork(network) === 'avax') {
     // Deployed contracts
-    const zorPriceFeed = await ZORPriceFeed.deployed();
+    const vaultTimelock = await VaultTimelock.deployed();
+    const poolTreasury = await PoolTreasury.deployed();
 
     // Deploy actions contract
-    await deployProxy(VaultActionsAlpaca, [infra.uniRouterAddress], { deployer });
-    const vaultActionsAlpaca = await VaultActionsAlpaca.deployed();
-
+    const vaultActionsBenqiLending = await deployProxy(VaultActionsBenqiLending, [infra.uniRouterAddress], { deployer });
 
     // Init values 
     const initVal = {
-      // TODO: This needs to be filled out
       pid: 0,
       keyAddresses: {
-        govAddress: accounts[0], // TODO: Should this be accounts[0]?
+        govAddress: vaultTimelock.address,
         zorroControllerAddress: zorroController.address,
         zorroXChainController: zorroControllerXChain.address,
         ZORROAddress: zorro.address,
         zorroStakingVault: zeroAddress,
-        wantAddress: zorro.address,
-        token0Address: zorro.address,
+        wantAddress: tokens.wavax,
+        token0Address: tokens.wavax,
         token1Address: zeroAddress,
-        earnedAddress: zeroAddress,
-        farmContractAddress: zeroAddress,
-        treasury: zeroAddress,
-        poolAddress: zeroAddress,
+        earnedAddress: tokens.qi,
+        farmContractAddress: benqi.tokenSaleDistributor,
+        treasury: poolTreasury.address,
+        poolAddress: benqi.avaxLendingPool,
         uniRouterAddress: infra.uniRouterAddress,
         zorroLPPool: zeroAddress,
         zorroLPPoolOtherToken: zeroAddress,
         defaultStablecoin: tokens.usdc,
-        vaultActions: vaultActionsAlpaca.address,
+        vaultActions: vaultActionsBenqiLending.address,
       },
       swapPaths: {
         earnedToZORROPath: [],
-        earnedToToken0Path: [],
+        earnedToToken0Path: [tokens.qi, tokens.wavax],
         earnedToToken1Path: [],
-        stablecoinToToken0Path: [tokens.usdc, tokens.wavax, zorro.address],
+        stablecoinToToken0Path: [tokens.usdc, tokens.wavax],
         stablecoinToToken1Path: [],
         earnedToZORLPPoolOtherTokenPath: [],
-        earnedToStablecoinPath: [],
-        stablecoinToZORROPath: [tokens.usdc, tokens.wavax, zorro.address],
-        stablecoinToLPPoolOtherTokenPath: [tokens.usdc, tokens.wavax],
+        earnedToStablecoinPath: [tokens.qi, tokens.wavax, tokens.usdc],
+        stablecoinToZORROPath: [],
+        stablecoinToLPPoolOtherTokenPath: [],
       },
       fees: vaultFees,
       priceFeeds: {
-        token0PriceFeed: zorPriceFeed.address,
+        token0PriceFeed: priceFeeds.avax,
         token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: zorPriceFeed.address,
-        lpPoolOtherTokenPriceFeed: priceFeeds.avax,
+        earnTokenPriceFeed: priceFeeds.qi,
+        ZORPriceFeed: zeroAddress,
+        lpPoolOtherTokenPriceFeed: zeroAddress,
         stablecoinPriceFeed: priceFeeds.usdc,
       },
-      targetBorrowLimit: 0, 
-      targetBorrowLimitHysteresis: 0,
-      comptrollerAddress: zeroAddress,
-      lendingToken: zeroAddress,
+      targetBorrowLimit: 74e16, // 1% = 1e16
+      targetBorrowLimitHysteresis: 1e16, // 1% = 1e16
+      comptrollerAddress: benqi.comptroller,
+      lendingToken: benqi.avaxLendingPool,
     };
 
     // Deploy
-    await deployProxy(VaultAlpacaLeveragedBTCB,
+    await deployProxy(VaultBenqiLendingAVAX,
       [
-        accounts[0],
+        vaultTimelock.address,
         initVal,
       ],
       {
@@ -104,6 +105,6 @@ module.exports = async function (deployer, network, accounts) {
       }
     );
   } else {
-    console.log('Not BNB chain. Skipping vault creation');
+    console.log('Not AVAX chain. Skipping vault creation');
   }
 };

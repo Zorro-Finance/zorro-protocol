@@ -30,11 +30,13 @@ exports.chains = {
       usdc: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
       stg: '0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590',
       joe: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd',
+      qi: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
     },
     priceFeeds: {
       usdc: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
       avax: '0x0A77230d17318075983913bC2145DB16C7366156',
       joe: '0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a',
+      qi: '0x36E039e6391A5E7A7267650979fdf613f659be5D',
     },
     infra: {
       uniRouterAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
@@ -44,7 +46,9 @@ exports.chains = {
     },
     protocols: {
       benqi: {
-
+        avaxLendingPool: '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c',
+        comptroller: '0x486Af39519B4Dc9a7fCcd318217352830E8AD9b4',
+        tokenSaleDistributor: '0x77533A0b34cd9Aa135EBE795dc40666Ca295C16D',
       },
       aave: {
 
