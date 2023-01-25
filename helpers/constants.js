@@ -97,6 +97,8 @@ exports.chains = {
     protocols: {
       apeswap: {
         ethLendingPool: '0xaA1b1E1f251610aE10E4D553b05C662e60992EEd',
+        banana: '0x603c7f932ED1fc6575303D8Fb018fDCBb0f39a95',
+        unitroller: '0xAD48B2C9DC6709a560018c678e918253a65df86e',
       },
       stader: {
         
