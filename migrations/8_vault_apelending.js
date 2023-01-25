@@ -105,7 +105,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployProxy(VaultApeLendingETH,
       [
         vaultTimelock.address,
-        initVal,
+        initVal,``
       ],
       {
         deployer,
