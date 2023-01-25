@@ -231,6 +231,12 @@ Unit tests are run using Truffle/Mocha.
 truffle test --network ganachecli --compile-none --stacktrace-extra
 ```
 
+# Running mainnet forks on Ganache
+
+```bash
+ganache -h 0.0.0.0 --chain.chainId 43115 -i 43115 --database.dbPath /opt/db -b 2 -e 1000000 --fork $MAINNET_FORK_AVAX 
+```
+
 # Upgradeability
 
 To allow for more features and fixes, we implement a _Transparent Proxy_ based on OpenZeppelin Upgradeability standard. 
