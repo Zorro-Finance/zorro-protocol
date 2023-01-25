@@ -54,7 +54,6 @@ module.exports = async function (deployer, network, accounts) {
 
     // Init values 
     const initVal = {
-      // TODO: put in apelending values
       pid: 0,
       keyAddresses: {
         govAddress: vaultTimelock.address,
@@ -65,10 +64,10 @@ module.exports = async function (deployer, network, accounts) {
         wantAddress: tokens.wbnb,
         token0Address: tokens.wbnb,
         token1Address: zeroAddress,
-        earnedAddress: protocols.alpaca.alpaca,
-        farmContractAddress: protocols.alpaca.fairLaunch,
+        earnedAddress: protocols.apeswap.banana,
+        farmContractAddress: protocols.apeswap.unitroller,
         treasury: poolTreasury.address,
-        poolAddress: protocols.alpaca.levPoolBNB,
+        poolAddress: protocols.apeswap.ethLendingPool,
         uniRouterAddress: infra.uniRouterAddress,
         zorroLPPool,
         zorroLPPoolOtherToken: tokens.wbnb,
@@ -76,13 +75,13 @@ module.exports = async function (deployer, network, accounts) {
         vaultActions: vaultActionsApeLending.address,
       },
       swapPaths: {
-        earnedToZORROPath: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb, zorro.address],
-        earnedToToken0Path: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb],
+        earnedToZORROPath: [protocols.apeswap.banana, tokens.wbnb, zorro.address],
+        earnedToToken0Path: [protocols.apeswap.banana, tokens.wbnb, tokens.eth],
         earnedToToken1Path: [],
-        stablecoinToToken0Path: [tokens.busd, tokens.wbnb],
+        stablecoinToToken0Path: [tokens.busd, tokens.eth],
         stablecoinToToken1Path: [],
-        earnedToZORLPPoolOtherTokenPath: [protocols.alpaca.alpaca, tokens.wbnb],
-        earnedToStablecoinPath: [protocols.alpaca.alpaca, tokens.busd],
+        earnedToZORLPPoolOtherTokenPath: [protocols.apeswap.banana, tokens.wbnb],
+        earnedToStablecoinPath: [protocols.apeswap.banana, tokens.wbnb, tokens.busd],
         stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
         stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
       },
@@ -99,7 +98,7 @@ module.exports = async function (deployer, network, accounts) {
       targetBorrowLimit: 0,
       targetBorrowLimitHysteresis: 0,
       comptrollerAddress: zeroAddress,
-      lendingToken: zeroAddress,
+      lendingToken: protocols.apeswap.ethLendingPool,
     };
 
     // Deploy

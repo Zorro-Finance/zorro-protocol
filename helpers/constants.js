@@ -79,12 +79,14 @@ exports.chains = {
     tokens: {
       wbnb: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
       busd: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+      eth: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
     },
     priceFeeds: {
       busd: '0xcBb98864Ef56E9042e7d2efef76141f15731B82f',
       bnb: '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE',
       cake: '0xB6064eD41d4f67e353768aA239cA86f4F73665a1',
       alpaca: '0xe0073b60833249ffd1bb2af809112c2fbf221DF6',
+      eth: '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e',
     },
     infra: {
       uniRouterAddress: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
@@ -94,7 +96,7 @@ exports.chains = {
     },
     protocols: {
       apeswap: {
-        
+        ethLendingPool: '0xaA1b1E1f251610aE10E4D553b05C662e60992EEd',
       },
       stader: {
         
