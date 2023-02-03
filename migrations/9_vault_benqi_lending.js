@@ -1,5 +1,3 @@
-// TODO: Needs to be filled out for BenqiLending
-
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Get key params

@@ -519,7 +519,7 @@ abstract contract VaultBase is
         require(_wantBal > 0, "0wantHarvested");
 
         // Allow spending
-        IERC20Upgradeable(earnedAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             vaultActions,
             _wantBal
         );
@@ -544,11 +544,11 @@ abstract contract VaultBase is
                         zorroLPPoolOtherToken
                     ],
                     stablecoinPriceFeed: priceFeeds[defaultStablecoin],
-                    stablecoinToZORROPath: swapPaths[earnedAddress][
+                    stablecoinToZORROPath: swapPaths[defaultStablecoin][
                         ZORROAddress
                     ],
                     stablecoinToZORLPPoolOtherTokenPath: swapPaths[
-                        earnedAddress
+                        defaultStablecoin
                     ][zorroLPPoolOtherToken],
                     controllerFeeBP: uint16(
                         (controllerFee * 10000) / feeDenominator

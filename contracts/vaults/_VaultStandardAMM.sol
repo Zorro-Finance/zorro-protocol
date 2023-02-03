@@ -88,10 +88,10 @@ abstract contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
     function pendingFarmRewards() public view virtual returns (uint256 pendingRewards);
 }
 
-import "../interfaces/TraderJoe/IMasterChefJoeV3.sol"; 
+import "../interfaces/PancakeSwap/IMasterChef.sol"; 
 
-contract TraderJoe_ZOR_WAVAX is VaultStandardAMM {
+contract PCS_ZOR_BNB is VaultStandardAMM {
     function pendingFarmRewards() public view override returns (uint256 pendingRewards) {
-        (pendingRewards,,,) = IMasterChefJoeV3(farmContractAddress).pendingTokens(pid, address(this));
+        pendingRewards = IPCSMasterChef(farmContractAddress).pendingCake(pid, address(this));
     }
 }

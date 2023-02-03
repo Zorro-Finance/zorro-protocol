@@ -16,6 +16,8 @@ const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerActions = artifacts.require("ZorroControllerActions");
 // Token
 const Zorro = artifacts.require('Zorro');
+// Other contracts
+const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 
 
 module.exports = async function (deployer, network, accounts) {
@@ -72,7 +74,7 @@ module.exports = async function (deployer, network, accounts) {
       },
   };
 
-  // TODO: Add in AVAX-specific items
+  // TODO: Add in AVAX/BNB-specific items
 
   // Deploy Controller
   await deployProxy(ZorroController, [zcInitVal], {deployer});

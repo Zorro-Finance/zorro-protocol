@@ -94,10 +94,9 @@ module.exports = async function (deployer, network, accounts) {
         lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
         stablecoinPriceFeed: priceFeeds.busd,
       },
-      // TODO: fill in
-      targetBorrowLimit: 0,
-      targetBorrowLimitHysteresis: 0,
-      comptrollerAddress: zeroAddress,
+      targetBorrowLimit: 70e16, // 1% = 1e16
+      targetBorrowLimitHysteresis: 1e16, // 1% = 1e16
+      comptrollerAddress: protocols.apeswap.unitroller,
       lendingToken: protocols.apeswap.ethLendingPool,
     };
 
@@ -105,7 +104,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployProxy(VaultApeLendingETH,
       [
         vaultTimelock.address,
-        initVal,``
+        initVal,
       ],
       {
         deployer,

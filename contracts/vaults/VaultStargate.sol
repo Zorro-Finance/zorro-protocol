@@ -117,4 +117,6 @@ contract VaultStargate is IVaultStargate, VaultBase {
     }
 }
 
-contract StargateUSDCOnAVAX is VaultStargate {}
+contract StargateUSDTOnAVAX is VaultStargate {}
+
+contract StargateBUSDOnBNB is VaultStargate {}

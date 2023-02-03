@@ -24,19 +24,23 @@ exports.chains = {
       zChainId: 0,
       lzChainId: 0, // TODO Correct this
       sgPoolId: 0, // TODO Correct this
+
     },
     tokens: {
       wavax: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       usdc: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+      usdt: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
       stg: '0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590',
       joe: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd',
       qi: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
     },
     priceFeeds: {
       usdc: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
+      usdt: '0xEBE676ee90Fe1112671f19b6B7459bC678B67e8a',
       avax: '0x0A77230d17318075983913bC2145DB16C7366156',
       joe: '0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a',
       qi: '0x36E039e6391A5E7A7267650979fdf613f659be5D',
+      savax: '0x2854Ca10a54800e15A2a25cFa52567166434Ff0a',
     },
     infra: {
       uniRouterAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
@@ -47,6 +51,7 @@ exports.chains = {
     protocols: {
       benqi: {
         avaxLendingPool: '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c',
+        savax: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
         comptroller: '0x486Af39519B4Dc9a7fCcd318217352830E8AD9b4',
         tokenSaleDistributor: '0x77533A0b34cd9Aa135EBE795dc40666Ca295C16D',
       },
@@ -57,7 +62,11 @@ exports.chains = {
         joeToken: '',
         poolUSDC_AVAX: '',
         pidUSDC_AVAX: '',
-        masterChef: '',
+        masterChef: '0x188bED1968b795d5c9022F6a0bb5931Ac4c18F00',
+      },
+      stargate: {
+        poolUSDT: '0x29e38769f23701A2e4A8Ef0492e19dA4604Be62c',
+        lpStaking: '0x8731d54E9D02c286767d56ac03e8037C07e01e98',
       },
     },
   },
@@ -104,7 +113,9 @@ exports.chains = {
         
       },
       stargate: {
-          
+        stg: '0xB0D502E938ed5f4df2E681fE6E419ff29631d62b',
+        lpStaking: '0x3052A0F6ab15b4AE1df39962d5DdEFacA86DaB47',
+        poolBUSD: '0x98a5737749490856b401DB5Dc27F522fC314A4e1',
       },
       alpaca: {
         alpaca: '0x8F0528cE5eF7B51152A59745bEfDD91D97091d2F',
@@ -113,13 +124,14 @@ exports.chains = {
       },
       pancakeswap: {
         cake: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
-
+        masterChef: '0xa5f8C5Dbd5F286960b9d90548680aE5ebFf07652',
       },
     },
   },
 };
 
 // TODO: Is this global or per chain?
+// Rewards
 exports.rewards = {
   blocksPerDay: 43200,
   startBlock: 0,
