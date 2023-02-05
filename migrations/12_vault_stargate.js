@@ -4,7 +4,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   getSynthNetwork,
 } = require('../helpers/chains');
-const { chains, zeroAddress } = require('../helpers/constants');
+const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const StargateUSDTOnAVAX = artifacts.require("StargateUSDTOnAVAX");
@@ -21,6 +21,7 @@ const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const VaultZorro = artifacts.require('VaultZorro');
 const VaultTimelock = artifacts.require('VaultTimelock');
 const PoolTreasury = artifacts.require('PoolTreasury');
+const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 
 module.exports = async function (deployer, network, accounts) {
   /* Production */
@@ -35,7 +36,7 @@ module.exports = async function (deployer, network, accounts) {
 
   if (getSynthNetwork(network) === 'avax') {
     // Unpack keyParams
-    const { avax, vaultFees } = chains;
+    const { avax } = chains;
     const {
       tokens,
       priceFeeds,
@@ -43,16 +44,23 @@ module.exports = async function (deployer, network, accounts) {
       protocols,
     } = avax;
 
-    // Deployed contracts
-    const stgPriceFeed = await STGPriceFeed.deployed();
-
     // Deploy contracts
     const vaultActionsStargate = await deployer.deploy(VaultActionsStargate, infra.uniRouterAddress);
+    // Deploy contracts
+    const stgPriceFeed = await deployer.deploy(
+      STGPriceFeed, 
+      infra.uniRouterAddress,
+      tokens.stg,
+      tokens.usdc
+    );
 
     // Init values 
     const initVal = {
       baseInit: {
-        pid: 0, // TODO: Change to actual PID
+        config: {
+          pid: 0, // TODO: Change to actual PID
+          isHomeChain: false,
+        },
         keyAddresses: {
           govAddress: vaultTimelock.address,
           zorroControllerAddress: zorroController.address,
@@ -87,7 +95,7 @@ module.exports = async function (deployer, network, accounts) {
         priceFeeds: {
           token0PriceFeed: priceFeeds.usdt,
           token1PriceFeed: zeroAddress,
-          earnTokenPriceFeed: stgPriceFeed,
+          earnTokenPriceFeed: stgPriceFeed.address,
           ZORPriceFeed: zeroAddress,
           lpPoolOtherTokenPriceFeed: zeroAddress,
           stablecoinPriceFeed: priceFeeds.usdc,
@@ -115,7 +123,7 @@ module.exports = async function (deployer, network, accounts) {
 
   if (getSynthNetwork(network) === 'bnb') {
     // Unpack keyParams
-    const { bnb, vaultFees } = chains;
+    const { bnb } = chains;
     const {
       tokens,
       priceFeeds,
@@ -126,12 +134,18 @@ module.exports = async function (deployer, network, accounts) {
     // Deployed contracts
     const zorro = await Zorro.deployed();
     const vaultZorro = await VaultZorro.deployed();
-    const stgPriceFeed = await STGPriceFeed.deployed();
     const zorPriceFeed = await ZORPriceFeed.deployed();
+    // Deploy contracts
+    const stgPriceFeed = await deployer.deploy(
+      STGPriceFeed, 
+      infra.uniRouterAddress,
+      tokens.stg,
+      tokens.usdc
+    );
 
     // Get Zorro LP pool
     const iUniswapV2Factory = await IUniswapV2Factory.at(infra.uniFactoryAddress);
-    const zorroLPPool = iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
+    const zorroLPPool = await iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
 
     // Deploy contracts
     const vaultActionsStargate = await deployer.deploy(VaultActionsStargate, infra.uniRouterAddress);
@@ -139,7 +153,10 @@ module.exports = async function (deployer, network, accounts) {
     // Init values 
     const initVal = {
       baseInit: {
-        pid: 0, // TODO: Change to actual PID
+        config: {
+          pid: 0, // TODO: Change to actual PID
+          isHomeChain: true,
+        },
         keyAddresses: {
           govAddress: vaultTimelock.address,
           zorroControllerAddress: zorroController.address,
@@ -174,8 +191,8 @@ module.exports = async function (deployer, network, accounts) {
         priceFeeds: {
           token0PriceFeed: priceFeeds.busd,
           token1PriceFeed: zeroAddress,
-          earnTokenPriceFeed: stgPriceFeed,
-          ZORPriceFeed: zorPriceFeed,
+          earnTokenPriceFeed: stgPriceFeed.address,
+          ZORPriceFeed: zorPriceFeed.address,
           lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
           stablecoinPriceFeed: priceFeeds.busd,
         },

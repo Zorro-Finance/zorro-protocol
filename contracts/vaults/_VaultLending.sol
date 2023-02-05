@@ -24,8 +24,8 @@ abstract contract VaultLending is IVaultLending, VaultBase {
     /* Constructor */
 
     /// @notice Upgradeable constructor
-    /// @param _initValue A VaultAlpacaInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
+    /// @param _initValue A VaultAlpacaInit struct containing all init values
     function initialize(
         address _timelockOwner,
         VaultLendingInit memory _initValue

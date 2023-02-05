@@ -11,22 +11,19 @@ contract STGPriceFeed is PriceFeedAggBase {
     /* State */
 
     address public stgToken;
-    address public wavaxToken;
-    address public usdcToken;
+    address public usdToken;
 
     /* Constructor */
 
     function initialize(
         address _router,
         address _stgToken,
-        address _wavaxToken,
-        address _usdcToken
+        address _usdToken
     ) public initializer {
         PriceFeedAggBase.initialize(_router, 18);
 
         stgToken = _stgToken;
-        wavaxToken = _wavaxToken;
-        usdcToken = _usdcToken;
+        usdToken = _usdToken;
     }
 
     /* Functions */
@@ -34,8 +31,7 @@ contract STGPriceFeed is PriceFeedAggBase {
     function _getExchRate() internal view override returns (uint256) {
         address[] memory _path = new address[](3);
         _path[0] = stgToken;
-        _path[1] = wavaxToken;
-        _path[2] = usdcToken;
+        _path[1] = usdToken;
         uint256 _amtIn = 1 ether;
         uint256[] memory _amts = IAMMRouter02(router).getAmountsOut(
             _amtIn,

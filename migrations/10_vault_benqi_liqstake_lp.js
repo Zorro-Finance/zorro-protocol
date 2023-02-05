@@ -4,7 +4,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   getSynthNetwork,
 } = require('../helpers/chains');
-const { chains, zeroAddress } = require('../helpers/constants');
+const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const VaultBenqiAVAXLiqStakeLP = artifacts.require("VaultBenqiAVAXLiqStakeLP");
@@ -30,7 +30,7 @@ module.exports = async function (deployer, network, accounts) {
   
   if (getSynthNetwork(network) === 'avax') {
     // Unpack keyParams
-    const { avax, vaultFees } = chains;
+    const { avax } = chains;
     const {
       tokens,
       priceFeeds,
@@ -50,8 +50,11 @@ module.exports = async function (deployer, network, accounts) {
     // Init values 
     const initVal = {
       baseInit: {
-        // TODO: get PID right
-        pid: 0,
+        config: {
+          // TODO: get PID right
+          pid: 0,
+          isHomeChain: false,
+        },
         keyAddresses: {
           govAddress: vaultTimelock.address,
           zorroControllerAddress: zorroController.address,

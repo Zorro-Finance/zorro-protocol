@@ -3,8 +3,10 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Get key params
 const {
   getSynthNetwork,
-} = require('../chains');
-const { chains, zeroAddress } = require('../helpers/constants');
+} = require('../helpers/chains');
+const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
+// Migration
+const Migrations = artifacts.require("Migrations");
 
 // Vaults
 const VaultBenqiLendingAVAX = artifacts.require("VaultBenqiLendingAVAX");
@@ -20,13 +22,17 @@ const PoolTreasury = artifacts.require('PoolTreasury');
 module.exports = async function (deployer, network, accounts) {
   /* Production */
 
+  // Web3
+  const adapter = Migrations.interfaceAdapter;
+  const { web3 } = adapter;
+
   // Deployed contracts
   const zorroController = await ZorroController.deployed();
   const zorroControllerXChain = await ZorroControllerXChain.deployed();
   const zorro = await Zorro.deployed();
 
   // Unpack keyParams
-  const { avax, vaultFees } = chains;
+  const { avax } = chains;
   const {
     tokens,
     priceFeeds,
@@ -46,48 +52,53 @@ module.exports = async function (deployer, network, accounts) {
 
     // Init values 
     const initVal = {
-      pid: 0,
-      keyAddresses: {
-        govAddress: vaultTimelock.address,
-        zorroControllerAddress: zorroController.address,
-        zorroXChainController: zorroControllerXChain.address,
-        ZORROAddress: zorro.address,
-        zorroStakingVault: zeroAddress,
-        wantAddress: tokens.wavax,
-        token0Address: tokens.wavax,
-        token1Address: zeroAddress,
-        earnedAddress: tokens.qi,
-        farmContractAddress: benqi.tokenSaleDistributor,
-        treasury: poolTreasury.address,
-        poolAddress: benqi.avaxLendingPool,
-        uniRouterAddress: infra.uniRouterAddress,
-        zorroLPPool: zeroAddress,
-        zorroLPPoolOtherToken: zeroAddress,
-        defaultStablecoin: tokens.usdc,
-        vaultActions: vaultActionsBenqiLending.address,
+      baseInit: {
+        config: {
+          pid: 0,
+          isHomeChain: false,
+        },
+        keyAddresses: {
+          govAddress: vaultTimelock.address,
+          zorroControllerAddress: zorroController.address,
+          zorroXChainController: zorroControllerXChain.address,
+          ZORROAddress: zorro.address,
+          zorroStakingVault: zeroAddress,
+          wantAddress: tokens.wavax,
+          token0Address: tokens.wavax,
+          token1Address: zeroAddress,
+          earnedAddress: tokens.qi,
+          farmContractAddress: benqi.tokenSaleDistributor,
+          treasury: poolTreasury.address,
+          poolAddress: benqi.avaxLendingPool,
+          uniRouterAddress: infra.uniRouterAddress,
+          zorroLPPool: zeroAddress,
+          zorroLPPoolOtherToken: zeroAddress,
+          defaultStablecoin: tokens.usdc,
+          vaultActions: vaultActionsBenqiLending.address,
+        },
+        swapPaths: {
+          earnedToZORROPath: [],
+          earnedToToken0Path: [tokens.qi, tokens.wavax],
+          earnedToToken1Path: [],
+          stablecoinToToken0Path: [tokens.usdc, tokens.wavax],
+          stablecoinToToken1Path: [],
+          earnedToZORLPPoolOtherTokenPath: [],
+          earnedToStablecoinPath: [tokens.qi, tokens.wavax, tokens.usdc],
+          stablecoinToZORROPath: [],
+          stablecoinToLPPoolOtherTokenPath: [],
+        },
+        fees: vaultFees,
+        priceFeeds: {
+          token0PriceFeed: priceFeeds.avax,
+          token1PriceFeed: zeroAddress,
+          earnTokenPriceFeed: priceFeeds.qi,
+          ZORPriceFeed: zeroAddress,
+          lpPoolOtherTokenPriceFeed: zeroAddress,
+          stablecoinPriceFeed: priceFeeds.usdc,
+        },
       },
-      swapPaths: {
-        earnedToZORROPath: [],
-        earnedToToken0Path: [tokens.qi, tokens.wavax],
-        earnedToToken1Path: [],
-        stablecoinToToken0Path: [tokens.usdc, tokens.wavax],
-        stablecoinToToken1Path: [],
-        earnedToZORLPPoolOtherTokenPath: [],
-        earnedToStablecoinPath: [tokens.qi, tokens.wavax, tokens.usdc],
-        stablecoinToZORROPath: [],
-        stablecoinToLPPoolOtherTokenPath: [],
-      },
-      fees: vaultFees,
-      priceFeeds: {
-        token0PriceFeed: priceFeeds.avax,
-        token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: priceFeeds.qi,
-        ZORPriceFeed: zeroAddress,
-        lpPoolOtherTokenPriceFeed: zeroAddress,
-        stablecoinPriceFeed: priceFeeds.usdc,
-      },
-      targetBorrowLimit: 74e16, // 1% = 1e16
-      targetBorrowLimitHysteresis: 1e16, // 1% = 1e16
+      targetBorrowLimit: web3.utils.toWei('740', 'milli'), // 1% = 1e16
+      targetBorrowLimitHysteresis: web3.utils.toWei('10', 'milli'), // 1% = 1e16
       comptrollerAddress: benqi.comptroller,
       lendingToken: benqi.avaxLendingPool,
     };

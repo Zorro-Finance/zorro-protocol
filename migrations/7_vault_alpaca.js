@@ -4,7 +4,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   getSynthNetwork,
 } = require('../helpers/chains');
-const { chains, zeroAddress } = require('../helpers/constants');
+const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const VaultAlpacaBNB = artifacts.require("VaultAlpacaBNB");
@@ -34,7 +34,7 @@ module.exports = async function (deployer, network, accounts) {
   
   if (getSynthNetwork(network) === 'bnb') {
     // Unpack keyParams
-    const { bnb, vaultFees } = chains;
+    const { bnb } = chains;
     const {
       tokens,
       priceFeeds,

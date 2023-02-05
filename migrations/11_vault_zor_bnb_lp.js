@@ -4,7 +4,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   getSynthNetwork,
 } = require('../helpers/chains');
-const { chains, zeroAddress } = require('../helpers/constants');
+const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const PCS_ZOR_BNB = artifacts.require("PCS_ZOR_BNB");
@@ -19,6 +19,7 @@ const Zorro = artifacts.require("Zorro");
 const VaultZorro = artifacts.require('VaultZorro');
 const VaultTimelock = artifacts.require('VaultTimelock');
 const PoolTreasury = artifacts.require('PoolTreasury');
+const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 
 module.exports = async function (deployer, network, accounts) {
   /* Production */
@@ -33,7 +34,7 @@ module.exports = async function (deployer, network, accounts) {
   
   if (getSynthNetwork(network) === 'bnb') {
     // Unpack keyParams
-    const { bnb, vaultFees } = chains;
+    const { bnb } = chains;
     const {
       tokens,
       priceFeeds,
@@ -47,7 +48,7 @@ module.exports = async function (deployer, network, accounts) {
 
     // Get Zorro LP pool
     const iUniswapV2Factory = await IUniswapV2Factory.at(infra.uniFactoryAddress);
-    const zorroLPPool = iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
+    const zorroLPPool = await iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
 
     // Deploy actions contract
     const vaultActionsStandardAMM = await deployProxy(VaultActionsStandardAMM, [infra.uniRouterAddress], { deployer });
@@ -57,8 +58,11 @@ module.exports = async function (deployer, network, accounts) {
     // Init values 
     const initVal = {
       baseInit: {
-        // TODO: Use correct PID from created pool above
-        pid: 0,
+        config: {
+          // TODO: Use correct PID from created pool above
+          pid: 0,
+          isHomeChain: true,
+        },
         keyAddresses: {
           govAddress: vaultTimelock.address,
           zorroControllerAddress: zorroController.address,
