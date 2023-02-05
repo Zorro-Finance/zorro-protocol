@@ -23,26 +23,25 @@ const ZORPriceFeed = artifacts.require("ZORPriceFeed");
 module.exports = async function (deployer, network, accounts) {
   /* Production */
 
-  // Deployed contracts
-  const zorroController = await ZorroController.deployed();
-  const zorroControllerXChain = await ZorroControllerXChain.deployed();
-  const poolPublic = await PoolPublic.deployed();
-  const zorro = await Zorro.deployed();
-  const vaultTimelock = await VaultTimelock.deployed();
-  const controllerTimelock = await ControllerTimelock.deployed();
-
-  // Unpack keyParams
-  const {bnb} = chains;
-  const {
-    tokens,
-    priceFeeds,
-    infra,
-  } = bnb;
   
   if (getSynthNetwork(network) === homeNetwork) {
     /* Home chain */
 
+    // Unpack keyParams
+    const {bnb} = chains;
+    const {
+      tokens,
+      priceFeeds,
+      infra,
+    } = bnb;
+
     // Deployed contracts
+    const zorroController = await ZorroController.deployed();
+    const zorroControllerXChain = await ZorroControllerXChain.deployed();
+    const poolPublic = await PoolPublic.deployed();
+    const zorro = await Zorro.deployed();
+    const vaultTimelock = await VaultTimelock.deployed();
+    const controllerTimelock = await ControllerTimelock.deployed();
     const zorPriceFeed = await ZORPriceFeed.deployed();
 
     // Deploy actions contract

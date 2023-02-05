@@ -19,6 +19,9 @@ const ZORPriceFeed = artifacts.require('ZORPriceFeed');
 module.exports = async function (deployer, network, accounts) {
   /* Production */
 
+  // Deployed contracts (common)
+  const zorro = await Zorro.deployed();
+
   /* BNB Chain */
 
   if (getSynthNetwork(network) === 'bnb') {
@@ -91,12 +94,15 @@ module.exports = async function (deployer, network, accounts) {
       tokens,
       priceFeeds,
       infra,
+      xChain,
     } = avax;
+
+    // Deployed contracts
+    const zorroController = await ZorroController.deployed();
 
      // Deploy contracts
      const zcxActionsInitVal = [infra.stargateRouter, infra.layerZeroEndpoint, infra.uniRouterAddress];
-     await deployProxy(ZorroControllerXChainActions, [zcxActionsInitVal], {deployer});
-     const zorroControllerXChainActions = await ZorroControllerXChainActions.deployed();
+     const zorroControllerXChainActions = await deployProxy(ZorroControllerXChainActions, [...zcxActionsInitVal], {deployer});
 
     // Prep init values
     let zcxInitVal = {
@@ -118,6 +124,8 @@ module.exports = async function (deployer, network, accounts) {
         stargateDestPoolIds: [xChain.sgPoolId],
         stargateRouter: infra.stargateRouter,
         controllerContracts: [zorroController.address],
+        layerZeroEndpoint: infra.layerZeroEndpoint,
+        stargateSwapPoolId: 0, // TODO: Change this to the real value. It's just a placeholder
       },
       swaps: {
         stablecoinToZorroPath: [],

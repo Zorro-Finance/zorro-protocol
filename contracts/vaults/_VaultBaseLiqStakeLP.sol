@@ -6,6 +6,8 @@ import "../interfaces/Uniswap/IAMMFarm.sol";
 
 import "../interfaces/Zorro/Vaults/IVaultLiqStakeLP.sol";
 
+import "../interfaces/Zorro/Vaults/Actions/IVaultActions.sol";
+
 import "./actions/_VaultActionsLiqStakeLP.sol";
 
 import "./_VaultBase.sol";
@@ -26,6 +28,9 @@ abstract contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         address _timelockOwner,
         VaultBaseLiqStakeLPInit memory _initValue
     ) public initializer {
+        // Super call
+        _initialize(_timelockOwner, _initValue.baseInit);
+
         // Addresses
         liquidStakeToken = _initValue.liquidStakeToken;
         liquidStakingPool = _initValue.liquidStakingPool;
@@ -43,9 +48,6 @@ abstract contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
 
         // Price feeds
         _setPriceFeed(liquidStakeToken, _initValue.liquidStakeTokenPriceFeed);
-
-        // Super call
-        _initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

@@ -9,7 +9,7 @@ const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 // Vaults
 const VaultBenqiAVAXLiqStakeLP = artifacts.require("VaultBenqiAVAXLiqStakeLP");
 // Actions
-const VaultActionsLiqStakeLP = artifacts.require('VaultActionsLiqStakeLP');
+const VaultActionsBenqiLiqStakeLP = artifacts.require('VaultActionsBenqiLiqStakeLP');
 // Other contracts
 const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
@@ -19,14 +19,6 @@ const PoolTreasury = artifacts.require('PoolTreasury');
 
 module.exports = async function (deployer, network, accounts) {
   /* Production */
-
-  // Deployed contracts
-  const zorroController = await ZorroController.deployed();
-  const zorroControllerXChain = await ZorroControllerXChain.deployed();
-  const zorro = await Zorro.deployed();
-  const vaultTimelock = await VaultTimelock.deployed();
-  const poolTreasury = await PoolTreasury.deployed();
-
   
   if (getSynthNetwork(network) === 'avax') {
     // Unpack keyParams
@@ -39,13 +31,14 @@ module.exports = async function (deployer, network, accounts) {
     } = avax;
 
     // Deployed contracts
-
-    // Get Zorro LP pool
-    const iUniswapV2Factory = await IUniswapV2Factory.at(infra.uniFactoryAddress);
-    const zorroLPPool = iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
+    const zorroController = await ZorroController.deployed();
+    const zorroControllerXChain = await ZorroControllerXChain.deployed();
+    const zorro = await Zorro.deployed();
+    const vaultTimelock = await VaultTimelock.deployed();
+    const poolTreasury = await PoolTreasury.deployed();
 
     // Deploy actions contract
-    const vaultActionsLiqStakeLP = await deployProxy(VaultActionsLiqStakeLP, [infra.uniRouterAddress], { deployer });
+    const vaultActionsBenqiLiqStakeLP = await deployProxy(VaultActionsBenqiLiqStakeLP, [infra.uniRouterAddress], { deployer });
 
     // Init values 
     const initVal = {
@@ -73,7 +66,7 @@ module.exports = async function (deployer, network, accounts) {
           zorroLPPool: zeroAddress,
           zorroLPPoolOtherToken: zeroAddress,
           defaultStablecoin: tokens.usdc,
-          vaultActions: vaultActionsLiqStakeLP.address,
+          vaultActions: vaultActionsBenqiLiqStakeLP.address,
         },
         swapPaths: {
           earnedToZORROPath: [],

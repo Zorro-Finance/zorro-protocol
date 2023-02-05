@@ -84,7 +84,7 @@ module.exports = async function (deployer, network, accounts) {
           earnedToZORROPath: [],
           earnedToToken0Path: [tokens.stg, tokens.usdc, tokens.usdt],
           earnedToToken1Path: [],
-          stablecoinToToken0Path: [tokens.usdc, tokens.tokens.usdt],
+          stablecoinToToken0Path: [tokens.usdc, tokens.usdt],
           stablecoinToToken1Path: [],
           earnedToZORLPPoolOtherTokenPath: [],
           earnedToStablecoinPath: [tokens.stg, tokens.usdc],
