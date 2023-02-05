@@ -254,6 +254,11 @@ abstract contract VaultBase is
     }
 
     function _setSwapPaths(address[] memory _path) internal {
+        // Check to make sure path not empty
+        if (_path.length == 0) {
+            return;
+        }
+
         // Prep
         address _startToken = _path[0];
         address _endToken = _path[_path.length - 1];

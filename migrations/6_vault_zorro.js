@@ -16,6 +16,7 @@ const ZorroController = artifacts.require("ZorroController");
 const ZorroControllerXChain = artifacts.require("ZorroControllerXChain");
 const Zorro = artifacts.require("Zorro");
 const VaultTimelock = artifacts.require('VaultTimelock');
+const ControllerTimelock = artifacts.require('ControllerTimelock');
 // Price feeds
 const ZORPriceFeed = artifacts.require("ZORPriceFeed");
 
@@ -28,6 +29,7 @@ module.exports = async function (deployer, network, accounts) {
   const poolPublic = await PoolPublic.deployed();
   const zorro = await Zorro.deployed();
   const vaultTimelock = await VaultTimelock.deployed();
+  const controllerTimelock = await ControllerTimelock.deployed();
 
   // Unpack keyParams
   const {bnb} = chains;
@@ -50,55 +52,55 @@ module.exports = async function (deployer, network, accounts) {
 
     // Init values 
     const initVal = {
-      baseInit: {
-        config: {
-          pid: 0,
-          isHomeChain: true,
-        },
-        keyAddresses: {
-          govAddress: vaultTimelock.address,
-          zorroControllerAddress: zorroController.address,
-          zorroXChainController: zorroControllerXChain.address,
-          ZORROAddress: zorro.address,
-          zorroStakingVault: zeroAddress,
-          wantAddress: zorro.address,
-          token0Address: zorro.address,
-          token1Address: zeroAddress,
-          earnedAddress: zeroAddress,
-          farmContractAddress: zeroAddress,
-          treasury: zeroAddress,
-          poolAddress: zeroAddress,
-          uniRouterAddress: infra.uniRouterAddress,
-          zorroLPPool: zeroAddress,
-          zorroLPPoolOtherToken: zeroAddress,
-          defaultStablecoin: tokens.busd,
-          vaultActions: vaultActionsZorro.address,
-        },
-        swapPaths: {
-          earnedToZORROPath: [],
-          earnedToToken0Path: [],
-          earnedToToken1Path: [],
-          stablecoinToToken0Path: [tokens.busd, tokens.wbnb, zorro.address],
-          stablecoinToToken1Path: [],
-          earnedToZORLPPoolOtherTokenPath: [],
-          earnedToStablecoinPath: [],
-          stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
-          stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
-        },
-        fees: vaultFees,
-        priceFeeds: {
-          token0PriceFeed: zorPriceFeed.address,
-          token1PriceFeed: zeroAddress,
-          earnTokenPriceFeed: zeroAddress,
-          ZORPriceFeed: zorPriceFeed.address,
-          lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
-          stablecoinPriceFeed: priceFeeds.busd,
-        },
+      config: {
+        pid: 0,
+        isHomeChain: true,
+      },
+      keyAddresses: {
+        govAddress: vaultTimelock.address,
+        zorroControllerAddress: zorroController.address,
+        zorroXChainController: zorroControllerXChain.address,
+        ZORROAddress: zorro.address,
+        zorroStakingVault: zeroAddress,
+        wantAddress: zorro.address,
+        token0Address: zorro.address,
+        token1Address: zeroAddress,
+        earnedAddress: zeroAddress,
+        farmContractAddress: zeroAddress,
+        treasury: zeroAddress,
+        poolAddress: zeroAddress,
+        uniRouterAddress: infra.uniRouterAddress,
+        zorroLPPool: zeroAddress,
+        zorroLPPoolOtherToken: zeroAddress,
+        defaultStablecoin: tokens.busd,
+        vaultActions: vaultActionsZorro.address,
+      },
+      swapPaths: {
+        earnedToZORROPath: [],
+        earnedToToken0Path: [],
+        earnedToToken1Path: [],
+        stablecoinToToken0Path: [tokens.busd, tokens.wbnb, zorro.address],
+        stablecoinToToken1Path: [],
+        earnedToZORLPPoolOtherTokenPath: [],
+        earnedToStablecoinPath: [],
+        stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
+        stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
+      },
+      fees: vaultFees,
+      priceFeeds: {
+        token0PriceFeed: zorPriceFeed.address,
+        token1PriceFeed: zeroAddress,
+        earnTokenPriceFeed: zeroAddress,
+        ZORPriceFeed: zorPriceFeed.address,
+        lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
+        stablecoinPriceFeed: priceFeeds.busd,
       },
     };
     
     // Deploy
-    await deployProxy(VaultZorro,
+    console.log('vault TL address: ', vaultTimelock.address);
+    console.log('initVal obj: ', initVal);
+    const vaultZorro = await deployProxy(VaultZorro,
       [
         vaultTimelock.address,
         initVal,
@@ -109,8 +111,10 @@ module.exports = async function (deployer, network, accounts) {
     );
 
     // Update ZorroController
-    const vaultZorro = await VaultZorro.deployed();
     await zorroController.setZorroContracts(poolPublic.address, vaultZorro.address);
+
+    // Controller transfer ownership to controller timelock
+    await zorroController.transferOwnership(controllerTimelock.address);
   } else {
     console.log('Not home chain. Skipping Zorro Single Staking Vault creation');
   }

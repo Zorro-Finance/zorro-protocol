@@ -61,9 +61,6 @@ module.exports = async function (deployer, network, accounts) {
     []
   ], { deployer });
 
-  // Controller transfer ownership to controller timelock
-  await zorroController.transferOwnership(controllerTimelock.address);
-
   // Deploy treasury pool on each chain
   const poolTreasury = await deployProxy(PoolTreasury, [
     zorroToken.address,

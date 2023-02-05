@@ -15,20 +15,6 @@ contract VaultZorro is IVaultZorro, VaultBase {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using PriceFeed for AggregatorV3Interface;
 
-    /* Constructor */
-
-    /// @notice Upgradeable constructor
-    /// @dev NOTE: Only to be deployed on home chain!
-    /// @param _initValue A VaultZorroInit struct that contains all constructor args
-    /// @param _timelockOwner The designated timelock controller address to act as owner
-    function initialize(
-        address _timelockOwner,
-        VaultZorroInit memory _initValue
-    ) public initializer {
-        // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
-    }
-
     /* Investment Actions */
 
     /// @notice Receives new deposits from user
