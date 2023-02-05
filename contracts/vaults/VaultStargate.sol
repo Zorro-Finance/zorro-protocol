@@ -35,7 +35,7 @@ contract VaultStargate is IVaultStargate, VaultBase {
         stargatePoolId = _initValue.stargatePoolId;
 
         // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+        _initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

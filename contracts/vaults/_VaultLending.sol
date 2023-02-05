@@ -39,7 +39,7 @@ abstract contract VaultLending is IVaultLending, VaultBase {
         lendingToken = _initValue.lendingToken;
 
         // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+        _initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

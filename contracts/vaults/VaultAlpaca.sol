@@ -18,14 +18,14 @@ contract VaultAlpaca is IVaultAlpaca, VaultBase {
     /* Constructor */
 
     /// @notice Upgradeable constructor
-    /// @param _initValue A VaultAlpacaInit struct containing all init values
     /// @param _timelockOwner The designated timelock controller address to act as owner
+    /// @param _initValue A VaultAlpacaInit struct containing all init values
     function initialize(
         address _timelockOwner,
         VaultAlpacaInit memory _initValue
     ) public initializer {
         // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+        _initialize(_timelockOwner, _initValue.baseInit);
 
         // Addresses
         lendingToken = _initValue.lendingToken;

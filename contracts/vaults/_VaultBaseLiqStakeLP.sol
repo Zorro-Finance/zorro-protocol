@@ -45,7 +45,7 @@ abstract contract VaultBaseLiqStakeLP is IVaultLiqStakeLP, VaultBase {
         _setPriceFeed(liquidStakeToken, _initValue.liquidStakeTokenPriceFeed);
 
         // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+        _initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

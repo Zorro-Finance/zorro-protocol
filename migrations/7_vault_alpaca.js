@@ -19,6 +19,7 @@ const Zorro = artifacts.require("Zorro");
 const VaultZorro = artifacts.require('VaultZorro');
 const VaultTimelock = artifacts.require('VaultTimelock');
 const PoolTreasury = artifacts.require('PoolTreasury');
+const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 
 module.exports = async function (deployer, network, accounts) {
   /* Production */
@@ -47,54 +48,59 @@ module.exports = async function (deployer, network, accounts) {
 
     // Get Zorro LP pool
     const iUniswapV2Factory = await IUniswapV2Factory.at(infra.uniFactoryAddress);
-    const zorroLPPool = iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
+    const ZORBNBLPPool = await iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
 
     // Deploy actions contract
     const vaultActionsAlpaca = await deployProxy(VaultActionsAlpaca, [infra.uniRouterAddress], { deployer });
 
     // Init values 
     const initVal = {
-      pid: 0,
-      keyAddresses: {
-        govAddress: vaultTimelock.address,
-        zorroControllerAddress: zorroController.address,
-        zorroXChainController: zorroControllerXChain.address,
-        ZORROAddress: zorro.address,
-        zorroStakingVault: vaultZorro.address,
-        wantAddress: tokens.wbnb,
-        token0Address: tokens.wbnb,
-        token1Address: zeroAddress,
-        earnedAddress: protocols.alpaca.alpaca,
-        farmContractAddress: protocols.alpaca.fairLaunch,
-        treasury: poolTreasury.address,
-        poolAddress: protocols.alpaca.levPoolBNB,
-        uniRouterAddress: infra.uniRouterAddress,
-        zorroLPPool,
-        zorroLPPoolOtherToken: tokens.wbnb,
-        defaultStablecoin: tokens.busd,
-        vaultActions: vaultActionsAlpaca.address,
+      baseInit: {
+        config: {
+          pid: 0,
+          isHomeChain: true,
+        },
+        keyAddresses: {
+          govAddress: vaultTimelock.address,
+          zorroControllerAddress: zorroController.address,
+          zorroXChainController: zorroControllerXChain.address,
+          ZORROAddress: zorro.address,
+          zorroStakingVault: vaultZorro.address,
+          wantAddress: tokens.wbnb,
+          token0Address: tokens.wbnb,
+          token1Address: zeroAddress,
+          earnedAddress: protocols.alpaca.alpaca,
+          farmContractAddress: protocols.alpaca.fairLaunch,
+          treasury: poolTreasury.address,
+          poolAddress: protocols.alpaca.levPoolBNB,
+          uniRouterAddress: infra.uniRouterAddress,
+          zorroLPPool: ZORBNBLPPool,
+          zorroLPPoolOtherToken: tokens.wbnb,
+          defaultStablecoin: tokens.busd,
+          vaultActions: vaultActionsAlpaca.address,
+        },
+        swapPaths: {
+          earnedToZORROPath: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb, zorro.address],
+          earnedToToken0Path: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb],
+          earnedToToken1Path: [],
+          stablecoinToToken0Path: [tokens.busd, tokens.wbnb],
+          stablecoinToToken1Path: [],
+          earnedToZORLPPoolOtherTokenPath: [protocols.alpaca.alpaca, tokens.wbnb],
+          earnedToStablecoinPath: [protocols.alpaca.alpaca, tokens.busd],
+          stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
+          stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
+        },
+        fees: vaultFees,
+        priceFeeds: {
+          token0PriceFeed: zorPriceFeed.address,
+          token1PriceFeed: zeroAddress,
+          earnTokenPriceFeed: zeroAddress,
+          ZORPriceFeed: zorPriceFeed.address,
+          lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
+          stablecoinPriceFeed: priceFeeds.busd,
+        },
       },
-      swapPaths: {
-        earnedToZORROPath: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb, zorro.address],
-        earnedToToken0Path: [protocols.alpaca.alpaca, tokens.busd, tokens.wbnb],
-        earnedToToken1Path: [],
-        stablecoinToToken0Path: [tokens.busd, tokens.wbnb],
-        stablecoinToToken1Path: [],
-        earnedToZORLPPoolOtherTokenPath: [protocols.alpaca.alpaca, tokens.wbnb],
-        earnedToStablecoinPath: [protocols.alpaca.alpaca, tokens.busd],
-        stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
-        stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
-      },
-      fees: vaultFees,
-      priceFeeds: {
-        token0PriceFeed: zorPriceFeed.address,
-        token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: zorPriceFeed.address,
-        lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
-        stablecoinPriceFeed: priceFeeds.busd,
-      },
-      // TODO: fill in
+      // TODO: fill in with real address
       lendingToken: zeroAddress,
     };
 

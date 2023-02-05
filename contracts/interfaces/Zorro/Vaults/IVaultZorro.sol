@@ -6,4 +6,10 @@ import "../../../vaults/actions/_VaultActions.sol";
 
 import "./IVault.sol";
 
-interface IVaultZorro is IVault {}
+interface IVaultZorro is IVault {
+    /* Structs */
+
+    struct VaultZorroInit {
+        VaultBaseInit baseInit;
+    }
+}

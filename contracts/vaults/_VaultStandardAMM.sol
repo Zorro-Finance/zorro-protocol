@@ -32,7 +32,7 @@ abstract contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
         isLPFarmable = _initValue.isLPFarmable;
 
         // Super call
-        VaultBase.initialize(_timelockOwner, _initValue.baseInit);
+        _initialize(_timelockOwner, _initValue.baseInit);
     }
 
     /* State */

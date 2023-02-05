@@ -31,10 +31,11 @@ abstract contract VaultBase is
     using PriceFeed for AggregatorV3Interface;
 
     /* Constructor */
-    function initialize(address _timelockOwner, VaultBaseInit memory _initValue)
-        public
-        initializer
-    {
+
+    /// @notice default initializer (internal). MUST be called by all child contracts in their initializer
+    /// @param _timelockOwner The timelock contract adddress that should be established as owner
+    /// @param _initValue: The VaultBaseInit struct that contains base init values
+    function _initialize(address _timelockOwner, VaultBaseInit memory _initValue) internal {
         // Ownable
         __Ownable_init();
 
