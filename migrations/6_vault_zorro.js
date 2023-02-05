@@ -4,7 +4,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const { 
   getSynthNetwork,
 } = require('../helpers/chains');
-const { chains, zeroAddress, homeNetwork } = require('../helpers/constants');
+const { chains, zeroAddress, homeNetwork, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const VaultZorro = artifacts.require("VaultZorro");
@@ -30,12 +30,12 @@ module.exports = async function (deployer, network, accounts) {
   const vaultTimelock = await VaultTimelock.deployed();
 
   // Unpack keyParams
-  const {avax, vaultFees} = chains;
+  const {bnb} = chains;
   const {
     tokens,
     priceFeeds,
     infra,
-  } = avax;
+  } = bnb;
   
   if (getSynthNetwork(network) === homeNetwork) {
     /* Home chain */
@@ -50,45 +50,50 @@ module.exports = async function (deployer, network, accounts) {
 
     // Init values 
     const initVal = {
-      pid: 0,
-      keyAddresses: {
-        govAddress: vaultTimelock.address,
-        zorroControllerAddress: zorroController.address,
-        zorroXChainController: zorroControllerXChain.address,
-        ZORROAddress: zorro.address,
-        zorroStakingVault: zeroAddress,
-        wantAddress: zorro.address,
-        token0Address: zorro.address,
-        token1Address: zeroAddress,
-        earnedAddress: zeroAddress,
-        farmContractAddress: zeroAddress,
-        treasury: zeroAddress,
-        poolAddress: zeroAddress,
-        uniRouterAddress: infra.uniRouterAddress,
-        zorroLPPool: zeroAddress,
-        zorroLPPoolOtherToken: zeroAddress,
-        defaultStablecoin: tokens.usdc,
-        vaultActions: vaultActionsZorro.address,
-      },
-      swapPaths: {
-        earnedToZORROPath: [],
-        earnedToToken0Path: [],
-        earnedToToken1Path: [],
-        stablecoinToToken0Path: [tokens.usdc, tokens.wavax, zorro.address],
-        stablecoinToToken1Path: [],
-        earnedToZORLPPoolOtherTokenPath: [],
-        earnedToStablecoinPath: [],
-        stablecoinToZORROPath: [tokens.usdc, tokens.wavax, zorro.address],
-        stablecoinToLPPoolOtherTokenPath: [tokens.usdc, tokens.wavax],
-      },
-      fees: vaultFees,
-      priceFeeds: {
-        token0PriceFeed: zorPriceFeed.address,
-        token1PriceFeed: zeroAddress,
-        earnTokenPriceFeed: zeroAddress,
-        ZORPriceFeed: zorPriceFeed.address,
-        lpPoolOtherTokenPriceFeed: priceFeeds.avax,
-        stablecoinPriceFeed: priceFeeds.usdc,
+      baseInit: {
+        config: {
+          pid: 0,
+          isHomeChain: true,
+        },
+        keyAddresses: {
+          govAddress: vaultTimelock.address,
+          zorroControllerAddress: zorroController.address,
+          zorroXChainController: zorroControllerXChain.address,
+          ZORROAddress: zorro.address,
+          zorroStakingVault: zeroAddress,
+          wantAddress: zorro.address,
+          token0Address: zorro.address,
+          token1Address: zeroAddress,
+          earnedAddress: zeroAddress,
+          farmContractAddress: zeroAddress,
+          treasury: zeroAddress,
+          poolAddress: zeroAddress,
+          uniRouterAddress: infra.uniRouterAddress,
+          zorroLPPool: zeroAddress,
+          zorroLPPoolOtherToken: zeroAddress,
+          defaultStablecoin: tokens.busd,
+          vaultActions: vaultActionsZorro.address,
+        },
+        swapPaths: {
+          earnedToZORROPath: [],
+          earnedToToken0Path: [],
+          earnedToToken1Path: [],
+          stablecoinToToken0Path: [tokens.busd, tokens.wbnb, zorro.address],
+          stablecoinToToken1Path: [],
+          earnedToZORLPPoolOtherTokenPath: [],
+          earnedToStablecoinPath: [],
+          stablecoinToZORROPath: [tokens.busd, tokens.wbnb, zorro.address],
+          stablecoinToLPPoolOtherTokenPath: [tokens.busd, tokens.wbnb],
+        },
+        fees: vaultFees,
+        priceFeeds: {
+          token0PriceFeed: zorPriceFeed.address,
+          token1PriceFeed: zeroAddress,
+          earnTokenPriceFeed: zeroAddress,
+          ZORPriceFeed: zorPriceFeed.address,
+          lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
+          stablecoinPriceFeed: priceFeeds.busd,
+        },
       },
     };
     
