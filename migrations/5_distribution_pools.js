@@ -109,14 +109,14 @@ module.exports = async function (deployer, network, accounts) {
     const modifiedOwners = isTestNetwork(network) ? [accounts[0]] : owners;
     for (let owner of modifiedOwners) {
       // Deploy contract
-      const tvw = await TeamVestingWallet.new([
+      const tvw = await TeamVestingWallet.new(
         owner,
         now,
         vestingPeriodSecs,
         cliffPeriodSecs,
-      ]);
+      );
 
-      console.log(`Createed team vesting wallet for owner: ${owner} at ${tvw.address}`);
+      console.log(`Created team vesting wallet for owner: ${owner} at ${tvw.address}`);
 
       // Send ZOR to vesting wallet
       const teamQty = web3.utils.toWei((ZORDistributions.team * ZORTotalDistribution / modifiedOwners.length).toString(), 'ether');

@@ -1,7 +1,7 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Get key params
-const {chains, zeroAddress} = require('../constants');
+const {chains, zeroAddress} = require('../helpers/constants');
 const { 
   getSynthNetwork, 
 } = require('../helpers/chains');
@@ -28,6 +28,7 @@ module.exports = async function (deployer, network, accounts) {
       tokens,
       priceFeeds,
       infra,
+      xChain,
     } = bnb;
 
     // Deployed contracts
@@ -37,7 +38,7 @@ module.exports = async function (deployer, network, accounts) {
 
     // Deploy contracts
     const zcxActionsInitVal = [infra.stargateRouter, infra.layerZeroEndpoint, infra.uniRouterAddress];
-    await deployProxy(ZorroControllerXChainActions, [zcxActionsInitVal], {deployer});
+    await deployProxy(ZorroControllerXChainActions, [...zcxActionsInitVal], {deployer});
     const zorroControllerXChainActions = await ZorroControllerXChainActions.deployed();
 
     // Prep init values
@@ -59,7 +60,8 @@ module.exports = async function (deployer, network, accounts) {
         LZChainIDs: [xChain.lzChainId],
         stargateDestPoolIds: [xChain.sgPoolId],
         stargateRouter: infra.stargateRouter,
-        controllerContracts: [zorroController.address],
+        layerZeroEndpoint: infra.layerZeroEndpoint,
+        stargateSwapPoolId: 0, // TODO: Change this to the real value. It's just a placeholder
       },
       swaps: {
         stablecoinToZorroPath: [tokens.busd, tokens.wbnb, zorro.address],

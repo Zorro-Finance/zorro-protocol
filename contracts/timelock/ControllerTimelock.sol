@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
+import "./_TimelockBase.sol";
 
 import "../interfaces/Zorro/Vaults/IVault.sol";
 
@@ -13,7 +13,7 @@ import "../interfaces/Zorro/Controllers/IZorroController.sol";
 import "../interfaces/Zorro/Controllers/IZorroControllerXChain.sol";
 
 /// @title ControllerTimelock: A contract that owns all deployed Zorro controllers for safety
-contract ControllerTimelock is TimelockControllerUpgradeable {
+contract ControllerTimelock is TimelockBase {
     /* No timelock functions */
 
     /* ZorroController */

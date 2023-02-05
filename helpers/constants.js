@@ -5,7 +5,7 @@ exports.zeroAddress = '0x0000000000000000000000000000000000000000';
 exports.homeNetwork = 'bnb';
 
 exports.owners = [
-  
+  // TODO: Put in Sierra + Delta wallets
 ];
 
 exports.defaultTimelockPeriodSecs = 24 * 3600;
@@ -13,6 +13,7 @@ exports.defaultTimelockPeriodSecs = 24 * 3600;
 exports.chains = {
   avax: {
     rewards: {
+      ZORROPerBlock: 0,
       blocksPerDay: 0,
       targetTVLCaptureBasisPoints: 0,
       chainMultiplier: 1,
@@ -27,6 +28,7 @@ exports.chains = {
 
     },
     tokens: {
+      defaultStablecoin: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
       wavax: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       usdc: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
       usdt: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
@@ -73,6 +75,7 @@ exports.chains = {
   bnb: {
     // TODO: Correct all of these values
     rewards: {
+      ZORROPerBlock: 0,
       blocksPerDay: 0,
       targetTVLCaptureBasisPoints: 0,
       chainMultiplier: 1,
@@ -86,6 +89,7 @@ exports.chains = {
       sgPoolId: 0, // TODO Correct this
     },
     tokens: {
+      defaultStablecoin: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
       wbnb: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
       busd: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
       eth: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',

@@ -29,8 +29,9 @@ contract PoolPublic is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
         controller = _controller;
         // Allow controller to spend tokens on this contract
         _allowControllerToSpend();
-        // TODO: For some reason, owner is being set to the ZERO address
-        _transferOwnership(_msgSender());
+
+        // Set owner to deployer
+        __Ownable_init();
     }
     
     /* State */

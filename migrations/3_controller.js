@@ -38,7 +38,7 @@ module.exports = async function (deployer, network, accounts) {
   if (getSynthNetwork(network) === homeNetwork) {
     // Create pair via Uni
     const iUniswapV2Factory = await IUniswapV2Factory.at(infra.uniFactoryAddress);
-    await iUniswapV2Factory.createPair(zorro.address, tokens.wavax);
+    await iUniswapV2Factory.createPair(zorro.address, tokens.wbnb);
   }
 
   
@@ -55,7 +55,7 @@ module.exports = async function (deployer, network, accounts) {
   // ZC constructor args
   let zcInitVal = {
       ZORRO: zorro.address,
-      defaultStablecoin: tokens.usdc,
+      defaultStablecoin: tokens.defaultStablecoin,
       publicPool: zeroAddress, // will be filled in subsequent migration
       zorroStakingVault: zeroAddress, // ditto
       controllerActions: zcActions.address,

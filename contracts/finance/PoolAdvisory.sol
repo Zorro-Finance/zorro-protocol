@@ -8,8 +8,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "@openzeppelin/contracts-upgradeable/finance/VestingWalletUpgradeable.sol";
-
 import "./PoolTeam.sol";
 
 /// @title PoolAdvisory: The advisory pool contract (for advisors).
@@ -33,6 +31,9 @@ contract PoolAdvisory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgra
         // Set vesting params
         cliffSeconds = _cliffSeconds;
         durationSeconds = _durationSeconds;
+
+        // Set owner to deployer (initially)
+        __Ownable_init();
     }
 
     /* State */

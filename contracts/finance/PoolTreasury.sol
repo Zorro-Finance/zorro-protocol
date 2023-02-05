@@ -27,6 +27,9 @@ contract PoolTreasury is Initializable, OwnableUpgradeable, ReentrancyGuardUpgra
     ) public initializer {
         // Set Zorro token address
         ZORRO = _zorroTokenAddress;
+
+        // Set owner
+        __Ownable_init();
     }
 
     /* State */
@@ -65,4 +68,22 @@ contract PoolTreasury is Initializable, OwnableUpgradeable, ReentrancyGuardUpgra
 }
 
 /// @title TreasuryVestingWallet: The vesting wallet for ZOR tokens, redeemable by PoolTreasury
-contract TreasuryVestingWallet is VestingWalletUpgradeable {}
+contract TreasuryVestingWallet is VestingWalletUpgradeable {
+    /* Constructor */
+
+    /// @notice Constructor function to init the VestingWallet per OZ specs
+    /// @param _beneficiaryAddress Address of beneficiary of vesting wallet
+    /// @param _startTimestamp When to begin vesting
+    /// @param _durationSeconds How long vesting period is
+    function initialize(
+        address _beneficiaryAddress,
+        uint64 _startTimestamp,
+        uint64 _durationSeconds
+    ) public initializer {
+        super.__VestingWallet_init(
+            _beneficiaryAddress,
+            _startTimestamp,
+            _durationSeconds
+        );
+    }
+}
