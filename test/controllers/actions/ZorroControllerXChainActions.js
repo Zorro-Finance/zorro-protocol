@@ -90,7 +90,7 @@ contract('ZorroControllerXChainActions :: EarningsDistribution', async accounts 
         */
     });
 
-    it('Receives and fulfills an earnings distribution request', async accounts => {
+    it('Receives and fulfills an earnings distribution request', async () => {
         /* GIVEN
         - Buyback and revshare parameters
         */

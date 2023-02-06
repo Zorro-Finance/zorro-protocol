@@ -1,8 +1,8 @@
 const MockCustomMath = artifacts.require('MockCustomMath');
 
-contract('MockCustomMath', async accounts => {
+contract('Math', async accounts => {
     it('calculates the square root to reasonable accuracy', async () => {
-        let lib = await MockCustomMath.deployed();
+        const lib = await MockCustomMath.new();
 
         const factor = 1e4;
         const precision = 0.1;
