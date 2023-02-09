@@ -30,7 +30,7 @@ module.exports = async function (deployer, network, accounts) {
     const zcxInitVal = {
       defaultStablecoin: tokens.defaultStablecoin,
       ZORRO: zeroAddress,
-      zorroLPPoolOtherToken: network === homeNetwork ? tokens.wbnb : zeroAddress,
+      zorroLPPoolOtherToken: zeroAddress,
       zorroStakingVault: zeroAddress, // Must be set later
       uniRouterAddress: infra.uniRouterAddress,
       homeChainZorroController: zorroController.address,
@@ -41,7 +41,7 @@ module.exports = async function (deployer, network, accounts) {
         chainId: xChain.chainId,
         homeChainId: xChain.homeChainId,
         ZorroChainIDs: [xChain.chainId],
-        controllerContracts: [zorroController.address],
+        controllerContracts: [zeroAddress],
         LZChainIDs: [xChain.lzChainId],
         stargateDestPoolIds: [xChain.sgPoolId],
         stargateRouter: infra.stargateRouter,

@@ -1,6 +1,8 @@
 // TODO: Must fill out these values
 
-exports.zeroAddress = '0x0000000000000000000000000000000000000000';
+const zeroAddress = '0x0000000000000000000000000000000000000000';
+
+exports.zeroAddress = zeroAddress;
 
 exports.homeNetwork = 'bnb';
 
@@ -132,6 +134,38 @@ exports.chains = {
         cake: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
         masterChef: '0xa5f8C5Dbd5F286960b9d90548680aE5ebFf07652',
       },
+    },
+  },
+  bnbtest: {
+    tokens: {
+      defaultStablecoin: '0x1010Bb1b9Dff29e6233E7947e045e0ba58f6E92e', // BUSD
+    },
+    infra: {
+      layerZeroEndpoint: '0x6Fcb97553D41516Cb228ac03FdC8B9a0a9df04A1',
+      stargateRouter: '0xbB0f1be1E9CE9cB27EA5b0c3a85B7cc3381d8176',
+      uniRouterAddress: zeroAddress,
+    },
+    xChain: {
+      chainId: 0, // Zorro Chain ID (BNB)
+      homeChainId: 0, // ID of the Zorro Home Chain (BNB)
+      lzChainId: 10102,
+      sgPoolId: 5, // BUSD
+    },
+  },
+  avaxtest: {
+    tokens: {
+      defaultStablecoin: '0x4A0D1092E9df255cf95D72834Ea9255132782318', // USDC
+    },
+    infra: {
+      layerZeroEndpoint: '0x93f54D755A063cE7bB9e6Ac47Eccc8e33411d706',
+      stargateRouter: '0x13093E05Eb890dfA6DacecBdE51d24DabAb2Faa1',
+      uniRouterAddress: zeroAddress,
+    },
+    xChain: {
+      chainId: 1, // Zorro Chain ID (AVAX)
+      homeChainId: 0, // ID of the Zorro Home Chain (BNB)
+      lzChainId: 10106,
+      sgPoolId: 2, // USDT
     },
   },
 };
