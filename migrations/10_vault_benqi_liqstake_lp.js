@@ -18,7 +18,11 @@ const VaultTimelock = artifacts.require('VaultTimelock');
 const PoolTreasury = artifacts.require('PoolTreasury');
 
 module.exports = async function (deployer, network, accounts) {
-  /* Production */
+  // Chain check 
+  if (isTestNetwork(network)) {
+    console.log('On Testnet. Skipping...');
+    return;
+  }
   
   if (getSynthNetwork(network) === 'avax') {
     // Unpack keyParams

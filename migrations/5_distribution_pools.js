@@ -1,7 +1,7 @@
 // Upgrades
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Chain params
-const { getSynthNetwork, isTestNetwork } = require('../helpers/chains');
+const { getSynthNetwork, isDevNetwork, isTestNetwork } = require('../helpers/chains');
 const { homeNetwork, owners, defaultTimelockPeriodSecs, vesting, zeroAddress, ZORDistributions, ZORTotalDistribution } = require('../helpers/constants');
 // Migration
 const Migrations = artifacts.require("Migrations");
@@ -25,6 +25,12 @@ const Zorro = artifacts.require("Zorro");
 
 
 module.exports = async function (deployer, network, accounts) {
+  // Chain check 
+  if (isTestNetwork(network)) {
+    console.log('On Testnet. Skipping...');
+    return;
+  }
+  
   // Web3
   const adapter = Migrations.interfaceAdapter;
   const { web3 } = adapter;
@@ -37,8 +43,8 @@ module.exports = async function (deployer, network, accounts) {
   const zorroController = await ZorroController.deployed();
 
   // Deploy timelock controllers
-  const minDelay = isTestNetwork(network) ? 0 : defaultTimelockPeriodSecs;
-  const proposers = isTestNetwork(network) ? [accounts[0]] : owners;
+  const minDelay = isDevNetwork(network) ? 0 : defaultTimelockPeriodSecs;
+  const proposers = isDevNetwork(network) ? [accounts[0]] : owners;
 
   // Deploy ControllerTimelock
   const controllerTimelock = await deployProxy(ControllerTimelock, [
@@ -103,7 +109,7 @@ module.exports = async function (deployer, network, accounts) {
     await zorroToken.mint(treasuryVestingWallet.address, treasuryQty);
 
     // Deploy team vesting wallets
-    const modifiedOwners = isTestNetwork(network) ? [accounts[0]] : owners;
+    const modifiedOwners = isDevNetwork(network) ? [accounts[0]] : owners;
     for (let owner of modifiedOwners) {
       // Deploy contract
       const tvw = await TeamVestingWallet.new(

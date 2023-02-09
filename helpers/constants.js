@@ -37,6 +37,7 @@ exports.chains = {
       qi: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
     },
     priceFeeds: {
+      defaultStablecoin: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
       usdc: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
       usdt: '0xEBE676ee90Fe1112671f19b6B7459bC678B67e8a',
       avax: '0x0A77230d17318075983913bC2145DB16C7366156',
@@ -95,6 +96,7 @@ exports.chains = {
       eth: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
     },
     priceFeeds: {
+      defaultStablecoin: '0xcBb98864Ef56E9042e7d2efef76141f15731B82f',
       busd: '0xcBb98864Ef56E9042e7d2efef76141f15731B82f',
       bnb: '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE',
       cake: '0xB6064eD41d4f67e353768aA239cA86f4F73665a1',

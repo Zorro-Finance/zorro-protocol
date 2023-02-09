@@ -24,7 +24,11 @@ const PoolTreasury = artifacts.require('PoolTreasury');
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 
 module.exports = async function (deployer, network, accounts) {
-  /* Production */
+  // Chain check 
+  if (isTestNetwork(network)) {
+    console.log('On Testnet. Skipping...');
+    return;
+  }
 
   // Web3
   const adapter = Migrations.interfaceAdapter;

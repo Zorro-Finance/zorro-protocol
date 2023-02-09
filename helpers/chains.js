@@ -10,4 +10,5 @@ exports.getSynthNetwork = (network) => {
   return network;
 };
 
-exports.isTestNetwork = (network) => network.includes('fork');
+exports.isTestNetwork = (network) => network.includes('test');
+exports.isDevNetwork = (network) => network.includes('fork') || network.includes('test');

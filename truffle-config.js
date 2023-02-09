@@ -67,16 +67,25 @@ module.exports = {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-     },
-     avaxfork: {
-       url: process.env.GANACHE_CLOUD_URL,
-       network_id: 43114,
-     },
-     bnbfork: {
-       url: process.env.GANACHE_CLOUD_URL,
-       network_id: 56,
-     },
-
+    },
+    avaxfork: {
+      url: process.env.GANACHE_CLOUD_URL,
+      network_id: 43114,
+    },
+    bnbfork: {
+      url: process.env.GANACHE_CLOUD_URL,
+      network_id: 56,
+    },
+    avaxtest: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_AVAX_TEST, 'https://api.avax-test.network/ext/C/rpc'),
+      network_id: 43113,
+      confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+    },
+    bnbtest: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_BNB_TEST, 'https://data-seed-prebsc-1-s1.binance.org:8545'),
+      network_id: 97,
+      confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+    },
     // An additional network, but with some advanced options…
     // advanced: {
     //   port: 8777,             // Custom port
@@ -104,14 +113,14 @@ module.exports = {
     //   production: true    // Treats this network as if it was a public net. (default: false)
     // }
     bnb: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC_BNB, ''),
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_BNB, 'https://bsc-dataseed1.ninicoin.io'),
       network_id: 56,
       gas: 8500000,
       gasPrice: 20000000000,
       skipDryRun: false
     },
     avax: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC_AVAX, ''),
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_AVAX, 'https://api.avax.network/ext/bc/C/rpc'),
       network_id: 43114,
       gas: 8500000,
       gasPrice: 20000000000,
@@ -130,11 +139,11 @@ module.exports = {
       version: "0.8.10", // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
-       optimizer: {
-         enabled: true,
-         runs: 200
-       },
-       evmVersion: "byzantium"
+        optimizer: {
+          enabled: true,
+          runs: 200
+        },
+        evmVersion: "byzantium"
       }
     }
   },

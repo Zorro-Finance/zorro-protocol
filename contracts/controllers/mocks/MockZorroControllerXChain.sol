@@ -94,10 +94,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         require(_trancheId >= 0);
         require(_originRecipient.length >= 0);
 
-        emit ReceiveXChainRepatriationReq(
-            _originChainId,
-            _rewardsDue
-        );
+        emit ReceiveXChainRepatriationReq(_originChainId, _rewardsDue);
     }
 
     function mockReceiveXChainDistributionRequest(
@@ -184,9 +181,7 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         );
     }
 
-    function awardSlashedRewardsToStakers(uint256 _slashedZORRewards)
-        public
-    {
+    function awardSlashedRewardsToStakers(uint256 _slashedZORRewards) public {
         _awardSlashedRewardsToStakers(_slashedZORRewards);
     }
 }
@@ -246,7 +241,7 @@ contract MockLayerZeroEndpoint is ILayerZeroEndpoint {
         require(_dstChainId >= 0);
         require(_userApplication != address(0));
         require(_payload.length >= 0);
-        require(_payInZRO || !_payInZRO); 
+        require(_payInZRO || !_payInZRO);
         require(_adapterParam.length >= 0);
         require(_dummy >= 0);
 

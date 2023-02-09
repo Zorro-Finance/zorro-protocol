@@ -21,8 +21,11 @@ const ControllerTimelock = artifacts.require('ControllerTimelock');
 const ZORPriceFeed = artifacts.require("ZORPriceFeed");
 
 module.exports = async function (deployer, network, accounts) {
-  /* Production */
-
+  // Chain check 
+  if (isTestNetwork(network)) {
+    console.log('On Testnet. Skipping...');
+    return;
+  }
   
   if (getSynthNetwork(network) === homeNetwork) {
     /* Home chain */
