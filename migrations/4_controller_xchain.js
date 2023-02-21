@@ -21,6 +21,13 @@ module.exports = async function (deployer, network, accounts) {
   // Check network
   if (isTestNetwork(network)) {
     /* Testnet */
+
+    // Get key vars
+    const {
+      infra,
+      tokens,
+      xChain,
+    } = chains[network];
   
     // Deploy contracts
     const zcxActionsInitVal = [infra.stargateRouter, infra.layerZeroEndpoint, infra.uniRouterAddress];
@@ -33,8 +40,8 @@ module.exports = async function (deployer, network, accounts) {
       zorroLPPoolOtherToken: zeroAddress,
       zorroStakingVault: zeroAddress, // Must be set later
       uniRouterAddress: infra.uniRouterAddress,
-      homeChainZorroController: zorroController.address,
-      currentChainController: zorroController.address,
+      homeChainZorroController: zeroAddress,
+      currentChainController: zeroAddress,
       publicPool: zeroAddress, // Must be set later
       controllerActions: zorroControllerXChainActions.address,
       bridge: {

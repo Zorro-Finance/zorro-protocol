@@ -3,6 +3,7 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 // Get key params
 const {
   getSynthNetwork,
+  isTestNetwork,
 } = require('../helpers/chains');
 const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 

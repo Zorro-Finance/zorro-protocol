@@ -45,6 +45,6 @@ module.exports = async function (deployer, network, accounts) {
       stablecoin
     );
   } else {
-    console.log('Testnet identified. Skiping...');
+    console.log('Testnet identified. Skipping...');
   }
 };

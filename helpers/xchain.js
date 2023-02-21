@@ -13,7 +13,10 @@ const { zeroAddress } = require("./constants");
 */
 
 // Migration
-const MockZorroControllerXChain = artifacts.require('MockZorroControllerXChain');
+// const MockZorroControllerXChain = artifacts.require('MockZorroControllerXChain');
+// const ZorroControllerXChainActions = artifacts.require('ZorroControllerXChainActions');
+// const ERC20Upgradeable = artifacts.require('ERC20Upgradeable');
+
 // TODO: Other contract artifacts
 
 /* Setup */
@@ -73,17 +76,120 @@ exports.setup = async (network) => {
 
 // Send deposit //
 
-exports.sendDeposit = async () => {
-    // Allow spending of USD
+exports.sendDeposit = async (zcx, zcxa, usdc, web3, accounts) => {
+    // Get instance of deployed x chain contract
+    // const zcx = await MockZorroControllerXChain.deployed();
+    // const zcxa = await ZorroControllerXChainActions.deployed();
+
     // Encode payload via encodeXChainDepositPayload
+    const wallet = '0x051D87B2a00451c2463F8A5EFEFBF54d8945Cf0c'; // Truffle wallet testing
+    // const depositUSDC = web3.utils.toBN(web3.utils.toWei('1', 'micro'));
+    const depositUSDC = '10'
+    const payload = web3.eth.abi.encodeFunctionCall({
+        name: 'receiveXChainDepositRequest',
+        type: 'function',
+        inputs: [
+            {type: 'uint256', name: '_vid'},
+            {type: 'uint256', name: '_valueUSD'},
+            {type: 'uint256', name: '_weeksCommitted'},
+            {type: 'uint256', name: '_maxMarketMovement'},
+            {type: 'address', name: '_originWallet'},
+            {type: 'bytes', name: '_destWallet'},
+        ],
+    }, [
+        0,
+        depositUSDC,
+        0,
+        990,
+        wallet,
+        wallet,
+    ]);
+
+    console.log('deposit payload: ', payload);
+
     // Check fee via checkXChainDepositFee
+    const nativeFee = await zcxa.checkXChainDepositFee.call(
+        10102, // BNB
+        '0xCbaF3d0193b5f3ad92F39E7E4Efa6EBA2D211BA3', // ZCX contract on BNB side
+        payload
+    );
+
+    console.log('native fee: ', nativeFee.toString());
+
+    // Approve spending of USDC
+    await usdc.approve(zcx.address, depositUSDC);
+
     // Call sendXChainDepositRequest
+    await zcx.sendXChainDepositRequest(
+        10102,
+        0,
+        depositUSDC,
+        0,
+        990,
+        wallet,
+        {   from: accounts[0],
+            value: nativeFee,
+        }
+    );
+};
+
+// Clear stuck tx on destination chain
+exports.clearDestTx = async (stgRouterAddr, srcAddress, nonce, web3, accounts) => {
+    // Prep call to clearCachedSwap
+    const data = web3.eth.abi.encodeFunctionCall({
+        name: 'clearCachedSwap',
+        type: 'function',
+        inputs: [{
+            type: 'uint16',
+            name: '_srcChainId',
+        }, {
+            type: 'bytes',
+            name: '_srcAddress',
+        }, {
+            type: 'uint256',
+            name: '_nonce',
+        }],
+    }, [
+        10106,
+        srcAddress,
+        nonce,
+    ]);
+
+    // Send transcation
+    return web3.eth.sendTransaction({
+        from: accounts[0],
+        data,
+        to: stgRouterAddr,
+    });
 };
 
 // Check receive deposit //
-exports.receiveDeposit = async () => {
+exports.receiveDeposit = async (zcx, busd, web3, hexString, topics) => {
     // Listen for ReceiveXChainDepositReq event, ensure all event params match what was sent over
+    const inputs = [
+        {
+            type: 'uint256',
+            name: '_vid',
+            indexed: true,
+        },
+        {
+            type: 'uint256',
+            name: '_valueUSD',
+            indexed: true,
+        },
+        {
+            type: 'address',
+            name: '_destAccount',
+            indexed: true,
+        },
+    ];
+
+    const decodedLog = web3.eth.abi.decodedLog(inputs, hexString, topics);
+    console.log('Decoded log for ReceiveXChainDepositReq event: ', JSON.stringify(decodedLog));
+
     // Upon receipt, check to see balance of USD, ensure matches the amount sent minus fee
+    const busdBal = await busd.balanceOf.call(zcx.address);
+    console.log('BUSD bal after xchain: ', busdBal.toString());
 };
 
 /* Withdrawals */
@@ -104,14 +210,15 @@ exports.receiveWithdrawal = async () => {
 /* Utilities */
 
 // Get USD (stablecoin) from native
-exports.mintStablecoin = async (network, amount) => {
-    // Get stablecoin ERC20 address
-    if (network === 'avaxtest') {
-        const stablecoinAddress = '0x4A0D1092E9df255cf95D72834Ea9255132782318';
-    } else if (network === 'bnbtest') {
-        const stablecoinAddress = '0xF49E250aEB5abDf660d643583AdFd0be41464EfD';
-    }
+exports.mintStablecoin = async (stablecoin, destination, amount) => {
+    // // Get stablecoin ERC20 address
+    // if (network === 'avaxtest') {
+    //     const stablecoinAddress = '0x4A0D1092E9df255cf95D72834Ea9255132782318';
+    // } else if (network === 'bnbtest') {
+    //     const stablecoinAddress = '0x1010bb1b9dff29e6233e7947e045e0ba58f6e92e';
+    // }
 
-    // TODO: call ERC20.mint() function and send to self
+    // Mint and send to self
+    await stablecoin.mint(destination, amount);
 };
 

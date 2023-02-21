@@ -44,7 +44,7 @@
 // require('dotenv').config();
 // const { MNEMONIC, PROJECT_ID } = process.env;
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 module.exports = {
   /**
@@ -77,14 +77,20 @@ module.exports = {
       network_id: 56,
     },
     avaxtest: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC_AVAX_TEST, 'https://api.avax-test.network/ext/C/rpc'),
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_TEST, 'https://api.avax-test.network/ext/bc/C/rpc'),
       network_id: 43113,
-      confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+      // confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true,     // Skip dry run before migrations? (default: false for public nets )
+      networkCheckTimeout: 10000,
     },
     bnbtest: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC_BNB_TEST, 'https://data-seed-prebsc-1-s1.binance.org:8545'),
+      provider: () => new HDWalletProvider(process.env.MNEMONIC_TEST, 'https://data-seed-prebsc-1-s1.binance.org:8545'),
       network_id: 97,
-      confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+      // confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true,     // Skip dry run before migrations? (default: false for public nets )
+      networkCheckTimeout: 10000,
     },
     // An additional network, but with some advanced options…
     // advanced: {
