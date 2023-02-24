@@ -163,7 +163,7 @@ exports.chains = {
     },
     xChain: {
       chainId: 1, // Zorro Chain ID (AVAX)
-      homeChainId: 0, // ID of the Zorro Home Chain (BNB)
+      homeChainId: 0, // ID of the Zorro Home Chain 
       lzChainId: 10106,
       sgPoolId: 2, // USDT
     },

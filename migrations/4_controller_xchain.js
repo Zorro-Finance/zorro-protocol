@@ -53,7 +53,7 @@ module.exports = async function (deployer, network, accounts) {
         stargateDestPoolIds: [xChain.sgPoolId],
         stargateRouter: infra.stargateRouter,
         layerZeroEndpoint: infra.layerZeroEndpoint,
-        stargateSwapPoolId: 0, // TODO: Change this to the real value. It's just a placeholder
+        stargateSwapPoolId: xChain.sgPoolId,
       },
       swaps: {
         stablecoinToZorroPath: [],

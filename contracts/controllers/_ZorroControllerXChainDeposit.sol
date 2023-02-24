@@ -28,13 +28,15 @@ contract ZorroControllerXChainDeposit is
     /// @param _weeksCommitted Number of weeks to commit to a vault
     /// @param _maxMarketMovement Acceptable degree of slippage on any transaction (e.g. 950 = 5%, 990 = 1% etc.)
     /// @param _destWallet A valid address on the remote chain that can claim ownership
+    /// @param _dstGasForCall Amount of gas to spend on the cross chain transaction
     function sendXChainDepositRequest(
         uint256 _zorroChainId,
         uint256 _vid,
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
-        bytes memory _destWallet
+        bytes memory _destWallet,
+        uint256 _dstGasForCall
     ) external payable nonReentrant {
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
@@ -72,7 +74,8 @@ contract ZorroControllerXChainDeposit is
                 qty: _balUSD,
                 dstContract: _dstContract,
                 payload: _payload,
-                maxMarketMovement: _maxMarketMovement
+                maxMarketMovement: _maxMarketMovement,
+                dstGasForCall: _dstGasForCall
             })
         );
     }

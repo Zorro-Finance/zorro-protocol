@@ -93,6 +93,7 @@ module.exports = async function (deployer, network, accounts) {
           lpPoolOtherTokenPriceFeed: zeroAddress,
           stablecoinPriceFeed: priceFeeds.usdc,
         },
+        dstGasForEarningsCall: 100000,
       },
       liquidStakeToken: protocols.benqi.savax,
       liquidStakingPool: protocols.benqi.avaxLendingPool,

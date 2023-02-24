@@ -83,14 +83,19 @@ contract ZorroControllerXChainActions is IZorroControllerXChainActions, OwnableU
     /// @param _lzChainId The LayerZero Chain ID (not the Zorro one)
     /// @param _dstContract The destination contract address on the remote chain
     /// @param _payload The byte encoded cross chain payload (use encodeXChainDepositPayload() below)
+    /// @param _dstGasForCall The amount of gas to send on the destination chain for composable contract execution
     /// @return nativeFee Expected fee to pay for bridging/cross chain execution
     function checkXChainDepositFee(
         uint16 _lzChainId,
         bytes memory _dstContract,
-        bytes memory _payload
+        bytes memory _payload,
+        uint256 _dstGasForCall
     ) external view returns (uint256 nativeFee) {
         // Init empty LZ object
         IStargateRouter.lzTxObj memory _lzTxParams;
+
+        // Tack on xchain contract gas fee
+        _lzTxParams.dstGasForCall = _dstGasForCall;
 
         // Calculate native gas fee and ZRO token fee (Layer Zero token)
         (nativeFee, ) = IStargateRouter(stargateRouter).quoteLayerZeroFee(

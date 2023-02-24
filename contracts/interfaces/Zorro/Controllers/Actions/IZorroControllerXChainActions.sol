@@ -54,7 +54,8 @@ interface IZorroControllerXChainActions {
     function checkXChainDepositFee(
         uint16 _lzChainId,
         bytes memory _dstContract,
-        bytes memory _payload
+        bytes memory _payload,
+        uint256 _dstGasForCall
     ) external view returns (uint256 nativeFee);
 
     function encodeXChainDepositPayload(

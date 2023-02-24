@@ -72,6 +72,7 @@ contract ZorroControllerXChainWithdraw is
     /// @param _amountUSD Amount withdrawn, to be repatriated
     /// @param _rewardsDue ZOR rewards due to the recipient
     /// @param _maxMarketMovementAllowed Acceptable slippage (950 = 5%, 990 = 1%, etc.)
+    /// @param _dstGasForCall Amount of gas to send for cross chain message
     function _sendXChainRepatriationRequest(
         uint256 _originChainId,
         uint256 _vid,
@@ -79,7 +80,8 @@ contract ZorroControllerXChainWithdraw is
         bytes memory _originRecipient,
         uint256 _amountUSD,
         uint256 _rewardsDue,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        uint256 _dstGasForCall
     ) internal {
         // Prep payload
         bytes memory _payload = ZorroControllerXChainActions(controllerActions)
@@ -100,7 +102,8 @@ contract ZorroControllerXChainWithdraw is
                 qty: _amountUSD,
                 dstContract: _dstContract,
                 payload: _payload,
-                maxMarketMovement: _maxMarketMovementAllowed
+                maxMarketMovement: _maxMarketMovementAllowed,
+                dstGasForCall: _dstGasForCall
             })
         );
     }
@@ -116,7 +119,8 @@ contract ZorroControllerXChainWithdraw is
         bytes memory _originAccount,
         uint256 _vid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) public {
         // Revert to make sure this function never gets called
         require(false, "illegal dummy func call");
@@ -127,7 +131,8 @@ contract ZorroControllerXChainWithdraw is
             _originAccount,
             _vid,
             _trancheId,
-            _maxMarketMovement
+            _maxMarketMovement,
+            _dstGasForCall
         );
     }
 
@@ -137,12 +142,14 @@ contract ZorroControllerXChainWithdraw is
     /// @param _vid Vault ID to withdraw from
     /// @param _trancheId Tranche ID to withdraw from
     /// @param _maxMarketMovement Slippage factor (e.g. 950 = 5%, 990 = 1%, etc.)
+    /// @param _dstGasForCall Amount of gas to send for cross chain message
     function _receiveXChainWithdrawalRequest(
         uint256 _originChainId,
         bytes memory _originAccount,
         uint256 _vid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) internal virtual {
         // Get on-chain account using foreign account as guide
         address _account = ZorroControllerInvestment(currentChainController)
@@ -174,7 +181,8 @@ contract ZorroControllerXChainWithdraw is
             _originAccount,
             _balUSD,
             _rewardsDue,
-            _maxMarketMovement
+            _maxMarketMovement,
+            _dstGasForCall
         );
     }
 

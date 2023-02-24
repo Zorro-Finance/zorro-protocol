@@ -142,8 +142,11 @@ contract ZorroControllerXChainBase is
             _swapPayload.qty
         );
 
-        // Swap call
+        // Specify gas for cross chain message
         IStargateRouter.lzTxObj memory _lzTxObj;
+        _lzTxObj.dstGasForCall = _swapPayload.dstGasForCall;
+
+        // Swap call
         IStargateRouter(stargateRouter).swap{value: msg.value}(
             ZorroChainToLZMap[_swapPayload.chainId],
             stargateSwapPoolId,

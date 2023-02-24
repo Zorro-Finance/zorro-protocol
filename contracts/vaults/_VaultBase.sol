@@ -35,7 +35,10 @@ abstract contract VaultBase is
     /// @notice default initializer (internal). MUST be called by all child contracts in their initializer
     /// @param _timelockOwner The timelock contract adddress that should be established as owner
     /// @param _initValue: The VaultBaseInit struct that contains base init values
-    function _initialize(address _timelockOwner, VaultBaseInit memory _initValue) internal {
+    function _initialize(
+        address _timelockOwner,
+        VaultBaseInit memory _initValue
+    ) internal {
         // Ownable
         __Ownable_init();
 
@@ -110,6 +113,7 @@ abstract contract VaultBase is
         // Other
         burnAddress = 0x000000000000000000000000000000000000dEaD;
         maxMarketMovementAllowed = 985;
+        dstGasForEarningsCall = _initValue.dstGasForEarningsCall;
     }
 
     /* Constants */
@@ -178,6 +182,7 @@ abstract contract VaultBase is
 
     // Other
     uint256 public maxMarketMovementAllowed; // Default slippage param (used when not overriden)
+    uint256 public dstGasForEarningsCall; // Gas for cross chain earnings message
 
     /* Modifiers */
 
@@ -346,6 +351,10 @@ abstract contract VaultBase is
         onlyOwner
     {
         maxMarketMovementAllowed = _slippageNumerator;
+    }
+
+    function setDstGasForEarningsCall(uint256 _amount) external onlyOwner {
+        dstGasForEarningsCall = _amount;
     }
 
     /* Investment Functions */
@@ -578,7 +587,8 @@ abstract contract VaultBase is
                 .sendXChainDistributeEarningsRequest(
                     _xChainBuybackAmt,
                     _xChainRevShareAmt,
-                    maxMarketMovementAllowed
+                    maxMarketMovementAllowed,
+                    dstGasForEarningsCall
                 );
         }
 

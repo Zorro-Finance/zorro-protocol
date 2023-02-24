@@ -104,6 +104,7 @@ module.exports = async function (deployer, network, accounts) {
           lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
           stablecoinPriceFeed: priceFeeds.busd,
         },
+        dstGasForEarningsCall: 100000,
       },
       // TODO: fill in with real address
       lendingToken: zeroAddress,

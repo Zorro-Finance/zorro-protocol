@@ -81,6 +81,9 @@ exports.sendDeposit = async (zcx, zcxa, usdc, web3, accounts) => {
     // const zcx = await MockZorroControllerXChain.deployed();
     // const zcxa = await ZorroControllerXChainActions.deployed();
 
+    // Dest gas
+    const dstGas = 500000; // 58000
+
     // Encode payload via encodeXChainDepositPayload
     const wallet = '0x051D87B2a00451c2463F8A5EFEFBF54d8945Cf0c'; // Truffle wallet testing
     // const depositUSDC = web3.utils.toBN(web3.utils.toWei('1', 'micro'));
@@ -110,8 +113,9 @@ exports.sendDeposit = async (zcx, zcxa, usdc, web3, accounts) => {
     // Check fee via checkXChainDepositFee
     const nativeFee = await zcxa.checkXChainDepositFee.call(
         10102, // BNB
-        '0xCbaF3d0193b5f3ad92F39E7E4Efa6EBA2D211BA3', // ZCX contract on BNB side
-        payload
+        '0x5Bc4a53d8AABadb39d25e66f49927076e4EF6d86', // ZCX contract on BNB side
+        payload,
+        dstGas
     );
 
     console.log('native fee: ', nativeFee.toString());
@@ -121,12 +125,13 @@ exports.sendDeposit = async (zcx, zcxa, usdc, web3, accounts) => {
 
     // Call sendXChainDepositRequest
     await zcx.sendXChainDepositRequest(
-        10102,
+        1,
         0,
         depositUSDC,
         0,
         990,
         wallet,
+        dstGas,
         {   from: accounts[0],
             value: nativeFee,
         }

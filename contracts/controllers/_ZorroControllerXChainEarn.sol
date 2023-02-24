@@ -96,10 +96,12 @@ contract ZorroControllerXChainEarn is
     /// @param _buybackAmountUSD Amount in USD to buy back
     /// @param _revShareAmountUSD Amount in USD to revshare w/ ZOR single staking vault
     /// @param _maxMarketMovement Acceptable slippage (950 = 5%, 990 = 1% etc.)
+    /// @param _dstGasForCall Gas to send for cross chain message
     function sendXChainDistributeEarningsRequest(
         uint256 _buybackAmountUSD,
         uint256 _revShareAmountUSD,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) public payable nonReentrant onlyRegisteredVault {
         // Require funds to be submitted with this message
         require(msg.value > 0, "No fees submitted");
@@ -142,7 +144,8 @@ contract ZorroControllerXChainEarn is
                 qty: _balUSD,
                 dstContract: _dstContract,
                 payload: _payload,
-                maxMarketMovement: _maxMarketMovement
+                maxMarketMovement: _maxMarketMovement,
+                dstGasForCall: _dstGasForCall
             })
         );
     }

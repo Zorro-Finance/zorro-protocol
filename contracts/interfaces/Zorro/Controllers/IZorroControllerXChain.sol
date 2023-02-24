@@ -19,6 +19,7 @@ interface IZorroControllerXChainBase {
         bytes dstContract;
         bytes payload;
         uint256 maxMarketMovement;
+        uint256 dstGasForCall;
     }
 
     // LayerZero messages
@@ -61,7 +62,8 @@ interface IZorroControllerXChainDeposit is IZorroControllerXChainBase {
         uint256 _valueUSD,
         uint256 _weeksCommitted,
         uint256 _maxMarketMovement,
-        bytes memory _destWallet
+        bytes memory _destWallet,
+        uint256 _dstGasForCall
     ) external payable;
 
     function receiveXChainDepositRequest(
@@ -104,7 +106,8 @@ interface IZorroControllerXChainEarn is IZorroControllerXChainBase {
     function sendXChainDistributeEarningsRequest(
         uint256 _buybackAmountUSD,
         uint256 _revShareAmountUSD,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) external payable;
 
     function receiveXChainDistributionRequest(
@@ -142,7 +145,8 @@ interface IZorroControllerXChainWithdraw is IZorroControllerXChainBase {
         bytes memory _originAccount,
         uint256 _vid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) external;
 
     function receiveXChainRepatriationRequest(

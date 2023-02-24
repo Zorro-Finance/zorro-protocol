@@ -21,18 +21,11 @@ contract ZorroControllerXChainReceiver is
     ZorroControllerXChainEarn
 {
     /* Modifiers */
-    /// @notice Ensures cross chain request is coming from a recognized controller
-    /// @param _lzChainId Layer Zero chain ID
-    /// @param _callingContract The cross chain sender (should be a Zorro controller)
-    modifier onlyRegXChainController(
-        uint16 _lzChainId,
-        bytes memory _callingContract
-    ) {
-        uint256 _zChainId = LZChainToZorroMap[_lzChainId];
+    /// @notice Ensures cross chain request is coming only from a LZ endpoint or STG router address
+    modifier onlyRegEndpoint() {
         require(
-            keccak256(controllerContractsMap[_zChainId]) ==
-                keccak256(_callingContract),
-            "Unrecog xchain controller"
+            msg.sender == layerZeroEndpoint || msg.sender == stargateRouter,
+            "Unrecog xchain sender"
         );
         _;
     }
@@ -48,8 +41,10 @@ contract ZorroControllerXChainReceiver is
         address _token,
         uint256 amountLD,
         bytes memory payload
-    ) public override onlyRegXChainController(_chainId, _srcAddress) {
+    ) public override onlyRegEndpoint {
         // Checks / authorization
+        require(_chainId >= 0);
+        require(_srcAddress.length > 0);
         require(_nonce >= 0);
         // Amounts
         uint256 _tokenBal = IERC20(_token).balanceOf(address(this));
@@ -139,9 +134,12 @@ contract ZorroControllerXChainReceiver is
         bytes calldata _srcAddress,
         uint64 _nonce,
         bytes calldata _payload
-    ) external override onlyRegXChainController(_srcChainId, _srcAddress) {
+    ) external override onlyRegEndpoint() {
         // Check requirements
+        require(_srcChainId >= 0);
+        require(_srcAddress.length > 0);
         require(_nonce >= 0);
+
         // Determine function based on signature
         // Get func signature
         bytes4 _funcSig = bytes4(_payload);
@@ -157,10 +155,11 @@ contract ZorroControllerXChainReceiver is
                 bytes memory _originAccount,
                 uint256 _vid,
                 uint256 _trancheId,
-                uint256 _maxMarketMovement
+                uint256 _maxMarketMovement,
+                uint256 _dstGasForCall
             ) = abi.decode(
                     _paramsPayload,
-                    (uint256, bytes, uint256, uint256, uint256)
+                    (uint256, bytes, uint256, uint256, uint256, uint256)
                 );
 
             // Call receiving function for cross chain withdrawals
@@ -170,7 +169,8 @@ contract ZorroControllerXChainReceiver is
                 _originAccount,
                 _vid,
                 _trancheId,
-                _maxMarketMovement
+                _maxMarketMovement,
+                _dstGasForCall
             );
         } else {
             revert("Unrecognized func");

@@ -110,6 +110,7 @@ module.exports = async function (deployer, network, accounts) {
           lpPoolOtherTokenPriceFeed: priceFeeds.bnb,
           stablecoinPriceFeed: priceFeeds.busd,
         },
+        dstGasForEarningsCall: 100000,
       },
       targetBorrowLimit: web3.utils.toWei('700', 'milli'), // 1% = 1e16
       targetBorrowLimitHysteresis: web3.utils.toWei('10', 'milli'), // 1% = 1e16

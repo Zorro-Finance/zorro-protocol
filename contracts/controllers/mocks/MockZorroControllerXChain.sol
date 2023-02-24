@@ -136,14 +136,16 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         bytes memory _originAccount,
         uint256 _vid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) public {
         _receiveXChainWithdrawalRequest(
             _originChainId,
             _originAccount,
             _vid,
             _trancheId,
-            _maxMarketMovement
+            _maxMarketMovement,
+            _dstGasForCall
         );
     }
 
@@ -152,11 +154,13 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         bytes memory _originAccount,
         uint256 _vid,
         uint256 _trancheId,
-        uint256 _maxMarketMovement
+        uint256 _maxMarketMovement,
+        uint256 _dstGasForCall
     ) internal override {
         // Requirements
         require(_originAccount.length >= 0);
         require(_maxMarketMovement > 0);
+        require(_dstGasForCall >= 0);
 
         emit ReceiveXChainWithdrawalReq(_originChainId, _vid, _trancheId);
     }
@@ -168,7 +172,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
         bytes memory _originRecipient,
         uint256 _amountUSD,
         uint256 _rewardsDue,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        uint256 _dstGasForCall
     ) public payable {
         _sendXChainRepatriationRequest(
             _originChainId,
@@ -177,7 +182,8 @@ contract MockZorroControllerXChain is ZorroControllerXChain {
             _originRecipient,
             _amountUSD,
             _rewardsDue,
-            _maxMarketMovementAllowed
+            _maxMarketMovementAllowed,
+            _dstGasForCall
         );
     }
 

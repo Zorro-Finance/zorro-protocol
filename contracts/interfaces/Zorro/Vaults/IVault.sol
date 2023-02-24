@@ -14,6 +14,7 @@ interface IVault {
         VaultSwapPaths swapPaths;
         VaultFees fees;
         VaultPriceFeeds priceFeeds;
+        uint256 dstGasForEarningsCall;
     }
 
     struct VaultConfig {

@@ -105,6 +105,7 @@ module.exports = async function (deployer, network, accounts) {
           lpPoolOtherTokenPriceFeed: zeroAddress,
           stablecoinPriceFeed: priceFeeds.usdc,
         },
+        dstGasForEarningsCall: 100000,
       },
       stargateRouter: infra.stargateRouter,
       stargatePoolId: 2,
