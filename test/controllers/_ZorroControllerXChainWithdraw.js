@@ -2,7 +2,7 @@
 // Includes all tests for processing cross chain withdrawals
 
 contract('ZorroControllerXChainWithdraw :: Sending', async accounts => {
-    it('Sends cross chain withdrawal request', async () => {
+    xit('Sends cross chain withdrawal request', async () => {
         /* GIVEN
         - As a public user
         */

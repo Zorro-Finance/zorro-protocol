@@ -2,7 +2,7 @@
 // Includes all tests for calculating shares/rewards of Zorro investors
 
 contract('ZorroController :: Analytics', async accounts => {
-    it('Calculates pending Zorro rewards for a single tranche', async () => {
+    xit('Calculates pending Zorro rewards for a single tranche', async () => {
         /* GIVEN
         - As a public user who has invested into a vault
         */
@@ -16,7 +16,7 @@ contract('ZorroController :: Analytics', async accounts => {
         */
     });
 
-    it('Calculates pending Zorro rewards for multiple tranches', async () => {
+    xit('Calculates pending Zorro rewards for multiple tranches', async () => {
         /* GIVEN
         - As a public user who has invested into a vault multiple times
         */
@@ -30,7 +30,7 @@ contract('ZorroController :: Analytics', async accounts => {
         */
     });
 
-    it('Gets number of shares for an account on a single tranche', async () => {
+    xit('Gets number of shares for an account on a single tranche', async () => {
         /* GIVEN
         - As a public user who has invested into a vault
         */
@@ -44,7 +44,7 @@ contract('ZorroController :: Analytics', async accounts => {
         */
     });
 
-    it('Gets number of shares for an account across multiple tranches', async () => {
+    xit('Gets number of shares for an account across multiple tranches', async () => {
         /* GIVEN
         - As a public user who has invested into a vault
         */

@@ -116,7 +116,7 @@ module.exports = async function (deployer, network, accounts) {
       },
       priceFeeds: {
         priceFeedZOR: network === homeNetwork ? zorPriceFeed.address: zeroAddress,
-        priceFeedLPPoolOtherToken: network === homeNetwork ? priceFeeds.bnb : network === homeNetwork,
+        priceFeedLPPoolOtherToken: network === homeNetwork ? priceFeeds.bnb : zeroAddress,
         priceFeedStablecoin: priceFeeds.defaultStablecoin,
       },
     };

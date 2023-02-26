@@ -2,7 +2,7 @@
 // Test for common utilities functions of lending vaults
 
 contract('VaultActionsLending :: Analytics', async accounts => {
-    it('Calculates current want equity', async () => {
+    xit('Calculates current want equity', async () => {
         /* GIVEN
         - As a public user
         */
@@ -16,7 +16,7 @@ contract('VaultActionsLending :: Analytics', async accounts => {
         */
     });
 
-    it('Calculates leveraged lending parameters', async () => {
+    xit('Calculates leveraged lending parameters', async () => {
         /* GIVEN
         - As a public user
         - Withdrawal amount, supply of underlying pool, comptroller address, 
@@ -33,7 +33,7 @@ contract('VaultActionsLending :: Analytics', async accounts => {
         */
     });
 
-    it('Calculates incremental borrow amount when below leverage target', async () => {
+    xit('Calculates incremental borrow amount when below leverage target', async () => {
         /* GIVEN
         - As a vault
         - My total leverage position for a lending pool is under the target leverage threshold
@@ -48,7 +48,7 @@ contract('VaultActionsLending :: Analytics', async accounts => {
         */
     });
 
-    it('Calculates incremental over-borrow amount when above leverage target', async () => {
+    xit('Calculates incremental over-borrow amount when above leverage target', async () => {
         /* GIVEN
         - As a vault
         - My total leverage position for a lending pool is over the target leverage threshold
@@ -63,7 +63,7 @@ contract('VaultActionsLending :: Analytics', async accounts => {
         */
     });
 
-    it('Calculates adjusted want token quantity, accounting for supply/borrow position', async () => {
+    xit('Calculates adjusted want token quantity, accounting for supply/borrow position', async () => {
         /* GIVEN
         - As a public user 
         */

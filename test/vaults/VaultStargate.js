@@ -2,7 +2,7 @@
 // Tests for all functions for Stargate vaults
 
 contract('VaultStargate :: Setters', async accounts => {
-    it('Sets key Stargate addresses', async () => {
+    xit('Sets key Stargate addresses', async () => {
         /* GIVEN
         - As the owner of the vault (timelock)
         */
@@ -18,7 +18,7 @@ contract('VaultStargate :: Setters', async accounts => {
 });
 
 contract('VaultStargate :: Investments', async accounts => {
-    it('Deposits', async () => {
+    xit('Deposits', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -36,7 +36,7 @@ contract('VaultStargate :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges USD to Want', async () => {
+    xit('Exchanges USD to Want', async () => {
         /* GIVEN
         - As a public user
         */
@@ -51,7 +51,7 @@ contract('VaultStargate :: Investments', async accounts => {
         */
     });
 
-    it('Withdraws', async () => {
+    xit('Withdraws', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -70,7 +70,7 @@ contract('VaultStargate :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges Want to USD', async () => {
+    xit('Exchanges Want to USD', async () => {
         /* GIVEN
         - As a public user
         */
@@ -87,7 +87,7 @@ contract('VaultStargate :: Investments', async accounts => {
 });
 
 contract('VaultBase :: Earnings', async accounts => {
-    it('Autocompounds successfullly', async () => {
+    xit('Autocompounds successfullly', async () => {
         /* GIVEN
         - As a public user
         - Enough blocks have elapsed such that harvestable earnings are present

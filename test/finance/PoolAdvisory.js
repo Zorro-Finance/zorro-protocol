@@ -2,7 +2,7 @@
 // Includes all tests for Zorro advisory pool
 
 contract('PoolAdvisory', async accounts => {
-    it('Registers new advisors with the appropriate amount of shares', async () => {
+    xit('Registers new advisors with the appropriate amount of shares', async () => {
         /* GIVEN
         - As the owner (timelock proposer)
         - With ZOR tokens already stored on this contract

@@ -2,7 +2,7 @@
 // Includes all tests for ZorroController contract utilities
 
 contract('ZorroControllerActions :: Investments', async accounts => {
-    it('Calculates rewards due and slashed rewards for a given tranche', async () => {
+    xit('Calculates rewards due and slashed rewards for a given tranche', async () => {
         /* GIVEN
         - As a public user
         */
@@ -16,7 +16,7 @@ contract('ZorroControllerActions :: Investments', async accounts => {
         */
     });
 
-    it('Calculates time multiplier factor for a given duration', async () => {
+    xit('Calculates time multiplier factor for a given duration', async () => {
         /* GIVEN
         - As a public user
         */
@@ -31,7 +31,7 @@ contract('ZorroControllerActions :: Investments', async accounts => {
         */
     });
 
-    it('Calculate shares, adjusted for time multiplier', async () => {
+    xit('Calculate shares, adjusted for time multiplier', async () => {
         /* GIVEN
         - As a public user
         - A number of shares and a time multiplier value

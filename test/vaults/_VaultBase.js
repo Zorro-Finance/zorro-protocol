@@ -1,8 +1,19 @@
 // VaultBase tests
 // Tests for all functions common to all vaults
 
+const StargateUSDTOnAVAX = artifacts.require('StargateUSDTOnAVAX');
+
 contract('VaultBase :: Setters', async accounts => {
-    it('Sets pool ID of underlying pool', async () => {
+    // Setup
+    let vault;
+
+    // Hook: Before all tests
+    before(async () => {
+        vault = await StargateUSDTOnAVAX.new();
+        console.log('loaded vault: ', vault.address);
+    });
+
+    xit('Sets pool ID of underlying pool', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -16,7 +27,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets all key contract addresses', async () => {
+    xit('Sets all key contract addresses', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -30,7 +41,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets price feed', async () => {
+    xit('Sets price feed', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -44,7 +55,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets swap paths', async () => {
+    xit('Sets swap paths', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -58,7 +69,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets governor parameters', async () => {
+    xit('Sets governor parameters', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -72,7 +83,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets fee settings', async () => {
+    xit('Sets fee settings', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -86,7 +97,7 @@ contract('VaultBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets slippage parameter', async () => {
+    xit('Sets slippage parameter', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */

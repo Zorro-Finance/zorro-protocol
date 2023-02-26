@@ -2,7 +2,7 @@
 // Includes all tests for Zorro treasury pool
 
 contract('PoolTreasury :: Setters', async accounts => {
-    it('Sets the treasury vesting wallet', async () => {
+    xit('Sets the treasury vesting wallet', async () => {
         /* GIVEN
         - As the owner (timelock proposer)
         */
@@ -18,7 +18,7 @@ contract('PoolTreasury :: Setters', async accounts => {
 });
 
 contract('PoolTreasury :: CashFlow', async accounts => {
-    it('Receives ETH', async () => {
+    xit('Receives ETH', async () => {
         /* GIVEN
         - A treasury pool contract
         */
@@ -32,7 +32,7 @@ contract('PoolTreasury :: CashFlow', async accounts => {
         */
     });
 
-    it('Redeems ZOR rewards from the connected vesting wallet (only owner)', async () => {
+    xit('Redeems ZOR rewards from the connected vesting wallet (only owner)', async () => {
         /* GIVEN
         - As the owner (timelock executor)
         */
@@ -46,7 +46,7 @@ contract('PoolTreasury :: CashFlow', async accounts => {
         */
     });
 
-    it('Withdraws ETH (only owner)', async () => {
+    xit('Withdraws ETH (only owner)', async () => {
         /* GIVEN
         - As the owner (timelock executor)
         */
@@ -60,7 +60,7 @@ contract('PoolTreasury :: CashFlow', async accounts => {
         */
     });
 
-    it('Withdraws ERC20 tokens (only owner)', async () => {
+    xit('Withdraws ERC20 tokens (only owner)', async () => {
         /* GIVEN
         - As the owner (timelock executor)
         */

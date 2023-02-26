@@ -2,7 +2,7 @@
 // Tests for Benqi lending vaults' utilities
 
 contract('VaultActionsBenqiLending :: Utilities', async accounts => {
-    it('Gets collateral factor', async () => {
+    xit('Gets collateral factor', async () => {
         /* GIVEN
         - As a public user
         */

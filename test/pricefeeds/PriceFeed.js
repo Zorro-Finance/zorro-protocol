@@ -2,7 +2,7 @@
 // Includes all tests for custom price feeds
 
 contract('PriceFeedAggBase', async accounts => {
-    it('Fetches latest round data from AMM', async () => {
+    xit('Fetches latest round data from AMM', async () => {
         /* GIVEN
         - A price feed contract that derives its round data from an AMM (e.g. Uniswap)
         */

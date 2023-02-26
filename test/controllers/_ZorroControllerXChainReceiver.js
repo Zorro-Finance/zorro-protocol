@@ -2,7 +2,7 @@
 // Includes all tests for receiving cross chain events
 
 contract('ZorroControllerXChainReceiver :: Receivers', async accounts => {
-    it('Receives Stargate deposit message', async () => {
+    xit('Receives Stargate deposit message', async () => {
         /* GIVEN
         - As a registered cross chain controller
         */
@@ -16,7 +16,7 @@ contract('ZorroControllerXChainReceiver :: Receivers', async accounts => {
         */
     });
 
-    it('Receives Stargate repatriation message', async () => {
+    xit('Receives Stargate repatriation message', async () => {
         /* GIVEN
         - As a registered cross chain controller
         */
@@ -30,7 +30,7 @@ contract('ZorroControllerXChainReceiver :: Receivers', async accounts => {
         */
     });
 
-    it('Receives Stargate earnings distribution message', async () => {
+    xit('Receives Stargate earnings distribution message', async () => {
         /* GIVEN
         - As a registered cross chain controller
         */
@@ -44,7 +44,7 @@ contract('ZorroControllerXChainReceiver :: Receivers', async accounts => {
         */
     });
 
-    it('Receives LayerZero message', async () => {
+    xit('Receives LayerZero message', async () => {
         /* GIVEN
         - As a registered cross chain controller
         */

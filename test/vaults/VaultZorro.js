@@ -2,7 +2,7 @@
 // Tests for all functions for the Zorro staking vault
 
 contract('VaultZorro :: Investments', async accounts => {
-    it('Deposits', async () => {
+    xit('Deposits', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -20,7 +20,7 @@ contract('VaultZorro :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges USD to Want', async () => {
+    xit('Exchanges USD to Want', async () => {
         /* GIVEN
         - As a public user
         */
@@ -35,7 +35,7 @@ contract('VaultZorro :: Investments', async accounts => {
         */
     });
 
-    it('Withdraws', async () => {
+    xit('Withdraws', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -54,7 +54,7 @@ contract('VaultZorro :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges Want to USD', async () => {
+    xit('Exchanges Want to USD', async () => {
         /* GIVEN
         - As a public user
         */

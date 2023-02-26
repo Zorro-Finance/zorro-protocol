@@ -2,7 +2,7 @@
 // Includes all tests for cross chain deposits
 
 contract('ZorroControllerXChainDeposit :: Sending', async accounts => {
-    it('Sends a cross chain deposit request', async () => {
+    xit('Sends a cross chain deposit request', async () => {
         /* GIVEN
         - As a public user looking to make a cross chain depoist
 

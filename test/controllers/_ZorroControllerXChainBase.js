@@ -2,7 +2,7 @@
 // Includes all tests for common cross chain controller logic
 
 contract('ZorroControllerXChainBase :: Setters', async accounts => {
-    it('Sets Zorro and Stablecoin token addresses', async () => {
+    xit('Sets Zorro and Stablecoin token addresses', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -16,7 +16,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets controller and public pool addresses', async () => {
+    xit('Sets controller and public pool addresses', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -30,7 +30,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets chain IDs', async () => {
+    xit('Sets chain IDs', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -44,7 +44,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Set ZorroControllerXChainActions address', async () => {
+    xit('Set ZorroControllerXChainActions address', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -58,7 +58,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets controller contracts', async () => {
+    xit('Sets controller contracts', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -72,7 +72,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets chain mapping', async () => {
+    xit('Sets chain mapping', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -87,7 +87,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets Stargate pool mapping', async () => {
+    xit('Sets Stargate pool mapping', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -101,7 +101,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets LayerZero parameters', async () => {
+    xit('Sets LayerZero parameters', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -115,7 +115,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets chain type', async () => {
+    xit('Sets chain type', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */
@@ -130,7 +130,7 @@ contract('ZorroControllerXChainBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets burn address', async () => {
+    xit('Sets burn address', async () => {
         /* GIVEN
         - As the owner of the contract (timelock)
         */

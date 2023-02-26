@@ -23,7 +23,7 @@
 //         lib = await MockSafeSwapUni.deployed();
 //     });
 
-//     it('calculates correct amount out when exchange rates are provided', async () => {
+//     xit('calculates correct amount out when exchange rates are provided', async () => {
 //         // Prep test conditions
 //         const amountIn = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
 //         const priceTokenIn = 342e12; // Exchange rate of 342 USD per In token
@@ -69,7 +69,7 @@
 //         );
 //     });
 
-//     it('calculates correct amount out when exchange rates ommitted', async () => {
+//     xit('calculates correct amount out when exchange rates ommitted', async () => {
 //         // Prep test conditions
 //         const amountIn = web3.utils.toBN(web3.utils.toWei('100', 'ether'));
 //         // Simulate the case that we do not know the exchange rates

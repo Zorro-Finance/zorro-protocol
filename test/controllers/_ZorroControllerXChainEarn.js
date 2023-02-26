@@ -2,7 +2,7 @@
 // Includes all tests for cross chain earn events
 
 contract('ZorroControllerXChainEarn :: Setters', async accounts => {
-    it('Sets key addresses', async () => {
+    xit('Sets key addresses', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -18,7 +18,7 @@ contract('ZorroControllerXChainEarn :: Setters', async accounts => {
         */
     });
 
-    it('Sets swap paths', async () => {
+    xit('Sets swap paths', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -33,7 +33,7 @@ contract('ZorroControllerXChainEarn :: Setters', async accounts => {
         */
     });
 
-    it('Sets price feeds', async () => {
+    xit('Sets price feeds', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -51,7 +51,7 @@ contract('ZorroControllerXChainEarn :: Setters', async accounts => {
 });
 
 contract('ZorroControllerXChainEarn :: Sending', async accounts => {
-    it('Sends a cross chain earnings distribution request', async () => {
+    xit('Sends a cross chain earnings distribution request', async () => {
         /* GIVEN
         - As a vault
         - With specified buyback and revshare amounts

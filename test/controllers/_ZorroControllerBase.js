@@ -2,7 +2,7 @@
 // Includes all tests for common functionality/utilties for all the ZorroController contracts
 
 contract('ZorroControllerBase :: Setters', async accounts => {
-    it('Sets the Zorro and stablecoin token addresses', async () => {
+    xit('Sets the Zorro and stablecoin token addresses', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -16,7 +16,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the burn address', async () => {
+    xit('Sets the burn address', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -30,7 +30,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the public pool and Zorro staking vault addresses', async () => {
+    xit('Sets the public pool and Zorro staking vault addresses', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -45,7 +45,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the rewards start block', async () => {
+    xit('Sets the rewards start block', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -59,7 +59,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the ZorroControllerActions contract address', async () => {
+    xit('Sets the ZorroControllerActions contract address', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -73,7 +73,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the key rewards parameters', async () => {
+    xit('Sets the key rewards parameters', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -92,7 +92,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the key cross chain parameters', async () => {
+    xit('Sets the key cross chain parameters', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -106,7 +106,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
 
-    it('Sets the ZorroController oracle address', async () => {
+    xit('Sets the ZorroController oracle address', async () => {
         /* GIVEN
         - As the contract owner (timelock)
         */
@@ -120,7 +120,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
         */
     });
     
-    it('Sets the ZorroPerBlock parameter correctly and securely', async () => {
+    xit('Sets the ZorroPerBlock parameter correctly and securely', async () => {
         /* GIVEN
         - As the Zorro controller oracle
         */
@@ -138,7 +138,7 @@ contract('ZorroControllerBase :: Setters', async accounts => {
 });
 
 contract('ZorroControllerBase :: Vault Management', async accounts => {
-    it('Updates the reward state of a vault on the home chain', async () => {
+    xit('Updates the reward state of a vault on the home chain', async () => {
         /* GIVEN
         - As a public user
         - On the home chain
@@ -156,7 +156,7 @@ contract('ZorroControllerBase :: Vault Management', async accounts => {
         */
     });
 
-    it('Updates the reward state of a vault on a NON home chain', async () => {
+    xit('Updates the reward state of a vault on a NON home chain', async () => {
         /* GIVEN
         - As a public user
         - On a chain OTHER than the home chain
@@ -174,7 +174,7 @@ contract('ZorroControllerBase :: Vault Management', async accounts => {
         */
     });
 
-    it('Resets the slashed synthetic rewards', async () => {
+    xit('Resets the slashed synthetic rewards', async () => {
         /* GIVEN
         - As the Zorro Controller Oracle
         - NOT on the home chain
@@ -190,7 +190,7 @@ contract('ZorroControllerBase :: Vault Management', async accounts => {
         */
     });
 
-    it('Resets the accumulated minted synthetic rewards', async () => {
+    xit('Resets the accumulated minted synthetic rewards', async () => {
         /* GIVEN
         - As the Zorro Controller Oracle
         - NOT on the home chain

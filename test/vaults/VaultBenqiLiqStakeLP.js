@@ -2,7 +2,7 @@
 // Tests for Benqi Liquid staking LP
 
 contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
-    it('Deposits', async () => {
+    xit('Deposits', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -20,7 +20,7 @@ contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges USD to Want', async () => {
+    xit('Exchanges USD to Want', async () => {
         /* GIVEN
         - As a public user
         */
@@ -35,7 +35,7 @@ contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
         */
     });
 
-    it('Withdraws', async () => {
+    xit('Withdraws', async () => {
         /* GIVEN
         - As a Zorro Controller
         */
@@ -54,7 +54,7 @@ contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
         */
     });
 
-    it('Exchanges Want to USD', async () => {
+    xit('Exchanges Want to USD', async () => {
         /* GIVEN
         - As a public user
         */
@@ -69,7 +69,7 @@ contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
         */
     });
 
-    it('Calculates pending LP farm rewards', async () => {
+    xit('Calculates pending LP farm rewards', async () => {
         /* GIVEN
         - As a public user
         */
@@ -85,7 +85,7 @@ contract('VaultBenqiLiqStakeLP :: Investments', async accounts => {
 });
 
 contract('VaultBase :: Earnings', async accounts => {
-    it('Autocompounds successfullly', async () => {
+    xit('Autocompounds successfullly', async () => {
         /* GIVEN
         - As a public user
         - Enough blocks have elapsed such that harvestable earnings are present

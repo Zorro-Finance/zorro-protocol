@@ -2,7 +2,7 @@
 // Test for common utilities functions of vaults for liquid staking + LP staking
 
 contract('VaultActionsLiqStakeLP :: Accounting', async accounts => {
-    it('Calculates current want equity', async () => {
+    xit('Calculates current want equity', async () => {
         /* GIVEN
         - As a public user
         */
@@ -18,7 +18,7 @@ contract('VaultActionsLiqStakeLP :: Accounting', async accounts => {
 });
 
 contract('VaultActionsLiqStakeLP :: Investments', async accounts => {
-    it('Performs liquid staking and adds synth token to LP pool', async () => {
+    xit('Performs liquid staking and adds synth token to LP pool', async () => {
         /* GIVEN
         - As a public user, with ETH
         */
@@ -33,7 +33,7 @@ contract('VaultActionsLiqStakeLP :: Investments', async accounts => {
         */
     });
 
-    it('Performs liquid UNstaking and removes synth token from LP pool', async () => {
+    xit('Performs liquid UNstaking and removes synth token from LP pool', async () => {
         /* GIVEN
         - As a public user, with an sETH-ETH LP token
         */

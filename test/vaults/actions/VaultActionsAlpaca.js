@@ -2,7 +2,7 @@
 // Tests for Alpaca vaults' utilities
 
 contract('VaultActionsAlpaca :: Accounting', async accounts => {
-    it('Calculates current want equity', async () => {
+    xit('Calculates current want equity', async () => {
         /* GIVEN
         - As a public user
         */

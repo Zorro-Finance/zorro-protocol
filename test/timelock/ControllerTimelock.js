@@ -2,7 +2,7 @@
 // Includes all tests for Timelock controller used to own controller contracts
 
 contract('ControllerTimelock', async accounts => {
-    it('Can call a function on a controller contract it owns using the timelock mechanism', async () => {
+    xit('Can call a function on a controller contract it owns using the timelock mechanism', async () => {
         /* GIVEN
         - As a timelock user with role of proposer (1)
         - As a timelock user with role of executor (2)
@@ -21,7 +21,7 @@ contract('ControllerTimelock', async accounts => {
 });
 
 contract('ControllerTimelock :: Bypasses', async accounts => {
-    it('Can bypass timelock for updating vault rewards', async () => {
+    xit('Can bypass timelock for updating vault rewards', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller
@@ -36,7 +36,7 @@ contract('ControllerTimelock :: Bypasses', async accounts => {
         */
     });
 
-    it('Can bypass timelock when mass updating vault rewards', async () => {
+    xit('Can bypass timelock when mass updating vault rewards', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller
@@ -51,7 +51,7 @@ contract('ControllerTimelock :: Bypasses', async accounts => {
         */
     });
 
-    it('Can bypass timelock when adding a new vault', async () => {
+    xit('Can bypass timelock when adding a new vault', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller
@@ -66,7 +66,7 @@ contract('ControllerTimelock :: Bypasses', async accounts => {
         */
     });
 
-    it('Can bypass timelock when setting the controller contract', async () => {
+    xit('Can bypass timelock when setting the controller contract', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller
@@ -81,7 +81,7 @@ contract('ControllerTimelock :: Bypasses', async accounts => {
         */
     });
 
-    it('Can bypass timelock when setting the cross chain mapping', async () => {
+    xit('Can bypass timelock when setting the cross chain mapping', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller
@@ -96,7 +96,7 @@ contract('ControllerTimelock :: Bypasses', async accounts => {
         */
     });
 
-    it('Can bypass timelock when setting Stargate and LayerZero parameters', async () => {
+    xit('Can bypass timelock when setting Stargate and LayerZero parameters', async () => {
         /* GIVEN
         - As a timelock user with role of proposer AND executor
         - A contract owned by a timelock controller

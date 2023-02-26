@@ -31,7 +31,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -112,7 +113,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -136,7 +138,8 @@
         }
       ],
       "stateMutability": "pure",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -160,7 +163,8 @@
         }
       ],
       "stateMutability": "pure",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"contribution\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewardDebt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"durationCommittedInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"enteredVaultAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"exitedVaultAt\",\"type\":\"uint256\"}],\"internalType\":\"struct IZorroControllerBase.TrancheInfo\",\"name\":\"_tranche\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_pendingRewards\",\"type\":\"uint256\"}],\"name\":\"getAdjustedRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rewardsDue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"slashedRewards\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_durationInWeeks\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_isTimeMultiplierActive\",\"type\":\"bool\"}],\"name\":\"getTimeMultiplier\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timeMultiplier\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_liquidityCommitted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_timeMultiplier\",\"type\":\"uint256\"}],\"name\":\"getUserContribution\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"params\":{\"_pendingRewards\":\"Qty of ZOR tokens as pending rewards\",\"_tranche\":\"TrancheInfo object\"},\"returns\":{\"rewardsDue\":\"The amount of ZOR rewards payable\",\"slashedRewards\":\"The amount of ZOR rewards slashed due to early withdrawals\"}},\"getTimeMultiplier(uint256,bool)\":{\"details\":\"For Zorro staking vault, returns 1e12 no matter what\",\"params\":{\"_durationInWeeks\":\"number of weeks committed into Vault\",\"_isTimeMultiplierActive\":\"Whether or not the time multiplier is active\"},\"returns\":{\"timeMultiplier\":\"Time multiplier factor, times 1e12\"}},\"getUserContribution(uint256,uint256)\":{\"params\":{\"_liquidityCommitted\":\"How many tokens staked (e.g. LP tokens)\",\"_timeMultiplier\":\"Time multiplier value (from getTimeMultiplier())\"},\"returns\":{\"_0\":\"uint256 The relative contribution of the user (unitless)\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"getAdjustedRewards((uint256,uint256,uint256,uint256,uint256,uint256),uint256)\":{\"notice\":\"Splits rewards into rewards due and slashed rewards (if early withdrawal)\"},\"getTimeMultiplier(uint256,bool)\":{\"notice\":\"Calculate time multiplier based on duration committed\"},\"getUserContribution(uint256,uint256)\":{\"notice\":\"The contribution of the user, meant to be used in rewards allocations\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":\"ZorroControllerActions\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\":{\"keccak256\":\"0x652fee292f698d8dba81bf287cb71f1682f6483b67ebe601a5f7387dcfc30b34\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://98c7bba29bcab7240cdaada7dd7cbe3529fec83314801270c46239e72a9e84d7\",\"dweb:/ipfs/QmfHCc1KMygjXchXVwafWTkFjhbb2SQ3Cu5GzRTdV4CCCh\"]},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"keccak256\":\"0x372b0bc04e3b4c074559bbbfb1317afddb56de5504158ca25a7f9cd403980445\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://88b812365459a042c2aab5c689ff723098e0e19cb372718d3dd028b3c406e4f6\",\"dweb:/ipfs/QmTsLrMYzPjnB85pyAy85NNcBg64RPVueJARzwNg9xMyR1\"]},\"@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol\":{\"keccak256\":\"0x6777f3fccb5dab95a9088ef62c41bee0198fd92e50d7c94f0e3733788af4079e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://bf67f82ba68e13b306fa350fc0e2acaac3b0e90b2734a56e61302d79b408fb0b\",\"dweb:/ipfs/QmVhMTANFDtZFpxdGk6SayfttDxEh23GrT8ttiFRoow7c2\"]},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"keccak256\":\"0x55cf2bd9fc76704ddcdc19834cd288b7de00fc0f298a40ea16a954ae8991db2d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://37e4df53c8d2e3c1062c1c7b2c17366db7de03bfd2559d340ca95c588aa49c2f\",\"dweb:/ipfs/QmQ9vsG3o4wED3FRogiSUhdzJvZSjjYFtydzXvFEJtgZk4\"]},\"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol\":{\"keccak256\":\"0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d6520943ea55fdf5f0bafb39ed909f64de17051bc954ff3e88c9e5621412c79c\",\"dweb:/ipfs/QmWZ4rAKTQbNG2HxGs46AcTXShsVytKeLs7CUCdCSv5N7a\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol\":{\"keccak256\":\"0x0ac286be11c2345f71d938119e638483fc1ddb9f56b7da00dd470adcd977f439\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fe678d5eacb4e4ffcd6e7038921688c418effea0af6f00e8897ef7ad922bae6d\",\"dweb:/ipfs/QmVpqPCGsUFWG43yjAw4LFqJQZ9x58J57WnZscFrBBRgvw\"]},\"@openzeppelin/contracts-upgradeable/utils/math/SignedSafeMathUpgradeable.sol\":{\"keccak256\":\"0x322088ced3c1d027a3260de4e5a867b2264adeef252b94158a9725767873ea31\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://b51371d5fbd30710a47361e5d9e2615664553ca0a896131d2a7b2ff304ccb51c\",\"dweb:/ipfs/Qmb9Y2f3XLymw7sjwhvYnJLkCZSrjVgUFdT1M1mpAy38sT\"]},\"project:/contracts/controllers/actions/ZorroControllerActions.sol\":{\"keccak256\":\"0x6657020ec1e3526ef6838d4f65a27bb76d72d39e66dde1a3b51bb36c5494d6dd\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://43ff6caa48d110a395e6f704837b54ea2085774c4492ed147dc6a7ec1f7dd9b3\",\"dweb:/ipfs/Qmbup1JMn8dcCarheQao9JncZr3FhsKbscc2Xmw82mxeEg\"]},\"project:/contracts/interfaces/Zorro/Controllers/Actions/IZorroControllerActions.sol\":{\"keccak256\":\"0x95bda45ac60370f6cf11608ab4c4c5c2801093b7af93593e19d7d5fc2979f042\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://72c3dec17debfdbcea5806d63ca290dcf99b7b53bff2e1c930fdc6e572d43f04\",\"dweb:/ipfs/QmVffK55p7VuCLB2j7QzEGkmbYU9Q2o1t8ikAGm7hR2Gmc\"]},\"project:/contracts/interfaces/Zorro/Controllers/IZorroController.sol\":{\"keccak256\":\"0xa0516cd798548ad39bfbb96a6cbe792f9fd00a125b13d3851f21cc485f716762\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://775a52cfad896349e44dde94cd9646dc8198d96092d63890dcd3bae211045e6d\",\"dweb:/ipfs/QmR2s3zkjQADN4ir3NN22dUuaA9pc9NxJkS1eh1waQmPCE\"]},\"project:/contracts/libraries/Math.sol\":{\"keccak256\":\"0x8b8949deef1b63739e25943b4c29f87593eafbc26331811884e7b19d086abcdf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d411fa18f0ef03d2dd5bab3989d0340d3cd3d0461dc9475857fb0173a3ffdeeb\",\"dweb:/ipfs/QmY9nMBk618tDvnemMwYsTpX49WcBDMZsQj7z8azx58zNr\"]}},\"version\":1}",
@@ -5994,9 +5998,16 @@
     "name": "solc",
     "version": "0.8.10+commit.fc410830.Emscripten.clang"
   },
-  "networks": {},
+  "networks": {
+    "43114": {
+      "events": {},
+      "links": {},
+      "address": "0xcd36B5e1f42F93CED89aa0448d2f610139035AAb",
+      "transactionHash": "0xc83e824fe808dac93c66bcd6ab52a7c398379c729f92873df88876939187c7ef"
+    }
+  },
   "schemaVersion": "3.4.11",
-  "updatedAt": "2023-02-22T14:01:05.524Z",
+  "updatedAt": "2023-02-26T16:05:43.517Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

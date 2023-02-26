@@ -2,7 +2,7 @@
 // Includes all tests for Zorro token
 
 contract('Zorro :: Setters', async accounts => {
-    it('Sets the Zorro Controller address', async () => {
+    xit('Sets the Zorro Controller address', async () => {
         /* GIVEN
         - As the owner (timelock executor) of the Zorro contract
         */
@@ -18,7 +18,7 @@ contract('Zorro :: Setters', async accounts => {
 });
 
 contract('Zorro :: Finance', async accounts => {
-    it('Mints tokens (only when called by Zorro Controller)', async () => {
+    xit('Mints tokens (only when called by Zorro Controller)', async () => {
         /* GIVEN
         - A Zorro contract with a Zorro Controller address set
         - As the Zorro Controller, and ONLY the Zorro controller

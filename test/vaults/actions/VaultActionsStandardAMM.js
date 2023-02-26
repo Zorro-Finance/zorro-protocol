@@ -2,7 +2,7 @@
 // Tests for standard AMM LP pair vaults' utilities
 
 contract('VaultActionsStandardAMM :: Accounting', async accounts => {
-    it('Calculats current want equity', async () => {
+    xit('Calculats current want equity', async () => {
         /* GIVEN
         - As a public user
         */

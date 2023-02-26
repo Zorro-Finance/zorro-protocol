@@ -2,7 +2,7 @@
 // Includes all tests for deposits, withdrawals, transfers, and their cross chain counterparts
 
 contract('ZorroControllerInvestment :: Setters', async accounts => {
-    it('Only owner can set X chain endpoint contract address', async () => {
+    xit('Only owner can set X chain endpoint contract address', async () => {
         /* Case 1: Authorized call should succeed */
 
         /* GIVEN 
@@ -32,7 +32,7 @@ contract('ZorroControllerInvestment :: Setters', async accounts => {
         */
     });
 
-    it('Only owner can set whether time multipliers are active', async () => {
+    xit('Only owner can set whether time multipliers are active', async () => {
         /* Case 1: Authorized call should succeed */
 
         /* GIVEN 
@@ -64,7 +64,7 @@ contract('ZorroControllerInvestment :: Setters', async accounts => {
 });
 
 contract('ZorroControllerInvestment :: Deposits', async accounts => {
-    it('Deposits Want token directly into a vault (aka "Core deposit")', async () => {
+    xit('Deposits Want token directly into a vault (aka "Core deposit")', async () => {
         /* GIVEN
         - As a public user
         - With a single vault available
@@ -81,7 +81,7 @@ contract('ZorroControllerInvestment :: Deposits', async accounts => {
         */
     });
 
-    it('Accepts Stablecoin and deposits into a vault (aka "Full Service deposit")', async () => {
+    xit('Accepts Stablecoin and deposits into a vault (aka "Full Service deposit")', async () => {
         /* GIVEN
         - As a public user
         - With a single vault available
@@ -99,7 +99,7 @@ contract('ZorroControllerInvestment :: Deposits', async accounts => {
 });
 
 contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
-    it('Withdraws Want token directly from a vault (aka "Core withdrawal")', async () => {
+    xit('Withdraws Want token directly from a vault (aka "Core withdrawal")', async () => {
         /* GIVEN
         - As a public user who has deposited into a vault already (and thus own a tranche on that vault)
         */
@@ -115,7 +115,7 @@ contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
         */
     });
 
-    it('Withdraws from vault into Stablecoin (aka "Full Service withdrawal")', async () => {
+    xit('Withdraws from vault into Stablecoin (aka "Full Service withdrawal")', async () => {
         /* GIVEN
         - As a public user who has deposited into a vault already (and thus own a tranche on that vault)
         */
@@ -132,7 +132,7 @@ contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
         */
     });
 
-    it('Withdraws all tranches from a given vault for a user', async () => {
+    xit('Withdraws all tranches from a given vault for a user', async () => {
         /* GIVEN
         - As a public user who has deposited MULTIPLE times into a vault already (and thus own a tranche on that vault)
         */
@@ -150,7 +150,7 @@ contract('ZorroControllerInvestment :: Withdrawals', async accounts => {
 });
 
 contract('ZorroControllerInvestment :: Transfers', async accounts => {
-    it('Transfers assets from one tranche to another vault', async () => {
+    xit('Transfers assets from one tranche to another vault', async () => {
         /* GIVEN 
         - As a public user who has deposited into a vault already
         */
@@ -169,7 +169,7 @@ contract('ZorroControllerInvestment :: Transfers', async accounts => {
 });
 
 contract('ZorroControllerInvestment :: XChain', async accounts => {
-    it('Accepts X Chain withdrawal request to Stablecoin', async () => {
+    xit('Accepts X Chain withdrawal request to Stablecoin', async () => {
         /* GIVEN 
         - A deposited tranche associated with a foreign wallet account exists on this chain already
         */
@@ -185,7 +185,7 @@ contract('ZorroControllerInvestment :: XChain', async accounts => {
         */
     });
 
-    it('Accepts Stablecoin from X Chain endpoint and deposits into a vault', async () => {
+    xit('Accepts Stablecoin from X Chain endpoint and deposits into a vault', async () => {
         /* GIVEN 
         - A vault exists on this chain
         */
@@ -199,7 +199,7 @@ contract('ZorroControllerInvestment :: XChain', async accounts => {
         */
     });
 
-    it('Repatriates rewards harvested during a cross chain withdrawal', async () => {
+    xit('Repatriates rewards harvested during a cross chain withdrawal', async () => {
         /* Case 1: Repatriation to the home chain */
 
         /* GIVEN
@@ -229,7 +229,7 @@ contract('ZorroControllerInvestment :: XChain', async accounts => {
         */
     });
 
-    it('Handles accumulated cross chain rewards', async () => {
+    xit('Handles accumulated cross chain rewards', async () => {
         /* GIVEN 
         - As the designated Zorro oracle contract
         */

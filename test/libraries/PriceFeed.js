@@ -4,7 +4,7 @@
 // const MockAggregatorV3 = artifacts.require('MockAggregatorV3');
 
 // contract('MockPriceFeed', async accounts => {
-//     it('gets the exchange rate for a given price feed', async () => {
+//     xit('gets the exchange rate for a given price feed', async () => {
 //         const price = 4015905000000;
 //         const dec = 8;
 

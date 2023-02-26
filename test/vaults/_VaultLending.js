@@ -2,7 +2,7 @@
 // Tests for all functions common to lending vaults
 
 contract('VaultLending :: Setters', async accounts => {
-    it('Sets leverage parameters and rebalances position', async () => {
+    xit('Sets leverage parameters and rebalances position', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -17,7 +17,7 @@ contract('VaultLending :: Setters', async accounts => {
         */
     });
 
-    it('Sets comptroller address', async () => {
+    xit('Sets comptroller address', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -31,7 +31,7 @@ contract('VaultLending :: Setters', async accounts => {
         */
     });
 
-    it('Sets lending token', async () => {
+    xit('Sets lending token', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -45,7 +45,7 @@ contract('VaultLending :: Setters', async accounts => {
         */
     });
 
-    it('Updates supply and borrow balances', async () => {
+    xit('Updates supply and borrow balances', async () => {
         /* GIVEN
         - As a public user
         */
@@ -61,7 +61,7 @@ contract('VaultLending :: Setters', async accounts => {
 });
 
 contract('VaultLending :: Investments', async accounts => {
-    it('Rebalances when above target borrow envelope', async () => {
+    xit('Rebalances when above target borrow envelope', async () => {
         /* GIVEN
         - As a public user
         */

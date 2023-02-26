@@ -2,7 +2,7 @@
 // Includes all tests for Zorro team vesting wallets (used by team members and advisors)
 
 contract('TeamVestingWallet', async accounts => {
-    it('It releases vested funds once cliff has been reached', async () => {
+    xit('It releases vested funds once cliff has been reached', async () => {
         /* GIVEN
         - As the beneficiary of the vesting wallet
         - The cliff has been reached
@@ -17,7 +17,7 @@ contract('TeamVestingWallet', async accounts => {
         */
     });
 
-    it('It does not release any funds until cliff has been reached', async () => {
+    xit('It does not release any funds until cliff has been reached', async () => {
         /* GIVEN
         - As the beneficiary of the vesting wallet
         - The cliff has NOT been reached

@@ -2,7 +2,7 @@
 // Includes all tests for adding and updating vaults
 
 contract('ZorroControllerVaultMgmt :: Vaults', async accounts => {
-    it('Adds a new vault', async () => {
+    xit('Adds a new vault', async () => {
         /* GIVEN
         - As an owner (timelock) of the contract
         - A pre-existing vault
@@ -20,7 +20,7 @@ contract('ZorroControllerVaultMgmt :: Vaults', async accounts => {
         */
     });
 
-    it('Updates a vault with a new multiplier value', async () => {
+    xit('Updates a vault with a new multiplier value', async () => {
         /* GIVEN
         - As an owner (timelock) of the contract
         - A pre-existing vault

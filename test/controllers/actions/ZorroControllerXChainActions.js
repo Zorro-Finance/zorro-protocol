@@ -2,7 +2,7 @@
 // Includes all tests for ZorroControllerXChain contract utilities
 
 contract('ZorroControllerXChainActions :: Utilities', async accounts => {
-    it('Converts raw bytes to an EVM address', async () => {
+    xit('Converts raw bytes to an EVM address', async () => {
         /* GIVEN
         - A raw bytes encoded EVM address
         */
@@ -16,7 +16,7 @@ contract('ZorroControllerXChainActions :: Utilities', async accounts => {
         */
     });
 
-    it('Strips the function signature from a raw bytes payload with signature', async () => {
+    xit('Strips the function signature from a raw bytes payload with signature', async () => {
         /* GIVEN
         - An ABI encoded payload with function signature
         */
@@ -32,7 +32,7 @@ contract('ZorroControllerXChainActions :: Utilities', async accounts => {
 });
 
 contract('ZorroControllerXChainActions :: Deposits', async accounts => {
-    it('Checks with Stargate to determine how much fees a deposit will cost', async () => {
+    xit('Checks with Stargate to determine how much fees a deposit will cost', async () => {
         /* GIVEN
         - A destination contract, chain, and payload
         */
@@ -46,7 +46,7 @@ contract('ZorroControllerXChainActions :: Deposits', async accounts => {
         */
     });
 
-    it('Encodes cross-chain deposit instructions into a bytes payload', async () => {
+    xit('Encodes cross-chain deposit instructions into a bytes payload', async () => {
         /* GIVEN
         - Vault parameters
         */
@@ -62,7 +62,7 @@ contract('ZorroControllerXChainActions :: Deposits', async accounts => {
 });
 
 contract('ZorroControllerXChainActions :: EarningsDistribution', async accounts => {
-    it('Checks with Stargate to determine how much fees an earnings distribution will cost', async () => {
+    xit('Checks with Stargate to determine how much fees an earnings distribution will cost', async () => {
         /* GIVEN
         - A destination contract, chain, and payload
         */
@@ -76,7 +76,7 @@ contract('ZorroControllerXChainActions :: EarningsDistribution', async accounts 
         */
     });
 
-    it('Encodes cross-chain earnings distribution instructions into a bytes payload', async () => {
+    xit('Encodes cross-chain earnings distribution instructions into a bytes payload', async () => {
         /* GIVEN
         - Vault parameters
         */
@@ -90,7 +90,7 @@ contract('ZorroControllerXChainActions :: EarningsDistribution', async accounts 
         */
     });
 
-    it('Receives and fulfills an earnings distribution request', async () => {
+    xit('Receives and fulfills an earnings distribution request', async () => {
         /* GIVEN
         - Buyback and revshare parameters
         */
@@ -110,7 +110,7 @@ contract('ZorroControllerXChainActions :: EarningsDistribution', async accounts 
 });
 
 contract('ZorroControllerXChainActions :: Withdrawals', async accounts => {
-    it('Checks with Stargate to determine how much fees a withdrawal will cost', async () => {
+    xit('Checks with Stargate to determine how much fees a withdrawal will cost', async () => {
         /* GIVEN
         - A destination contract, chain, and payload
         */
@@ -124,7 +124,7 @@ contract('ZorroControllerXChainActions :: Withdrawals', async accounts => {
         */
     });
 
-    it('Encodes cross-chain withdrawal instructions into a bytes payload', async () => {
+    xit('Encodes cross-chain withdrawal instructions into a bytes payload', async () => {
         /* GIVEN
         - Trache and account parameters
         */
@@ -138,7 +138,7 @@ contract('ZorroControllerXChainActions :: Withdrawals', async accounts => {
         */
     });
 
-    it('Checks with Stargate to determine how much fees a repatriation will cost', async () => {
+    xit('Checks with Stargate to determine how much fees a repatriation will cost', async () => {
         /* GIVEN
         - A destination contract and payload
         */
@@ -152,7 +152,7 @@ contract('ZorroControllerXChainActions :: Withdrawals', async accounts => {
         */
     });
 
-    it('Encodes cross-chain repatriation instructions into a bytes payload', async () => {
+    xit('Encodes cross-chain repatriation instructions into a bytes payload', async () => {
         /* GIVEN
         */
 

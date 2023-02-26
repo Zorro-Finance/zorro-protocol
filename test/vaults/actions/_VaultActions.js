@@ -2,7 +2,7 @@
 // Test for common utilities functions of vaults
 
 contract('VaultActions :: Setters', async accounts => {
-    it('Sets key addresses', async () => {
+    xit('Sets key addresses', async () => {
         /* GIVEN
         - As the owner (timelock) of the contract
         */
@@ -18,7 +18,7 @@ contract('VaultActions :: Setters', async accounts => {
 });
 
 contract('VaultActions :: Utilities', async accounts => {
-    it('Adds liquidity to LP pool', async () => {
+    xit('Adds liquidity to LP pool', async () => {
         /* GIVEN
         - As a public user
         */
@@ -32,7 +32,7 @@ contract('VaultActions :: Utilities', async accounts => {
         */
     });
 
-    it('Removes liquidity from LP pools', async () => {
+    xit('Removes liquidity from LP pools', async () => {
         /* GIVEN
         - As a public user
         */
@@ -46,7 +46,7 @@ contract('VaultActions :: Utilities', async accounts => {
         */
     });
 
-    it('Safely performs swaps', async () => {
+    xit('Safely performs swaps', async () => {
         /* GIVEN
         - As a public user
         */
@@ -62,7 +62,7 @@ contract('VaultActions :: Utilities', async accounts => {
 });
 
 contract('VaultActions :: Finance', async accounts => {
-    it('Distributes and reinvests earnings', async () => {
+    xit('Distributes and reinvests earnings', async () => {
         /* GIVEN
         - As a public user
         */
@@ -80,7 +80,7 @@ contract('VaultActions :: Finance', async accounts => {
 });
 
 contract('VaultActions :: Analytics', async accounts => {
-    it('Calculates unrealized profits', async () => {
+    xit('Calculates unrealized profits', async () => {
         /* GIVEN
         - As a public user
         */
