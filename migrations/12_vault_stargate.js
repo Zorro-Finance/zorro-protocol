@@ -4,11 +4,13 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   getSynthNetwork,
   isTestNetwork,
+  isDevNetwork,
 } = require('../helpers/chains');
 const { chains, zeroAddress, vaultFees } = require('../helpers/constants');
 
 // Vaults
 const StargateUSDTOnAVAX = artifacts.require("StargateUSDTOnAVAX");
+const StargateUSDTOnAVAXTest0 = artifacts.require("StargateUSDTOnAVAXTest0");
 const StargateBUSDOnBNB = artifacts.require("StargateBUSDOnBNB");
 // Actions
 const VaultActionsStargate = artifacts.require('VaultActionsStargate');
@@ -50,20 +52,31 @@ module.exports = async function (deployer, network, accounts) {
     } = avax;
 
     // Deploy contracts
-    const vaultActionsStargate = await deployer.deploy(VaultActionsStargate, infra.uniRouterAddress);
-    // Deploy contracts
-    const stgPriceFeed = await deployer.deploy(
-      STGPriceFeed, 
-      infra.uniRouterAddress,
-      tokens.stg,
-      tokens.usdc
+    const vaultActionsStargate = await deployProxy(VaultActionsStargate,
+      [
+        infra.uniRouterAddress,
+      ],
+      {
+        deployer,
+      }
+    );
+
+    const stgPriceFeed = await deployProxy(STGPriceFeed,
+      [
+        infra.uniRouterAddress,
+        tokens.stg,
+        tokens.usdc,
+      ],
+      {
+        deployer,
+      }
     );
 
     // Init values 
     const initVal = {
       baseInit: {
         config: {
-          pid: 0, // TODO: Change to actual PID
+          pid: 1,
           isHomeChain: false,
         },
         keyAddresses: {
@@ -121,6 +134,19 @@ module.exports = async function (deployer, network, accounts) {
         deployer,
       }
     );
+
+    if (isDevNetwork(network)) {
+      // Deploy test version
+      await deployProxy(StargateUSDTOnAVAXTest0,
+        [
+          vaultTimelock.address,
+          initVal,
+        ],
+        {
+          deployer,
+        }
+      );
+    }
   } else {
     console.log('Not AVAX chain. Skipping vault creation');
   }
@@ -142,11 +168,15 @@ module.exports = async function (deployer, network, accounts) {
     const vaultZorro = await VaultZorro.deployed();
     const zorPriceFeed = await ZORPriceFeed.deployed();
     // Deploy contracts
-    const stgPriceFeed = await deployer.deploy(
-      STGPriceFeed, 
-      infra.uniRouterAddress,
-      tokens.stg,
-      tokens.usdc
+    const stgPriceFeed = await deployProxy(STGPriceFeed,
+      [
+        infra.uniRouterAddress,
+        tokens.stg,
+        tokens.busd,
+      ],
+      {
+        deployer,
+      }
     );
 
     // Get Zorro LP pool

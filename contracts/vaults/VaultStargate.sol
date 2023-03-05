@@ -84,7 +84,7 @@ contract VaultStargate is IVaultStargate, VaultBase {
         uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(address(this));
 
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
-        IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
+        IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
             farmContractAddress,
             _lpBal
         );
@@ -118,5 +118,6 @@ contract VaultStargate is IVaultStargate, VaultBase {
 }
 
 contract StargateUSDTOnAVAX is VaultStargate {}
+contract StargateUSDTOnAVAXTest0 is VaultStargate {}
 
 contract StargateBUSDOnBNB is VaultStargate {}

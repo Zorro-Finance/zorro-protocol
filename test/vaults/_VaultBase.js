@@ -1,19 +1,24 @@
 // VaultBase tests
 // Tests for all functions common to all vaults
 
-const StargateUSDTOnAVAX = artifacts.require('StargateUSDTOnAVAX');
+// Artifacts
+const StargateUSDTOnAVAXTest0 = artifacts.require('StargateUSDTOnAVAXTest0');
+const VaultTimelock = artifacts.require('VaultTimelock');
 
 contract('VaultBase :: Setters', async accounts => {
     // Setup
-    let vault;
+    let vault, vaultTimelock;
 
     // Hook: Before all tests
     before(async () => {
-        vault = await StargateUSDTOnAVAX.new();
-        console.log('loaded vault: ', vault.address);
+        // Get timelock
+        vaultTimelock = await VaultTimelock.deployed();
+        
+        // Get vault
+        vault = await StargateUSDTOnAVAXTest0.deployed();
     });
 
-    xit('Sets pool ID of underlying pool', async () => {
+    it('Sets pool ID of underlying pool', async () => {
         /* GIVEN
         - As the owner (timelock) of the vault contract
         */
@@ -25,6 +30,38 @@ contract('VaultBase :: Setters', async accounts => {
         /* THEN
         - The pid updates
         */
+
+        /* Test */
+        // Setup
+        const payload = vault.contract.methods.setPid(99).encodeABI();
+        const salt = web3.utils.numberToHex(4096);
+
+        // Run
+        // Schedule timelock
+        console.log('scheduling timelock...');
+        await vaultTimelock.schedule(
+            vault.address,
+            0,
+            payload,
+            '0x',
+            salt,
+            0
+        );
+        // Execute timelock
+        console.log('executing timelock...');
+        await vaultTimelock.execute(
+            vault.address,
+            0,
+            payload,
+            '0x',
+            salt
+        );
+
+        // Assert
+        assert.equal(
+            (await vault.pid.call()).toString(),
+            '99'
+        );
     });
 
     xit('Sets all key contract addresses', async () => {

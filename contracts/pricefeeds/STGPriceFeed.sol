@@ -29,7 +29,7 @@ contract STGPriceFeed is PriceFeedAggBase {
     /* Functions */
 
     function _getExchRate() internal view override returns (uint256) {
-        address[] memory _path = new address[](3);
+        address[] memory _path = new address[](2);
         _path[0] = stgToken;
         _path[1] = usdToken;
         uint256 _amtIn = 1 ether;

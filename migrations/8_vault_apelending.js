@@ -64,6 +64,8 @@ module.exports = async function (deployer, network, accounts) {
     // Deploy actions contract
     const vaultActionsApeLending = await deployProxy(VaultActionsApeLending, [infra.uniRouterAddress], { deployer });
 
+    // TODO: Deploy BANANAPriceFeed using deployProxy
+
     // Init values 
     const initVal = {
       baseInit: {

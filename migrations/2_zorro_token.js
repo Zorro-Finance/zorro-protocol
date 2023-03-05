@@ -35,15 +35,20 @@ module.exports = async function (deployer, network, accounts) {
     // Zorro token. NOTE: Deployed on every chain, but values are meant to sync to the "home chain Zorro" token
     await deployer.deploy(Zorro);
     const zorro = await Zorro.deployed();
-  
+
     // Zorro price feed
-    await deployer.deploy(
-      ZORPriceFeed, 
-      uniRouterAddress, 
-      zorro.address, 
-      lpOtherToken, 
-      stablecoin
+    await deployProxy(ZORPriceFeed,
+      [
+        uniRouterAddress,
+        zorro.address,
+        lpOtherToken,
+        stablecoin,
+      ],
+      {
+        deployer,
+      }
     );
+
   } else {
     console.log('Testnet identified. Skipping...');
   }

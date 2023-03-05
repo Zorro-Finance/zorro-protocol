@@ -38,8 +38,8 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
         uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
         // Get balance of LP token
-        uint256 _balLPToken = IERC20Upgradeable(_vault.wantAddress()).balanceOf(
-            _sgPoolAddr
+        uint256 _balLPToken = IERC20Upgradeable(_sgPoolAddr).balanceOf(
+            _vaultAddr
         );
 
         // Rebase balance of LP token in Token0 units
@@ -48,7 +48,7 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
             IERC20Upgradeable(_sgPoolAddr).totalSupply();
 
         // Get Earn and rebase equity into Token0 units
-        uint256 _pendingEarnToken0 = (IStargateLPStaking(_sgPoolAddr)
+        uint256 _pendingEarnToken0 = (IStargateLPStaking(_vault.farmContractAddress())
             .pendingStargate(_vault.pid(), _vaultAddr) *
             _vault.priceFeeds(_vault.earnedAddress()).getExchangeRate()) /
             _vault.priceFeeds(_token0).getExchangeRate();

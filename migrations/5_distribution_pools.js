@@ -45,26 +45,27 @@ module.exports = async function (deployer, network, accounts) {
   // Deploy timelock controllers
   const minDelay = isDevNetwork(network) ? 0 : defaultTimelockPeriodSecs;
   const proposers = isDevNetwork(network) ? [accounts[0]] : owners;
+  const executors = isDevNetwork(network) ? [accounts[0]] : owners;
 
   // Deploy ControllerTimelock
   const controllerTimelock = await deployProxy(ControllerTimelock, [
     minDelay,
     proposers,
-    []
+    executors,
   ], { deployer });
 
   // Deploy FinanceTimelock
   const financeTimelock = await deployProxy(FinanceTimelock, [
     minDelay,
     proposers,
-    []
+    executors,
   ], { deployer });
 
   // Deploy VaultTimelock
   await deployProxy(VaultTimelock, [
     minDelay,
     proposers,
-    []
+    executors,
   ], { deployer });
 
   // Deploy treasury pool on each chain
