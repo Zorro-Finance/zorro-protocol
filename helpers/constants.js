@@ -64,10 +64,9 @@ exports.chains = {
 
       },
       traderjoe: {
-        joeToken: '',
-        poolUSDC_AVAX: '',
-        pidUSDC_AVAX: '',
-        masterChef: '0x188bED1968b795d5c9022F6a0bb5931Ac4c18F00',
+        poolAVAX_USDC: '0xf4003F4efBE8691B60249E6afbD307aBE7758adb',
+        pidAVAX_USDC: 0,
+        masterChef: '0x4483f0b6e2F5486D06958C20f8C39A7aBe87bf8F',
       },
       stargate: {
         poolUSDT: '0x29e38769f23701A2e4A8Ef0492e19dA4604Be62c',
