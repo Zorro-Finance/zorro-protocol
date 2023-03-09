@@ -619,7 +619,8 @@ abstract contract VaultBase is
         // Exchange
         wantObtained = IVaultActions(vaultActions).exchangeUSDForWantToken(
             _amountUSD,
-            _maxMarketMovementAllowed
+            _maxMarketMovementAllowed,
+            msg.sender
         );
     }
 
@@ -631,6 +632,13 @@ abstract contract VaultBase is
         uint256 _amount,
         uint256 _maxMarketMovementAllowed
     ) external virtual returns (uint256 usdObtained) {
+        // Transfer funds
+        IERC20Upgradeable(wantAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
         // Approve spending
         IERC20Upgradeable(wantAddress).safeIncreaseAllowance(
             vaultActions,
@@ -640,7 +648,8 @@ abstract contract VaultBase is
         // Exchange
         usdObtained = IVaultActions(vaultActions).exchangeWantTokenForUSD(
             _amount,
-            _maxMarketMovementAllowed
+            _maxMarketMovementAllowed,
+            msg.sender
         );
     }
 

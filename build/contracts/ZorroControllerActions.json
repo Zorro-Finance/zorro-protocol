@@ -1048,7 +1048,7 @@
                 }
               ]
             },
-            "name": "abi_decode_tuple_t_struct$_TrancheInfo_$15066_memory_ptrt_uint256",
+            "name": "abi_decode_tuple_t_struct$_TrancheInfo_$15077_memory_ptrt_uint256",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -3783,7 +3783,7 @@
           }
         ]
       },
-      "contents": "{\n    { }\n    function abi_decode_tuple_t_struct$_TrancheInfo_$15066_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        if slt(_1, 0xc0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr))\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x41)\n            revert(0, 0x24)\n        }\n        mstore(64, newFreePtr)\n        mstore(memPtr, calldataload(headStart))\n        mstore(add(memPtr, 32), calldataload(add(headStart, 32)))\n        mstore(add(memPtr, 64), calldataload(add(headStart, 64)))\n        mstore(add(memPtr, 96), calldataload(add(headStart, 96)))\n        mstore(add(memPtr, 128), calldataload(add(headStart, 128)))\n        mstore(add(memPtr, 160), calldataload(add(headStart, 160)))\n        value0 := memPtr\n        value1 := calldataload(add(headStart, 0xc0))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_uint256t_bool(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let value := calldataload(add(headStart, 32))\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n        value1 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_add_t_int256(x, y) -> sum\n    {\n        let _1 := slt(x, 0)\n        if and(iszero(_1), sgt(y, sub(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, x))) { panic_error_0x11() }\n        if and(_1, slt(y, sub(0x8000000000000000000000000000000000000000000000000000000000000000, x))) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_int256(x, y) -> diff\n    {\n        let _1 := slt(y, 0)\n        if and(iszero(_1), slt(x, add(0x8000000000000000000000000000000000000000000000000000000000000000, y))) { panic_error_0x11() }\n        if and(_1, sgt(x, add(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, y))) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n}",
+      "contents": "{\n    { }\n    function abi_decode_tuple_t_struct$_TrancheInfo_$15077_memory_ptrt_uint256(headStart, dataEnd) -> value0, value1\n    {\n        let _1 := sub(dataEnd, headStart)\n        if slt(_1, 224) { revert(0, 0) }\n        if slt(_1, 0xc0) { revert(0, 0) }\n        let memPtr := mload(64)\n        let newFreePtr := add(memPtr, 0xc0)\n        if or(gt(newFreePtr, 0xffffffffffffffff), lt(newFreePtr, memPtr))\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x41)\n            revert(0, 0x24)\n        }\n        mstore(64, newFreePtr)\n        mstore(memPtr, calldataload(headStart))\n        mstore(add(memPtr, 32), calldataload(add(headStart, 32)))\n        mstore(add(memPtr, 64), calldataload(add(headStart, 64)))\n        mstore(add(memPtr, 96), calldataload(add(headStart, 96)))\n        mstore(add(memPtr, 128), calldataload(add(headStart, 128)))\n        mstore(add(memPtr, 160), calldataload(add(headStart, 160)))\n        value0 := memPtr\n        value1 := calldataload(add(headStart, 0xc0))\n    }\n    function abi_encode_tuple_t_uint256_t_uint256__to_t_uint256_t_uint256__fromStack_reversed(headStart, value1, value0) -> tail\n    {\n        tail := add(headStart, 64)\n        mstore(headStart, value0)\n        mstore(add(headStart, 32), value1)\n    }\n    function abi_encode_tuple_t_address__to_t_address__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, and(value0, 0xffffffffffffffffffffffffffffffffffffffff))\n    }\n    function abi_decode_tuple_t_uint256t_uint256(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        value1 := calldataload(add(headStart, 32))\n    }\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart, value0) -> tail\n    {\n        tail := add(headStart, 32)\n        mstore(headStart, value0)\n    }\n    function abi_decode_tuple_t_uint256t_bool(headStart, dataEnd) -> value0, value1\n    {\n        if slt(sub(dataEnd, headStart), 64) { revert(0, 0) }\n        value0 := calldataload(headStart)\n        let value := calldataload(add(headStart, 32))\n        if iszero(eq(value, iszero(iszero(value)))) { revert(0, 0) }\n        value1 := value\n    }\n    function abi_decode_tuple_t_address(headStart, dataEnd) -> value0\n    {\n        if slt(sub(dataEnd, headStart), 32) { revert(0, 0) }\n        let value := calldataload(headStart)\n        if iszero(eq(value, and(value, 0xffffffffffffffffffffffffffffffffffffffff))) { revert(0, 0) }\n        value0 := value\n    }\n    function abi_encode_tuple_t_stringliteral_9924ebdf1add33d25d4ef888e16131f0a5687b0580a36c21b5c301a6c462effe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 32)\n        mstore(add(headStart, 64), \"Ownable: caller is not the owner\")\n        tail := add(headStart, 96)\n    }\n    function abi_encode_tuple_t_stringliteral_245f15ff17f551913a7a18385165551503906a406f905ac1c2437281a7cd0cfe__to_t_string_memory_ptr__fromStack_reversed(headStart) -> tail\n    {\n        mstore(headStart, 32)\n        mstore(add(headStart, 32), 38)\n        mstore(add(headStart, 64), \"Ownable: new owner is the zero a\")\n        mstore(add(headStart, 96), \"ddress\")\n        tail := add(headStart, 128)\n    }\n    function panic_error_0x11()\n    {\n        mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n        mstore(4, 0x11)\n        revert(0, 0x24)\n    }\n    function checked_mul_t_uint256(x, y) -> product\n    {\n        if and(iszero(iszero(x)), gt(y, div(not(0), x))) { panic_error_0x11() }\n        product := mul(x, y)\n    }\n    function checked_add_t_int256(x, y) -> sum\n    {\n        let _1 := slt(x, 0)\n        if and(iszero(_1), sgt(y, sub(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, x))) { panic_error_0x11() }\n        if and(_1, slt(y, sub(0x8000000000000000000000000000000000000000000000000000000000000000, x))) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n    function checked_sub_t_int256(x, y) -> diff\n    {\n        let _1 := slt(y, 0)\n        if and(iszero(_1), slt(x, add(0x8000000000000000000000000000000000000000000000000000000000000000, y))) { panic_error_0x11() }\n        if and(_1, sgt(x, add(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, y))) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_div_t_uint256(x, y) -> r\n    {\n        if iszero(y)\n        {\n            mstore(0, 35408467139433450592217433187231851964531694900788300625387963629091585785856)\n            mstore(4, 0x12)\n            revert(0, 0x24)\n        }\n        r := div(x, y)\n    }\n    function checked_sub_t_uint256(x, y) -> diff\n    {\n        if lt(x, y) { panic_error_0x11() }\n        diff := sub(x, y)\n    }\n    function checked_add_t_uint256(x, y) -> sum\n    {\n        if gt(x, not(y)) { panic_error_0x11() }\n        sum := add(x, y)\n    }\n}",
       "id": 132,
       "language": "Yul",
       "name": "#utility.yul"
@@ -3803,28 +3803,28 @@
         3169
       ],
       "CustomMath": [
-        16564
+        16579
       ],
       "IERC20Upgradeable": [
         2635
       ],
       "IZorroController": [
-        15411
+        15422
       ],
       "IZorroControllerActions": [
-        14820
+        14831
       ],
       "IZorroControllerAnalytics": [
-        15210
+        15221
       ],
       "IZorroControllerBase": [
-        15184
+        15195
       ],
       "IZorroControllerInvestment": [
-        15371
+        15382
       ],
       "IZorroControllerVaultMgmt": [
-        15401
+        15412
       ],
       "Initializable": [
         1774
@@ -3900,7 +3900,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 10178,
-        "sourceUnit": 16565,
+        "sourceUnit": 16580,
         "src": "305:34:42",
         "symbolAliases": [],
         "unitAlias": ""
@@ -3912,7 +3912,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 10178,
-        "sourceUnit": 15412,
+        "sourceUnit": 15423,
         "src": "341:65:42",
         "symbolAliases": [],
         "unitAlias": ""
@@ -3924,7 +3924,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 10178,
-        "sourceUnit": 14821,
+        "sourceUnit": 14832,
         "src": "408:80:42",
         "symbolAliases": [],
         "unitAlias": ""
@@ -3937,7 +3937,7 @@
               "id": 10022,
               "name": "IZorroControllerActions",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 14820,
+              "referencedDeclaration": 14831,
               "src": "525:23:42"
             },
             "id": 10023,
@@ -3967,7 +3967,7 @@
           571,
           3169,
           1774,
-          14820
+          14831
         ],
         "name": "ZorroControllerActions",
         "nameLocation": "499:22:42",
@@ -4023,7 +4023,7 @@
               "id": 10032,
               "name": "CustomMath",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 16564,
+              "referencedDeclaration": 16579,
               "src": "692:10:42"
             },
             "nodeType": "UsingForDirective",
@@ -4041,7 +4041,7 @@
           },
           {
             "baseFunctions": [
-              14801
+              14812
             ],
             "body": {
               "id": 10115,
@@ -4314,7 +4314,7 @@
                                       "referencedDeclaration": 10038,
                                       "src": "1719:8:42",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_TrancheInfo_$15066_memory_ptr",
+                                        "typeIdentifier": "t_struct$_TrancheInfo_$15077_memory_ptr",
                                         "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                       }
                                     },
@@ -4325,7 +4325,7 @@
                                     "lValueRequested": false,
                                     "memberName": "durationCommittedInWeeks",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 15061,
+                                    "referencedDeclaration": 15072,
                                     "src": "1719:33:42",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -4422,7 +4422,7 @@
                                   "referencedDeclaration": 10038,
                                   "src": "1670:8:42",
                                   "typeDescriptions": {
-                                    "typeIdentifier": "t_struct$_TrancheInfo_$15066_memory_ptr",
+                                    "typeIdentifier": "t_struct$_TrancheInfo_$15077_memory_ptr",
                                     "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                   }
                                 },
@@ -4433,7 +4433,7 @@
                                 "lValueRequested": false,
                                 "memberName": "enteredVaultAt",
                                 "nodeType": "MemberAccess",
-                                "referencedDeclaration": 15063,
+                                "referencedDeclaration": 15074,
                                 "src": "1670:23:42",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -4707,7 +4707,7 @@
                                       "referencedDeclaration": 10038,
                                       "src": "1981:8:42",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_struct$_TrancheInfo_$15066_memory_ptr",
+                                        "typeIdentifier": "t_struct$_TrancheInfo_$15077_memory_ptr",
                                         "typeString": "struct IZorroControllerBase.TrancheInfo memory"
                                       }
                                     },
@@ -4718,7 +4718,7 @@
                                     "lValueRequested": false,
                                     "memberName": "durationCommittedInWeeks",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 15061,
+                                    "referencedDeclaration": 15072,
                                     "src": "1981:33:42",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -5037,7 +5037,7 @@
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_TrancheInfo_$15066_memory_ptr",
+                    "typeIdentifier": "t_struct$_TrancheInfo_$15077_memory_ptr",
                     "typeString": "struct IZorroControllerBase.TrancheInfo"
                   },
                   "typeName": {
@@ -5047,13 +5047,13 @@
                       "id": 10036,
                       "name": "IZorroControllerBase.TrancheInfo",
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 15066,
+                      "referencedDeclaration": 15077,
                       "src": "1133:32:42"
                     },
-                    "referencedDeclaration": 15066,
+                    "referencedDeclaration": 15077,
                     "src": "1133:32:42",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_TrancheInfo_$15066_storage_ptr",
+                      "typeIdentifier": "t_struct$_TrancheInfo_$15077_storage_ptr",
                       "typeString": "struct IZorroControllerBase.TrancheInfo"
                     }
                   },
@@ -5158,7 +5158,7 @@
           },
           {
             "baseFunctions": [
-              14810
+              14821
             ],
             "body": {
               "id": 10156,
@@ -5454,7 +5454,7 @@
                                                   "lValueRequested": false,
                                                   "memberName": "sqrt",
                                                   "nodeType": "MemberAccess",
-                                                  "referencedDeclaration": 16563,
+                                                  "referencedDeclaration": 16578,
                                                   "src": "2894:32:42",
                                                   "typeDescriptions": {
                                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$returns$_t_uint256_$bound_to$_t_uint256_$",
@@ -5738,7 +5738,7 @@
           },
           {
             "baseFunctions": [
-              14819
+              14830
             ],
             "body": {
               "id": 10175,
@@ -6002,12 +6002,12 @@
     "43114": {
       "events": {},
       "links": {},
-      "address": "0xDB075271f405a2Dc53c9E0bFDf3E29fE6625Bd98",
-      "transactionHash": "0x3e505db4b0a0fe9b2eb53b725b150491898249c901fe681f19d8be2f933aeeb3"
+      "address": "0xCBF3f25F8bd2C7150191F0F024B1d8f512994CE7",
+      "transactionHash": "0xa0f39f4b7b95e37a7e14753fb15c25e25089217cabb1d4ea1481c2c19670f3da"
     }
   },
   "schemaVersion": "3.4.11",
-  "updatedAt": "2023-03-05T23:15:18.118Z",
+  "updatedAt": "2023-03-08T03:11:23.283Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

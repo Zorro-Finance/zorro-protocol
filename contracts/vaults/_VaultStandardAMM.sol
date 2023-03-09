@@ -95,3 +95,11 @@ contract PCS_ZOR_BNB is VaultStandardAMM {
         pendingRewards = IPCSMasterChef(farmContractAddress).pendingCake(pid, address(this));
     }
 }
+
+import "../interfaces/TraderJoe/IMasterChefJoeV3.sol"; 
+
+contract TJ_AVAX_USDC is VaultStandardAMM {
+    function pendingFarmRewards() public view override returns (uint256 pendingRewards) {
+        (pendingRewards,,,) = IMasterChefJoeV3(farmContractAddress).pendingTokens(pid, address(this));
+    }
+}

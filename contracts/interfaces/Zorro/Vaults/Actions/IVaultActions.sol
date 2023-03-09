@@ -101,12 +101,14 @@ interface IVaultActions {
 
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _destination
     ) external returns (uint256 wantObtained);
 
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _destination
     ) external returns (uint256 usdObtained);
 
     function unrealizedProfits(address _vault)

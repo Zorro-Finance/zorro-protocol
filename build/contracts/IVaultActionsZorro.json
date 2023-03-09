@@ -180,6 +180,11 @@
           "internalType": "uint256",
           "name": "_maxMarketMovementAllowed",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_destination",
+          "type": "address"
         }
       ],
       "name": "exchangeUSDForWantToken",
@@ -204,6 +209,11 @@
           "internalType": "uint256",
           "name": "_maxMarketMovementAllowed",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_destination",
+          "type": "address"
         }
       ],
       "name": "exchangeWantTokenForUSD",
@@ -417,7 +427,7 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"name\":\"DistributedEarnings\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"burnAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"currentWantEquity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"positionVal\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"ZORROAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"treasury\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"stablecoin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroStakingVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroLPPoolOtherToken\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"ZORPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"lpPoolOtherTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"stablecoinPriceFeed\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORROPath\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORLPPoolOtherTokenPath\",\"type\":\"address[]\"},{\"internalType\":\"uint16\",\"name\":\"controllerFeeBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"buybackBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"revShareBP\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"isHomeChain\",\"type\":\"bool\"}],\"internalType\":\"struct IVaultActions.DistributeEarningsParams\",\"name\":\"_params\",\"type\":\"tuple\"}],\"name\":\"distributeAndReinvestEarnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSD\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeUSDForWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"}],\"name\":\"exchangeWantTokenForUSD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"usdObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountLP\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"poolAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"lpTokenAddress\",\"type\":\"address\"}],\"internalType\":\"struct IVaultActions.ExitPoolParams\",\"name\":\"_exitPoolParams\",\"type\":\"tuple\"}],\"name\":\"exitPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_token0Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_token1Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_path\",\"type\":\"address[]\"}],\"name\":\"reversePath\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"newPath\",\"type\":\"address[]\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken1\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"path\",\"type\":\"address[]\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"internalType\":\"struct SafeSwapUni.SafeSwapParams\",\"name\":\"_swapParams\",\"type\":\"tuple\"}],\"name\":\"safeSwap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"uniRouterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"unrealizedProfits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"accumulatedProfit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"harvestableProfit\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsZorro.sol\":\"IVaultActionsZorro\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter01.sol\":{\"keccak256\":\"0xedff0a1c8dd8eac392692f031406c459891a88a09d996629e3a56a9b8e003915\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7bb31e6c73608c55b6a40f6a4ccb4d592acb6f402fad3b12e78f6314e6da491e\",\"dweb:/ipfs/QmVTMhwncB1MwGJabKKtfcRzyHtnkueAx8XrB4yLrv6Xci\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter02.sol\":{\"keccak256\":\"0x6ff071388c7b300cb602534f249a4a1e63e97ae3870945ebc477d8cf03d36e24\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://32dbfb0f88caff1dc0859b430d30b9bc8c301ce073d26d3c1d92eea481007d12\",\"dweb:/ipfs/QmP8giHQSDYVt9qxyMjnVawFCi8gTCrgCKhZrywiwCiZ9x\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActions.sol\":{\"keccak256\":\"0x70a52bf5d20e14c3166bc53704266eb74c7fdc15919d365dd6dfb17771769787\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5c6bd33631992ac2f080a59e41879d3ae50c47162f7cfd7b011d0ba1891d0afa\",\"dweb:/ipfs/QmSWxVJod4LTVPpAsTmRnRfDwZA3FVbnXBAkoHqgQVR4h4\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsZorro.sol\":{\"keccak256\":\"0x6674cb2c6297d4cac701229171a4ed871b6fc0dfb2416ac0c44317d67689e9dc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://886be4a59eb51852b4c481519fe89cd9968dd16ca2e5b552a1f7925649dbd7f1\",\"dweb:/ipfs/QmRCqfx2F565UMQGhVr76w9MpVdxfP6PHhvxQniSvFwmQS\"]},\"project:/contracts/libraries/SafeSwap.sol\":{\"keccak256\":\"0x12474ac6678158bda55a1ce0fb982a920253ab3b72084bb8b3219f1bbdf66a02\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a157fa3130e187f4354a5398eb8271ba2733642b3e7e49bfd51d24de874d6c25\",\"dweb:/ipfs/QmXT3Z4rEHhJLzVZpccJeseefLQXkxXRcvc76KhvSDby68\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"name\":\"DistributedEarnings\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"burnAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"currentWantEquity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"positionVal\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"ZORROAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"treasury\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"stablecoin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroStakingVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zorroLPPoolOtherToken\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"ZORPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"lpPoolOtherTokenPriceFeed\",\"type\":\"address\"},{\"internalType\":\"contract AggregatorV3Interface\",\"name\":\"stablecoinPriceFeed\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORROPath\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"stablecoinToZORLPPoolOtherTokenPath\",\"type\":\"address[]\"},{\"internalType\":\"uint16\",\"name\":\"controllerFeeBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"buybackBP\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"revShareBP\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"isHomeChain\",\"type\":\"bool\"}],\"internalType\":\"struct IVaultActions.DistributeEarningsParams\",\"name\":\"_params\",\"type\":\"tuple\"}],\"name\":\"distributeAndReinvestEarnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantRemaining\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainBuybackAmt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"xChainRevShareAmt\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountUSD\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_destination\",\"type\":\"address\"}],\"name\":\"exchangeUSDForWantToken\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"wantObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_destination\",\"type\":\"address\"}],\"name\":\"exchangeWantTokenForUSD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"usdObtained\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountLP\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"poolAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"lpTokenAddress\",\"type\":\"address\"}],\"internalType\":\"struct IVaultActions.ExitPoolParams\",\"name\":\"_exitPoolParams\",\"type\":\"tuple\"}],\"name\":\"exitPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_token0Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_token1Amt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"}],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_path\",\"type\":\"address[]\"}],\"name\":\"reversePath\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"newPath\",\"type\":\"address[]\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceToken1\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maxMarketMovementAllowed\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"path\",\"type\":\"address[]\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"internalType\":\"struct SafeSwapUni.SafeSwapParams\",\"name\":\"_swapParams\",\"type\":\"tuple\"}],\"name\":\"safeSwap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"uniRouterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"unrealizedProfits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"accumulatedProfit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"harvestableProfit\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsZorro.sol\":\"IVaultActionsZorro\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter01.sol\":{\"keccak256\":\"0xedff0a1c8dd8eac392692f031406c459891a88a09d996629e3a56a9b8e003915\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7bb31e6c73608c55b6a40f6a4ccb4d592acb6f402fad3b12e78f6314e6da491e\",\"dweb:/ipfs/QmVTMhwncB1MwGJabKKtfcRzyHtnkueAx8XrB4yLrv6Xci\"]},\"project:/contracts/interfaces/Uniswap/IAMMRouter02.sol\":{\"keccak256\":\"0x6ff071388c7b300cb602534f249a4a1e63e97ae3870945ebc477d8cf03d36e24\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://32dbfb0f88caff1dc0859b430d30b9bc8c301ce073d26d3c1d92eea481007d12\",\"dweb:/ipfs/QmP8giHQSDYVt9qxyMjnVawFCi8gTCrgCKhZrywiwCiZ9x\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActions.sol\":{\"keccak256\":\"0xab55d48af4640e61d209cb0eb3a8442599b846497f92ea3b3c12f239ae6b3759\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3341df25c0b3d76788501ed529eac637c99e4c304b58bea5b397f341ac545da3\",\"dweb:/ipfs/QmYUvtYXZBWBVmmu14tzm7hxcaCLGWBKjz9fGEKj3BRggA\"]},\"project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActionsZorro.sol\":{\"keccak256\":\"0x6674cb2c6297d4cac701229171a4ed871b6fc0dfb2416ac0c44317d67689e9dc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://886be4a59eb51852b4c481519fe89cd9968dd16ca2e5b552a1f7925649dbd7f1\",\"dweb:/ipfs/QmRCqfx2F565UMQGhVr76w9MpVdxfP6PHhvxQniSvFwmQS\"]},\"project:/contracts/libraries/SafeSwap.sol\":{\"keccak256\":\"0x12474ac6678158bda55a1ce0fb982a920253ab3b72084bb8b3219f1bbdf66a02\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a157fa3130e187f4354a5398eb8271ba2733642b3e7e49bfd51d24de874d6c25\",\"dweb:/ipfs/QmXT3Z4rEHhJLzVZpccJeseefLQXkxXRcvc76KhvSDby68\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -434,27 +444,27 @@
         45
       ],
       "IAMMRouter01": [
-        14393
+        14404
       ],
       "IAMMRouter02": [
-        14481
+        14492
       ],
       "IVaultActions": [
-        15872
+        15887
       ],
       "IVaultActionsZorro": [
-        16043
+        16058
       ],
       "SafeSwapUni": [
-        16815
+        16830
       ]
     },
-    "id": 16044,
+    "id": 16059,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 16039,
+        "id": 16054,
         "literals": [
           "solidity",
           "^",
@@ -467,11 +477,11 @@
       {
         "absolutePath": "project:/contracts/interfaces/Zorro/Vaults/Actions/IVaultActions.sol",
         "file": "./IVaultActions.sol",
-        "id": 16040,
+        "id": 16055,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 16044,
-        "sourceUnit": 15873,
+        "scope": 16059,
+        "sourceUnit": 15888,
         "src": "58:29:86",
         "symbolAliases": [],
         "unitAlias": ""
@@ -481,13 +491,13 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 16041,
+              "id": 16056,
               "name": "IVaultActions",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 15872,
+              "referencedDeclaration": 15887,
               "src": "121:13:86"
             },
-            "id": 16042,
+            "id": 16057,
             "nodeType": "InheritanceSpecifier",
             "src": "121:13:86"
           }
@@ -496,16 +506,16 @@
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 16043,
+        "id": 16058,
         "linearizedBaseContracts": [
-          16043,
-          15872
+          16058,
+          15887
         ],
         "name": "IVaultActionsZorro",
         "nameLocation": "99:18:86",
         "nodeType": "ContractDefinition",
         "nodes": [],
-        "scope": 16044,
+        "scope": 16059,
         "src": "89:54:86",
         "usedErrors": []
       }
@@ -518,7 +528,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.11",
-  "updatedAt": "2023-03-05T23:14:55.056Z",
+  "updatedAt": "2023-03-08T03:10:58.192Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

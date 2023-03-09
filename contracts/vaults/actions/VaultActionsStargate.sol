@@ -37,13 +37,16 @@ contract VaultActionsStargate is IVaultActionsStargate, VaultActions {
         // Get balance of Token0
         uint256 _balToken0 = IERC20Upgradeable(_token0).balanceOf(_vaultAddr);
 
-        // Get balance of LP token
+        // Get balance of LP token on vault
         uint256 _balLPToken = IERC20Upgradeable(_sgPoolAddr).balanceOf(
             _vaultAddr
         );
 
+        // Get balance of LP token, staked into Masterchef
+        (uint256 _lpTokenStaked,) = IStargateLPStaking(_vault.farmContractAddress()).userInfo(_vault.pid(), _vaultAddr);
+
         // Rebase balance of LP token in Token0 units
-        uint256 _balLPTokenInToken0 = (_balLPToken *
+        uint256 _balLPTokenInToken0 = ((_balLPToken + _lpTokenStaked) *
             IERC20Upgradeable(_token0).balanceOf(_sgPoolAddr)) /
             IERC20Upgradeable(_sgPoolAddr).totalSupply();
 

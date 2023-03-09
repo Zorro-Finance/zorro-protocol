@@ -81,7 +81,9 @@ contract VaultStargate is IVaultStargate, VaultBase {
         );
 
         // Calc LP balance
-        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(address(this));
+        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
+            address(this)
+        );
 
         // Allow the farm contract (e.g. MasterChef) the ability to transfer up to the Want amount
         IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
@@ -96,11 +98,25 @@ contract VaultStargate is IVaultStargate, VaultBase {
     /// @notice Internal function for unfarming Want token. Responsible for unstaking Want token from MasterChef/MasterApe contracts
     /// @param _wantAmt the amount of Want tokens to withdraw. If 0, will only harvest and not withdraw
     function _unfarm(uint256 _wantAmt) internal override {
+        // Convert want amount into SG LP pool token amount
+        uint256 _lpAmount = (_wantAmt *
+            IERC20Upgradeable(poolAddress).totalSupply()) /
+            IERC20Upgradeable(wantAddress).balanceOf(poolAddress);
+
+        // Safety: Cap the LP amount to the maximum on the ledger for this vault
+        (uint256 _ledgerAmountLP, ) = IStargateLPStaking(farmContractAddress)
+            .userInfo(pid, address(this));
+        if (_lpAmount > _ledgerAmountLP) {
+            _lpAmount = _ledgerAmountLP;
+        }
+
         // Withdraw the Want tokens from the Farm contract
-        IStargateLPStaking(farmContractAddress).withdraw(pid, _wantAmt);
+        IStargateLPStaking(farmContractAddress).withdraw(pid, _lpAmount);
 
         // Calc lp balance
-        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(address(this));
+        uint256 _lpBal = IERC20Upgradeable(poolAddress).balanceOf(
+            address(this)
+        );
 
         // Approve
         IERC20Upgradeable(poolAddress).safeIncreaseAllowance(
@@ -118,6 +134,7 @@ contract VaultStargate is IVaultStargate, VaultBase {
 }
 
 contract StargateUSDTOnAVAX is VaultStargate {}
+
 contract StargateUSDTOnAVAXTest0 is VaultStargate {}
 
 contract StargateBUSDOnBNB is VaultStargate {}

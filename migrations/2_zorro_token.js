@@ -1,3 +1,6 @@
+// Upgrades
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+
 const { chains } = require("../helpers/constants");
 const { isDevNetwork, isTestNetwork, getSynthNetwork } = require("../helpers/chains");
 

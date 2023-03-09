@@ -317,6 +317,8 @@ contract ZorroControllerInvestment is
             _wantAmt
         );
 
+        // TODO: Why when making a deposit, we proactively send funds over, and on a withdrawal we utilise safeTransferFrom()?
+
         // Make deposit
         // Call core deposit function
         _deposit(

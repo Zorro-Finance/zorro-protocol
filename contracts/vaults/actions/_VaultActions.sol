@@ -548,10 +548,12 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
     /// @notice Performs necessary operations to convert USD into Want token
     /// @param _amountUSD The USD quantity to exchange (must already be deposited)
     /// @param _maxMarketMovementAllowed The max slippage allowed. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _destination Where to send want token to
     /// @return wantObtained Amount of Want token obtained and transferred to sender
     function exchangeUSDForWantToken(
         uint256 _amountUSD,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _destination
     ) public virtual returns (uint256 wantObtained) {
         // Prep
         address _stablecoin = IVault(_msgSender()).defaultStablecoin();
@@ -571,16 +573,18 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         );
 
         // Transfer back to sender
-        IERC20Upgradeable(_want).safeTransfer(msg.sender, wantObtained);
+        IERC20Upgradeable(_want).safeTransfer(_destination, wantObtained);
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal and transfers to sender
     /// @param _amount The Want token quantity to exchange (must be deposited beforehand)
     /// @param _maxMarketMovementAllowed The max slippage allowed for swaps. 1000 = 0 %, 995 = 0.5%, etc.
+    /// @param _destination Where to send converted USD to
     /// @return usdObtained Amount of USD token obtained and transferred to sender
     function exchangeWantTokenForUSD(
         uint256 _amount,
-        uint256 _maxMarketMovementAllowed
+        uint256 _maxMarketMovementAllowed,
+        address _destination
     ) public virtual returns (uint256 usdObtained) {
         // Preflight checks
         require(_amount > 0, "negWant");
@@ -603,7 +607,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         );
 
         // Transfer back to sender
-        IERC20Upgradeable(_stablecoin).safeTransfer(msg.sender, usdObtained);
+        IERC20Upgradeable(_stablecoin).safeTransfer(_destination, usdObtained);
     }
 
     /// @notice Calculates accumulated unrealized profits on a vault
