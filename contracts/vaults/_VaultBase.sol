@@ -429,24 +429,22 @@ abstract contract VaultBase is
         // Hook
         _beforeWithdrawal();
 
-        // Calc current want equity
-        uint256 _wantEquity = IVaultActions(vaultActions).currentWantEquity(
-            address(this)
-        );
+        // Calc current amount of token farmed
+        uint256 _farmedTotal = this.amountFarmed();
 
         // Safety: cap the shares to the total number of shares
         if (_shares > sharesTotal) {
             _shares = sharesTotal;
         }
 
-        // Calculate proportional amount of Want
-        uint256 _wantRemovable = (_wantEquity * _shares) / sharesTotal;
+        // Calculate proportional amount of token to unfarm
+        uint256 _removableShare = (_farmedTotal * _shares) / sharesTotal;
 
         // Decrement the total shares by the sharesRemoved
         sharesTotal -= _shares;
 
-        // Unfarm Want token if applicable
-        _unfarm(_wantRemovable);
+        // Unfarm token if applicable
+        _unfarm(_removableShare);
 
         // Calculate actual Want unfarmed
         wantRemoved = IERC20Upgradeable(wantAddress).balanceOf(address(this));
@@ -602,7 +600,7 @@ abstract contract VaultBase is
         _farm();
     }
 
-    /// @notice Converts USD to Want token and delivers back to this contract
+    /// @notice Converts USD to Want token and delivers back to sender
     /// @param _amountUSD Amount of USD to exchange
     /// @param _maxMarketMovementAllowed Slippage (990 = 1%)
     /// @return wantObtained The amount of Want token returned
@@ -610,6 +608,13 @@ abstract contract VaultBase is
         uint256 _amountUSD,
         uint256 _maxMarketMovementAllowed
     ) external virtual returns (uint256 wantObtained) {
+        // Transfer IN
+        IERC20Upgradeable(defaultStablecoin).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amountUSD
+        );
+
         // Approve spending
         IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
             vaultActions,
@@ -654,6 +659,12 @@ abstract contract VaultBase is
     }
 
     /* Abstract methods */
+
+    function amountFarmed()
+        public
+        view
+        virtual
+        returns (uint256 farmed);
 
     function _farm() internal virtual;
 

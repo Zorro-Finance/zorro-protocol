@@ -21,7 +21,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
     /// @param _timelockOwner Address of timelock contract, to be set as owner
     /// @param _initValue A VaultZorroInit struct
     function initialize(
-        address _timelockOwner, 
+        address _timelockOwner,
         VaultZorroInit memory _initValue
     ) public initializer {
         // Call base initializer
@@ -129,10 +129,10 @@ contract VaultZorro is IVaultZorro, VaultBase {
     /// @notice Public function for farming Want token.
     function farm() public nonReentrant {}
 
-    /// @notice Implement dummy _farm function to satisfy abstract contract 
+    /// @notice Implement dummy _farm function to satisfy abstract contract
     function _farm() internal override {}
 
-    /// @notice Implement dummy _unfarm function to satisfy abstract contract 
+    /// @notice Implement dummy _unfarm function to satisfy abstract contract
     function _unfarm(uint256 _amount) internal override {}
 
     /// @notice The main compounding (earn) function. Reinvests profits since the last earn event.
@@ -152,4 +152,7 @@ contract VaultZorro is IVaultZorro, VaultBase {
         // Update last earned block
         lastEarnBlock = block.number;
     }
+
+    /// @notice Implement dummy amountFarmed function to satisfy abstract contract
+    function amountFarmed() public view override returns (uint256) {}
 }

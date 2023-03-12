@@ -9,33 +9,22 @@ const {
 const {
     setDeployerAsZC,
     setZorroControllerAsZC,
-    swapExactETHForTokens,
+    swapExactAVAXForTokens,
+    callTimelockFunc,
 } = require('../../helpers/vaults');
 
 // Artifacts
-const PCS_ZOR_BNB = artifacts.require('PCS_ZOR_BNB');
+const TJ_AVAX_USDC = artifacts.require('TJ_AVAX_USDC');
 const VaultTimelock = artifacts.require('VaultTimelock');
 const ERC20Upgradeable = artifacts.require('ERC20Upgradeable');
 const VaultActionsStandardAMM = artifacts.require('VaultActionsStandardAMM');
-const IAMMRouter02 = artifacts.require('IAMMRouter02');
+const IJoeRouter02 = artifacts.require('IJoeRouter02');
+const IBoostedMasterChefJoe = artifacts.require('IBoostedMasterChefJoe');
 const ZorroController = artifacts.require('ZorroController');
+const IWETH = artifacts.require('IWETH');
 
 contract('VaultStandardAMM :: Setters', async accounts => {
-    xit('Sets whether LP token is farmable', async () => {
-        /* GIVEN
-        */
-
-        /* WHEN
-        */
-
-        /* THEN
-        */
-    });
-});
-
-contract('VaultLending :: Investments', async accounts => {
-    // Setup
-    let vault, zc, vaultTimelock, busdERC20;
+    let vault, vaultTimelock, zc;
 
     // Hook: Before all tests
     before(async () => {
@@ -43,31 +32,113 @@ contract('VaultLending :: Investments', async accounts => {
         vaultTimelock = await VaultTimelock.deployed();
 
         // Get vault
-        vault = await PCS_ZOR_BNB.deployed();
+        vault = await TJ_AVAX_USDC.deployed();
 
         // Other contracts/tokens
         zc = await ZorroController.deployed();
-        const vaultActions = await VaultActionsStandardAMM.deployed();
-        const routerAddress = await vaultActions.uniRouterAddress.call();
-        const router = await IAMMRouter02.at(routerAddress);
-        const { wbnb, busd } = chains.bnb.tokens;
-
-        // Get BUSD
-        const val = web3.utils.toWei('100', 'ether');
-        await swapExactETHForTokens(router, [wbnb, busd], accounts[0], val);
-        
-        // Establish contracts
-        busdERC20 = await ERC20Upgradeable.at(busd);
 
         // Set Zorrocontroller as deployer (to auth the caller for deposits)
-        await setDeployerAsZC(vault);
+        await setDeployerAsZC(vault, vaultTimelock, accounts[0]);
     });
 
     // Hook: After all tests
     after(async () => {
         // Cleanup
         // Set Zorrocontroller back to actual ZorroController
-        await setZorroControllerAsZC(vault, zc);
+        await setZorroControllerAsZC(vault, vaultTimelock, zc);
+    });
+
+    it('Sets whether LP token is farmable', async () => {
+        /* GIVEN
+        - As the timelock owner
+        */
+
+        /* WHEN
+        - I set whether LP token is farmable
+        */
+
+        /* THEN
+        - The vault contract toggles this value
+        */
+
+        /* Test */
+        // Setup
+        const isLPFarmable = await vault.isLPFarmable.call();
+
+        // Run
+        await callTimelockFunc(
+            vaultTimelock, 
+            vault.contract.methods.setIsFarmable(!isLPFarmable), 
+            vault.address
+        );
+
+        // Assert
+        assert.notEqual(await vault.isLPFarmable.call(), isLPFarmable);
+    });
+});
+
+contract('VaultStandardAMM :: Investments', async accounts => {
+    // Setup
+    let vault, vaultActions, zc, masterchef, vaultTimelock, usdcERC20, iAVAX, pool;
+
+    // Hook: Before all tests
+    before(async () => {
+        // Get timelock
+        vaultTimelock = await VaultTimelock.deployed();
+
+        // Get vault
+        vault = await TJ_AVAX_USDC.deployed();
+
+        // Other contracts/tokens
+        zc = await ZorroController.deployed();
+        vaultActions = await VaultActionsStandardAMM.deployed();
+        const routerAddress = await vaultActions.uniRouterAddress.call();
+        const router = await IJoeRouter02.at(routerAddress);
+        const { wavax, usdc } = chains.avax.tokens;
+        iAVAX = await IWETH.at(wavax);
+        masterchef = await IBoostedMasterChefJoe.at(chains.avax.protocols.traderjoe.masterChef);
+
+        // Establish contracts
+        usdcERC20 = await ERC20Upgradeable.at(usdc);
+
+        // Get USDC
+        const amountAvax = 100;
+        const amountAvaxWei = web3.utils.toWei(amountAvax.toString(), 'ether');
+        await swapExactAVAXForTokens(router, [wavax, usdc], accounts[0], amountAvaxWei);
+        const balUSDC = await usdcERC20.balanceOf.call(accounts[0]);
+        const exchgRate = (balUSDC.toNumber() * 10 ** -6) / amountAvax;
+
+        // Wrap AVAX
+        const amountAvaxToWrap = 10;
+        const amountAvaxWrapWei = web3.utils.toWei(amountAvaxToWrap.toString(), 'ether');
+        await iAVAX.deposit({ value: amountAvaxWrapWei });
+
+        // Get LP token
+        const amountUSDCWei = web3.utils.toWei(Math.round(amountAvax * exchgRate * 10 ** 6).toString(), 'Mwei');
+        const now = Math.floor((new Date).getTime() / 1000);
+        await iAVAX.approve(router.address, amountAvaxWrapWei);
+        await usdcERC20.approve(router.address, amountUSDCWei);
+        await router.addLiquidity(
+            wavax,
+            usdc,
+            amountAvaxWrapWei,
+            amountUSDCWei,
+            0,
+            0,
+            accounts[0],
+            now + 300
+        );
+        pool = await ERC20Upgradeable.at(await vault.poolAddress.call());
+
+        // Set Zorrocontroller as deployer (to auth the caller for deposits)
+        await setDeployerAsZC(vault, vaultTimelock, accounts[0]);
+    });
+
+    // Hook: After all tests
+    after(async () => {
+        // Cleanup
+        // Set Zorrocontroller back to actual ZorroController
+        await setZorroControllerAsZC(vault, vaultTimelock, zc);
     });
 
     it('Deposits', async () => {
@@ -89,21 +160,17 @@ contract('VaultLending :: Investments', async accounts => {
 
         /* Test */
         // Setup
-        // Wrap BNB
-
-        // Get Zorro
-
-        // Add liquidity to Zorro-BNB pool
-
         // Query LP token balance
+        const balLP = await pool.balanceOf.call(accounts[0]);
 
         // Set deposit amount of LP token
+        const amountLP = balLP.div(web3.utils.toBN(10));
 
         // Approve spending of LP token
-        
+        await pool.approve(vault.address, amountLP);
 
         // Run
-        await vault.depositWantToken(amountLPToken);
+        await vault.depositWantToken(amountLP);
 
         // Assert
         // TODO
@@ -126,18 +193,24 @@ contract('VaultLending :: Investments', async accounts => {
         /* Test */
 
         // Setup
+        // Get existing LP balance
+        const balLP0 = await pool.balanceOf.call(accounts[0]);
+
         // Set usd amount, slippage
-        const amountBUSD = web3.utils.toWei('10', 'ether'); // $10
+        const amountUSDC = web3.utils.toWei('10', 'Mwei'); // $10
         const slippage = 990;
 
-        // Approve spending
-        await busdERC20.approve(vault.address, amountBUSD);
+        // Send usdc
+        await usdcERC20.approve(vault.address, amountUSDC);
 
         // Run
-        await vault.exchangeUSDForWantToken(amountBUSD, slippage);
+        await vault.exchangeUSDForWantToken(amountUSDC, slippage);
 
         // Assert
-        // TODO: (lp token balance > 0)
+        // TODO
+        // const balLP = await pool.balanceOf.call(accounts[0]);
+        // const netLP = balLP.sub(balLP0);
+        // assert.approximately(netLP.toNumber(), 0, 100000); // Get back similar amount to what was put in
     });
 
     it('Withdraws', async () => {
@@ -161,12 +234,22 @@ contract('VaultLending :: Investments', async accounts => {
         /* Tests */
 
         // Setup
-        // Get LP token (TODO: Abstract out whatever logic was used for deposit() to get LP token)
+        // Record initial balance
+        const balLP0 = await pool.balanceOf.call(accounts[0]);
+
+        // Set deposit amount
+        const amountLP = balLP0.div(web3.utils.toBN(10));
 
         // Approve spending
+        await pool.approve(vault.address, amountLP);
 
         // Deposit
+        await vault.depositWantToken(amountLP);
 
+        // Check the current want equity
+        const currWantEquity = await vaultActions.currentWantEquity.call(vault.address);
+        const userInfo = await masterchef.userInfo.call(0, vault.address);
+        // console.log('curr want equity: ', currWantEquity.toString(), 'userInfo: ', userInfo, 'amountLP: ', amountLP.toString());
         // Determine number of shares
         const totalShares = await vault.sharesTotal.call();
 
@@ -174,6 +257,9 @@ contract('VaultLending :: Investments', async accounts => {
         await vault.withdrawWantToken(totalShares);
 
         // Assert
+        // const balUSDT = await usdtERC20.balanceOf.call(accounts[0]);
+        // const netUSDT = balUSDT.sub(balUSDT0);
+        // assert.approximately(netUSDT.toNumber(), 0, 100000); // Tolerance: 1%
         // TODO: All other assertions
     });
 
@@ -194,22 +280,28 @@ contract('VaultLending :: Investments', async accounts => {
         /* Test */
 
         // Setup
-        // Get LP token (same abstract method above)
+        // Calculate USDC balance beforehand
+        const balUSDC0 = await usdcERC20.balanceOf.call(accounts[0]);
 
-        // Get LP bal, set slippage
-        
+        // Set LP amount, slippage
+        const balLP0 = await pool.balanceOf.call(accounts[0]);
+        const amountLP = balLP0.div(web3.utils.toBN(10));
         const slippage = 990;
 
         // Approve spending
+        await pool.approve(vault.address, amountLP);
 
         // Run
-        await vault.exchangeWantTokenForUSD(amountLPToken, slippage);
+        await vault.exchangeWantTokenForUSD(amountLP, slippage);
 
         // Assert
         // TODO
+        // const balUSDC = await usdcERC20.balanceOf.call(accounts[0]);
+        // const netUSDC = balUSDC.sub(balUSDC0);
+        // assert.approximately(netUSDC.toNumber(), parseInt(amountUSDT), 100000);
     });
 
-    xit('Fetches pending farm rewards', async () => {
+    it('Fetches pending farm rewards', async () => {
         /* GIVEN
         - As a public user
         */
@@ -221,6 +313,26 @@ contract('VaultLending :: Investments', async accounts => {
         /* THEN
         - I expect to see the pending rewards owed to this vault
         */
+
+        /* Test */
+        // Setup 
+        // Calculate rewards before depositing
+        const joeRewards0 = await vault.pendingFarmRewards.call();
+        console.log('joeRewards0', joeRewards0.toString());
+        
+        // Deposit
+        const balLP0 = await pool.balanceOf.call(accounts[0]);
+        const amountLP = balLP0.div(web3.utils.toBN(10));
+        await pool.approve(vault.address, amountLP);
+        await vault.depositWantToken(amountLP);
+        
+        // Run
+        await masterchef.updatePool(0);
+        const joeRewards = await vault.pendingFarmRewards.call();
+        console.log('joeRewards', joeRewards.toString());
+
+        // Assert
+        // assert.isAbove(joeRewards.sub(joeRewards0).toNumber(), 0);
     });
 });
 

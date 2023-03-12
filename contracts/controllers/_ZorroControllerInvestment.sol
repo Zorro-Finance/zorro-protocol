@@ -305,6 +305,12 @@ contract ZorroControllerInvestment is
         // Get Vault contract
         address vaultAddr = vaultInfo[_vid].vault;
 
+        // Safe increase allowance of stablecoin
+        IERC20Upgradeable(defaultStablecoin).safeIncreaseAllowance(
+            vaultAddr,
+            _valueUSD
+        );
+
         // Exchange USD for Want token in the Vault contract
         uint256 _wantAmt = IVault(vaultAddr).exchangeUSDForWantToken(
             _valueUSD,
@@ -488,7 +494,8 @@ contract ZorroControllerInvestment is
                     IVault _vault = IVault(_vaultAddr);
 
                     // Get staked want tokens
-                    uint256 _shares = _tranche.contribution * 1e12 / _tranche.timeMultiplier;
+                    uint256 _shares = (_tranche.contribution * 1e12) /
+                        _tranche.timeMultiplier;
 
                     // Withdraw the want token for this account
                     _vault.withdrawWantToken(_shares);
@@ -508,7 +515,6 @@ contract ZorroControllerInvestment is
                 trancheInfo[_vid][_resolvedLocalAcct][_trancheId]
                     .exitedVaultAt = block.timestamp;
             }
-            
 
             // Emit withdrawal event and return want balance
             emit Withdraw(

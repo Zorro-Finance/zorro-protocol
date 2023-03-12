@@ -158,6 +158,8 @@ contract MockInvestmentVault is VaultBase {
     function _farm() internal override {}
 
     function _unfarm(uint256 _amount) internal override {}
+
+    function amountFarmed() public view override returns (uint256) {}
 }
 
 contract MockInvestmentVault1 is MockInvestmentVault {}

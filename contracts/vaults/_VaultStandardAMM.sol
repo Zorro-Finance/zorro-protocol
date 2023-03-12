@@ -86,6 +86,15 @@ abstract contract VaultStandardAMM is IVaultStandardAMM, VaultBase {
     /// @dev Every protocol has a different function name for this, so the implementing contract must conform to this abstraction
     /// @return pendingRewards The quantity of rewards tokens available for harvest
     function pendingFarmRewards() public view virtual returns (uint256 pendingRewards);
+
+    /// @notice Measures the amount of farmable tokens that has been farmed
+    /// @return farmed Total farmed value, in units of farmable token
+    function amountFarmed()
+        public
+        view
+        virtual
+        override
+        returns (uint256 farmed);
 }
 
 import "../interfaces/PancakeSwap/IMasterChef.sol"; 
@@ -94,12 +103,20 @@ contract PCS_ZOR_BNB is VaultStandardAMM {
     function pendingFarmRewards() public view override returns (uint256 pendingRewards) {
         pendingRewards = IPCSMasterChef(farmContractAddress).pendingCake(pid, address(this));
     }
+
+    function amountFarmed() public view override returns (uint256 farmed) {
+        (farmed,) = IPCSMasterChef(farmContractAddress).userInfo(pid, address(this));
+    }
 }
 
-import "../interfaces/TraderJoe/IMasterChefJoeV3.sol"; 
+import "../interfaces/TraderJoe/IBoostedMasterChefJoe.sol"; 
 
 contract TJ_AVAX_USDC is VaultStandardAMM {
     function pendingFarmRewards() public view override returns (uint256 pendingRewards) {
-        (pendingRewards,,,) = IMasterChefJoeV3(farmContractAddress).pendingTokens(pid, address(this));
+        (pendingRewards,,,) = IBoostedMasterChefJoe(farmContractAddress).pendingTokens(pid, address(this));
+    }
+
+    function amountFarmed() public view override returns (uint256 farmed) {
+        (farmed,,) = IBoostedMasterChefJoe(farmContractAddress).userInfo(pid, address(this));
     }
 }

@@ -1,12 +1,12 @@
 const salt = web3.utils.numberToHex(4096);
 
-exports.setDeployerAsZC = async (vault, vaultTimelock, controller) => {
+const callTimelockFunc = async (timelock, callable, contractAddr) => {
     // Generate payload
-    const payload = vault.contract.methods.setContractAddress(12, controller).encodeABI();
+    const payload = callable.encodeABI();
 
     // Schedule timelock
-    await vaultTimelock.schedule(
-        vault.address,
+    await timelock.schedule(
+        contractAddr,
         0,
         payload,
         '0x',
@@ -15,8 +15,8 @@ exports.setDeployerAsZC = async (vault, vaultTimelock, controller) => {
     );
 
     // Execute timelock
-    await vaultTimelock.execute(
-        vault.address,
+    await timelock.execute(
+        contractAddr,
         0,
         payload,
         '0x',
@@ -24,28 +24,14 @@ exports.setDeployerAsZC = async (vault, vaultTimelock, controller) => {
     );
 };
 
+exports.callTimelockFunc = callTimelockFunc;
+
+exports.setDeployerAsZC = async (vault, vaultTimelock, controller) => {
+    await callTimelockFunc(vaultTimelock, vault.contract.methods.setContractAddress(12, controller), vault.address);
+};
+
 exports.setZorroControllerAsZC = async (vault, vaultTimelock, zc) => {
-    // Generate payload
-    const payload = vault.contract.methods.setContractAddress(12, zc.address).encodeABI();
-
-    // Schedule timelock
-    await vaultTimelock.schedule(
-        vault.address,
-        0,
-        payload,
-        '0x',
-        salt,
-        0
-    );
-
-    // Execute timelock
-    await vaultTimelock.execute(
-        vault.address,
-        0,
-        payload,
-        '0x',
-        salt
-    );
+    await callTimelockFunc(vaultTimelock, vault.contract.methods.setContractAddress(12, zc.address), vault.address);
 };
 
 const now = () => Math.floor((new Date).getTime() / 1000);

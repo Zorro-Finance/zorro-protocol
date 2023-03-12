@@ -51,7 +51,7 @@ interface IBoostedMasterChefJoe {
     }
 
     function poolInfo(uint256 _i) external view returns (PoolInfo memory);
-    function userInfo(uint256 _pid, address _user) external view returns (UserInfo memory);
+    function userInfo(uint256 _pid, address _user) external view returns (uint256, uint256, uint256);
     function totalAllocPoint() external view returns (uint256);
     function claimableJoe(uint256 _i, address _user) external view returns (uint256);
 

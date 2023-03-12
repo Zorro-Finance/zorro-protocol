@@ -2,10 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
-
-import "../../interfaces/Alpaca/IAlpacaVault.sol";
-
 import "../../interfaces/Zorro/Vaults/IVaultStandardAMM.sol";
 
 import "../../interfaces/Uniswap/IAMMFarm.sol";
@@ -43,13 +39,18 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
 
         if (_vault.isLPFarmable()) {
             // Get balance of LP token staked on Masterchef (if isFarmable)
-            (uint256 _amtLPStaked, ) = IAMMFarm(_vault.farmContractAddress()).userInfo(_vault.pid(), _vaultAddr);
+            (uint256 _amtLPStaked, ) = IAMMFarm(_vault.farmContractAddress())
+                .userInfo(_vault.pid(), _vaultAddr);
 
             // Express in Token0 units
-            _stakedLP = _amtLPStaked * IERC20Upgradeable(_token0).balanceOf(_lpToken) / IERC20Upgradeable(_lpToken).totalSupply();
+            _stakedLP =
+                (_amtLPStaked *
+                    IERC20Upgradeable(_token0).balanceOf(_lpToken)) /
+                IERC20Upgradeable(_lpToken).totalSupply();
 
             // Get pending Earn
-            uint256 _pendingEarn = IVaultStandardAMM(_vaultAddr).pendingFarmRewards();
+            uint256 _pendingEarn = IVaultStandardAMM(_vaultAddr)
+                .pendingFarmRewards();
 
             // Convert to equivalent in Want token
             uint256 _earnEquityInToken0 = (_pendingEarn *
@@ -57,10 +58,11 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
                 (2 * _vault.priceFeeds(_token0).getExchangeRate());
 
             // Calculate earn balance in units of LP (earn bal in units of Token 0 * total LP token supply / balance of token 0 on LP pool contract)
-            _pendingEarnLP = (_earnEquityInToken0 *
-                IERC20Upgradeable(_lpToken).totalSupply()) /
+            _pendingEarnLP =
+                (_earnEquityInToken0 *
+                    IERC20Upgradeable(_lpToken).totalSupply()) /
                 IERC20Upgradeable(_token0).balanceOf(_lpToken);
-            }
+        }
 
         // Sum up all equity in the units of the Want token
         positionVal = _stakedLP + _pendingEarnLP;
@@ -137,11 +139,11 @@ contract VaultActionsStandardAMM is IVaultActionsStandardAMM, VaultActions {
             _token0Amt,
             _token1Amt,
             _maxMarketMovementAllowed,
-            msg.sender
+            address(this)
         );
 
         // Calculate resulting want token balance
-        wantObtained = IERC20Upgradeable(_want).balanceOf(msg.sender);
+        wantObtained = IERC20Upgradeable(_want).balanceOf(address(this));
     }
 
     /// @notice Converts Want token back into USD to be ready for withdrawal, transfers back to sender

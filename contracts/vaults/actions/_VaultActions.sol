@@ -10,10 +10,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../../interfaces/Alpaca/IAlpacaFairLaunch.sol";
-
-import "../../interfaces/Alpaca/IAlpacaVault.sol";
-
 import "../../interfaces/Uniswap/IAMMRouter02.sol";
 
 import "../../interfaces/Zorro/Vaults/IVault.sol";
@@ -341,7 +337,11 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
         IERC20Upgradeable(_want).safeTransfer(msg.sender, _balUSD);
 
         // Emit log
-        emit DistributedEarnings(wantRemaining, xChainBuybackAmt, xChainRevShareAmt);
+        emit DistributedEarnings(
+            wantRemaining,
+            xChainBuybackAmt,
+            xChainRevShareAmt
+        );
     }
 
     /// @notice Takes earnings (in Want) and distributes fees, buyback, revshare etc.
@@ -443,10 +443,7 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
                 fee = (_amount * _controllerFeeBP) / 10000;
 
                 // Transfer the fee to the rewards address
-                IERC20Upgradeable(_stablecoin).safeTransfer(
-                    _treasury,
-                    fee
-                );
+                IERC20Upgradeable(_stablecoin).safeTransfer(_treasury, fee);
             }
         }
     }
