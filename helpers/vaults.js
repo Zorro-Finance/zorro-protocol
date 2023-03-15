@@ -1,8 +1,10 @@
-const salt = web3.utils.numberToHex(4096);
+const salt = () => web3.utils.numberToHex(Math.floor(4096*Math.random()));
 
 const callTimelockFunc = async (timelock, callable, contractAddr) => {
     // Generate payload
     const payload = callable.encodeABI();
+
+    const s = salt();
 
     // Schedule timelock
     await timelock.schedule(
@@ -10,7 +12,7 @@ const callTimelockFunc = async (timelock, callable, contractAddr) => {
         0,
         payload,
         '0x',
-        salt,
+        s,
         0
     );
 
@@ -20,7 +22,7 @@ const callTimelockFunc = async (timelock, callable, contractAddr) => {
         0,
         payload,
         '0x',
-        salt
+        s
     );
 };
 

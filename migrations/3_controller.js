@@ -86,5 +86,5 @@ module.exports = async function (deployer, network, accounts) {
   }
   
 
-  
+  // TODO: Where is Zorro token's ZC set?
 };

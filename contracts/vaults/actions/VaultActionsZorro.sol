@@ -38,7 +38,7 @@ contract VaultActionsZorro is IVaultActionsZorro, VaultActions {
         address _zor = _vault.ZORROAddress();
 
         // Return ZOR balance
-        positionVal = IERC20Upgradeable(_zor).balanceOf(address(this));
+        positionVal = IERC20Upgradeable(_zor).balanceOf(_vaultAddr);
     }
 
     /// @notice Performs necessary operations to convert USD into Want token
