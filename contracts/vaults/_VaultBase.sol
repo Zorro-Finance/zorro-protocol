@@ -412,6 +412,8 @@ abstract contract VaultBase is
         _afterDeposit();
     }
 
+    // TODO: Does masterchef.updatePool(pid) need to be called before farming/unfarming?
+
     /// @notice Fully withdraw Want tokens from the Farm contract (100% withdrawals only)
     /// @param _shares The number of shares to withdraw
     /// @return wantRemoved The amount of Want tokens withdrawn

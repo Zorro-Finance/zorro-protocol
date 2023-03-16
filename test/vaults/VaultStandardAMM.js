@@ -80,7 +80,7 @@ contract('VaultStandardAMM :: Setters', async accounts => {
 
 contract('VaultStandardAMM :: Investments', async accounts => {
     // Setup
-    let vault, vaultActions, zc, masterchef, vaultTimelock, usdcERC20, iAVAX, pool;
+    let vault, vaultActions, zc, masterchef, vaultTimelock, usdcERC20, iAVAX, pool, joeERC20;
 
     // Hook: Before all tests
     before(async () => {
@@ -95,9 +95,10 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         vaultActions = await VaultActionsStandardAMM.deployed();
         const routerAddress = await vaultActions.uniRouterAddress.call();
         const router = await IJoeRouter02.at(routerAddress);
-        const { wavax, usdc } = chains.avax.tokens;
+        const { wavax, usdc, joe } = chains.avax.tokens;
         iAVAX = await IWETH.at(wavax);
         masterchef = await IBoostedMasterChefJoe.at(chains.avax.protocols.traderjoe.masterChef);
+        joeERC20 = await ERC20Upgradeable.at(joe);
 
         // Establish contracts
         usdcERC20 = await ERC20Upgradeable.at(usdc);
@@ -160,13 +161,46 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         const amountLP = balLP.div(web3.utils.toBN(10));
 
         // Approve spending of LP token
-        await pool.approve(vault.address, amountLP);
+        await pool.approve(vault.address, amountLP.mul(web3.utils.toBN(2)));
 
         // Run
+        // Deposit 1
+        console.log('bal LP before deposit 0: ', (await pool.balanceOf.call(accounts[0])).toString());
         await vault.depositWantToken(amountLP);
+        const totalShares0 = await vault.sharesTotal.call();
+        // Deposit 2
+        console.log('bal LP before deposit 1: ', (await pool.balanceOf.call(accounts[0])).toString());
+        console.log('curr want eq before deposit 1: ', (await vaultActions.currentWantEquity.call(vault.address)).toString());
+        await vault.depositWantToken(amountLP);
+        const totalShares1 = await vault.sharesTotal.call();
+        const principalDebt1 = await vault.principalDebt.call();
 
         // Assert
-        // TODO
+        assert.approximately(
+            totalShares1.toNumber(),
+            amountLP.toNumber() * 2,
+            1000, // tolerance
+            'Total shares added approximately equivalent to number of want tokens added, minus fees'
+        );
+
+        assert.approximately(
+            principalDebt.toNumber(),
+            amountLP.toNumber() * 2,
+            1000, // tolerance
+            'Total principal debt should be the sum of cash flow in'
+        );
+
+        assert.equal(
+            await pool.balanceOf.call(vault.address),
+            web3.utils.toBN(0),
+            'Vault should have zero want tokens because they should all have been farmed'
+        );
+
+        assert.equal(
+            await vault.amountFarmed.call().toNumber(),
+            amountLP.toNumber() * 2,
+            '100% of want tokens should have been farmed to Masterchef contract'
+        );
     });
 
     it('Exchanges USD to Want', async () => {
@@ -180,7 +214,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
 
         /* THEN
         - I expect USDC to be swapped for the Want token
-        - I expect the USDC to be sent back to me
+        - I expect the want to be sent back to me
         */
 
         /* Test */
@@ -200,10 +234,13 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         await vault.exchangeUSDForWantToken(amountUSDC, slippage);
 
         // Assert
-        // TODO
-        // const balLP = await pool.balanceOf.call(accounts[0]);
-        // const netLP = balLP.sub(balLP0);
-        // assert.approximately(netLP.toNumber(), 0, 100000); // Get back similar amount to what was put in
+        const balLP1 = await pool.balanceOf.call(accounts[0]);
+        const netLP = balLP1.sub(balLP0);
+        assert.isAbove(
+            netLP.toNumber(),
+            0,
+            'A non zero amount of want tokens was obtained'
+        );
     });
 
     it('Withdraws', async () => {
@@ -220,40 +257,80 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         - I expect the total shares to be decremented by the above amount, accounting for fees
         - I expect the principal debt to be decremented by the Want amount withdrawn
         - I expect the want token to be unfarmed
-        - I expect the supply and borrow balances to be updated
         - I expect the amount removed, along with any rewards harvested, to be sent back to me
         */
 
         /* Tests */
 
         // Setup
-        // Record initial balance
-        const balLP0 = await pool.balanceOf.call(accounts[0]);
-
         // Set deposit amount
-        const amountLP = balLP0.div(web3.utils.toBN(10));
+        const balLP = await pool.balanceOf.call(accounts[0]);
+        const amountLP = balLP.div(web3.utils.toBN(10));
 
         // Approve spending
         await pool.approve(vault.address, amountLP);
 
         // Deposit
         await vault.depositWantToken(amountLP);
-
+        const principalDebt0 = await vault.principalDebt.call();
+        
         // Check the current want equity
         const currWantEquity = await vaultActions.currentWantEquity.call(vault.address);
         const userInfo = await masterchef.userInfo.call(0, vault.address);
         // console.log('curr want equity: ', currWantEquity.toString(), 'userInfo: ', userInfo, 'amountLP: ', amountLP.toString());
         // Determine number of shares
-        const totalShares = await vault.sharesTotal.call();
-
+        const totalShares0 = await vault.sharesTotal.call();
+        const principalDebt1 = await vault.principalDebt.call();
+        const amountFarmed0 = await vault.amountFarmed.call();
+        const balLP0 = await pool.balanceOf.call(accounts[0]);
+        
         // Run
-        await vault.withdrawWantToken(totalShares);
+        const sharesToRemove = totalShares0.mul(amountLP).div(currWantEquity);
+        await vault.withdrawWantToken(sharesToRemove);
+        for (let i=0; i<5; i++) {
+            // Run updatePool() a few times to advance blocks and get rewards
+            await masterchef.updatePool(0);
+        }
+        const totalShares1 = await vault.sharesTotal.call();
+        const amountFarmed1 = await vault.amountFarmed.call();
+        const balLP1 = await pool.balanceOf.call(accounts[0]);
+        const joeReward = await joe.balanceOf(accounts[0]);
 
         // Assert
-        // const balUSDT = await usdtERC20.balanceOf.call(accounts[0]);
-        // const netUSDT = balUSDT.sub(balUSDT0);
-        // assert.approximately(netUSDT.toNumber(), 0, 100000); // Tolerance: 1%
-        // TODO: All other assertions
+        const sharesRemoved = totalShares1.sub(totalShares0);
+        const netPrincipalDebt = principalDebt1.sub(principalDebt0);
+        const netAmountFarmed = amountFarmed1.sub(amountFarmed0);
+        const netBalLP = balLP1.sub(balLP0);
+        assert.approximately(
+            sharesRemoved.toNumber(),
+            amountLP.toNumber(),
+            1000,
+            'Shares removed should be approximately equal to the amount of LP removed'
+        );
+        
+        assert.equal(
+            netPrincipalDebt.toNumber(),
+            amountLP.toNumber(),
+            'Principal debt decremented by Want amount removed'
+        );
+
+        assert.equal(
+            netAmountFarmed.toNumber(),
+            -1 * amountLP.toNumber(),
+            'Amount farmed on Masterchef should be completely unfarmed' 
+        );
+        
+        assert.equal(
+            netBalLP.toNumber(),
+            amountLP.toNumber(),
+            'Amount of LP returned to wallet corresponds to the number of shares requested on the withdrawal'
+        );
+
+        assert.isAbove(
+            joeReward.toNumber(),
+            0,
+            'Joe rewards earned is > 0 and returned to wallet'
+        )
     });
 
     it('Exchanges Want to USD', async () => {
@@ -267,7 +344,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
 
         /* THEN
         - I expect Want token to be exchanged for USDC
-        - I expect the Want token to be sent back to me
+        - I expect the USD token to be sent back to me
         */
 
         /* Test */
@@ -288,10 +365,13 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         await vault.exchangeWantTokenForUSD(amountLP, slippage);
 
         // Assert
-        // TODO
-        // const balUSDC = await usdcERC20.balanceOf.call(accounts[0]);
-        // const netUSDC = balUSDC.sub(balUSDC0);
-        // assert.approximately(netUSDC.toNumber(), parseInt(amountUSDT), 100000);
+        const balUSDC1 = await usdcERC20.balanceOf.call(accounts[0]);
+        const netUSDC = balUSDC1.sub(balUSDC0);
+        assert.isAbove(
+            netUSDC.toNumber(),
+            0,
+            'Net USDC received after exchange is > 0'
+        );
     });
 
     it('Fetches pending farm rewards', async () => {
@@ -311,7 +391,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         // Setup 
         // Calculate rewards before depositing
         const joeRewards0 = await vault.pendingFarmRewards.call();
-        console.log('joeRewards0', joeRewards0.toString());
+        console.log('joeRewards0: ', joeRewards0.toString());
         
         // Deposit
         const balLP0 = await pool.balanceOf.call(accounts[0]);
@@ -320,12 +400,19 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         await vault.depositWantToken(amountLP);
         
         // Run
-        await masterchef.updatePool(0);
-        const joeRewards = await vault.pendingFarmRewards.call();
-        console.log('joeRewards', joeRewards.toString());
+        for (let i=0; i<5; i++) {
+            // Update the pool a few times to advance the blocks and get rewards
+            await masterchef.updatePool(0);
+        }
+        const joeRewards1 = await vault.pendingFarmRewards.call();
+        console.log('joeRewards1: ', joeRewards1.toString());
 
         // Assert
-        // assert.isAbove(joeRewards.sub(joeRewards0).toNumber(), 0);
+        assert.isAbove(
+            joeRewards1.sub(joeRewards0).toNumber(), 
+            0,
+            'Farm rewards are > 0'
+        );
     });
 });
 
