@@ -19,7 +19,6 @@ const VaultTimelock = artifacts.require('VaultTimelock');
 const ERC20Upgradeable = artifacts.require('ERC20Upgradeable');
 const VaultActionsZorro = artifacts.require('VaultActionsZorro');
 const IAMMRouter02 = artifacts.require('IAMMRouter02');
-const IPCSMasterChef = artifacts.require('IPCSMasterChef');
 const ZorroController = artifacts.require('ZorroController');
 const Zorro = artifacts.require('Zorro');
 const IWETH = artifacts.require('IWETH');
@@ -29,7 +28,7 @@ const FinanceTimelock = artifacts.require('FinanceTimelock');
 
 contract('VaultZorro :: Investments', async accounts => {
     // Setup
-    let vault, vaultActions, zc, masterchef, vaultTimelock, financeTimelock, busdERC20, iBNB, zorro, poolZORBNB;
+    let vault, vaultActions, zc, vaultTimelock, financeTimelock, busdERC20, iBNB, zorro, poolZORBNB;
 
     // Hook: Before all tests
     before(async () => {
@@ -47,7 +46,6 @@ contract('VaultZorro :: Investments', async accounts => {
         const router = await IAMMRouter02.at(routerAddress);
         const { wbnb, busd } = chains.bnb.tokens;
         iBNB = await IWETH.at(wbnb);
-        masterchef = await IPCSMasterChef.at(chains.bnb.protocols.pancakeswap.masterChef);
         zorro = await Zorro.deployed();
 
         // Establish contracts
@@ -128,19 +126,42 @@ contract('VaultZorro :: Investments', async accounts => {
         // Setup
         // Query LP token balance
         const balZOR = await zorro.balanceOf.call(accounts[0]);
-        console.log('balZOR in deposits: ', balZOR.toString());
 
         // Set deposit amount of LP token
         const amountZOR = balZOR.div(web3.utils.toBN(10));
 
         // Approve spending of LP token
-        await zorro.approve(vault.address, amountZOR);
+        await zorro.approve(vault.address, amountZOR.mul(web3.utils.toBN(2)));
 
         // Run
+        // Deposit 1
         await vault.depositWantToken(amountZOR);
+        const totalShares0 = await vault.sharesTotal.call();
+        // Deposit 2
+        await vault.depositWantToken(amountZOR);
+        const totalShares1 = await vault.sharesTotal.call();
+        const principalDebt1 = await vault.principalDebt.call();
 
         // Assert
-        // TODO
+        assert.approximately(
+            totalShares1.toNumber(),
+            amountZOR.toNumber() * 2,
+            1000, // tolerance
+            'Total shares added approximately equivalent to number of want tokens added, minus fees'
+        );
+
+        assert.approximately(
+            principalDebt1.toNumber(),
+            amountZOR.toNumber() * 2,
+            1000, // tolerance
+            'Total principal debt should be the sum of cash flow in'
+        );
+
+        assert.isAbove(
+            (await zorro.balanceOf.call(vault.address)).toNumber(),
+            0,
+            'Vault should have > 0 want tokens'
+        );
     });
 
     it('Exchanges USD to Want', async () => {
@@ -163,8 +184,7 @@ contract('VaultZorro :: Investments', async accounts => {
 
         // Set usd amount, slippage
         const amountBUSD = web3.utils.toWei('10', 'ether'); // $10
-        console.log('balBUSD for exch USD to Want: ', (await busdERC20.balanceOf.call(accounts[0])).toString());
-        const slippage = 100;
+        const slippage = 990;
 
         // Send usdc
         await busdERC20.approve(vault.address, amountBUSD);
@@ -173,10 +193,13 @@ contract('VaultZorro :: Investments', async accounts => {
         await vault.exchangeUSDForWantToken(amountBUSD, slippage);
 
         // Assert
-        // TODO
-        // const balLP = await pool.balanceOf.call(accounts[0]);
-        // const netLP = balLP.sub(balLP0);
-        // assert.approximately(netLP.toNumber(), 0, 100000); // Get back similar amount to what was put in
+        const balZOR1 = await pool.balanceOf.call(accounts[0]);
+        const netZOR = balZOR1.sub(balZOR0);
+        assert.isAbove(
+            netZOR.toNumber(),
+            0,
+            'A non zero amount of ZOR tokens was obtained'
+        );
     });
 
     it('Withdraws', async () => {
@@ -192,18 +215,83 @@ contract('VaultZorro :: Investments', async accounts => {
         - I expect shares to be removed, proportional to the size of the pool
         - I expect the total shares to be decremented by the above amount, accounting for fees
         - I expect the principal debt to be decremented by the Want amount withdrawn
-        - I expect the want token to be unfarmed
-        - I expect the supply and borrow balances to be updated
-        - I expect the amount removed, along with any rewards harvested, to be sent back to me
         */
 
+        /* Tests */
         // Setup
-        // Record initial balance
-        const balZOR0 = await zorro.balanceOf.call(accounts[0]);
-        console.log('balZOR in withdraws: ', balZOR0.toString());
-
         // Set deposit amount
-        const amountZOR = balZOR0.div(web3.utils.toBN(10));
+        const balZOR = await zorro.balanceOf.call(accounts[0]);
+        const amountZOR = balZOR.div(web3.utils.toBN(10));
+
+        // Approve spending
+        await zorro.approve(vault.address, amountZOR);
+
+        // Deposit
+        await vault.depositWantToken(amountZOR);
+        const principalDebt0 = await vault.principalDebt.call();
+
+        // Check the current want equity
+        const currWantEquity = await vaultActions.currentWantEquity.call(vault.address);
+
+        // Determine number of shares
+        const totalShares0 = await vault.sharesTotal.call();
+        const principalDebt1 = await vault.principalDebt.call();
+        const amountFarmed0 = await vault.amountFarmed.call();
+        const balZOR0 = await pool.balanceOf.call(accounts[0]);
+
+        // Run
+        const sharesToRemove = totalShares0.mul(amountLP).div(currWantEquity);
+        await vault.withdrawWantToken(sharesToRemove);
+        const totalShares1 = await vault.sharesTotal.call();
+        const amountFarmed1 = await vault.amountFarmed.call();
+        const balZOR1 = await pool.balanceOf.call(accounts[0]);
+
+        // Assert
+        const sharesRemoved = totalShares1.sub(totalShares0);
+        const netPrincipalDebt = principalDebt1.sub(principalDebt0);
+        const netAmountFarmed = amountFarmed1.sub(amountFarmed0);
+        const netBalZOR = balZOR1.sub(balZOR1);
+
+        assert.approximately(
+            sharesRemoved.toNumber(),
+            amountZOR.toNumber(),
+            1000,
+            'Shares removed should be approximately equal to the amount of want (Zorro) removed'
+        );
+        
+        assert.equal(
+            netPrincipalDebt.toNumber(),
+            amountZOR.toNumber(),
+            'Principal debt decremented by Want amount removed'
+        );
+        
+        assert.equal(
+            netBalZOR.toNumber(),
+            amountZOR.toNumber(),
+            'Amount of want returned to wallet corresponds to the number of shares requested on the withdrawal'
+        );
+    });
+
+    it('Withdraws (revshare)', async () => {
+        /* GIVEN
+        - As a Zorro Controller
+        */
+
+        /* WHEN
+        - I withdraw from this vault
+        - After a revenue share transfer into the vault happened
+        */
+
+        /* THEN
+        - I expect the amount removed to be sent back to me, 
+          plus my share of any increase in the vault due to revenue sharing
+        */
+
+        /* Tests */
+        // Setup
+        // Set deposit amount
+        const balZOR = await zorro.balanceOf.call(accounts[0]);
+        const amountZOR = balZOR.div(web3.utils.toBN(10));
 
         // Approve spending
         await zorro.approve(vault.address, amountZOR);
@@ -212,21 +300,29 @@ contract('VaultZorro :: Investments', async accounts => {
         await vault.depositWantToken(amountZOR);
 
         // Check the current want equity
-        const currWantEquity = await vaultActions.currentWantEquity.call(vault.address);
-        const userInfo = await masterchef.userInfo.call(0, vault.address);
-        // console.log('curr want equity: ', currWantEquity.toString(), 'userInfo: ', userInfo, 'amountLP: ', amountLP.toString());
-        // Determine number of shares
-        const totalShares = await vault.sharesTotal.call();
-        console.log('totalShares: ', totalShares.toString());
+        const totalShares0 = await vault.sharesTotal.call();
 
         // Run
-        await vault.withdrawWantToken(totalShares);
+        // Transfer ZOR to vault (simulate revshare)
+        await zorro.transfer(vault.address, amountZOR.div(web3.utils.toBN(2)));
+
+        // Withdrawa ZOR
+        await vault.withdrawWantToken(totalShares0);
+        const totalShares1 = await vault.sharesTotal.call();
+        const balZOR1 = await pool.balanceOf.call(accounts[0]);
 
         // Assert
-        // const balUSDT = await usdtERC20.balanceOf.call(accounts[0]);
-        // const netUSDT = balUSDT.sub(balUSDT0);
-        // assert.approximately(netUSDT.toNumber(), 0, 100000); // Tolerance: 1%
-        // TODO: All other assertions
+        assert.approximately(
+            balZOR1.toNumber(),
+            balZOR.toNumber(),
+            'ZOR returned should equal ZOR deposited plus revshare'
+        );
+
+        assert.equal(
+            totalShares1.toNumber(),
+            0,
+            'No shares should be left'
+        );
     });
 
     it('Exchanges Want to USD', async () => {
@@ -251,9 +347,7 @@ contract('VaultZorro :: Investments', async accounts => {
 
         // Set ZOR amount, slippage
         const balZOR0 = await zorro.balanceOf.call(accounts[0]);
-        console.log('balZOR in withdraws: ', balZOR0.toString());
         const amountZOR = balZOR0.div(web3.utils.toBN(10));
-        console.log('amountZOR: ', amountZOR.toString());
         const slippage = 100;
 
         // Approve spending
@@ -263,9 +357,12 @@ contract('VaultZorro :: Investments', async accounts => {
         await vault.exchangeWantTokenForUSD(amountZOR, slippage);
 
         // Assert
-        // TODO
-        // const balUSDC = await usdcERC20.balanceOf.call(accounts[0]);
-        // const netUSDC = balUSDC.sub(balUSDC0);
-        // assert.approximately(netUSDC.toNumber(), parseInt(amountUSDT), 100000);
+        const balBUSD1 = await busdERC20.balanceOf.call(accounts[0]);
+        const netBUSD = balBUSD1.sub(balBUSD0);
+        assert.isAbove(
+            netBUSD.toNumber(),
+            0,
+            'Net BUSD received after exchange is > 0'
+        );
     });
 });

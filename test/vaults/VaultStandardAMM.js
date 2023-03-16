@@ -184,7 +184,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         );
 
         assert.approximately(
-            principalDebt.toNumber(),
+            principalDebt1.toNumber(),
             amountLP.toNumber() * 2,
             1000, // tolerance
             'Total principal debt should be the sum of cash flow in'
@@ -301,6 +301,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         const netPrincipalDebt = principalDebt1.sub(principalDebt0);
         const netAmountFarmed = amountFarmed1.sub(amountFarmed0);
         const netBalLP = balLP1.sub(balLP0);
+        
         assert.approximately(
             sharesRemoved.toNumber(),
             amountLP.toNumber(),
@@ -330,7 +331,7 @@ contract('VaultStandardAMM :: Investments', async accounts => {
             joeReward.toNumber(),
             0,
             'Joe rewards earned is > 0 and returned to wallet'
-        )
+        );
     });
 
     it('Exchanges Want to USD', async () => {
