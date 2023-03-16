@@ -46,7 +46,7 @@ module.exports = async function (deployer, network, accounts) {
     // Deployed contracts
 
     // Deploy actions contract
-    const vaultActionsStandardAMM = await deployProxy(VaultActionsStandardAMM, [infra.uniRouterAddress], { deployer });
+    const vaultActionsStandardAMM = await deployProxy(VaultActionsStandardAMM, [infra.uniRouterAddress, vaultTimelock.address], { deployer });
 
     // Init values 
     const initVal = {
@@ -100,7 +100,7 @@ module.exports = async function (deployer, network, accounts) {
     };
 
     // Deploy
-    await deployProxy(TJ_AVAX_USDC,
+    const vault = await deployProxy(TJ_AVAX_USDC,
       [
         vaultTimelock.address,
         initVal,
@@ -109,9 +109,15 @@ module.exports = async function (deployer, network, accounts) {
         deployer,
       }
     );
+
+    // Add vault to controller
+    await zorroController.add(
+      1, // allocation point
+      protocols.traderjoe.poolAVAX_USDC, // want
+      true, // withUpdate
+      vault.address // vault
+    );
   } else {
     console.log('Not AVAX chain. Skipping vault creation');
   }
 };
-
-// TODO: For all vaults!: call the addVault() func with appropriate multiplier

@@ -31,9 +31,11 @@ abstract contract VaultActions is IVaultActions, OwnableUpgradeable {
 
     /// @notice Constructor
     /// @param _uniRouterAddress Address of Uniswap style router
-    function initialize(address _uniRouterAddress) public initializer {
+    /// @param _owner The designated owner of this contract (usually a Timelock)
+    function initialize(address _uniRouterAddress, address _owner) public initializer {
         uniRouterAddress = _uniRouterAddress;
         burnAddress = 0x000000000000000000000000000000000000dEaD;
+        _transferOwnership(_owner);
     }
 
     /* State */

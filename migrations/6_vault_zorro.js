@@ -49,7 +49,7 @@ module.exports = async function (deployer, network, accounts) {
     const zorPriceFeed = await ZORPriceFeed.deployed();
 
     // Deploy actions contract
-    await deployProxy(VaultActionsZorro, [infra.uniRouterAddress], {deployer});
+    await deployProxy(VaultActionsZorro, [infra.uniRouterAddress, vaultTimelock.address], {deployer});
     const vaultActionsZorro = await VaultActionsZorro.deployed();
 
 
@@ -119,6 +119,14 @@ module.exports = async function (deployer, network, accounts) {
 
     // Controller transfer ownership to controller timelock
     await zorroController.transferOwnership(controllerTimelock.address);
+
+    // Add vault to controller
+    await zorroController.add(
+      1, // allocation point
+      zorro.address, // want
+      true, // withUpdate
+      vaultZorro.address // vault
+    );
   } else {
     console.log('Not home chain. Skipping Zorro Single Staking Vault creation');
   }

@@ -1,8 +1,38 @@
 // VaultActions tests
 // Test for common utilities functions of vaults
 
+// Imports
+const {
+    chains,
+} = require('../../helpers/constants');
+
+const {
+    callTimelockFunc,
+} = require('../../helpers/vaults');
+
+// Artifacts
+const TJ_AVAX_USDC = artifacts.require('TJ_AVAX_USDC');
+const VaultTimelock = artifacts.require('VaultTimelock');
+const ERC20Upgradeable = artifacts.require('ERC20Upgradeable');
+const VaultActionsStandardAMM = artifacts.require('VaultActionsStandardAMM');
+const IJoeRouter02 = artifacts.require('IJoeRouter02');
+const IBoostedMasterChefJoe = artifacts.require('IBoostedMasterChefJoe');
+const ZorroController = artifacts.require('ZorroController');
+const IWETH = artifacts.require('IWETH');
+
 contract('VaultActions :: Setters', async accounts => {
-    xit('Sets key addresses', async () => {
+    let vaultActions, vaultTimelock, zc;
+
+    // Hook: Before all tests
+    before(async () => {
+        // Get timelock
+        vaultTimelock = await VaultTimelock.deployed();
+
+        // Get vaultActions
+        vaultActions = await VaultActionsStandardAMM.deployed();
+    });
+
+    it('Sets key addresses', async () => {
         /* GIVEN
         - As the owner (timelock) of the contract
         */
@@ -14,6 +44,27 @@ contract('VaultActions :: Setters', async accounts => {
         /* THEN
         - Their values update correctly
         */
+
+        /* Test */
+        // Setup 
+        const newRouterAddr = '0x70f657164e5b75689b64b7fd1fa275f334f28e18';
+        const newBurnAddr = '0xcac4CFDA055cDD57139086A0391e64B9a19781d2';
+
+        // Run
+        await callTimelockFunc(
+            vaultTimelock,
+            vaultActions.contract.methods.setUniRouterAddress(newRouterAddr),
+            vaultActions.address
+        );
+        await callTimelockFunc(
+            vaultTimelock,
+            vaultActions.contract.methods.setBurnAddress(newBurnAddr),
+            vaultActions.address
+        );
+
+        // Test
+        assert.equal(await vaultActions.uniRouterAddress, newRouterAddr);
+        assert.equal(await vaultActions.burnAddress, newBurnAddr);
     });
 });
 

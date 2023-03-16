@@ -9,7 +9,8 @@ const {
 const {
     setDeployerAsZC,
     setZorroControllerAsZC,
-    swapExactAVAXForTokens,
+    getUSDC,
+    get_TJ_AVAX_USDC_LP,
     callTimelockFunc,
 } = require('../../helpers/vaults');
 
@@ -102,32 +103,24 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         usdcERC20 = await ERC20Upgradeable.at(usdc);
 
         // Get USDC
-        const amountAvax = 100;
-        const amountAvaxWei = web3.utils.toWei(amountAvax.toString(), 'ether');
-        await swapExactAVAXForTokens(router, [wavax, usdc], accounts[0], amountAvaxWei);
-        const balUSDC = await usdcERC20.balanceOf.call(accounts[0]);
-        const exchgRate = (balUSDC.toNumber() * 10 ** -6) / amountAvax;
-
-        // Wrap AVAX
-        const amountAvaxToWrap = 10;
-        const amountAvaxWrapWei = web3.utils.toWei(amountAvaxToWrap.toString(), 'ether');
-        await iAVAX.deposit({ value: amountAvaxWrapWei });
-
-        // Get LP token
-        const amountUSDCWei = web3.utils.toWei(Math.round(amountAvax * exchgRate * 10 ** 6).toString(), 'Mwei');
-        const now = Math.floor((new Date).getTime() / 1000);
-        await iAVAX.approve(router.address, amountAvaxWrapWei);
-        await usdcERC20.approve(router.address, amountUSDCWei);
-        await router.addLiquidity(
-            wavax,
-            usdc,
-            amountAvaxWrapWei,
-            amountUSDCWei,
-            0,
-            0,
+        await getUSDC(
+            web3.utils.toBN(web3.utils.toWei('100', 'ether')),
+            router,
             accounts[0],
-            now + 300
+            web3
         );
+
+        // Get LP
+        await get_TJ_AVAX_USDC_LP(
+            web3.utils.toBN(web3.utils.toWei('10', 'ether')),
+            usdcERC20,
+            iAVAX,
+            router,
+            accounts[0],
+            web3
+        );
+
+        // Set pool
         pool = await ERC20Upgradeable.at(await vault.poolAddress.call());
 
         // Set Zorrocontroller as deployer (to auth the caller for deposits)
@@ -154,8 +147,8 @@ contract('VaultStandardAMM :: Investments', async accounts => {
         - I expect shares to be added, proportional to the size of the pool
         - I expect the total shares to be incremented by the above amount, accounting for fees
         - I expect the principal debt to be incremented by the Want amount deposited
-        - I expect the want token to be farmed
-        - I expect the supply and borrow balances to be updated
+        - I expect the want token to be farmed (and at the appropriate amount)
+        - I expect the current want equity to be correct
         */
 
         /* Test */

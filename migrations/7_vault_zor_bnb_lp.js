@@ -56,7 +56,7 @@ module.exports = async function (deployer, network, accounts) {
     const zorroLPPool = await iUniswapV2Factory.getPair.call(zorro.address, tokens.wbnb);
 
     // Deploy actions contract
-    const vaultActionsStandardAMM = await deployProxy(VaultActionsStandardAMM, [infra.uniRouterAddress], { deployer });
+    const vaultActionsStandardAMM = await deployProxy(VaultActionsStandardAMM, [infra.uniRouterAddress, vaultTimelock.address], { deployer });
 
     // TODO: Need to fund the pool? Or rather, check to see if exchange rate can be calculated with zero pool?
 
@@ -113,7 +113,7 @@ module.exports = async function (deployer, network, accounts) {
     };
 
     // Deploy
-    await deployProxy(PCS_ZOR_BNB,
+    const vault = await deployProxy(PCS_ZOR_BNB,
       [
         vaultTimelock.address,
         initVal,
@@ -121,6 +121,14 @@ module.exports = async function (deployer, network, accounts) {
       {
         deployer,
       }
+    );
+
+    // Add vault to controller
+    await zorroController.add(
+      1, // allocation point
+      zorroLPPool, // want
+      true, // withUpdate
+      vault.address // vault
     );
   } else {
     console.log('Not BNB chain. Skipping vault creation');
